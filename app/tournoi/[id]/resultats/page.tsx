@@ -1,0 +1,150 @@
+import { notFound } from 'next/navigation';
+import TournoiNav from '../TournoiNav';
+import RecomputeButton from './RecomputeButton';
+import {
+  getTournament,
+  getPicks,
+  getPlayerRows,
+  getMatchRows,
+} from '@/supabase/queries';
+
+export const dynamic = 'force-dynamic';
+
+const HALF_LABEL: Record<string, string> = { top: 'Haut', bottom: 'Bas' };
+
+function num(n: number | null): string {
+  return n === null || n === undefined ? '—' : String(n);
+}
+
+export default async function ResultatsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const tournoi = await getTournament(id);
+  if (!tournoi) notFound();
+
+  const picks = await getPicks(id);
+  const players = await getPlayerRows(picks.map((p) => p.player_id));
+  const nomDe = new Map(players.map((p) => [p.id, p.name]));
+
+  // Ordre d'affichage : par round puis half
+  const rounds = tournoi.rounds ?? [];
+  const ordre = (r: string) => {
+    const i = rounds.indexOf(r);
+    return i === -1 ? 99 : i;
+  };
+  const picksTries = [...picks].sort(
+    (a, b) =>
+      ordre(a.round) - ordre(b.round) ||
+      (a.half ?? '').localeCompare(b.half ?? ''),
+  );
+
+  const total = picks.reduce((s, p) => s + (p.points ?? 0), 0);
+  const tousCalcules = picks.length > 0 && picks.every((p) => p.points !== null);
+
+  // Un pick n'a de points que si son match est joué : on repère les picks
+  // dont le match n'est pas encore terminé (info d'affichage).
+  const matchRows = await getMatchRows(id);
+  const statutMatch = (round: string, playerId: string) => {
+    const m = matchRows.find(
+      (mm) =>
+        mm.round === round &&
+        (mm.player1_id === playerId || mm.player2_id === playerId),
+    );
+    return m?.status ?? null;
+  };
+
+  return (
+    <div className="space-y-5">
+      <TournoiNav id={id} nom={tournoi.name} active="resultats" />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm">
+          <span className="text-zinc-500">Total du tournoi : </span>
+          <span className="text-lg font-semibold tabular-nums">{total}</span>
+          <span className="text-zinc-500"> pts</span>
+          {!tousCalcules && picks.length > 0 && (
+            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+              (certains picks non encore calculés)
+            </span>
+          )}
+        </div>
+        <RecomputeButton tournamentId={id} />
+      </div>
+
+      {picks.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Aucun pick pour ce tournoi. Rends-toi sur l&apos;onglet Picks.
+        </p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <th className="py-2 pr-3 font-medium">Tour</th>
+              <th className="py-2 pr-3 font-medium">Moitié</th>
+              <th className="py-2 pr-3 font-medium">Joueur</th>
+              <th className="py-2 pr-3 text-right font-medium">Match</th>
+              <th className="py-2 pr-3 text-right font-medium">Net sets</th>
+              <th className="py-2 pr-3 text-right font-medium">Net games</th>
+              <th className="py-2 pr-3 text-right font-medium">Total</th>
+              <th className="py-2 pr-3 text-right font-medium">E[pts]</th>
+            </tr>
+          </thead>
+          <tbody>
+            {picksTries.map((p) => {
+              const st = statutMatch(p.round, p.player_id);
+              const enAttente = st === 'scheduled' || st === 'live' || st === null;
+              return (
+                <tr
+                  key={p.id}
+                  className="border-b border-zinc-100 dark:border-zinc-900"
+                >
+                  <td className="py-1.5 pr-3 font-medium">{p.round}</td>
+                  <td className="py-1.5 pr-3 text-zinc-500">
+                    {p.half ? HALF_LABEL[p.half] : '—'}
+                  </td>
+                  <td className="py-1.5 pr-3">
+                    {nomDe.get(p.player_id) ?? p.player_id}
+                    {enAttente && (
+                      <span className="ml-1 text-xs text-zinc-400">
+                        ({st === 'live' ? 'en cours' : 'à jouer'})
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {num(p.points_match)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {num(p.points_sets)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {num(p.points_games)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
+                    {num(p.points)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-400">
+                    {p.e_points != null ? Number(p.e_points).toFixed(1) : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-zinc-300 dark:border-zinc-700">
+              <td colSpan={6} className="py-2 pr-3 text-right font-medium">
+                Total
+              </td>
+              <td className="py-2 pr-3 text-right font-semibold tabular-nums">
+                {total}
+              </td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      )}
+    </div>
+  );
+}

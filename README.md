@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Picks Tennis
 
-## Getting Started
+Jeu de picks tennis personnel, mono-utilisateur. Next.js 16 (App Router) +
+Supabase + Tailwind v4.
 
-First, run the development server:
+## Principe
+
+À chaque tour d'un tournoi, on « pique » des joueurs. Barème : 5 pts par match
+gagné, net sets ×3 (plancher 0), net games sur les sets gagnés uniquement. Un
+joueur ne peut être pické **qu'une seule fois** sur tout le tournoi — c'est la
+contrainte structurante du jeu. 12 picks par tournoi (2 par tour jusqu'aux quarts,
+puis 1 en demi et 1 en finale).
+
+Le moteur (`lib/`) est fourni tel quel et n'est pas modifié : scoring, Elo par
+surface, simulation Monte Carlo, affectation optimale (algorithme hongrois),
+parser du JSON du bookmarklet.
+
+## Démarrer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Variables d'environnement (`.env.local`) :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # publique : lecture seule, inlinée dans le bundle
+SUPABASE_SERVICE_ROLE_KEY=...          # SECRET : jamais préfixée NEXT_PUBLIC_
+APP_PASSWORD=...                       # mot de passe unique d'accès à l'app
+AUTH_SECRET=...                        # signature du cookie (sinon dérivé d'APP_PASSWORD)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Modèle complet dans `.env.example`.
 
-## Learn More
+## Accès à l'app
 
-To learn more about Next.js, take a look at the following resources:
+L'app entière est privée derrière un **mot de passe unique** (`APP_PASSWORD`).
+`proxy.ts` — le `middleware.ts` de Next 16 — redirige vers `/login` toute requête
+sans cookie de session valide, et répond **401** sur `/api/*` et sur les Server
+Actions, où une redirection HTML serait illisible.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Le cookie `tn_session` est `httpOnly`, `SameSite=Lax`, `secure` en production, et
+signé en HMAC-SHA256 : il ne contient qu'une expiration, elle-même dans la charge
+signée — donc non modifiable côté client. Rien n'est stocké en base.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Le proxy n'est pas la ligne de défense principale.** La doc Next 16 est
+explicite : une Server Action n'est pas une route, c'est un POST vers la route qui
+l'héberge, qu'un changement de matcher peut sortir de la couverture du proxy sans
+bruit. Chaque écriture revérifie donc la session elle-même via `auth/garde.ts` —
+`importerExtrait`, `validerPick`, `supprimerPick`, `POST /api/recompute`.
 
-## Deploy on Vercel
+```bash
+npm run build && npm start
+npm run verify:auth            # 401 sans cookie, cookie signé, contournements
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Sécurité de la base
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Les tables `tn_*` sont en **lecture publique / écriture service-role** :
+
+```bash
+# 1. Appliquer une fois la migration (SQL editor Supabase, ou psql)
+#    supabase/migrations/0001_rls_lecture_publique.sql
+
+# 2. Vérifier depuis la clé publique : lecture OK, écritures et RPC refusées
+npm run verify:rls
+```
+
+Tant que la migration n'est pas appliquée, les pages s'affichent **vides** : les
+lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
+
+## Écrans
+
+- `/import` — coller le JSON du bookmarklet ATP. `parseExtract()` +
+  `verifierExtraction()`, puis **upsert** dans `tn_tournaments`, `tn_players`,
+  `tn_matches` (réimportable après chaque tour).
+- `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
+- `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
+  basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
+  pickés grisés. Validation → `tn_picks`.
+- `/tournoi/[id]/resultats` — points par pick (match / net sets / net games) et
+  total du tournoi. Bouton « Recalculer » → `/api/recompute`.
+- `POST /api/recompute` — appelle la fonction Supabase `tn_recompute_picks()`.
+
+## Décisions d'architecture
+
+Ces points s'écartent légèrement de l'énoncé, pour des raisons dictées par la base
+et par Next.js 16 :
+
+- **Séparation lecture / écriture des clés Supabase.** Les lectures passent par la
+  clé publique (`supabase/anon.ts`), adossée à des policies RLS
+  `for select to anon using (true)` sur les 5 tables `tn_*` : ce client ne peut
+  rien modifier, et reste donc utilisable jusque dans le navigateur. Les écritures
+  (import, picks, cache de projections, `tn_recompute_picks`) passent par la
+  `SUPABASE_SERVICE_ROLE_KEY` (`supabase/server.ts`), qui contourne RLS et ne vit
+  que côté serveur — le module porte `import 'server-only'`, ce qui casse le build
+  s'il est atteint depuis un Client Component. Aucune policy insert/update/delete
+  n'existe : même volée, la clé publique ne permet aucune écriture.
+- **Espérances par simulation Monte Carlo** plutôt que par propagation analytique,
+  qui s'effondrait aux tours tardifs (espérances → 0, slots de picks laissés
+  vides). L'écran picks simule **à partir du tour affiché** (`simulerDepuis`,
+  20 000 runs) : seuls les survivants réels de ce tour sont simulés — un joueur
+  déjà éliminé n'apparaît plus comme candidat. Le résultat est **mis en cache dans
+  `tn_projections`, indexé par `from_round`** (E[pts] + P d'avancer). L'import
+  invalide tout le cache du tournoi puis préchauffe le tour courant ; les autres
+  tours sont simulés à la demande au premier affichage. Voir
+  `supabase/projections.ts`.
+- **Elo lus depuis `tn_players`** (colonnes `elo_*`, renseignées par ailleurs avec
+  des Elo réels calculés match par match). L'import n'écrit plus ces colonnes pour
+  ne pas les écraser ; les Elo sont réinjectés dans les `Player` avant simulation.
+- **`best_of` et `surface`** déduits à l'import (`devinerBestOf`, `devinerSurface`),
+  stockés sur `tn_tournaments` et propagés au scoring (un walkover en Grand Chelem
+  masculin vaut 20 pts, pas 15) comme à la simulation.
+- **Le schéma ne stocke pas la tête de série** (ni la moitié de tableau) sur
+  `tn_players`. Après import, les structures du moteur (`Match[]`, `Player`) sont
+  reconstruites depuis la DB (`supabase/queries.ts`) : la moitié se déduit du
+  match de 1er tour ; la reconstruction est vérifiée identique à l'extraction en
+  mémoire. La tête de série n'étant pas persistée, l'UI affiche le rang ATP quand
+  il est connu.
+- **Next.js 16** : `params` et `searchParams` sont des `Promise` (breaking change),
+  d'où le `await` dans les pages.
+
+## Tester
+
+`madrid2026.json` (127 matchs, 96 joueurs) permet de tester l'import et tous les
+écrans sans extraction fraîche : le coller dans `/import`.
+
+## Structure
+
+```
+proxy.ts                         porte d'entrée : tout est privé sauf /login
+auth/
+  session.ts                     jeton signé HMAC (importable depuis proxy.ts)
+  garde.ts                       contrôle de session dans les écritures
+app/
+  login/                         mot de passe unique → cookie de session
+  page.tsx                       liste des tournois
+  import/                        import du JSON + action serveur
+  tournoi/[id]/                  tableau, picks, resultats, sous-nav
+  api/recompute/route.ts         POST → tn_recompute_picks()
+supabase/
+  anon.ts                        client clé publique — LECTURES uniquement
+  server.ts                      client service-role (server-only) — ÉCRITURES
+  queries.ts                     lectures + reconstruction Match[]/Player
+  projections.ts                 simulation Monte Carlo + cache tn_projections
+  migrations/                    RLS lecture publique / écriture service-role
+scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
+scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
+lib/                             moteur fourni (non modifié)
+```
