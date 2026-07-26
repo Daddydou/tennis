@@ -6,7 +6,9 @@ import {
   getPicks,
   getPlayerRows,
   getMatchRows,
+  etatsSlots,
 } from '@/supabase/queries';
+import { genererSlots } from '@/lib/optimizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,8 +43,10 @@ export default async function ResultatsPage({
       (a.half ?? '').localeCompare(b.half ?? ''),
   );
 
+  // Total courant : la somme de ce qui est déjà scoré. Les points sont
+  // recalculés à chaque import et à chaque pick, indépendamment de la
+  // complétude des tours — un tournoi en cours a donc un total valide.
   const total = picks.reduce((s, p) => s + (p.points ?? 0), 0);
-  const tousCalcules = picks.length > 0 && picks.every((p) => p.points !== null);
 
   // Un pick n'a de points que si son match est joué : on repère les picks
   // dont le match n'est pas encore terminé (info d'affichage).
@@ -56,6 +60,16 @@ export default async function ResultatsPage({
     return m?.status ?? null;
   };
 
+  const enAttenteCount = picks.filter((p) => {
+    const st = statutMatch(p.round, p.player_id);
+    return st === null || st === 'scheduled' || st === 'live';
+  }).length;
+
+  // Slots que la contrainte d'unicité a rendus impossibles : ils expliquent
+  // pourquoi le nombre de picks peut rester sous les 12 sur un tournoi fini.
+  const etats = etatsSlots(genererSlots(rounds), matchRows, picks);
+  const sansPickPossible = etats.filter((e) => e.impossible && !e.pick).length;
+
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournoi.name} active="resultats" />
@@ -65,9 +79,16 @@ export default async function ResultatsPage({
           <span className="text-zinc-500">Total du tournoi : </span>
           <span className="text-lg font-semibold tabular-nums">{total}</span>
           <span className="text-zinc-500"> pts</span>
-          {!tousCalcules && picks.length > 0 && (
+          {enAttenteCount > 0 && (
+            <span className="ml-2 text-xs text-zinc-500">
+              ({enAttenteCount} pick{enAttenteCount > 1 ? 's' : ''} en attente de
+              résultat)
+            </span>
+          )}
+          {sansPickPossible > 0 && (
             <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-              (certains picks non encore calculés)
+              ({sansPickPossible} slot{sansPickPossible > 1 ? 's' : ''} sans pick
+              possible)
             </span>
           )}
         </div>

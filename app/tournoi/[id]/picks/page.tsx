@@ -2,7 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
-import { getPicks, loadEngineData, surfacePourElo } from '@/supabase/queries';
+import {
+  etatsSlots,
+  getPicks,
+  loadEngineData,
+  surfacePourElo,
+} from '@/supabase/queries';
 import { getProjections } from '@/supabase/projections';
 import { genererSlots, recommanderPourTour } from '@/lib/optimizer';
 import { eloEffectif } from '@/lib/elo';
@@ -28,7 +33,7 @@ export default async function PicksPage({
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();
-  const { tournament, matches, players } = engine;
+  const { tournament, matches, matchRows, players } = engine;
   const rounds = tournament.rounds ?? [];
 
   const picks = await getPicks(id);
@@ -42,14 +47,32 @@ export default async function PicksPage({
     slotsParRound.set(s.round, a);
   }
 
+  // Un slot dont tous les survivants sont déjà pickés ailleurs ne peut pas être
+  // rempli : c'est un état valide du jeu (contrainte d'unicité), pas une
+  // erreur. Il sort du décompte, sinon le tour resterait éternellement
+  // incomplet et bloquerait la progression.
+  const etats = etatsSlots(slots, matchRows, picks);
+  const etatDe = new Map(
+    etats.map((e) => [`${e.round}|${e.half ?? ''}`, e] as const),
+  );
+  const estImpossible = (round: string, half: Half | null) =>
+    etatDe.get(`${round}|${half ?? ''}`)?.impossible ?? false;
+
   const picksFaitsParRound = new Map<string, number>();
   for (const p of picks) {
     picksFaitsParRound.set(p.round, (picksFaitsParRound.get(p.round) ?? 0) + 1);
   }
-  const requis = (r: string) => slotsParRound.get(r)?.length ?? 0;
+  /** Slots réellement remplissables : les impossibles sont neutralisés. */
+  const requis = (r: string) =>
+    (slotsParRound.get(r) ?? []).filter(
+      (s) => !estImpossible(s.round, s.half as Half | null),
+    ).length;
   const faits = (r: string) => picksFaitsParRound.get(r) ?? 0;
+  const neutralises = (r: string) =>
+    (slotsParRound.get(r) ?? []).length - requis(r);
 
-  // Tour courant = premier tour dont les picks ne sont pas tous posés
+  // Tour courant = premier tour dont les picks remplissables ne sont pas
+  // tous posés.
   const tourCourant =
     rounds.find((r) => faits(r) < requis(r)) ?? rounds[rounds.length - 1] ?? null;
 
@@ -120,12 +143,14 @@ export default async function PicksPage({
         half,
         label: half ? HALF_LABEL[half] : 'Un seul pick',
         pickActuel: pickExistant?.player_id ?? null,
+        impossible: estImpossible(roundSelectionne, half),
         candidats,
       });
     }
   }
 
-  const totalPicks = slots.length;
+  const totalNeutralises = rounds.reduce((s, r) => s + neutralises(r), 0);
+  const totalPossibles = slots.length - totalNeutralises;
   const totalFaits = picks.length;
 
   return (
@@ -135,12 +160,20 @@ export default async function PicksPage({
       {/* Sélecteur de tour */}
       <div className="flex flex-wrap items-center gap-2">
         {rounds.map((r) => {
-          const complet = faits(r) >= requis(r) && requis(r) > 0;
+          // requis(r) === 0 : tous les slots du tour sont neutralisés — le tour
+          // est complet, il n'y avait rien à y poser.
+          const complet = faits(r) >= requis(r);
+          const nt = neutralises(r);
           const actif = r === roundSelectionne;
           return (
             <Link
               key={r}
               href={`/tournoi/${id}/picks?round=${r}`}
+              title={
+                nt > 0
+                  ? `${nt} slot(s) sans pick possible : tous les survivants étaient déjà utilisés`
+                  : undefined
+              }
               className={`rounded border px-2.5 py-1 text-xs ${
                 actif
                   ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
@@ -148,17 +181,23 @@ export default async function PicksPage({
               }`}
             >
               {r} {complet ? '✓' : `${faits(r)}/${requis(r)}`}
+              {nt > 0 && <span className="ml-0.5 opacity-60">·{nt}∅</span>}
             </Link>
           );
         })}
         <span className="ml-auto text-xs text-zinc-500">
-          {totalFaits}/{totalPicks} picks
+          {totalFaits}/{totalPossibles} picks
+          {totalNeutralises > 0 && (
+            <span className="ml-1 text-zinc-400">
+              ({totalNeutralises} sans pick possible)
+            </span>
+          )}
         </span>
       </div>
 
       {!roundSelectionne ? (
         <p className="text-sm text-zinc-500">Aucun tour à picker.</p>
-      ) : colonnes.every((c) => c.candidats.length === 0) ? (
+      ) : colonnes.every((c) => c.candidats.length === 0 && !c.impossible) ? (
         <p className="text-sm text-zinc-500">
           Aucun joueur disponible pour ce tour (données de tableau manquantes ou
           tour non encore constitué).

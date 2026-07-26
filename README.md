@@ -110,6 +110,22 @@ et par Next.js 16 :
   invalide tout le cache du tournoi puis préchauffe le tour courant ; les autres
   tours sont simulés à la demande au premier affichage. Voir
   `supabase/projections.ts`.
+- **Slots sans pick possible.** À un tour donné, si tous les survivants d'une
+  moitié ont déjà été pickés, le slot ne peut littéralement pas être rempli —
+  état valide du jeu (un joueur ne sert qu'une fois), pas une erreur. Ces slots
+  sont détectés par `etatsSlots()` à partir des **matchs réels** (pas des
+  projections : la disponibilité est un fait du tableau, et il faut pouvoir la
+  calculer sur tous les tours sans lancer une simulation par tour). Ils sortent
+  du décompte « requis » du tour, qui devient donc complétable. Un tour dont les
+  joueurs ne sont pas encore connus n'est pas « impossible », seulement
+  indéterminé.
+- **Le calcul des points est découplé de la validation des tours.**
+  `tn_recompute_picks` scorait déjà chaque pick contre son match, sans notion de
+  tour complet — mais il n'était appelé que par le bouton « Recalculer » de
+  l'écran Résultats. Des picks dont le match était terminé restaient donc à
+  `points = null`. `recalculerPoints()` est désormais appelé à l'import (arrivée
+  des résultats) et à chaque validation/suppression de pick ; le bouton n'est
+  plus qu'un filet de sécurité.
 - **P(titre) ajoutée au moteur.** `presence` ne couvre que « jouer un tour » : la
   finale y figure, la gagner non — la boucle de simulation s'arrête dès qu'il ne
   reste qu'un joueur. `simulerTournoi` crédite désormais le dernier survivant de

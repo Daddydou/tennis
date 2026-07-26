@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
 import { supabaseAdmin } from '@/supabase/server';
+import { recalculerPoints } from '@/supabase/points';
 import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
 import {
   computeAndStoreProjections,
@@ -239,7 +240,16 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     if (error) return { ok: false, error: `Matchs : ${error.message}`, avertissements };
   }
 
-  // 6. Cache des projections Monte Carlo. On invalide tout le cache du tournoi
+  // 6. Points des picks. L'import est le moment où les résultats arrivent :
+  //    on rescore immédiatement, sans attendre que l'utilisateur ouvre l'écran
+  //    Résultats et clique « Recalculer ». Chaque pick est scoré contre son
+  //    match, indépendamment des autres slots du tour.
+  const scoring = await recalculerPoints(tournamentId);
+  if (!scoring.ok) {
+    avertissements.push(`Recalcul des points : ${scoring.error}`);
+  }
+
+  // 7. Cache des projections Monte Carlo. On invalide tout le cache du tournoi
   //    (les résultats du tour importé changent les survivants) puis on préchauffe
   //    le tour courant. Les autres tours seront simulés à la demande (et mis en
   //    cache) au premier affichage. Chaque simulation part des survivants réels

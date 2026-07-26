@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/supabase/server';
+import { recalculerPoints } from '@/supabase/points';
 import { sessionValide } from '@/auth/garde';
 
 /**
@@ -30,14 +30,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const sb = supabaseAdmin();
-  const { data, error } = await sb.rpc('tn_recompute_picks', {
-    p_tournament_id: tournamentId,
-  });
-
-  if (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+  // Recalcul manuel : même chemin que les recalculs automatiques (import,
+  // validation d'un pick). Le bouton n'est plus qu'un filet de sécurité.
+  const r = await recalculerPoints(tournamentId);
+  if (!r.ok) {
+    return Response.json({ ok: false, error: r.error }, { status: 500 });
   }
 
-  return Response.json({ ok: true, picksRecalcules: data });
+  return Response.json({ ok: true, picksRecalcules: r.picks ?? 0 });
 }

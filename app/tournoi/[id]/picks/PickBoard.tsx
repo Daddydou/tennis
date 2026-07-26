@@ -20,6 +20,12 @@ export interface Colonne {
   half: Half | null;
   label: string;
   pickActuel: string | null;
+  /**
+   * Tous les survivants de cette moitié sont déjà pickés ailleurs : le slot ne
+   * peut pas être rempli. État valide du jeu (un joueur ne sert qu'une fois),
+   * pas une erreur — on n'attend donc plus de pick ici.
+   */
+  impossible: boolean;
   candidats: Candidat[];
 }
 
@@ -71,12 +77,25 @@ function ColonnePick({
     <div className="flex-1 space-y-2">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">{colonne.label}</h2>
-        {colonne.pickActuel && (
+        {colonne.pickActuel ? (
           <span className="text-xs text-emerald-600 dark:text-emerald-400">
             pické
           </span>
-        )}
+        ) : colonne.impossible ? (
+          <span className="text-xs text-amber-600 dark:text-amber-400">
+            sans pick possible
+          </span>
+        ) : null}
       </div>
+
+      {colonne.impossible && (
+        <p className="rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          Tous les survivants de cette moitié ont déjà été pickés à un tour
+          précédent. Un joueur ne pouvant servir qu&apos;une fois par tournoi, ce
+          slot ne peut pas être rempli : il est neutralisé et ne bloque pas la
+          progression.
+        </p>
+      )}
 
       <div className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-900 dark:border-zinc-800">
         {colonne.candidats.map((c) => {
@@ -147,7 +166,7 @@ function ColonnePick({
       <div className="flex items-center gap-2">
         <button
           onClick={valider}
-          disabled={pending || !choix || !modifie}
+          disabled={pending || !choix || !modifie || colonne.impossible}
           className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
         >
           {pending ? '…' : colonne.pickActuel ? 'Modifier' : 'Valider'}

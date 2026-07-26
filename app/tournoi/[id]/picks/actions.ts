@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
 import { supabaseAdmin } from '@/supabase/server';
+import { recalculerPoints } from '@/supabase/points';
 
 export interface PickActionResult {
   ok: boolean;
@@ -74,6 +75,10 @@ export async function validerPick(
     if (error) return { ok: false, error: error.message };
   }
 
+  // Si le match du joueur pické est déjà joué, ses points sont connus tout de
+  // suite : on ne les fait pas dépendre de la complétude du tour.
+  await recalculerPoints(tournamentId);
+
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
   return { ok: true };
@@ -95,6 +100,8 @@ export async function supprimerPick(
   del = half === null ? del.is('half', null) : del.eq('half', half);
   const { error } = await del;
   if (error) return { ok: false, error: error.message };
+
+  await recalculerPoints(tournamentId);
 
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
