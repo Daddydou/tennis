@@ -12,9 +12,9 @@ import {
   parseExtract,
   extraireJoueurs,
   verifierExtraction,
-  devinerSurface,
   devinerBestOf,
 } from '@/lib/parser';
+import { metaTournoi } from '@/lib/calendrier';
 import type { DrawExtract, Match } from '@/lib/types';
 
 export interface ImportResult {
@@ -109,11 +109,31 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
 
   // 3. Tournoi (upsert sur external_id, tour, year)
   const slug = extract.tournament.slug;
-  const mois = new Date(extract.extractedAt).getUTCMonth() + 1;
-  const surface = devinerSurface(slug, mois);
   const bestOf = devinerBestOf(extract.tour, slug);
   const rounds = extract.roundsFound;
   const drawSize = DRAW_FROM_ROUND[rounds[0]] ?? null;
+
+  // Surface / catégorie / date de début viennent du référentiel des tournois.
+  // On n'utilise plus `devinerSurface(slug, mois)` : son repli calendaire
+  // recevait le mois de l'EXTRACTION, pas celui du tournoi — importer un
+  // tableau en juillet classait l'Australian Open sur gazon.
+  const meta = metaTournoi(
+    slug,
+    extract.tour,
+    extract.tournament.year,
+    drawSize,
+  );
+
+  // Une date fournie par l'extraction prime sur celle du référentiel : le
+  // bookmarklet n'en produit pas aujourd'hui, mais s'il évolue on la prend.
+  const dateExtraite = (
+    (raw as { tournament?: Record<string, unknown> })?.tournament ?? {}
+  );
+  const startDateBrute = dateExtraite.start_date ?? dateExtraite.startDate;
+  const startDate =
+    typeof startDateBrute === 'string' && /^\d{4}-\d{2}-\d{2}/.test(startDateBrute)
+      ? startDateBrute.slice(0, 10)
+      : meta.startDate;
 
   // Statut : terminé si la finale est jouée
   const finale = extract.matches.find(
@@ -126,10 +146,12 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     slug,
     name: `${prettifyName(slug)} ${extract.tournament.year}`,
     tour: extract.tour,
-    surface,
+    surface: meta.surface,
+    category: meta.categorie,
     draw_size: drawSize,
     best_of: bestOf,
     year: extract.tournament.year,
+    start_date: startDate,
     status,
     rounds,
   };

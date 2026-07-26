@@ -100,6 +100,13 @@ export interface ResultatMonteCarlo {
   esperances: Esperances;
   /** P(le joueur atteint ce tour). */
   presence: Record<string, Record<string, number>>;
+  /**
+   * P(le joueur remporte le tournoi).
+   *
+   * `presence` s'arrete a la finale : jouer la finale y figure, la gagner non.
+   * On credite donc le dernier survivant de chaque simulation.
+   */
+  titres: Record<string, number>;
   simulations: number;
 }
 
@@ -150,6 +157,7 @@ export function simulerTournoi(
 
   const cumulPoints: Record<string, Record<string, number>> = {};
   const cumulPresence: Record<string, Record<string, number>> = {};
+  const cumulTitres: Record<string, number> = {};
 
   const ajouter = (
     cible: Record<string, Record<string, number>>,
@@ -201,13 +209,19 @@ export function simulerTournoi(
       actuels = suivants;
       if (actuels.length <= 1) break;
     }
+
+    // Dernier survivant = vainqueur du tournoi sur cette simulation.
+    const champion = actuels.length === 1 ? actuels[0] : null;
+    if (champion) cumulTitres[champion] = (cumulTitres[champion] ?? 0) + 1;
   }
 
   // Moyennes
   const esperances: Esperances = {};
   const presence: Record<string, Record<string, number>> = {};
+  const titres: Record<string, number> = {};
 
   for (const id of Object.keys(cumulPresence)) {
+    titres[id] = (cumulTitres[id] ?? 0) / n;
     presence[id] = {};
     esperances[id] = {};
     for (const round of rounds) {
@@ -219,7 +233,7 @@ export function simulerTournoi(
     }
   }
 
-  return { esperances, presence, simulations: n };
+  return { esperances, presence, titres, simulations: n };
 }
 
 /**

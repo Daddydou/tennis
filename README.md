@@ -79,6 +79,10 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
 - `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
   pickés grisés. Validation → `tn_picks`.
+- `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
+  lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
+  titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
+  n'est resimulé si les picks ont déjà été affichés.
 - `/tournoi/[id]/resultats` — points par pick (match / net sets / net games) et
   total du tournoi. Bouton « Recalculer » → `/api/recompute`.
 - `POST /api/recompute` — appelle la fonction Supabase `tn_recompute_picks()`.
@@ -106,6 +110,23 @@ et par Next.js 16 :
   invalide tout le cache du tournoi puis préchauffe le tour courant ; les autres
   tours sont simulés à la demande au premier affichage. Voir
   `supabase/projections.ts`.
+- **P(titre) ajoutée au moteur.** `presence` ne couvre que « jouer un tour » : la
+  finale y figure, la gagner non — la boucle de simulation s'arrête dès qu'il ne
+  reste qu'un joueur. `simulerTournoi` crédite désormais le dernier survivant de
+  chaque simulation (`titres`), seul ajout au moteur fourni ; aucune sortie
+  existante ne change. Vérifié : Σ P(titre) = 1, Σ P(finale) = 2, et
+  P(titre) ≤ P(finale) pour chaque joueur. La valeur est stockée dans
+  `tn_projections` sous le pseudo-tour `TITRE`, hors de `tournament.rounds` pour
+  rester invisible de l'optimiseur.
+- **Référentiel des tournois (`lib/calendrier.ts`)** pour la surface, la catégorie
+  et la date de début. Il remplace `devinerSurface(slug, mois)`, dont le repli
+  calendaire recevait le mois de l'**extraction** et non celui du tournoi :
+  importer un tableau en juillet classait l'Australian Open sur gazon (15 des 22
+  tournois en base étaient faux). L'extraction du bookmarklet ne portant aucune
+  date, `start_date` — colonne déjà présente au schéma mais jamais remplie — est
+  reconstituée depuis la semaine ISO habituelle du tournoi. `npm run
+  backfill:tournois` corrige les lignes existantes (aperçu par défaut,
+  `--appliquer` pour écrire).
 - **Elo lus depuis `tn_players`** (colonnes `elo_*`, renseignées par ailleurs avec
   des Elo réels calculés match par match). L'import n'écrit plus ces colonnes pour
   ne pas les écraser ; les Elo sont réinjectés dans les `Player` avant simulation.

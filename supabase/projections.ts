@@ -10,10 +10,20 @@ const N_SIMULATIONS = 20000;
 /** Graine fixe → projections reproductibles. */
 const SEED = 42;
 
+/**
+ * Pseudo-tour sous lequel P(titre) est stockée dans `tn_projections`.
+ *
+ * `presence` s'arrête à la finale : la jouer y figure, la gagner non. On range
+ * donc la probabilité de titre dans une ligne à part, ce qui évite d'ajouter
+ * une colonne dédiée à chacune des lignes par tour. Ne fait jamais partie de
+ * `tournament.rounds` : l'optimiseur ne la voit pas.
+ */
+export const ROUND_TITRE = 'TITRE';
+
 export interface Projections {
   /** E[points | joueur pické au tour R]. */
   esperances: Record<string, Record<string, number>>;
-  /** P(le joueur atteint ce tour). */
+  /** P(le joueur atteint ce tour), plus P(titre) sous la clé ROUND_TITRE. */
   presence: Record<string, Record<string, number>>;
 }
 
@@ -77,6 +87,19 @@ export async function computeAndStoreProjections(
         p_reach: p,
       });
     }
+
+    // P(titre), hors énumération des tours (cf. ROUND_TITRE).
+    const titre = mc.titres[id] ?? 0;
+    if (titre > 0) {
+      rows.push({
+        tournament_id: tournament.id,
+        from_round: fromRound,
+        player_id: id,
+        round: ROUND_TITRE,
+        e_points: 0,
+        p_reach: titre,
+      });
+    }
   }
 
   await sb
@@ -89,7 +112,15 @@ export async function computeAndStoreProjections(
     if (error) throw new Error(`Projections : ${error.message}`);
   }
 
-  return { esperances: mc.esperances, presence: mc.presence };
+  // `mc.presence` s'arrête aux tours ; on y greffe P(titre) pour que la valeur
+  // renvoyée soit identique à ce que relira `lireCache`. Sans ça, un appelant
+  // tombant sur un cache vide recevrait des probabilités de titre absentes.
+  const presence: Projections['presence'] = {};
+  for (const id of Object.keys(mc.presence)) {
+    presence[id] = { ...mc.presence[id], [ROUND_TITRE]: mc.titres[id] ?? 0 };
+  }
+
+  return { esperances: mc.esperances, presence };
 }
 
 /** Supprime tout le cache de projections d'un tournoi (tous les from_round). */
@@ -130,6 +161,10 @@ export async function getProjections(
     .eq('from_round', fromRound);
   if (error) throw new Error(error.message);
 
-  if (data && data.length > 0) return lireCache(data);
+  // Un cache antérieur à l'ajout de P(titre) n'a aucune ligne ROUND_TITRE :
+  // on le considère périmé et on relance la simulation, plutôt que d'afficher
+  // des probabilités de titre nulles.
+  const complet = data?.some((r) => r.round === ROUND_TITRE);
+  if (data && data.length > 0 && complet) return lireCache(data);
   return computeAndStoreProjections(engine, fromRound);
 }

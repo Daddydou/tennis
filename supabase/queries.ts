@@ -26,8 +26,10 @@ export interface TournamentRow {
   draw_size: number | null;
   best_of: number | null;
   year: number;
+  start_date: string | null;
   status: 'upcoming' | 'running' | 'completed';
   rounds: string[] | null;
+  created_at: string | null;
 }
 
 export interface PlayerRow {
@@ -85,13 +87,22 @@ export interface PickRow {
 /*  depuis un Server Component que depuis le navigateur.                      */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Tournois du plus récent au plus ancien.
+ *
+ * `start_date` peut manquer sur d'anciennes lignes (l'extraction du
+ * bookmarklet ne porte aucune date ; elle est reconstituée à l'import depuis
+ * `lib/calendrier.ts`). On les renvoie en dernier, départagées par année puis
+ * par date d'import — jamais mélangées aux tournois datés.
+ */
 export async function listTournaments(): Promise<TournamentRow[]> {
   const sb = supabaseAnon();
   const { data, error } = await sb
     .from('tn_tournaments')
     .select('*')
+    .order('start_date', { ascending: false, nullsFirst: false })
     .order('year', { ascending: false })
-    .order('name', { ascending: true });
+    .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as TournamentRow[];
 }

@@ -30,5 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "//": "scripts/ : utilitaires Node autonomes, exécutés via le type stripping de Node (imports en .ts explicites, incompatibles avec moduleResolution bundler). Hors périmètre du build Next.",
+  "exclude": ["node_modules", "scripts"]
 }
