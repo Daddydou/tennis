@@ -212,6 +212,19 @@ export function devinerBestOf(tour: Tour, slug: string | null): 3 | 5 {
 }
 
 /**
+ * Un slot de match désigne-t-il un joueur identifiable ?
+ *
+ * Les tableaux ATP en cours contiennent des slots d'attente : vides pour les
+ * tours pas encore alimentés, ou étiquetés (« Qualifier », « TBD »). Aucun
+ * n'est un joueur dont l'ID manquerait — il n'y a simplement personne encore.
+ */
+function estJoueurNomme(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  if (!n || n === '-') return false;
+  return !['bye', 'qualifier', 'qualificato', 'q', 'tbd', 'to be determined'].includes(n);
+}
+
+/**
  * Contrôle de cohérence d'une extraction.
  * À appeler après chaque import : une donnée manquante fausse un classement.
  */
@@ -234,10 +247,17 @@ export function verifierExtraction(extract: DrawExtract): {
     }
   }
 
-  const sansId = extract.matches.filter((m) =>
-    m.players.some((p) => !p.id && !p.isBye)
+  // Un slot sans ID n'est un problème que s'il désigne un vrai joueur. Les
+  // tours à venir d'un tableau en cours arrivent avec deux slots vides : les
+  // compter signalait « 15 joueurs sans ID » sur un tableau de 32 parfaitement
+  // extrait (R16+QF+SF+F). On ne retient donc que les slots NOMMÉS.
+  const sansId = extract.matches.flatMap((m) =>
+    m.players.filter((p) => !p.id && !p.isBye && estJoueurNomme(p.name))
   );
-  if (sansId.length) av.push(`${sansId.length} joueur(s) sans ID ATP`);
+  if (sansId.length) {
+    const noms = [...new Set(sansId.map((p) => p.name))];
+    av.push(`${sansId.length} joueur(s) sans ID ATP : ${noms.join(', ')}`);
+  }
 
   const incomplets = extract.matches.filter(
     (m) => m.status === 'completed' && !m.players.some((p) => p.winner)
