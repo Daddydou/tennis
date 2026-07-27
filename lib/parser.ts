@@ -1,8 +1,9 @@
 /**
  * PARSER — JSON DU BOOKMARKLET → STRUCTURES DU MOTEUR
  *
- * Le bookmarklet ATP produit un JSON brut. Ce module le normalise,
- * en déduit les joueurs, les moitiés de tableau et l'ordre des tours.
+ * Les bookmarklets ATP et WTA produisent le MÊME JSON brut, au champ `tour`
+ * près ('ATP' / 'WTA'). Ce module le normalise, en déduit les joueurs, les
+ * moitiés de tableau et l'ordre des tours.
  */
 
 import { eloDepuisRang, ELO_DEFAUT } from './elo';
@@ -45,6 +46,24 @@ export function trierRounds(rounds: string[]): string[] {
 }
 
 /**
+ * Circuit d'une extraction.
+ *
+ * Le champ décide de TOUT ce qui sépare les deux circuits en aval : le
+ * `tour` stocké sur le tournoi et les joueurs, le nombre de sets gagnants,
+ * la fiche calendrier, et surtout le rapport Elo interrogé
+ * (`chargerIndexElo` filtre `ta_elo` sur ce circuit). Un tour faux ferait
+ * chercher l'Elo d'une joueuse parmi les hommes — jamais silencieusement.
+ *
+ * À défaut de champ exploitable, on tranche sur l'URL source plutôt que de
+ * supposer l'ATP : le bookmarklet WTA est le seul à produire des URL wtatennis.
+ */
+export function normaliserTour(brut: unknown, sourceUrl = ''): Tour {
+  const t = String(brut ?? '').trim().toUpperCase();
+  if (t === 'ATP' || t === 'WTA') return t;
+  return /wtatennis\.com|(^|[^a-z])wta([^a-z]|$)/i.test(sourceUrl) ? 'WTA' : 'ATP';
+}
+
+/**
  * Parse le JSON du bookmarklet.
  * Tolérant aux variations de casse des clés (camelCase / snake_case).
  */
@@ -52,6 +71,7 @@ export function parseExtract(raw: unknown): DrawExtract {
   const o = raw as Record<string, unknown>;
   const t = (o.tournament ?? {}) as Record<string, unknown>;
   const matchesRaw = (o.matches ?? []) as Record<string, unknown>[];
+  const sourceUrl = String(o.source_url ?? o.sourceUrl ?? '');
 
   const matches: Match[] = matchesRaw.map((m) => {
     const players = (m.players ?? []) as Record<string, unknown>[];
@@ -70,13 +90,20 @@ export function parseExtract(raw: unknown): DrawExtract {
 
   return {
     extractedAt: String(o.extracted_at ?? o.extractedAt ?? new Date().toISOString()),
-    sourceUrl: String(o.source_url ?? o.sourceUrl ?? ''),
+    sourceUrl,
     tournament: {
       slug: (t.slug ?? null) as string | null,
-      atpId: (t.atp_id ?? t.atpId ?? null) as string | null,
+      // Le bookmarklet WTA reprend le format ATP (`atp_id`) ; on accepte
+      // néanmoins les clés propres au circuit féminin si elles apparaissent.
+      externalId: (t.atp_id ??
+        t.atpId ??
+        t.wta_id ??
+        t.wtaId ??
+        t.tournament_id ??
+        null) as string | null,
       year: Number(t.year ?? new Date().getFullYear()),
     },
-    tour: (o.tour ?? 'ATP') as Tour,
+    tour: normaliserTour(o.tour, sourceUrl),
     roundsFound,
     matchCount: matches.length,
     matches,
@@ -181,8 +208,19 @@ export function adversaireDe(
   return null;
 }
 
-/** Déduit la surface depuis le slug du tournoi (heuristique). */
-export function devinerSurface(slug: string | null, mois?: number): Surface {
+/**
+ * Déduit la surface depuis le slug du tournoi (heuristique).
+ *
+ * Le circuit compte : un même slug peut désigner deux surfaces selon le
+ * tableau. Stuttgart est sur terre battue indoor en avril chez les femmes et
+ * sur gazon en juin chez les hommes ; Lyon sur dur en février côté WTA contre
+ * terre en mai côté ATP. Les fiches féminines sont donc consultées d'abord.
+ */
+export function devinerSurface(
+  slug: string | null,
+  mois?: number,
+  tour: Tour = 'ATP',
+): Surface {
   if (!slug) return 'hard';
   const s = slug.toLowerCase();
 
@@ -192,6 +230,17 @@ export function devinerSurface(slug: string | null, mois?: number): Surface {
                  'santiago', 'cordoba', 'marrakech'];
   const gazon = ['wimbledon', 'queens', 'halle', 'stuttgart', 'eastbourne',
                  'mallorca', 'newport', 's-hertogenbosch'];
+
+  if (tour === 'WTA') {
+    const terreW = ['charleston', 'stuttgart', 'bogota', 'rouen', 'strasbourg',
+                    'rabat', 'palermo', 'iasi', 'budapest', 'prague', 'warsaw',
+                    'makarska'];
+    const gazonW = ['nottingham', 'birmingham', 'berlin', 'bad-homburg', 'ilkley'];
+    const durW = ['lyon'];
+    if (terreW.some((t) => s.includes(t))) return 'clay';
+    if (gazonW.some((g) => s.includes(g))) return 'grass';
+    if (durW.some((d) => s.includes(d))) return 'hard';
+  }
 
   if (terre.some((t) => s.includes(t))) return 'clay';
   if (gazon.some((g) => s.includes(g))) return 'grass';
@@ -204,7 +253,13 @@ export function devinerSurface(slug: string | null, mois?: number): Surface {
   return 'hard';
 }
 
-/** Nombre de sets gagnants selon le tournoi. */
+/**
+ * Nombre de sets gagnants selon le tournoi.
+ *
+ * Le circuit féminin se joue en deux sets gagnants PARTOUT, Grand Chelem
+ * compris : le test sur le tour passe donc avant celui sur le slug, sans quoi
+ * Roland-Garros ou l'US Open féminin repartiraient en bo5.
+ */
 export function devinerBestOf(tour: Tour, slug: string | null): 3 | 5 {
   if (tour === 'WTA') return 3;
   const gs = ['australian-open', 'roland-garros', 'wimbledon', 'us-open'];
@@ -214,7 +269,7 @@ export function devinerBestOf(tour: Tour, slug: string | null): 3 | 5 {
 /**
  * Un slot de match désigne-t-il un joueur identifiable ?
  *
- * Les tableaux ATP en cours contiennent des slots d'attente : vides pour les
+ * Les tableaux en cours contiennent des slots d'attente : vides pour les
  * tours pas encore alimentés, ou étiquetés (« Qualifier », « TBD »). Aucun
  * n'est un joueur dont l'ID manquerait — il n'y a simplement personne encore.
  */
@@ -256,7 +311,7 @@ export function verifierExtraction(extract: DrawExtract): {
   );
   if (sansId.length) {
     const noms = [...new Set(sansId.map((p) => p.name))];
-    av.push(`${sansId.length} joueur(s) sans ID ATP : ${noms.join(', ')}`);
+    av.push(`${sansId.length} joueur(s) sans ID ${extract.tour} : ${noms.join(', ')}`);
   }
 
   const incomplets = extract.matches.filter(

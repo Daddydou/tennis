@@ -108,7 +108,10 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
 
   const sb = supabaseAdmin();
 
-  // 3. Tournoi (upsert sur external_id, tour, year)
+  // 3. Tournoi (upsert sur external_id, tour, year). Le `tour` de l'extraction
+  //    est stocké tel quel : c'est lui qui décide ensuite du rapport Elo
+  //    interrogé (`chargerIndexElo`), un tournoi WTA ne devant JAMAIS être
+  //    rapproché des joueurs du circuit masculin.
   const slug = extract.tournament.slug;
   const bestOf = devinerBestOf(extract.tour, slug);
   const rounds = extract.roundsFound;
@@ -143,7 +146,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   const status = finale ? 'completed' : 'running';
 
   const tournamentPayload = {
-    external_id: extract.tournament.atpId,
+    external_id: extract.tournament.externalId,
     slug,
     name: `${prettifyName(slug)} ${extract.tournament.year}`,
     tour: extract.tour,
@@ -158,7 +161,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   };
 
   let tournamentId: string;
-  if (extract.tournament.atpId) {
+  if (extract.tournament.externalId) {
     const { data, error } = await sb
       .from('tn_tournaments')
       .upsert(tournamentPayload, { onConflict: 'external_id,tour,year' })
@@ -167,7 +170,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     if (error) return { ok: false, error: `Tournoi : ${error.message}`, avertissements };
     tournamentId = data.id;
   } else {
-    // Pas d'ID ATP : on retrouve/insère à la main sur slug+tour+year
+    // Pas d'ID de circuit : on retrouve/insère à la main sur slug+tour+year
     const { data: existing } = await sb
       .from('tn_tournaments')
       .select('id')

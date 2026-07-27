@@ -23,7 +23,8 @@ export type Categorie =
   | 'Finals'
   | 'WTA1000'
   | 'WTA500'
-  | 'WTA250';
+  | 'WTA250'
+  | 'WTAFinals';
 
 interface Fiche {
   surface: Surface;
@@ -36,7 +37,10 @@ const H = 'hard' as const;
 const T = 'clay' as const;
 const G = 'grass' as const;
 
-/** Clé = slug ATP. */
+/**
+ * Clé = slug ATP. Sert aussi de repli au circuit féminin pour les tournois
+ * communs aux deux calendriers (cf. `CALENDRIER_WTA`).
+ */
 const CALENDRIER: Record<string, Fiche> = {
   // — Janvier : tournée australienne
   'brisbane': { surface: H, categorie: 'ATP250', semaine: 1 },
@@ -120,6 +124,82 @@ const CALENDRIER: Record<string, Fiche> = {
   'turin': { surface: H, categorie: 'Finals', semaine: 46 },
 };
 
+/**
+ * Fiches PROPRES au circuit féminin, consultées avant `CALENDRIER`.
+ *
+ * Deux raisons d'y figurer :
+ *   1. le tournoi n'a pas d'équivalent masculin (Charleston, Berlin, Wuhan…) ;
+ *   2. le slug est partagé mais la fiche diffère — Stuttgart est sur terre
+ *      battue indoor en avril chez les femmes et sur gazon en juin chez les
+ *      hommes, Lyon sur dur en février contre terre en mai. La traduction de
+ *      catégorie par `pourTour` ne suffit pas non plus partout : Doha et
+ *      Pékin sont des ATP 500 et des WTA 1000.
+ *
+ * Un slug absent d'ici retombe sur la fiche ATP : les Grands Chelems, Madrid,
+ * Rome, Indian Wells, Miami, Cincinnati ou Montréal se jouent les mêmes
+ * semaines sur les mêmes surfaces, seule la catégorie est traduite.
+ */
+const CALENDRIER_WTA: Record<string, Fiche> = {
+  // — Janvier : tournée australienne
+  'brisbane': { surface: H, categorie: 'WTA500', semaine: 1 },
+  'auckland': { surface: H, categorie: 'WTA250', semaine: 1 },
+  'adelaide': { surface: H, categorie: 'WTA500', semaine: 2 },
+  'hobart': { surface: H, categorie: 'WTA250', semaine: 2 },
+
+  // — Février : Golfe, indoor européen, Amérique du Nord
+  'abu-dhabi': { surface: H, categorie: 'WTA500', semaine: 5 },
+  'linz': { surface: H, categorie: 'WTA500', semaine: 5 },
+  'singapore': { surface: H, categorie: 'WTA250', semaine: 5 },
+  'doha': { surface: H, categorie: 'WTA1000', semaine: 6 },
+  'lyon': { surface: H, categorie: 'WTA250', semaine: 6 },
+  'cluj-napoca': { surface: H, categorie: 'WTA250', semaine: 6 },
+  'dubai': { surface: H, categorie: 'WTA1000', semaine: 7 },
+  'austin': { surface: H, categorie: 'WTA250', semaine: 8 },
+  'merida': { surface: H, categorie: 'WTA500', semaine: 8 },
+  'monterrey': { surface: H, categorie: 'WTA500', semaine: 9 },
+
+  // — Avril-mai : saison sur terre
+  'charleston': { surface: T, categorie: 'WTA500', semaine: 14 },
+  'bogota': { surface: T, categorie: 'WTA250', semaine: 14 },
+  'rouen': { surface: T, categorie: 'WTA250', semaine: 15 },
+  'stuttgart': { surface: T, categorie: 'WTA500', semaine: 16 },
+  'strasbourg': { surface: T, categorie: 'WTA500', semaine: 21 },
+  'rabat': { surface: T, categorie: 'WTA250', semaine: 21 },
+
+  // — Juin : gazon
+  'nottingham': { surface: G, categorie: 'WTA250', semaine: 24 },
+  'birmingham': { surface: G, categorie: 'WTA250', semaine: 25 },
+  'berlin': { surface: G, categorie: 'WTA500', semaine: 25 },
+  'bad-homburg': { surface: G, categorie: 'WTA500', semaine: 26 },
+  'eastbourne': { surface: G, categorie: 'WTA500', semaine: 26 },
+
+  // — Juillet : terre estivale (semaines sans équivalent masculin)
+  'iasi': { surface: T, categorie: 'WTA250', semaine: 29 },
+  'hamburg': { surface: T, categorie: 'WTA250', semaine: 29 },
+  'palermo': { surface: T, categorie: 'WTA250', semaine: 30 },
+  'budapest': { surface: T, categorie: 'WTA250', semaine: 30 },
+  'warsaw': { surface: T, categorie: 'WTA250', semaine: 30 },
+  'prague': { surface: T, categorie: 'WTA250', semaine: 31 },
+
+  // — Août : tournée américaine
+  'washington': { surface: H, categorie: 'WTA500', semaine: 30 },
+  'cleveland': { surface: H, categorie: 'WTA250', semaine: 34 },
+
+  // — Septembre-novembre : tournée asiatique puis Finals
+  'guadalajara': { surface: H, categorie: 'WTA500', semaine: 37 },
+  'guangzhou': { surface: H, categorie: 'WTA250', semaine: 38 },
+  'seoul': { surface: H, categorie: 'WTA500', semaine: 38 },
+  'zhengzhou': { surface: H, categorie: 'WTA500', semaine: 39 },
+  'beijing': { surface: H, categorie: 'WTA1000', semaine: 40 },
+  'wuhan': { surface: H, categorie: 'WTA1000', semaine: 41 },
+  'ningbo': { surface: H, categorie: 'WTA500', semaine: 42 },
+  'tokyo': { surface: H, categorie: 'WTA500', semaine: 43 },
+  'osaka': { surface: H, categorie: 'WTA250', semaine: 43 },
+  'hong-kong': { surface: H, categorie: 'WTA250', semaine: 44 },
+  'wta-finals': { surface: H, categorie: 'WTAFinals', semaine: 45 },
+  'riyadh': { surface: H, categorie: 'WTAFinals', semaine: 45 },
+};
+
 /** Catégorie de repli quand le slug est inconnu : la plus fréquente. */
 function categorieParDefaut(tour: Tour, drawSize: number | null): Categorie {
   if (tour === 'WTA') return drawSize && drawSize >= 96 ? 'WTA1000' : 'WTA250';
@@ -140,13 +220,21 @@ function normaliser(slug: string | null): string | null {
   return slug ? slug.toLowerCase().trim() : null;
 }
 
-function fiche(slug: string | null): Fiche | null {
+function fiche(slug: string | null, tour: Tour): Fiche | null {
   const s = normaliser(slug);
   if (!s) return null;
-  if (CALENDRIER[s]) return CALENDRIER[s];
-  // Slugs composés du type 'madrid-open' ou 'rolex-monte-carlo'.
-  const cle = Object.keys(CALENDRIER).find((k) => s.includes(k));
-  return cle ? CALENDRIER[cle] : null;
+
+  // Le circuit féminin d'abord : ses fiches REDÉFINISSENT des slugs partagés
+  // (stuttgart, lyon, doha…). Les chercher en second les laisserait capter la
+  // fiche masculine.
+  const tables = tour === 'WTA' ? [CALENDRIER_WTA, CALENDRIER] : [CALENDRIER];
+  for (const table of tables) {
+    if (table[s]) return table[s];
+    // Slugs composés du type 'madrid-open' ou 'rolex-monte-carlo'.
+    const cle = Object.keys(table).find((k) => s.includes(k));
+    if (cle) return table[cle];
+  }
+  return null;
 }
 
 /** Lundi de la semaine ISO `semaine` de l'année `annee`, en 'YYYY-MM-DD'. */
@@ -178,7 +266,7 @@ export function metaTournoi(
   annee: number,
   drawSize: number | null,
 ): MetaTournoi {
-  const f = fiche(slug);
+  const f = fiche(slug, tour);
   if (!f) {
     return {
       surface: 'hard',
@@ -202,6 +290,7 @@ export const LIBELLE_CATEGORIE: Record<string, string> = {
   WTA1000: 'WTA 1000',
   WTA500: 'WTA 500',
   WTA250: 'WTA 250',
+  WTAFinals: 'WTA Finals',
 };
 
 /** Forme courte pour les tableaux. */
@@ -214,4 +303,5 @@ export const LIBELLE_CATEGORIE_COURT: Record<string, string> = {
   WTA1000: 'WTA 1000',
   WTA500: 'WTA 500',
   WTA250: 'WTA 250',
+  WTAFinals: 'Finals',
 };

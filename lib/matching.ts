@@ -1,5 +1,9 @@
 /**
- * RAPPROCHEMENT DES NOMS DE JOUEURS — ATP ↔ TENNIS ABSTRACT
+ * RAPPROCHEMENT DES NOMS DE JOUEURS — ATP / WTA ↔ TENNIS ABSTRACT
+ *
+ * Le module est indifférent au circuit : il travaille sur l'index qu'on lui
+ * donne, et `chargerIndexElo` n'y met que les lignes `ta_elo` du circuit du
+ * tournoi. Les deux ne se croisent donc jamais.
  *
  * Les tableaux ATP portent un ID officiel (`GC88`) et un nom court
  * (« M. Giron »). Tennis Abstract ne publie aucun ID : seulement un nom
@@ -23,6 +27,11 @@
  * On génère donc plusieurs clés candidates par nom, de la plus spécifique à
  * la plus lâche, et on ne retient une correspondance que si la clé essayée
  * désigne UN SEUL joueur.
+ *
+ * Le circuit féminin ajoute une troisième source d'écart, les noms composés
+ * (« Beatriz Haddad Maia », « Maria Camila Osorio Serrano ») : la clé lâche du
+ * dernier jeton et celle du premier jeton du nom les couvrent aux mêmes
+ * conditions que côté masculin, le reste relève de `ta_name_exceptions`.
  *
  * HOMONYMES — « a martin » désigne Andrej Martin (SVK) ET Andres Martin (USA),
  * « d blanch » Darwin ET Dali Blanch. Le rapport Elo ne publie pas le pays :

@@ -8,7 +8,8 @@ export default function ImportPage() {
       <div>
         <h1 className="text-lg font-semibold">Importer un tableau</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Colle le JSON produit par le bookmarklet ATP. Le même tournoi peut être
+          Colle le JSON produit par le bookmarklet ATP ou WTA — le circuit est lu
+          dans le champ <code>tour</code> de l&apos;extraction. Le même tournoi peut être
           réimporté après chaque tour : les données sont mises à jour (upsert),
           pas dupliquées.
         </p>

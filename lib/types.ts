@@ -51,7 +51,8 @@ export interface DrawExtract {
   sourceUrl: string;
   tournament: {
     slug: string | null;
-    atpId: string | null;
+    /** ID officiel du tournoi sur son circuit (ATP ou WTA). */
+    externalId: string | null;
     year: number;
   };
   tour: Tour;

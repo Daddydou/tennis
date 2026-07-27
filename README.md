@@ -64,6 +64,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0001_rls_lecture_publique.sql
 #    supabase/migrations/0002_elo_tennis_abstract.sql   (tables ta_elo, ta_name_exceptions)
 #    supabase/migrations/0003_elo_identite_par_slug.sql (identité TA par slug — vide ta_elo)
+#    supabase/migrations/0004_exceptions_par_circuit.sql (clé d'exception = nom + circuit)
 # 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
 #        migration vide ta_elo, que seul l'import repeuple (slug compris).
 
@@ -76,9 +77,11 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
 
 ## Écrans
 
-- `/import` — coller le JSON du bookmarklet ATP. `parseExtract()` +
-  `verifierExtraction()`, puis **upsert** dans `tn_tournaments`, `tn_players`,
-  `tn_matches` (réimportable après chaque tour).
+- `/import` — coller le JSON du bookmarklet ATP **ou WTA** (même format, au champ
+  `tour` près). `parseExtract()` + `verifierExtraction()`, puis **upsert** dans
+  `tn_tournaments`, `tn_players`, `tn_matches` (réimportable après chaque tour).
+  Le circuit du tournoi décide du rapport Elo interrogé : un tableau WTA n'est
+  jamais rapproché des joueurs ATP, et inversement.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
 - `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
