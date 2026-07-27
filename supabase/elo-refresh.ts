@@ -13,16 +13,24 @@ import { recupererRapportElo, type TourTa } from '@/lib/tennisabstract';
  * Les joueurs absents du rapport de la semaine ne sont PAS supprimés : un
  * joueur qui sort de la liste (blessure, moins de 10 matchs sur 52 semaines)
  * garde son dernier Elo connu, meilleur repère que l'Elo maison.
+ *
+ * L'identité d'une ligne est le SLUG Tennis Abstract (player.cgi?p=AndresMartin),
+ * pas le nom normalisé : deux homonymes coexistent en base, et c'est au
+ * rapprochement de les départager (cf. lib/matching.ts).
  */
 
 export interface ResumeTour {
   tour: TourTa;
   /** Lignes lues dans le rapport. */
   lues: number;
-  /** Lignes écrites après déduplication des clés. */
+  /** Lignes écrites. Identité = slug, donc plus aucune perte d'homonyme. */
   importees: number;
-  /** Homonymes réduits à la même clé : une seule ligne survit (cf. §collisions). */
-  collisions: { cle: string; noms: string[] }[];
+  /**
+   * Homonymes conservés : plusieurs slugs sous la même clé normalisée. Ils
+   * sont tous en base ; c'est le RAPPROCHEMENT avec un tableau ATP qui devra
+   * les départager, via `ta_name_exceptions`.
+   */
+  homonymes: { cle: string; slugs: string[] }[];
   misAJourLe: string | null;
 }
 
@@ -37,52 +45,48 @@ export interface ResumeRefresh {
 async function rafraichirTour(tour: TourTa): Promise<ResumeTour> {
   const rapport = await recupererRapportElo(tour);
 
-  // Deux joueurs peuvent se réduire à la même clé (« Andrej Martin » et
-  // « Andres Martin » → « a martin »). La contrainte unique n'en garde qu'un ;
-  // un upsert contenant les deux échouerait de toute façon (« ON CONFLICT DO
-  // UPDATE cannot affect row a second time »). On garde le mieux classé —
-  // le rapport est trié par Elo décroissant — et on signale le cas.
-  const parCle = new Map<string, { nom: string; payload: Record<string, unknown> }>();
-  const collisions = new Map<string, string[]>();
+  // L'identité est le slug : deux homonymes (« Andrej Martin » et « Andres
+  // Martin », tous deux réduits à « a martin ») sont désormais DEUX lignes.
+  // Seule une répétition du même slug serait à écarter — un upsert visant
+  // deux fois la même ligne échoue (« ON CONFLICT DO UPDATE cannot affect
+  // row a second time »).
+  const parSlug = new Map<string, Record<string, unknown>>();
+  const clesVues = new Map<string, string[]>();
 
   for (const l of rapport.lignes) {
     const cle = normaliserNom(l.nom);
-    if (!cle) continue;
+    if (!cle || !l.slug || parSlug.has(l.slug)) continue;
 
-    const deja = parCle.get(cle);
-    if (deja) {
-      collisions.set(cle, [...(collisions.get(cle) ?? [deja.nom]), l.nom]);
-      continue;
-    }
+    clesVues.set(cle, [...(clesVues.get(cle) ?? []), l.slug]);
 
-    parCle.set(cle, {
-      nom: l.nom,
-      payload: {
-        ta_name: l.nom,
-        ta_name_normalized: cle,
-        tour,
-        elo_overall: l.eloOverall,
-        elo_hard: l.eloHard,
-        elo_clay: l.eloClay,
-        elo_grass: l.eloGrass,
-        atp_rank: l.rang,
-        updated_at: rapport.misAJourLe,
-      },
+    parSlug.set(l.slug, {
+      ta_name: l.nom,
+      ta_name_normalized: cle,
+      ta_slug: l.slug,
+      tour,
+      elo_overall: l.eloOverall,
+      elo_hard: l.eloHard,
+      elo_clay: l.eloClay,
+      elo_grass: l.eloGrass,
+      atp_rank: l.rang,
+      updated_at: rapport.misAJourLe,
     });
   }
 
-  const payload = [...parCle.values()].map((v) => v.payload);
+  const payload = [...parSlug.values()];
   const sb = supabaseAdmin();
   const { error } = await sb
     .from('ta_elo')
-    .upsert(payload, { onConflict: 'ta_name_normalized,tour' });
+    .upsert(payload, { onConflict: 'ta_slug,tour' });
   if (error) throw new Error(`ta_elo (${tour}) : ${error.message}`);
 
   return {
     tour,
     lues: rapport.lignes.length,
     importees: payload.length,
-    collisions: [...collisions.entries()].map(([cle, noms]) => ({ cle, noms })),
+    homonymes: [...clesVues.entries()]
+      .filter(([, slugs]) => slugs.length > 1)
+      .map(([cle, slugs]) => ({ cle, slugs })),
     misAJourLe: rapport.misAJourLe,
   };
 }

@@ -63,6 +63,9 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 # 1. Appliquer une fois les migrations (SQL editor Supabase, ou psql)
 #    supabase/migrations/0001_rls_lecture_publique.sql
 #    supabase/migrations/0002_elo_tennis_abstract.sql   (tables ta_elo, ta_name_exceptions)
+#    supabase/migrations/0003_elo_identite_par_slug.sql (identité TA par slug — vide ta_elo)
+# 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
+#        migration vide ta_elo, que seul l'import repeuple (slug compris).
 
 # 2. Vérifier depuis la clé publique : lecture OK, écritures et RPC refusées
 npm run verify:rls
@@ -154,6 +157,16 @@ et par Next.js 16 :
   normalisé (`lib/matching.ts`) ; les cas irréductibles se déclarent dans
   `ta_name_exceptions`. L'écran Picks affiche l'Elo effectif de chaque joueur et
   sa source, pour repérer d'un coup d'œil une mauvaise correspondance.
+- **Homonymes : l'identité est le slug TA, pas le nom.** « Andrej Martin » (SVK)
+  et « Andres Martin » (USA) se normalisent tous deux en `a martin` ; le rapport
+  Elo ne publie **aucun pays**, donc rien dans la source ne les départage.
+  `ta_elo` est donc unique sur `(ta_slug, tour)` — le slug vient de l'URL TA
+  (`player.cgi?p=AndresMartin`) — et les deux lignes coexistent. Le
+  rapprochement d'un nom ambigu ne choisit **aucun** des deux : le joueur passe
+  en source `ambigu` (badge violet), la valeur retombe sur le repli, et l'écran
+  Picks affiche les candidats avec l'`insert` prêt à coller dans
+  `ta_name_exceptions` (colonne `ta_slug`). Un Elo faux et silencieux est pire
+  qu'un signalement.
 - **`best_of` et `surface`** déduits à l'import (`devinerBestOf`, `devinerSurface`),
   stockés sur `tn_tournaments` et propagés au scoring (un walkover en Grand Chelem
   masculin vaut 20 pts, pas 15) comme à la simulation.

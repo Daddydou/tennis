@@ -13,10 +13,12 @@ export interface Candidat {
   ePoints: number;
   /** Elo effectif (pondéré surface) réellement utilisé par la simulation. */
   elo: number | null;
-  /** D'où vient cet Elo : Tennis Abstract, repli maison, ou défaut. */
-  sourceElo: 'ta' | 'maison' | 'defaut';
+  /** D'où vient cet Elo : Tennis Abstract, repli maison/défaut, ou homonymie. */
+  sourceElo: 'ta' | 'maison' | 'defaut' | 'ambigu';
   /** Nom Tennis Abstract retenu — révèle une correspondance douteuse. */
   taName: string | null;
+  /** Homonymes non départagés (source `ambigu`) : « Nom (slug) ». */
+  candidats: string[];
   /** Écart d'Elo effectif joueur − adversaire (indicateur de mismatch). */
   ecartElo: number | null;
   utilise: boolean;
@@ -29,32 +31,66 @@ export interface Candidat {
  * les replis sont signalés, pour qu'un joueur fort affiché en « défaut » ou
  * avec un Elo aberrant saute aux yeux.
  */
-function BadgeSource({ source, taName }: { source: Candidat['sourceElo']; taName: string | null }) {
+const STYLE_BADGE: Record<
+  Exclude<Candidat['sourceElo'], 'ta'>,
+  { classes: string; libelle: string; titre: string }
+> = {
+  maison: {
+    classes:
+      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
+    libelle: 'maison',
+    titre:
+      'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.',
+  },
+  defaut: {
+    classes:
+      'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
+    libelle: 'défaut',
+    titre: 'Ni Elo Tennis Abstract ni Elo maison : valeur par défaut. À vérifier.',
+  },
+  ambigu: {
+    classes:
+      'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300',
+    libelle: 'ambigu',
+    titre:
+      'Plusieurs joueurs Tennis Abstract portent ce nom : aucun n’a été choisi.',
+  },
+};
+
+function BadgeSource({
+  source,
+  taName,
+  candidats,
+}: {
+  source: Candidat['sourceElo'];
+  taName: string | null;
+  candidats: string[];
+}) {
   if (source === 'ta') {
     return taName ? (
-      <span className="w-14 truncate text-right text-[10px] text-zinc-300 dark:text-zinc-700" title={`Tennis Abstract : ${taName}`}>
+      <span
+        className="w-14 truncate text-right text-[10px] text-zinc-300 dark:text-zinc-700"
+        title={`Tennis Abstract : ${taName}`}
+      >
         {taName}
       </span>
     ) : (
       <span className="w-14" />
     );
   }
-  const maison = source === 'maison';
+
+  const s = STYLE_BADGE[source];
   return (
     <span className="w-14 text-right">
       <span
-        className={`rounded border px-1 py-px text-[10px] font-medium ${
-          maison
-            ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
-            : 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
-        }`}
+        className={`rounded border px-1 py-px text-[10px] font-medium ${s.classes}`}
         title={
-          maison
-            ? 'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.'
-            : 'Ni Elo Tennis Abstract ni Elo maison : valeur par défaut. À vérifier.'
+          candidats.length
+            ? `${s.titre} Candidats : ${candidats.join(', ')}. Déclarer le bon ta_slug dans ta_name_exceptions.`
+            : s.titre
         }
       >
-        {maison ? 'maison' : 'défaut'}
+        {s.libelle}
       </span>
     </span>
   );
@@ -181,15 +217,21 @@ function ColonnePick({
                 className={`w-11 text-right font-mono text-xs tabular-nums ${
                   c.sourceElo === 'defaut'
                     ? 'text-red-600 dark:text-red-400'
-                    : c.sourceElo === 'maison'
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-zinc-900 dark:text-zinc-100'
+                    : c.sourceElo === 'ambigu'
+                      ? 'text-violet-600 dark:text-violet-400'
+                      : c.sourceElo === 'maison'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-zinc-900 dark:text-zinc-100'
                 }`}
                 title="Elo effectif utilisé par la simulation (pondéré surface)"
               >
                 {c.elo ?? '—'}
               </span>
-              <BadgeSource source={c.sourceElo} taName={c.taName} />
+              <BadgeSource
+                source={c.sourceElo}
+                taName={c.taName}
+                candidats={c.candidats}
+              />
               <span
                 className={`w-14 text-right font-mono text-xs tabular-nums ${
                   c.ecartElo == null
@@ -263,7 +305,10 @@ export default function PickBoard({
         joueurs déjà utilisés dans ce tournoi sont grisés. Un Elo en{' '}
         <span className="text-amber-600 dark:text-amber-400">maison</span> ou en{' '}
         <span className="text-red-600 dark:text-red-400">défaut</span> n&apos;a
-        pas trouvé sa correspondance Tennis Abstract.
+        pas trouvé sa correspondance Tennis Abstract ;{' '}
+        <span className="text-violet-600 dark:text-violet-400">ambigu</span>{' '}
+        signale plusieurs homonymes possibles, à trancher dans{' '}
+        <code>ta_name_exceptions</code>.
       </p>
       <div className="flex flex-col gap-6 sm:flex-row">
         {colonnes.map((c, i) => (

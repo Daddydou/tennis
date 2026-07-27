@@ -21,6 +21,13 @@ export const URLS_RAPPORTS: Record<TourTa, string> = {
 
 export interface LigneRapport {
   nom: string;
+  /**
+   * Identifiant Tennis Abstract, lu dans l'URL du joueur
+   * (player.cgi?p=AndresMartin). C'est la SEULE identité fiable : deux
+   * homonymes ont des slugs distincts (AndrejMartin / AndresMartin) là où
+   * leurs noms normalisés sont identiques.
+   */
+  slug: string;
   eloOverall: number | null;
   eloHard: number | null;
   eloClay: number | null;
@@ -113,8 +120,18 @@ export function parserRapportElo(html: string, tour: TourTa): RapportElo {
     const nom = texte(tds[iNom] ?? '');
     if (!nom) continue;
 
+    // Le slug vit dans le lien de la cellule « Player ». Repli sur le nom
+    // sans espaces : c'est la règle de construction des slugs TA
+    // (« Tomas Martin Etcheverry » → « TomasMartinEtcheverry »), ce qui
+    // laisse une identité utilisable si le lien venait à disparaître.
+    const lien = (tds[iNom] ?? '').match(/player\.cgi\?p=([^"'&\s]+)/i);
+    const slug = lien
+      ? decodeURIComponent(lien[1])
+      : nom.replace(/\s+/g, '');
+
     lignes.push({
       nom,
+      slug,
       eloOverall: nombre(texte(tds[iElo] ?? '')),
       eloHard: iHard === -1 ? null : nombre(texte(tds[iHard] ?? '')),
       eloClay: iClay === -1 ? null : nombre(texte(tds[iClay] ?? '')),

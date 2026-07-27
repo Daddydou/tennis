@@ -7,7 +7,7 @@ interface ResumeTour {
   tour: 'atp' | 'wta';
   lues: number;
   importees: number;
-  collisions: { cle: string; noms: string[] }[];
+  homonymes: { cle: string; slugs: string[] }[];
   misAJourLe: string | null;
 }
 
@@ -48,7 +48,7 @@ export default function EloRefreshButton() {
     });
   }
 
-  const collisions = (resume ?? []).flatMap((t) => t.collisions);
+  const homonymes = (resume ?? []).flatMap((t) => t.homonymes);
 
   return (
     <div className="space-y-1">
@@ -78,11 +78,12 @@ export default function EloRefreshButton() {
         )}
       </div>
 
-      {collisions.length > 0 && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          {collisions.length} homonyme(s) réduits à la même clé, un seul Elo
-          conservé :{' '}
-          {collisions.map((c) => c.noms.join(' / ')).join(' · ')}
+      {homonymes.length > 0 && (
+        <p className="text-xs text-violet-600 dark:text-violet-400">
+          {homonymes.length} clé(s) portée(s) par plusieurs joueurs, toutes
+          conservées — un tableau qui en contient un affichera « ambigu » tant
+          qu&apos;aucune exception ne tranche :{' '}
+          {homonymes.map((h) => h.slugs.join(' / ')).join(' · ')}
         </p>
       )}
     </div>

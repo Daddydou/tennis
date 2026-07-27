@@ -36,13 +36,20 @@ export const ELO_DEFAUT_RESOLU = 1650;
 /** Poids de la surface dans l'Elo effectif — identique à celui du moteur. */
 export const POIDS_SURFACE = 0.6;
 
-export type SourceElo = 'ta' | 'maison' | 'defaut';
+/**
+ * `ambigu` : plusieurs joueurs Tennis Abstract portent ce nom et la source ne
+ * permet pas de trancher. La valeur affichée est alors un repli (maison, ou
+ * défaut), mais elle est signalée comme telle — cf. `chercherCorrespondance`.
+ */
+export type SourceElo = 'ta' | 'maison' | 'defaut' | 'ambigu';
 
 export type SurfaceElo = 'hard' | 'clay' | 'grass';
 
 export interface TaEloRow {
   ta_name: string;
   ta_name_normalized: string;
+  ta_slug: string;
+  country: string | null;
   tour: 'atp' | 'wta';
   elo_overall: number | string | null;
   elo_hard: number | string | null;
@@ -71,17 +78,26 @@ export interface ElosResolus {
   source: SourceElo;
   /** Nom Tennis Abstract retenu — permet de repérer une mauvaise correspondance. */
   taName: string | null;
+  /** Slug Tennis Abstract retenu — identité exacte du joueur apparié. */
+  taSlug: string | null;
   /** Clé ayant permis le rapprochement (diagnostic). */
   via: string | null;
   /** Rang officiel publié par Tennis Abstract, quand il est connu. */
   rangTa: number | null;
+  /**
+   * Homonymes non départageables, quand `source === 'ambigu'`. Chacun est un
+   * `ta_slug` candidat à déclarer dans `ta_name_exceptions`.
+   */
+  candidats: { slug: string; nom: string; elo: number | null }[];
+  /** D'où vient la valeur quand la source TA n'a pas pu être utilisée. */
+  repli: 'maison' | 'defaut' | null;
 }
 
 export type IndexElo = IndexTa<TaEloRow>;
 
 /** Index vide : aucun Elo TA disponible (table non encore peuplée). */
 export const INDEX_ELO_VIDE: IndexElo = {
-  parCle: new Map(),
+  parSlug: new Map(),
   parVariante: new Map(),
   exceptions: new Map(),
 };
@@ -108,12 +124,12 @@ export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
     sb
       .from('ta_elo')
       .select(
-        'ta_name, ta_name_normalized, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at',
+        'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at',
       )
       .eq('tour', t),
     sb
       .from('ta_name_exceptions')
-      .select('atp_name_normalized, ta_name_normalized, tour')
+      .select('atp_name_normalized, ta_name_normalized, ta_slug, tour')
       .eq('tour', t),
   ]);
 
@@ -139,21 +155,40 @@ export function resoudreElos(
   joueur: JoueurAResoudre,
   index: IndexElo = INDEX_ELO_VIDE,
 ): ElosResolus {
-  // 1. Tennis Abstract
   const corr = chercherCorrespondance(index, joueur.name);
-  const taOverall = corr ? num(corr.ligne.elo_overall) : null;
-  if (corr && taOverall !== null) {
-    return {
-      eloOverall: taOverall,
-      eloHard: num(corr.ligne.elo_hard) ?? taOverall,
-      eloClay: num(corr.ligne.elo_clay) ?? taOverall,
-      eloGrass: num(corr.ligne.elo_grass) ?? taOverall,
-      source: 'ta',
-      taName: corr.ligne.ta_name,
-      via: corr.via,
-      rangTa: corr.ligne.atp_rank ?? null,
-    };
+
+  // 1. Tennis Abstract
+  if (corr.statut === 'trouve') {
+    const taOverall = num(corr.ligne.elo_overall);
+    if (taOverall !== null) {
+      return {
+        eloOverall: taOverall,
+        eloHard: num(corr.ligne.elo_hard) ?? taOverall,
+        eloClay: num(corr.ligne.elo_clay) ?? taOverall,
+        eloGrass: num(corr.ligne.elo_grass) ?? taOverall,
+        source: 'ta',
+        taName: corr.ligne.ta_name,
+        taSlug: corr.ligne.ta_slug,
+        via: corr.via,
+        rangTa: corr.ligne.atp_rank ?? null,
+        candidats: [],
+        repli: null,
+      };
+    }
   }
+
+  // Homonymes non départageables : on N'EN CHOISIT AUCUN. La valeur vient du
+  // repli, et la source reste `ambigu` pour que l'écran Picks le signale.
+  const candidats =
+    corr.statut === 'ambigu'
+      ? corr.candidats.map((c) => ({
+          slug: c.ta_slug,
+          nom: c.ta_name,
+          elo: num(c.elo_overall),
+        }))
+      : [];
+  const source: SourceElo | null = corr.statut === 'ambigu' ? 'ambigu' : null;
+  const via = corr.statut === 'ambigu' ? corr.via : null;
 
   // 2. Elo maison. À défaut d'Elo calculé, un Elo dérivé du classement reste
   //    une estimation maison — pas un défaut.
@@ -166,10 +201,13 @@ export function resoudreElos(
       eloHard: num(joueur.elo_hard) ?? maisonOverall,
       eloClay: num(joueur.elo_clay) ?? maisonOverall,
       eloGrass: num(joueur.elo_grass) ?? maisonOverall,
-      source: 'maison',
+      source: source ?? 'maison',
       taName: null,
-      via: null,
+      taSlug: null,
+      via,
       rangTa: null,
+      candidats,
+      repli: 'maison',
     };
   }
 
@@ -179,10 +217,13 @@ export function resoudreElos(
     eloHard: ELO_DEFAUT_RESOLU,
     eloClay: ELO_DEFAUT_RESOLU,
     eloGrass: ELO_DEFAUT_RESOLU,
-    source: 'defaut',
+    source: source ?? 'defaut',
     taName: null,
-    via: null,
+    taSlug: null,
+    via,
     rangTa: null,
+    candidats,
+    repli: 'defaut',
   };
 }
 
@@ -223,10 +264,14 @@ export function eloEffectifResolu(e: ElosResolus, surface: SurfaceElo): number {
 }
 
 /** Répartition des sources — alimente le compteur de l'écran Picks. */
-export function compterSources(
-  elos: Record<string, ElosResolus>,
-): { ta: number; maison: number; defaut: number; total: number } {
-  const c = { ta: 0, maison: 0, defaut: 0, total: 0 };
+export function compterSources(elos: Record<string, ElosResolus>): {
+  ta: number;
+  maison: number;
+  defaut: number;
+  ambigu: number;
+  total: number;
+} {
+  const c = { ta: 0, maison: 0, defaut: 0, ambigu: 0, total: 0 };
   for (const e of Object.values(elos)) {
     c[e.source]++;
     c.total++;

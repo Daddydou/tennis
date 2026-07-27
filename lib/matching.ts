@@ -22,10 +22,13 @@
  *
  * On génère donc plusieurs clés candidates par nom, de la plus spécifique à
  * la plus lâche, et on ne retient une correspondance que si la clé essayée
- * désigne UN SEUL joueur. Une clé ambiguë (« a martin » = Andrej Martin ET
- * Andres Martin) ne produit aucune correspondance : le joueur retombe sur son
- * Elo maison et apparaît dans la liste à compléter dans `ta_name_exceptions`,
- * plutôt que d'hériter silencieusement de l'Elo d'un homonyme.
+ * désigne UN SEUL joueur.
+ *
+ * HOMONYMES — « a martin » désigne Andrej Martin (SVK) ET Andres Martin (USA),
+ * « d blanch » Darwin ET Dali Blanch. Le rapport Elo ne publie pas le pays :
+ * rien dans la source ne permet de trancher. Le rapprochement renvoie alors
+ * `ambigu` avec la liste des candidats, l'écran Picks le signale, et
+ * l'utilisateur déclare le bon `ta_slug` dans `ta_name_exceptions`.
  */
 
 /** Espace insécable, diacritiques combinants, apostrophes typographiques. */
@@ -91,19 +94,33 @@ export function clesCandidates(nom: string): string[] {
   return cles;
 }
 
-/** Ligne indexable : tout objet portant le nom TA et sa clé canonique. */
+/**
+ * Ligne indexable.
+ *
+ * `ta_slug` est l'IDENTITÉ (player.cgi?p=AndresMartin), `ta_name_normalized`
+ * la clé de RAPPROCHEMENT. Les deux ne se confondent pas : deux homonymes
+ * partagent la clé et se distinguent par le slug.
+ */
 export interface LigneTa {
   ta_name: string;
   ta_name_normalized: string;
+  ta_slug: string;
+}
+
+/** Exception de correspondance : vise un slug, ou à défaut une clé. */
+export interface ExceptionNom {
+  atp_name_normalized: string;
+  ta_slug?: string | null;
+  ta_name_normalized?: string | null;
 }
 
 export interface IndexTa<T extends LigneTa> {
-  /** Clé canonique → ligne. */
-  parCle: Map<string, T>;
+  /** Slug → ligne. Identité, donc toujours unique. */
+  parSlug: Map<string, T>;
   /** Clé candidate (toutes variantes) → lignes. Une clé ambiguë en a plusieurs. */
   parVariante: Map<string, T[]>;
-  /** atp_name_normalized → ta_name_normalized. */
-  exceptions: Map<string, string>;
+  /** atp_name_normalized → cible de l'exception. */
+  exceptions: Map<string, ExceptionNom>;
 }
 
 /**
@@ -113,13 +130,13 @@ export interface IndexTa<T extends LigneTa> {
  */
 export function construireIndex<T extends LigneTa>(
   lignes: T[],
-  exceptions: { atp_name_normalized: string; ta_name_normalized: string }[] = [],
+  exceptions: ExceptionNom[] = [],
 ): IndexTa<T> {
-  const parCle = new Map<string, T>();
+  const parSlug = new Map<string, T>();
   const parVariante = new Map<string, T[]>();
 
   for (const l of lignes) {
-    parCle.set(l.ta_name_normalized, l);
+    parSlug.set(l.ta_slug, l);
     for (const c of clesCandidates(l.ta_name)) {
       const bucket = parVariante.get(c);
       if (bucket) {
@@ -131,47 +148,66 @@ export function construireIndex<T extends LigneTa>(
   }
 
   return {
-    parCle,
+    parSlug,
     parVariante,
-    exceptions: new Map(
-      exceptions.map((e) => [e.atp_name_normalized, e.ta_name_normalized]),
-    ),
+    exceptions: new Map(exceptions.map((e) => [e.atp_name_normalized, e])),
   };
 }
 
-export interface Correspondance<T> {
-  ligne: T;
-  /** Clé qui a permis le rapprochement — utile pour diagnostiquer un faux positif. */
-  via: string;
-  /** true si la correspondance vient de `ta_name_exceptions`. */
-  exception: boolean;
-}
+/**
+ * Issue d'un rapprochement.
+ *
+ * `ambigu` est un résultat à part entière, pas un échec : plusieurs joueurs
+ * Tennis Abstract portent ce nom et RIEN ne permet de trancher (le rapport ne
+ * publie pas le pays). Choisir au hasard donnerait un Elo faux et silencieux ;
+ * on remonte donc les candidats pour que l'utilisateur déclare une exception.
+ */
+export type Resolution<T> =
+  | { statut: 'trouve'; ligne: T; via: string; exception: boolean }
+  | { statut: 'ambigu'; candidats: T[]; via: string }
+  | { statut: 'absent' };
 
 /**
  * Cherche la ligne Tennis Abstract correspondant à un nom ATP.
  *
- * Ordre : exception déclarée, puis clés candidates de la plus spécifique à la
- * plus lâche. Une clé qui désigne plusieurs joueurs est ignorée (ambiguë).
- * Retourne null si rien ne correspond — l'appelant retombe sur l'Elo maison.
+ * Ordre : exception déclarée (par slug, ou par clé pour les anciennes lignes),
+ * puis clés candidates de la plus spécifique à la plus lâche.
  */
 export function chercherCorrespondance<T extends LigneTa>(
   index: IndexTa<T>,
   nomAtp: string,
-): Correspondance<T> | null {
+): Resolution<T> {
   const canonique = normaliserNom(nomAtp);
 
   const forcee = index.exceptions.get(canonique);
-  if (forcee) {
-    const ligne = index.parCle.get(forcee);
-    if (ligne) return { ligne, via: forcee, exception: true };
-    // Exception pointant vers un nom TA absent du rapport : on ne s'arrête pas
-    // là, le rapprochement automatique reste la meilleure chance.
+  if (forcee?.ta_slug) {
+    const ligne = index.parSlug.get(forcee.ta_slug);
+    if (ligne) return { statut: 'trouve', ligne, via: forcee.ta_slug, exception: true };
+    // Slug absent du rapport (joueur sorti de la liste, ou faute de frappe) :
+    // on ne s'arrête pas là, le rapprochement automatique reste une chance.
+  }
+  if (forcee?.ta_name_normalized) {
+    const bucket = index.parVariante.get(forcee.ta_name_normalized);
+    if (bucket?.length === 1) {
+      return {
+        statut: 'trouve',
+        ligne: bucket[0],
+        via: forcee.ta_name_normalized,
+        exception: true,
+      };
+    }
   }
 
   for (const cle of clesCandidates(nomAtp)) {
     const bucket = index.parVariante.get(cle);
-    if (bucket?.length === 1) return { ligne: bucket[0], via: cle, exception: false };
+    if (!bucket || bucket.length === 0) continue;
+    if (bucket.length === 1) {
+      return { statut: 'trouve', ligne: bucket[0], via: cle, exception: false };
+    }
+    // Plusieurs joueurs sous cette clé. Inutile d'essayer les clés plus
+    // lâches : elles ne peuvent que ramener au moins les mêmes candidats.
+    return { statut: 'ambigu', candidats: bucket, via: cle };
   }
 
-  return null;
+  return { statut: 'absent' };
 }

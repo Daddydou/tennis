@@ -105,14 +105,32 @@ export default async function PicksPage({
   // Répartition des sources sur TOUS les joueurs du tournoi (pas seulement les
   // survivants du tour affiché) : c'est le tableau entier qu'on veut contrôler.
   const sources = compterSources(elos);
+  const tourTa = tournament.tour.toLowerCase();
   const aCompleter = playerRows
     .filter((p) => elos[p.id] && elos[p.id].source !== 'ta')
-    .map((p) => ({
-      nom: p.name,
-      cle: cleDeNom(p.name),
-      source: elos[p.id].source,
-    }))
-    .sort((a, b) => a.nom.localeCompare(b.nom));
+    .map((p) => {
+      const e = elos[p.id];
+      return {
+        nom: p.name,
+        pays: p.country,
+        cle: cleDeNom(p.name),
+        source: e.source,
+        candidats: e.candidats,
+        // Un homonyme se tranche en désignant un slug : on donne l'insert prêt
+        // à coller, c'est la seule action utile depuis cet écran.
+        sql:
+          e.candidats.length > 0
+            ? `insert into ta_name_exceptions (atp_name_normalized, ta_slug, tour) values ('${cleDeNom(
+                p.name,
+              )}', '${e.candidats[0].slug}', '${tourTa}');`
+            : null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        Number(b.source === 'ambigu') - Number(a.source === 'ambigu') ||
+        a.nom.localeCompare(b.nom),
+    );
 
   const dejaUtilises = new Set(picks.map((p) => p.player_id));
 
@@ -158,6 +176,9 @@ export default async function PicksPage({
           elo: elo === null ? null : Math.round(elo),
           sourceElo: resolu?.source ?? 'defaut',
           taName: resolu?.taName ?? null,
+          candidats: (resolu?.candidats ?? []).map(
+            (c) => `${c.nom} (${c.slug}${c.elo != null ? `, Elo ${Math.round(c.elo)}` : ''})`,
+          ),
           // Écart d'Elo effectif joueur − adversaire (indicateur de mismatch).
           ecartElo:
             elo !== null && eloAdv !== null ? Math.round(elo - eloAdv) : null,
@@ -207,7 +228,17 @@ export default async function PicksPage({
           >
             {sources.defaut}
           </span>{' '}
-          en défaut
+          en défaut,{' '}
+          <span
+            className={
+              sources.ambigu > 0
+                ? 'font-medium text-violet-600 dark:text-violet-400'
+                : ''
+            }
+          >
+            {sources.ambigu}
+          </span>{' '}
+          ambigu(s)
           {aCompleter.length > 0 && (
             <span className="ml-1 text-zinc-400">— détail</span>
           )}
@@ -218,32 +249,68 @@ export default async function PicksPage({
             Tous les joueurs du tableau ont un Elo Tennis Abstract.
           </p>
         ) : (
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 space-y-3">
             <p className="text-zinc-500">
-              Sans correspondance Tennis Abstract. Beaucoup sont des
-              spécialistes de double ou des joueurs inactifs, absents du
-              rapport — pour les autres, ajouter la clé ci-dessous dans{' '}
+              Sans Elo Tennis Abstract retenu. Beaucoup sont des spécialistes de
+              double ou des joueurs inactifs, absents du rapport — pour les
+              autres, déclarer la correspondance dans{' '}
               <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
                 ta_name_exceptions
               </code>
               .
             </p>
-            <ul className="grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
-              {aCompleter.map((j) => (
-                <li key={j.cle} className="flex items-baseline gap-2">
-                  <span
-                    className={
-                      j.source === 'defaut'
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-amber-600 dark:text-amber-400'
-                    }
-                  >
-                    {j.source === 'defaut' ? 'défaut' : 'maison'}
-                  </span>
-                  <span className="text-zinc-700 dark:text-zinc-300">{j.nom}</span>
-                  <code className="text-zinc-400">{j.cle}</code>
-                </li>
+
+            {/* Les ambigus d'abord : ce sont les seuls réellement actionnables,
+                et le seul cas où un Elo faux pourrait passer inaperçu. */}
+            {aCompleter
+              .filter((j) => j.source === 'ambigu')
+              .map((j) => (
+                <div
+                  key={j.cle}
+                  className="space-y-1 rounded border border-violet-300 bg-violet-50 p-2 dark:border-violet-900 dark:bg-violet-950"
+                >
+                  <p className="text-violet-800 dark:text-violet-200">
+                    <span className="font-medium">{j.nom}</span>
+                    {j.pays ? ` (${j.pays})` : ''} — {j.candidats.length}{' '}
+                    homonymes sous la clé <code>{j.cle}</code>, aucun choisi :
+                  </p>
+                  <ul className="ml-4 list-disc text-violet-800 dark:text-violet-200">
+                    {j.candidats.map((c) => (
+                      <li key={c.slug}>
+                        {c.nom} — <code>{c.slug}</code>
+                        {c.elo != null && ` — Elo ${Math.round(c.elo)}`}
+                      </li>
+                    ))}
+                  </ul>
+                  {j.sql && (
+                    <p className="text-[11px] text-violet-700 dark:text-violet-300">
+                      Trancher (remplacer le slug si besoin) :{' '}
+                      <code className="rounded bg-white/60 px-1 dark:bg-black/30">
+                        {j.sql}
+                      </code>
+                    </p>
+                  )}
+                </div>
               ))}
+
+            <ul className="grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
+              {aCompleter
+                .filter((j) => j.source !== 'ambigu')
+                .map((j) => (
+                  <li key={j.cle} className="flex items-baseline gap-2">
+                    <span
+                      className={
+                        j.source === 'defaut'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-amber-600 dark:text-amber-400'
+                      }
+                    >
+                      {j.source === 'defaut' ? 'défaut' : 'maison'}
+                    </span>
+                    <span className="text-zinc-700 dark:text-zinc-300">{j.nom}</span>
+                    <code className="text-zinc-400">{j.cle}</code>
+                  </li>
+                ))}
             </ul>
           </div>
         )}
