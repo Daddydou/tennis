@@ -60,8 +60,9 @@ npm run verify:auth            # 401 sans cookie, cookie signé, contournements
 Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 
 ```bash
-# 1. Appliquer une fois la migration (SQL editor Supabase, ou psql)
+# 1. Appliquer une fois les migrations (SQL editor Supabase, ou psql)
 #    supabase/migrations/0001_rls_lecture_publique.sql
+#    supabase/migrations/0002_elo_tennis_abstract.sql   (tables ta_elo, ta_name_exceptions)
 
 # 2. Vérifier depuis la clé publique : lecture OK, écritures et RPC refusées
 npm run verify:rls
@@ -143,9 +144,16 @@ et par Next.js 16 :
   reconstituée depuis la semaine ISO habituelle du tournoi. `npm run
   backfill:tournois` corrige les lignes existantes (aperçu par défaut,
   `--appliquer` pour écrire).
-- **Elo lus depuis `tn_players`** (colonnes `elo_*`, renseignées par ailleurs avec
-  des Elo réels calculés match par match). L'import n'écrit plus ces colonnes pour
-  ne pas les écraser ; les Elo sont réinjectés dans les `Player` avant simulation.
+- **Elo : source externe Tennis Abstract, avec repli.** Les Elo maison (colonnes
+  `elo_*` de `tn_players`) ne sont calculés que sur les tournois importés ici,
+  donc bruités. `ta_elo` reçoit les rapports hebdomadaires de Tennis Abstract
+  (~540 joueurs par circuit, Elo global + dur/terre/gazon), et la simulation
+  applique la cascade **TA → maison → défaut (1650)** (`supabase/elo.ts`).
+  L'import de tableau n'écrit toujours pas les colonnes `elo_*`.
+  Tennis Abstract ne publiant pas d'ID ATP, le rapprochement se fait par nom
+  normalisé (`lib/matching.ts`) ; les cas irréductibles se déclarent dans
+  `ta_name_exceptions`. L'écran Picks affiche l'Elo effectif de chaque joueur et
+  sa source, pour repérer d'un coup d'œil une mauvaise correspondance.
 - **`best_of` et `surface`** déduits à l'import (`devinerBestOf`, `devinerSurface`),
   stockés sur `tn_tournaments` et propagés au scoring (un walkover en Grand Chelem
   masculin vaut 20 pts, pas 15) comme à la simulation.
@@ -176,12 +184,16 @@ app/
   import/                        import du JSON + action serveur
   tournoi/[id]/                  tableau, picks, resultats, sous-nav
   api/recompute/route.ts         POST → tn_recompute_picks()
+  api/elo/refresh/route.ts       POST → import des Elo Tennis Abstract
+  EloRefreshButton.tsx           bouton de rafraîchissement (accueil)
 supabase/
   anon.ts                        client clé publique — LECTURES uniquement
   server.ts                      client service-role (server-only) — ÉCRITURES
   queries.ts                     lectures + reconstruction Match[]/Player
+  elo.ts                         cascade TA → maison → défaut + sources
+  elo-refresh.ts                 récupération TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
-  migrations/                    RLS lecture publique / écriture service-role
+  migrations/                    RLS, puis tables ta_elo / ta_name_exceptions
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
 lib/                             moteur fourni (non modifié)

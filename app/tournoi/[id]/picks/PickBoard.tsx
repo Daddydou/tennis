@@ -11,9 +11,53 @@ export interface Candidat {
   rang: number | null;
   adversaire: string | null;
   ePoints: number;
+  /** Elo effectif (pondéré surface) réellement utilisé par la simulation. */
+  elo: number | null;
+  /** D'où vient cet Elo : Tennis Abstract, repli maison, ou défaut. */
+  sourceElo: 'ta' | 'maison' | 'defaut';
+  /** Nom Tennis Abstract retenu — révèle une correspondance douteuse. */
+  taName: string | null;
   /** Écart d'Elo effectif joueur − adversaire (indicateur de mismatch). */
   ecartElo: number | null;
   utilise: boolean;
+}
+
+/**
+ * Badge de source d'Elo.
+ *
+ * Un Elo Tennis Abstract est la normale : il ne porte aucune marque. Seuls
+ * les replis sont signalés, pour qu'un joueur fort affiché en « défaut » ou
+ * avec un Elo aberrant saute aux yeux.
+ */
+function BadgeSource({ source, taName }: { source: Candidat['sourceElo']; taName: string | null }) {
+  if (source === 'ta') {
+    return taName ? (
+      <span className="w-14 truncate text-right text-[10px] text-zinc-300 dark:text-zinc-700" title={`Tennis Abstract : ${taName}`}>
+        {taName}
+      </span>
+    ) : (
+      <span className="w-14" />
+    );
+  }
+  const maison = source === 'maison';
+  return (
+    <span className="w-14 text-right">
+      <span
+        className={`rounded border px-1 py-px text-[10px] font-medium ${
+          maison
+            ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+            : 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+        }`}
+        title={
+          maison
+            ? 'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.'
+            : 'Ni Elo Tennis Abstract ni Elo maison : valeur par défaut. À vérifier.'
+        }
+      >
+        {maison ? 'maison' : 'défaut'}
+      </span>
+    </span>
+  );
 }
 
 export interface Colonne {
@@ -134,6 +178,19 @@ function ColonnePick({
                 {c.adversaire ? `vs ${c.adversaire}` : '—'}
               </span>
               <span
+                className={`w-11 text-right font-mono text-xs tabular-nums ${
+                  c.sourceElo === 'defaut'
+                    ? 'text-red-600 dark:text-red-400'
+                    : c.sourceElo === 'maison'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-zinc-900 dark:text-zinc-100'
+                }`}
+                title="Elo effectif utilisé par la simulation (pondéré surface)"
+              >
+                {c.elo ?? '—'}
+              </span>
+              <BadgeSource source={c.sourceElo} taName={c.taName} />
+              <span
                 className={`w-14 text-right font-mono text-xs tabular-nums ${
                   c.ecartElo == null
                     ? 'text-zinc-400'
@@ -201,9 +258,12 @@ export default function PickBoard({
     <div className="space-y-1">
       <p className="text-xs text-zinc-500">
         Tour {round} — simulation Monte Carlo (20 000 runs) depuis les survivants
-        réels de ce tour. Colonnes : adversaire · écart d&apos;Elo (joueur −
-        adversaire) · E[pts]. Tri par E[pts]. Les joueurs déjà utilisés dans ce
-        tournoi sont grisés.
+        réels de ce tour. Colonnes : adversaire · Elo effectif · source ·
+        écart d&apos;Elo (joueur − adversaire) · E[pts]. Tri par E[pts]. Les
+        joueurs déjà utilisés dans ce tournoi sont grisés. Un Elo en{' '}
+        <span className="text-amber-600 dark:text-amber-400">maison</span> ou en{' '}
+        <span className="text-red-600 dark:text-red-400">défaut</span> n&apos;a
+        pas trouvé sa correspondance Tennis Abstract.
       </p>
       <div className="flex flex-col gap-6 sm:flex-row">
         {colonnes.map((c, i) => (

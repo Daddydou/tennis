@@ -1,5 +1,11 @@
 import { supabaseAnon } from './anon';
-import { ELO_DEFAUT, eloDepuisRang } from '@/lib/elo';
+import {
+  chargerIndexElo,
+  resoudreElosParJoueur,
+  INDEX_ELO_VIDE,
+  type ElosResolus,
+  type IndexElo,
+} from './elo';
 import type {
   Half,
   Match,
@@ -257,10 +263,23 @@ export function etatsSlots(
   });
 }
 
+/**
+ * Reconstruit les `Player` du moteur.
+ *
+ * Les Elo ne viennent plus des colonnes `elo_*` : ils sont résolus par la
+ * cascade Tennis Abstract → maison → défaut (cf. supabase/elo.ts). Passer
+ * `elos` déjà résolus évite de refaire le rapprochement de noms ici ; sans
+ * lui, la résolution se fait sur un index vide et retombe donc sur l'Elo
+ * maison, ce qui préserve le comportement d'avant.
+ */
 export function rowsToPlayers(
   tournament: TournamentRow,
   matchRows: MatchRow[],
   playerRows: PlayerRow[],
+  elos: Record<string, ElosResolus> = resoudreElosParJoueur(
+    playerRows,
+    INDEX_ELO_VIDE,
+  ),
 ): Record<string, Player> {
   const byId = new Map(playerRows.map((p) => [p.id, p]));
   const rounds = tournament.rounds ?? [];
@@ -282,25 +301,22 @@ export function rowsToPlayers(
       const p = byId.get(pid);
       if (!p) continue;
 
-      const base =
-        p.elo_overall != null
-          ? Number(p.elo_overall)
-          : p.rank != null
-            ? eloDepuisRang(p.rank)
-            : ELO_DEFAUT;
+      const e = elos[pid] ?? resoudreElosParJoueur([p], INDEX_ELO_VIDE)[pid];
 
       out[pid] = {
         id: pid,
         tour: tournament.tour,
         name: p.name,
         country: p.country,
-        rank: p.rank,
+        // Le rang publié par Tennis Abstract complète celui de tn_players,
+        // qui n'est renseigné par aucun import aujourd'hui.
+        rank: p.rank ?? e.rangTa,
         seed: null, // non persisté par le schéma (voir README)
         half: moities[pid] ?? m.half ?? 'top',
-        eloOverall: p.elo_overall != null ? Number(p.elo_overall) : base,
-        eloHard: p.elo_hard != null ? Number(p.elo_hard) : base,
-        eloClay: p.elo_clay != null ? Number(p.elo_clay) : base,
-        eloGrass: p.elo_grass != null ? Number(p.elo_grass) : base,
+        eloOverall: e.eloOverall,
+        eloHard: e.eloHard,
+        eloClay: e.eloClay,
+        eloGrass: e.eloGrass,
       };
     }
   }
@@ -366,6 +382,9 @@ export async function loadEngineData(tournamentId: string): Promise<{
   playerRows: PlayerRow[];
   matches: Match[];
   players: Record<string, Player>;
+  /** Elo résolus par joueur, avec leur source — pour l'affichage. */
+  elos: Record<string, ElosResolus>;
+  indexElo: IndexElo;
 } | null> {
   const tournament = await getTournament(tournamentId);
   if (!tournament) return null;
@@ -378,11 +397,19 @@ export async function loadEngineData(tournamentId: string): Promise<{
   }
   const playerRows = await getPlayerRows([...ids]);
 
+  // Elo Tennis Abstract du circuit du tournoi, puis résolution de la cascade
+  // une fois pour toutes : le rapprochement de noms ne doit pas être refait à
+  // chaque lecture.
+  const indexElo = await chargerIndexElo(tournament.tour);
+  const elos = resoudreElosParJoueur(playerRows, indexElo);
+
   return {
     tournament,
     matchRows,
     playerRows,
     matches: rowsToMatches(matchRows, playerRows),
-    players: rowsToPlayers(tournament, matchRows, playerRows),
+    players: rowsToPlayers(tournament, matchRows, playerRows, elos),
+    elos,
+    indexElo,
   };
 }

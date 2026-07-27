@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import EloRefreshButton from './EloRefreshButton';
 import { listTournaments } from '@/supabase/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 
@@ -59,14 +60,17 @@ export default async function Home() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Tournois</h1>
-        <Link
-          href="/import"
-          className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
-          Importer un tableau
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <EloRefreshButton />
+          <Link
+            href="/import"
+            className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          >
+            Importer un tableau
+          </Link>
+        </div>
       </div>
 
       {tournois.length === 0 ? (
