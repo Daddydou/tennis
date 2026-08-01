@@ -9,7 +9,6 @@ import {
   type FamilleFantasy,
   type LigneTour,
 } from '@/lib/fantasy';
-import { pointsAtRound } from '@/lib/scoring';
 
 /**
  * ESPÉRANCES FANTASY — CALCUL ET CACHE
@@ -18,17 +17,24 @@ import { pointsAtRound } from '@/lib/scoring';
  * UNE espérance globale, somme de ses espérances par tour pondérées par le
  * multiplicateur du tour (cf. lib/fantasy.ts).
  *
- * Rien n'est simulé ici : on réutilise TELLES QUELLES les projections Monte
- * Carlo des picks (`getProjections`, cache `tn_projections`). Un tournoi déjà
- * consulté côté Picks ou Prédictions ne relance donc aucune simulation.
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ ESPÉRANCE A PRIORI, DEPUIS LE TIRAGE — jamais recalculée en cours de     │
+ * │ route. La simulation part TOUJOURS du premier tour, tableau complet,     │
+ * │ et n'injecte AUCUN résultat réel : ni points marqués, ni survivants.     │
+ * └─────────────────────────────────────────────────────────────────────────┘
  *
- * Deux régimes cohabitent dans un même total :
- *   - les tours ANTÉRIEURS au tour de départ sont joués : on prend les points
- *     réellement marqués (lib/scoring.ts), pas une espérance ;
- *   - les tours restants sont estimés par la simulation.
- * Le total est donc « ce que l'équipe rapportera sur tout le tournoi, compte
- * tenu de ce qui est déjà acquis » — et redevient une espérance pure avant le
- * premier tour, quand rien n'est joué.
+ * C'est la différence de fond avec les picks, et elle vient de la règle du
+ * jeu : l'équipe se compose une seule fois, avant le coup d'envoi. La bonne
+ * question n'est donc pas « que rapportera cette équipe compte tenu de ce qui
+ * est déjà joué », mais « quelle équipe fallait-il composer au vu du tirage ».
+ * Un tournoi à venir, en cours ou terminé donne exactement le même résultat.
+ *
+ * Rien n'est simulé ici : on réutilise TELLES QUELLES les projections Monte
+ * Carlo du premier tour (`getProjections` sur `rounds[0]`, cache
+ * `tn_projections`). À ce tour de départ, `simulerDepuis` délègue à
+ * `simulerTournoi`, qui repart du tableau initial — les résultats connus n'y
+ * entrent pas. C'est aussi la projection qu'affiche l'écran Picks sur le
+ * premier tour : le cache est partagé, pas dupliqué.
  */
 
 export interface FantasyJoueur {
@@ -40,8 +46,12 @@ export interface FantasyJoueur {
 }
 
 export interface Fantasy {
-  /** Tour depuis lequel la simulation part (cf. `simulerDepuis`). */
-  fromRound: string;
+  /**
+   * Tour de départ de la simulation — toujours le premier tour du tableau.
+   * Conservé pour l'affichage (« simulation depuis le tirage (R128) »), pas
+   * comme un paramètre : le calcul n'en admet pas d'autre.
+   */
+  tirage: string;
   famille: FamilleFantasy;
   /** Multiplicateurs appliqués, du premier tour à la finale. */
   bareme: number[];
@@ -66,8 +76,19 @@ export function contexteFantasy(tournament: EngineInput['tournament']): {
 }
 
 /**
+ * Premier tour du tableau — l'unique point de départ de la simulation Fantasy.
+ * Renvoie null sur un tournoi sans tours connus, où il n'y a rien à calculer.
+ */
+function tirageDe(tournament: EngineInput['tournament']): string | null {
+  return (tournament.rounds ?? [])[0] ?? null;
+}
+
+/**
  * Calcule l'espérance Fantasy de chaque joueur du tableau et la met en cache
- * dans `tn_fantasy`, indexée par (tournoi, tour de départ).
+ * dans `tn_fantasy`.
+ *
+ * Une seule entrée par tournoi : le calcul ne dépend pas de l'avancée du
+ * tournoi, il part toujours du tirage. Rien à indexer par tour de départ.
  *
  * Le gros du coût est la simulation Monte Carlo, déjà mutualisée avec les
  * picks. Ce qui reste ici est une combinaison linéaire — mais on la stocke
@@ -76,48 +97,33 @@ export function contexteFantasy(tournament: EngineInput['tournament']): {
  */
 export async function computeAndStoreFantasy(
   engine: EngineInput,
-  fromRound: string,
 ): Promise<Fantasy> {
-  const { tournament, matches, players } = engine;
+  const { tournament, players } = engine;
   const rounds = tournament.rounds ?? [];
-  const bestOf = (tournament.best_of ?? 3) as 3 | 5;
   const { famille, bareme } = contexteFantasy(tournament);
+  const tirage = tirageDe(tournament);
 
-  const { esperances, presence } = await getProjections(engine, fromRound);
+  if (!tirage) return { tirage: '', famille, bareme, joueurs: {} };
 
-  // Tours déjà joués : ceux qui précèdent le tour de départ de la simulation.
-  const depart = rounds.indexOf(fromRound);
-  const premierSimule = depart < 0 ? 0 : depart;
+  // Tour de départ = premier tour : `simulerDepuis` délègue alors à
+  // `simulerTournoi`, qui repart du tableau initial. Aucun résultat réel n'est
+  // injecté, que le tournoi soit à venir, en cours ou terminé.
+  const { esperances, presence } = await getProjections(engine, tirage);
 
   const joueurs: Record<string, FantasyJoueur> = {};
   for (const playerId of Object.keys(players)) {
-    const { lignes, eTotal } = detaillerJoueur(rounds, bareme, (round, i) => {
-      if (i < premierSimule) {
-        return {
-          pReach: null,
-          points: pointsAtRound(matches, playerId, round, bestOf),
-          acquis: true,
-        };
-      }
-      return {
-        pReach: presence[playerId]?.[round] ?? 0,
-        points: esperances[playerId]?.[round] ?? 0,
-        acquis: false,
-      };
-    });
+    const { lignes, eTotal } = detaillerJoueur(rounds, bareme, (round) => ({
+      pReach: presence[playerId]?.[round] ?? 0,
+      points: esperances[playerId]?.[round] ?? 0,
+    }));
     joueurs[playerId] = { playerId, eTotal, detail: lignes };
   }
 
   const sb = supabaseAdmin();
-  await sb
-    .from('tn_fantasy')
-    .delete()
-    .eq('tournament_id', tournament.id)
-    .eq('from_round', fromRound);
+  await sb.from('tn_fantasy').delete().eq('tournament_id', tournament.id);
 
   const rows = Object.values(joueurs).map((j) => ({
     tournament_id: tournament.id,
-    from_round: fromRound,
     player_id: j.playerId,
     e_total: j.eTotal,
     detail: j.detail,
@@ -127,10 +133,10 @@ export async function computeAndStoreFantasy(
     if (error) throw new Error(`Fantasy : ${error.message}`);
   }
 
-  return { fromRound, famille, bareme, joueurs };
+  return { tirage, famille, bareme, joueurs };
 }
 
-/** Supprime tout le cache Fantasy d'un tournoi (tous les tours de départ). */
+/** Supprime le cache Fantasy d'un tournoi. */
 export async function invaliderFantasy(tournamentId: string): Promise<void> {
   const sb = supabaseAdmin();
   await sb.from('tn_fantasy').delete().eq('tournament_id', tournamentId);
@@ -161,23 +167,20 @@ function baremeInchange(ligne: LigneCache, bareme: number[]): boolean {
 }
 
 /**
- * Espérances Fantasy pour un tour de départ donné.
+ * Espérances Fantasy d'un tournoi, telles qu'elles étaient au tirage.
  * Lit le cache `tn_fantasy` ; s'il est vide (import récent, rafraîchissement
- * des Elo, premier affichage de ce tour), recalcule et le repeuple.
+ * des Elo, premier affichage), recalcule et le repeuple.
  */
-export async function getFantasy(
-  engine: EngineInput,
-  fromRound: string,
-): Promise<Fantasy> {
+export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
   const { famille, bareme } = contexteFantasy(engine.tournament);
+  const tirage = tirageDe(engine.tournament) ?? '';
 
   // Lecture en clé anon ; seul le repeuplement écrit, en service role.
   const sb = supabaseAnon();
   const { data, error } = await sb
     .from('tn_fantasy')
     .select('player_id, e_total, detail')
-    .eq('tournament_id', engine.tournament.id)
-    .eq('from_round', fromRound);
+    .eq('tournament_id', engine.tournament.id);
   if (error) throw new Error(error.message);
 
   // Le cache porte les multiplicateurs avec lesquels il a été calculé : une
@@ -192,8 +195,8 @@ export async function getFantasy(
         detail: r.detail ?? [],
       };
     }
-    return { fromRound, famille, bareme, joueurs };
+    return { tirage, famille, bareme, joueurs };
   }
 
-  return computeAndStoreFantasy(engine, fromRound);
+  return computeAndStoreFantasy(engine);
 }

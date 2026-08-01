@@ -141,13 +141,17 @@ create index if not exists idx_tn_proj_lookup
   on tn_projections(tournament_id, round, e_points desc);
 
 -- ---------------------------------------------------------------------
--- FANTASY — ESPÉRANCE D'UN JOUEUR SUR TOUT LE TOURNOI
+-- FANTASY — ESPÉRANCE A PRIORI D'UN JOUEUR SUR TOUT LE TOURNOI
 --
--- Le jeu Fantasy compose une équipe figée pour tout le tournoi : chaque
--- joueur y porte UNE espérance globale (somme de ses espérances par tour,
--- pondérées par le multiplicateur du tour), là où les picks raisonnent
--- tour par tour. Cache dérivable de tn_projections + des matchs joués,
--- indexé comme lui par le tour de départ de la simulation.
+-- Le jeu Fantasy compose une équipe UNE SEULE FOIS avant le coup d'envoi,
+-- puis la fige : chaque joueur y porte UNE espérance globale (somme de ses
+-- espérances par tour, pondérées par le multiplicateur du tour), là où les
+-- picks raisonnent tour par tour.
+--
+-- L'espérance part TOUJOURS du tirage, tableau complet, sans jamais
+-- injecter de résultat réel : elle ne dépend donc pas de l'avancée du
+-- tournoi, d'où une seule entrée par (tournoi, joueur) — contrairement à
+-- tn_projections, indexée par tour de départ.
 --
 -- La composition de l'équipe (quel joueur pour quel palier) n'est pas
 -- stockée : c'est une affectation instantanée sur ces espérances
@@ -157,7 +161,6 @@ create index if not exists idx_tn_proj_lookup
 create table if not exists tn_fantasy (
   id            uuid primary key default gen_random_uuid(),
   tournament_id uuid not null references tn_tournaments(id) on delete cascade,
-  from_round    text not null,                    -- tour de départ de la simulation
   player_id     text not null references tn_players(id),
 
   e_total       numeric not null,                 -- espérance sur tout le tournoi
@@ -165,11 +168,11 @@ create table if not exists tn_fantasy (
 
   computed_at   timestamptz default now(),
 
-  unique (tournament_id, from_round, player_id)
+  unique (tournament_id, player_id)
 );
 
 create index if not exists idx_tn_fantasy_lookup
-  on tn_fantasy(tournament_id, from_round, e_total desc);
+  on tn_fantasy(tournament_id, e_total desc);
 
 -- =====================================================================
 -- FONCTION DE SCORING

@@ -259,19 +259,20 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   //    cache) au premier affichage. Chaque simulation part des survivants réels
   //    du tour concerné (simulerDepuis) et coûte plusieurs secondes.
   //
-  //    Le cache Fantasy (tn_fantasy) dérive des mêmes projections, plus des
-  //    points réellement marqués aux tours joués : il se périme donc aux mêmes
-  //    moments, et se préchauffe dans la foulée sans resimuler quoi que ce soit.
+  //    Le cache Fantasy (tn_fantasy) se périme aux mêmes moments — le tableau
+  //    lui-même a pu changer, et les Elo avec. Il part en revanche TOUJOURS du
+  //    tirage (espérance a priori, cf. supabase/fantasy.ts) : son préchauffage
+  //    simule donc le premier tour, pas le tour courant. C'est une seconde
+  //    simulation, mais c'est aussi celle dont l'écran Picks a besoin sur le
+  //    premier tour — elle n'est pas perdue.
   try {
     await invaliderProjections(tournamentId);
     await invaliderFantasy(tournamentId);
     const engine = await loadEngineData(tournamentId);
     if (engine) {
       const rc = tourCourantMatches(engine.matchRows, engine.tournament.rounds ?? []);
-      if (rc) {
-        await computeAndStoreProjections(engine, rc);
-        await computeAndStoreFantasy(engine, rc);
-      }
+      if (rc) await computeAndStoreProjections(engine, rc);
+      await computeAndStoreFantasy(engine);
     }
   } catch (e) {
     // La simulation ne doit pas faire échouer l'import lui-même.

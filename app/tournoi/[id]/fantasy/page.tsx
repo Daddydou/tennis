@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
-import { loadEngineData, surfacePourElo, tourCourantMatches } from '@/supabase/queries';
+import { loadEngineData, surfacePourElo } from '@/supabase/queries';
 import { getFantasy } from '@/supabase/fantasy';
 import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
 import {
@@ -22,7 +22,7 @@ export default async function FantasyPage({
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();
-  const { tournament, matchRows, players, elos } = engine;
+  const { tournament, players, elos } = engine;
   const rounds = tournament.rounds ?? [];
 
   if (rounds.length === 0) {
@@ -41,11 +41,12 @@ export default async function FantasyPage({
   // féminin d'un même événement sont deux tournois distincts en base, jamais
   // fusionnés — c'est déjà la structure du reste de l'app.
   //
-  // Même tour de départ que les écrans Picks et Prédictions : la simulation
-  // part des survivants réels, et le cache Monte Carlo (tn_projections) est
-  // partagé avec eux.
-  const fromRound = tourCourantMatches(matchRows, rounds) ?? rounds[0];
-  const fantasy = await getFantasy(engine, fromRound);
+  // L'équipe se compose une fois pour toutes avant le coup d'envoi : les
+  // espérances partent du tirage et ignorent les résultats réels, à la
+  // différence des écrans Picks et Prédictions qui suivent le tour courant
+  // (cf. supabase/fantasy.ts). L'écran affiche donc toujours la même équipe,
+  // que le tournoi soit à venir, en cours ou terminé.
+  const fantasy = await getFantasy(engine);
 
   const paliers = COMPOSITIONS[fantasy.famille];
 
@@ -92,8 +93,6 @@ export default async function FantasyPage({
   });
 
   const sansClassement = candidats.filter((c) => c.rang === null).length;
-  const depart = rounds.indexOf(fromRound);
-  const dejaJoues = depart > 0 ? rounds.slice(0, depart) : [];
 
   return (
     <div className="space-y-5">
@@ -122,21 +121,14 @@ export default async function FantasyPage({
           ))}
         </p>
         <p className="text-xs">
-          {dejaJoues.length > 0 ? (
-            <>
-              Tours déjà joués ({dejaJoues.join(', ')}) comptés en points réels ;
-              simulation Monte Carlo à partir des{' '}
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                {fromRound}
-              </span>
-              , depuis les survivants réels.
-            </>
-          ) : (
-            <>
-              Simulation Monte Carlo depuis le tirage ({fromRound}) : rien
-              n&apos;est encore joué, tout est espérance.
-            </>
-          )}
+          Espérance{' '}
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            a priori
+          </span>{' '}
+          : simulation Monte Carlo depuis le tirage ({fantasy.tirage || rounds[0]}
+          ), tableau complet. L&apos;équipe se composant une seule fois avant le
+          coup d&apos;envoi, aucun résultat réel n&apos;entre dans ce calcul — il
+          est identique que le tournoi soit à venir, en cours ou terminé.
           {sansClassement > 0 && (
             <>
               {' '}

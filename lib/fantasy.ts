@@ -6,10 +6,12 @@
  *   Picks   : un joueur par slot (tour × moitié de tableau), chaque joueur ne
  *             servant qu'une fois — c'est une affectation joueur → slot, et
  *             chaque joueur porte une espérance PAR TOUR.
- *   Fantasy : une équipe figée pour TOUT le tournoi. Chaque joueur retenu
- *             marque sur l'ensemble de ses matchs, selon le même barème
- *             (lib/scoring.ts), pondéré par un multiplicateur croissant selon
- *             le tour. Chaque joueur porte donc UNE espérance globale.
+ *   Fantasy : une équipe composée UNE SEULE FOIS avant le coup d'envoi, puis
+ *             figée. Chaque joueur retenu marque sur l'ensemble de ses matchs,
+ *             selon le même barème (lib/scoring.ts), pondéré par un
+ *             multiplicateur croissant selon le tour. Chaque joueur porte donc
+ *             UNE espérance globale, celle du tirage — aucun résultat réel n'y
+ *             entre jamais (cf. supabase/fantasy.ts).
  *
  * L'équipe se compose d'un joueur par palier de classement. Comme les derniers
  * paliers se recoupent (« 61 et au-delà » ⊂ « 41 et au-delà »), prendre le
@@ -202,33 +204,29 @@ export function famillePourCategorie(
 export interface LigneTour {
   round: string;
   multiplicateur: number;
-  /**
-   * P(le joueur dispute ce tour), issue de la simulation.
-   * null sur un tour déjà joué : sa présence n'est plus une probabilité.
-   */
-  pReach: number | null;
-  /** Points bruts : espérance Monte Carlo, ou points réellement marqués. */
+  /** P(le joueur dispute ce tour), issue de la simulation. */
+  pReach: number;
+  /** Espérance de points marqués à ce tour. */
   points: number;
   /** `points` × `multiplicateur` — ce qui alimente le total. */
   pondere: number;
-  /** Tour déjà joué : `points` est un résultat acquis, pas une espérance. */
-  acquis: boolean;
 }
 
 /**
  * Ventilation tour par tour de l'espérance d'un joueur, et son total.
  *
- * `parTour` renseigne, pour chaque tour, les points bruts (espérance ou
- * résultat acquis) et la probabilité de présence. La pondération, elle, ne
- * dépend que du rang du tour dans le tableau.
+ * `parTour` renseigne, pour chaque tour, l'espérance de points et la
+ * probabilité de présence. La pondération, elle, ne dépend que du rang du tour
+ * dans le tableau.
+ *
+ * Tout est espérance, du premier tour à la finale : l'équipe Fantasy se
+ * compose une fois pour toutes avant le coup d'envoi, aucun résultat réel
+ * n'entre dans ce calcul (cf. supabase/fantasy.ts).
  */
 export function detaillerJoueur(
   rounds: string[],
   bareme: number[],
-  parTour: (
-    round: string,
-    index: number,
-  ) => { pReach: number | null; points: number; acquis: boolean },
+  parTour: (round: string, index: number) => { pReach: number; points: number },
 ): { lignes: LigneTour[]; eTotal: number } {
   const lignes: LigneTour[] = [];
   let eTotal = 0;
@@ -238,10 +236,10 @@ export function detaillerJoueur(
     // dimensionné écarté en amont, mais on ne présume rien ici) : le
     // multiplicateur neutre laisse les points bruts intacts.
     const multiplicateur = bareme[i] ?? 1;
-    const { pReach, points, acquis } = parTour(round, i);
+    const { pReach, points } = parTour(round, i);
     const pondere = points * multiplicateur;
     eTotal += pondere;
-    lignes.push({ round, multiplicateur, pReach, points, pondere, acquis });
+    lignes.push({ round, multiplicateur, pReach, points, pondere });
   });
 
   return { lignes, eTotal };

@@ -66,6 +66,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0003_elo_identite_par_slug.sql (identité TA par slug — vide ta_elo)
 #    supabase/migrations/0004_exceptions_par_circuit.sql (clé d'exception = nom + circuit)
 #    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
+#    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
 # 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
 #        migration vide ta_elo, que seul l'import repeuple (slug compris).
 
@@ -88,11 +89,17 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
   pickés grisés. Validation → `tn_picks`.
 - `/tournoi/[id]/fantasy` — **second jeu**, à côté des picks et sans interaction
-  avec eux : une équipe figée pour tout le tournoi, un joueur par palier de
-  classement (5 en Grand Chelem, 4 ailleurs). Chaque joueur y marque sur *tous*
-  ses matchs, au même barème, pondéré par un multiplicateur croissant selon le
-  tour. L'écran propose la composition optimale, le détail tour par tour au clic,
-  et le total de l'équipe. Lit le même cache `tn_projections` que les picks.
+  avec eux : une équipe composée **une seule fois avant le coup d'envoi**, puis
+  figée — un joueur par palier de classement (5 en Grand Chelem, 4 ailleurs).
+  Chaque joueur y marque sur *tous* ses matchs, au même barème, pondéré par un
+  multiplicateur croissant selon le tour. L'écran propose la composition
+  optimale, le détail tour par tour au clic, et le total de l'équipe.
+  **Espérance a priori** : la simulation part toujours du tirage, tableau
+  complet, et n'injecte aucun résultat réel — la question posée est « quelle
+  équipe fallait-il composer au vu du tirage », pas « que rapportera-t-elle
+  compte tenu de ce qui est joué ». Le résultat est donc identique que le
+  tournoi soit à venir, en cours ou terminé. Lit le même cache
+  `tn_projections` que les picks, sur le premier tour.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -217,7 +224,7 @@ supabase/
   elo.ts                         cascade TA → maison → défaut + sources
   elo-refresh.ts                 récupération TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
-  fantasy.ts                     espérances sur tout le tournoi + cache tn_fantasy
+  fantasy.ts                     espérances a priori (depuis le tirage) + tn_fantasy
   migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe

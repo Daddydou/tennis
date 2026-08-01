@@ -8,12 +8,10 @@ import type { SourceElo } from '@/supabase/elo';
 export interface LigneTourVue {
   round: string;
   multiplicateur: number;
-  /** P(dispute ce tour). null sur un tour déjà joué. */
-  pReach: number | null;
+  /** P(dispute ce tour), depuis le tirage. */
+  pReach: number;
   points: number;
   pondere: number;
-  /** Tour déjà joué : `points` est un résultat acquis, pas une espérance. */
-  acquis: boolean;
 }
 
 export interface MembreVue {
@@ -35,8 +33,7 @@ export interface MembreVue {
   eligibles: number;
 }
 
-function pourcent(p: number | null): string {
-  if (p === null) return '—';
+function pourcent(p: number): string {
   if (p <= 0) return '0 %';
   if (p >= 0.995) return '100 %';
   return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)} %`;
@@ -72,17 +69,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
               key={l.round}
               className="border-t border-zinc-100 dark:border-zinc-900"
             >
-              <td className="py-1 pr-3">
-                {l.round}
-                {l.acquis && (
-                  <span
-                    className="ml-1.5 text-[10px] text-emerald-600 dark:text-emerald-400"
-                    title="Tour déjà joué : points réellement marqués, pas une espérance."
-                  >
-                    acquis
-                  </span>
-                )}
-              </td>
+              <td className="py-1 pr-3">{l.round}</td>
               <td className="py-1 pr-3 text-right tabular-nums text-zinc-500">
                 {pourcent(l.pReach)}
               </td>
