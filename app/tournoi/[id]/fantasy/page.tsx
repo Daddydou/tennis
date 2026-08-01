@@ -2,14 +2,9 @@ import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
 import { loadEngineData, surfacePourElo } from '@/supabase/queries';
-import { getFantasy } from '@/supabase/fantasy';
+import { equipeEvaluee, getFantasy } from '@/supabase/fantasy';
 import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
-import {
-  COMPOSITIONS,
-  LIBELLE_FAMILLE,
-  composerEquipe,
-  type CandidatFantasy,
-} from '@/lib/fantasy';
+import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,15 +45,12 @@ export default async function FantasyPage({
 
   const paliers = COMPOSITIONS[fantasy.famille];
 
-  // Le classement est celui de tn_players.rank, complété par le rang publié
-  // par Tennis Abstract quand la colonne est vide (cf. rowsToPlayers).
-  const candidats: CandidatFantasy[] = Object.keys(players).map((playerId) => ({
-    playerId,
-    rang: players[playerId]?.rank ?? null,
-    eTotal: fantasy.joueurs[playerId]?.eTotal ?? 0,
-  }));
-
-  const equipe = composerEquipe(paliers, candidats);
+  // L'équipe optimale (sur les seules espérances, cf. ci-dessus) et ce que
+  // cette MÊME équipe a marqué sur les résultats importés. Le second n'entre
+  // jamais dans le choix du premier — c'est une mesure, pas un critère.
+  // Le classement vient de tn_players.rank, complété par le rang publié par
+  // Tennis Abstract quand la colonne est vide (cf. rowsToPlayers).
+  const evaluation = equipeEvaluee(engine, fantasy);
 
   // Elo effectif (pondéré surface) : exactement celui que la simulation a
   // utilisé, affiché avec sa source comme dans l'écran Picks.
@@ -68,10 +60,16 @@ export default async function FantasyPage({
     return e ? Math.round(eloEffectifResolu(e, surfElo)) : null;
   };
 
-  const vue: MembreVue[] = equipe.map((m) => {
+  const vue: MembreVue[] = evaluation.membres.map((m) => {
     const pid = m.playerId;
     const p = pid ? players[pid] : undefined;
     const resolu = pid ? (elos[pid] as ElosResolus | undefined) : undefined;
+
+    // Espérance et réel du même tour se lisent sur une seule ligne : on les
+    // apparie ici, l'affichage n'a plus qu'à les mettre côte à côte. Un tour
+    // non joué reste à null, pour ne pas le confondre avec un vrai zéro.
+    const reelParTour = new Map(m.detailReel.map((l) => [l.round, l]));
+
     return {
       numero: m.palier.numero,
       libellePalier: m.palier.libelle,
@@ -87,12 +85,20 @@ export default async function FantasyPage({
           `${c.nom} (${c.slug}${c.elo != null ? `, Elo ${Math.round(c.elo)}` : ''})`,
       ),
       eTotal: m.eTotal,
-      detail: pid ? (fantasy.joueurs[pid]?.detail ?? []) : [],
+      reel: m.reel,
+      detail: pid
+        ? (fantasy.joueurs[pid]?.detail ?? []).map((l) => {
+            const r = reelParTour.get(l.round);
+            return { ...l, reel: r && r.joue ? r.pondere : null };
+          })
+        : [],
       eligibles: m.eligibles,
     };
   });
 
-  const sansClassement = candidats.filter((c) => c.rang === null).length;
+  const sansClassement = Object.keys(players).filter(
+    (pid) => (players[pid]?.rank ?? null) === null,
+  ).length;
 
   return (
     <div className="space-y-5">
@@ -139,7 +145,7 @@ export default async function FantasyPage({
         </p>
       </div>
 
-      <EquipeFantasy equipe={vue} />
+      <EquipeFantasy equipe={vue} termine={evaluation.termine} />
     </div>
   );
 }

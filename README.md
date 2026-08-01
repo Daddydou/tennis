@@ -67,6 +67,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0004_exceptions_par_circuit.sql (clé d'exception = nom + circuit)
 #    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
 #    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
+#    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
 # 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
 #        migration vide ta_elo, que seul l'import repeuple (slug compris).
 
@@ -100,6 +101,19 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   compte tenu de ce qui est joué ». Le résultat est donc identique que le
   tournoi soit à venir, en cours ou terminé. Lit le même cache
   `tn_projections` que les picks, sur le premier tour.
+  À côté de l'espérance, l'écran affiche le **score réel de cette même équipe
+  figée** — ce qu'elle a marqué sur les résultats importés, joueur par joueur,
+  tour par tour et en total. C'est une mesure, jamais un critère : la
+  composition ne tient aucun compte des résultats.
+- `/fantasy` — **historique prédit / réalisé**, un tournoi par ligne. Écrit à
+  chaque import ; le bouton « Reprendre les tournois déjà en base » rattrape
+  l'existant (`POST /api/fantasy/backfill`, borné dans le temps, à recliquer
+  tant qu'il reste des tournois). La synthèse ne porte que sur les tournois
+  **terminés** — un tournoi en cours a un score tronqué qui tirerait la moyenne
+  vers le bas. **Collecte seulement** : aucun paramètre du modèle n'est dérivé
+  de ces chiffres, ni aujourd'hui ni automatiquement demain. Sur quelques
+  tournois, l'écart est dominé par le bruit ; s'y ajuster serait du
+  sur-apprentissage. On accumule pour pouvoir regarder, et décider à la main.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -211,11 +225,13 @@ auth/
 app/
   login/                         mot de passe unique → cookie de session
   page.tsx                       liste des tournois
+  fantasy/                       historique prédit / réalisé + bouton de reprise
   import/                        import du JSON + action serveur
   tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
   api/recompute/route.ts         POST → tn_recompute_picks()
   api/elo/refresh/route.ts       POST → import des Elo Tennis Abstract
+  api/fantasy/backfill/route.ts  POST → historique des tournois déjà en base
   EloRefreshButton.tsx           bouton de rafraîchissement (accueil)
 supabase/
   anon.ts                        client clé publique — LECTURES uniquement
@@ -224,14 +240,15 @@ supabase/
   elo.ts                         cascade TA → maison → défaut + sources
   elo-refresh.ts                 récupération TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
-  fantasy.ts                     espérances a priori (depuis le tirage) + tn_fantasy
+  fantasy.ts                     espérances a priori, score réel, historique
   migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
 scripts/appliquer-migration.mjs  joue un .sql via l'API Management Supabase
 lib/                             moteur fourni (non modifié)
-lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale
-                                 (réutilise optimizer/scoring/montecarlo tels quels)
+lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale,
+                                 score réel (réutilise optimizer/scoring/montecarlo
+                                 tels quels)
 ```
 
 ### Où corriger le barème de multiplicateurs

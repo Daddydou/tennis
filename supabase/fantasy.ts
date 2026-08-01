@@ -3,11 +3,17 @@ import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
 import { getProjections, type EngineInput } from './projections';
 import {
+  COMPOSITIONS,
   baremeTournoi,
+  composerEquipe,
+  detailReelJoueur,
   detaillerJoueur,
   famillePourCategorie,
+  type CandidatFantasy,
   type FamilleFantasy,
+  type LigneReelle,
   type LigneTour,
+  type MembreEquipe,
 } from '@/lib/fantasy';
 
 /**
@@ -199,4 +205,170 @@ export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
   }
 
   return computeAndStoreFantasy(engine);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  ÉQUIPE OPTIMALE ET SON SCORE RÉEL                                          */
+/* -------------------------------------------------------------------------- */
+
+/** Un membre de l'équipe, avec son espérance a priori et ce qu'il a marqué. */
+export interface MembreAvecReel extends MembreEquipe {
+  /** Points réellement marqués à ce stade, multiplicateurs compris. */
+  reel: number;
+  /** Ventilation réelle tour par tour. Vide si le palier n'est pas pourvu. */
+  detailReel: LigneReelle[];
+}
+
+export interface EquipeEvaluee {
+  membres: MembreAvecReel[];
+  /** Espérance a priori de l'équipe (somme des paliers pourvus). */
+  eTotal: number;
+  /** Points réels de cette même équipe, à ce stade du tournoi. */
+  reelTotal: number;
+  /** Tous les matchs du tableau ont une issue connue. */
+  termine: boolean;
+}
+
+/**
+ * Équipe optimale d'un tournoi, et ce qu'elle a réellement marqué.
+ *
+ * Deux mesures d'une SEULE ET MÊME équipe, jamais deux équipes :
+ *   - `eTotal` : l'espérance a priori, qui a servi à la composer et qui ne
+ *     bouge plus (cf. l'encadré en tête de module) ;
+ *   - `reelTotal` : ce que cette composition figée a marqué sur les résultats
+ *     importés, qui monte à chaque import jusqu'au score final.
+ *
+ * La composition n'est jamais recalculée à partir des résultats : elle sort
+ * des seules espérances, exactement comme avant le coup d'envoi.
+ */
+export function equipeEvaluee(
+  engine: EngineInput,
+  fantasy: Fantasy,
+): EquipeEvaluee {
+  const { tournament, matches, players } = engine;
+  const rounds = tournament.rounds ?? [];
+  const bestOf = (tournament.best_of ?? 3) as 3 | 5;
+
+  const candidats: CandidatFantasy[] = Object.keys(players).map((playerId) => ({
+    playerId,
+    rang: players[playerId]?.rank ?? null,
+    eTotal: fantasy.joueurs[playerId]?.eTotal ?? 0,
+  }));
+
+  const membres = composerEquipe(COMPOSITIONS[fantasy.famille], candidats).map(
+    (m): MembreAvecReel => {
+      if (!m.playerId) return { ...m, reel: 0, detailReel: [] };
+      const r = detailReelJoueur(
+        matches,
+        m.playerId,
+        rounds,
+        fantasy.bareme,
+        bestOf,
+      );
+      return { ...m, reel: r.total, detailReel: r.lignes };
+    },
+  );
+
+  const indecis = ['scheduled', 'live'];
+  return {
+    membres,
+    eTotal: membres.reduce((s, m) => s + (m.playerId ? m.eTotal : 0), 0),
+    reelTotal: membres.reduce((s, m) => s + m.reel, 0),
+    // Un tableau vide n'est pas un tournoi terminé, seulement un tournoi
+    // sans matchs connus.
+    termine:
+      matches.length > 0 && !matches.some((m) => indecis.includes(m.status)),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  HISTORIQUE PRÉDIT / RÉALISÉ                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Couple (prédit, réalisé) d'un tournoi — matière première d'une future
+ * évaluation de calibration.
+ *
+ * On ENREGISTRE, on n'ajuste rien. Aucun paramètre du modèle n'est dérivé de
+ * ces lignes : sur quelques tournois, l'écart prédit/réalisé est surtout du
+ * bruit, et s'y ajuster serait du sur-apprentissage. La décision d'en tirer
+ * quelque chose reste humaine, une fois le volume atteint.
+ */
+export interface LigneHistorique {
+  tournamentId: string;
+  /** Espérance a priori de l'équipe optimale. */
+  ePredit: number;
+  /** Points réels de cette équipe. Partiel tant que `termine` est faux. */
+  reel: number;
+  /**
+   * Le tournoi est allé à son terme. SEULES ces lignes forment des couples
+   * comparables : un tournoi à mi-parcours a un `reel` tronqué, qui tirerait
+   * mécaniquement toute moyenne vers le bas.
+   */
+  termine: boolean;
+  /** Composition retenue, pour pouvoir revenir sur un écart surprenant. */
+  equipe: {
+    palier: number;
+    playerId: string | null;
+    nom: string | null;
+    rang: number | null;
+    ePoints: number;
+    reel: number;
+  }[];
+}
+
+/**
+ * Enregistre (ou met à jour) le couple prédit/réalisé d'un tournoi.
+ * Ne lève jamais : l'historique est une collecte annexe, il ne doit pas faire
+ * échouer l'import qui le déclenche.
+ */
+export async function enregistrerHistorique(
+  engine: EngineInput,
+  evaluation: EquipeEvaluee,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { tournament, players } = engine;
+    const sb = supabaseAdmin();
+    const { error } = await sb.from('tn_fantasy_historique').upsert(
+      {
+        tournament_id: tournament.id,
+        e_predit: evaluation.eTotal,
+        score_reel: evaluation.reelTotal,
+        termine: evaluation.termine,
+        equipe: evaluation.membres.map((m) => ({
+          palier: m.palier.numero,
+          playerId: m.playerId,
+          nom: m.playerId ? (players[m.playerId]?.name ?? m.playerId) : null,
+          rang: m.playerId ? (players[m.playerId]?.rank ?? null) : null,
+          ePoints: m.playerId ? m.eTotal : 0,
+          reel: m.reel,
+        })),
+        computed_at: new Date().toISOString(),
+      },
+      { onConflict: 'tournament_id' },
+    );
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export interface HistoriqueRow {
+  tournament_id: string;
+  e_predit: number | string | null;
+  score_reel: number | string | null;
+  termine: boolean;
+  equipe: LigneHistorique['equipe'] | null;
+  computed_at: string | null;
+}
+
+/** Tout l'historique, du tournoi le plus récent au plus ancien. */
+export async function listerHistorique(): Promise<HistoriqueRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_fantasy_historique')
+    .select('tournament_id, e_predit, score_reel, termine, equipe, computed_at');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as HistoriqueRow[];
 }

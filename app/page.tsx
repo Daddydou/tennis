@@ -63,6 +63,12 @@ export default async function Home() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Tournois</h1>
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/fantasy"
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+          >
+            Fantasy — prédit vs réalisé
+          </Link>
           <EloRefreshButton />
           <Link
             href="/import"

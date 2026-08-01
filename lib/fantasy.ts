@@ -25,6 +25,8 @@
  */
 
 import { affectationHongroise } from './optimizer';
+import { pointsAtRound } from './scoring';
+import type { Match, MatchStatus } from './types';
 
 /* -------------------------------------------------------------------------- */
 /*  1. MULTIPLICATEURS PAR TOUR                                                */
@@ -243,6 +245,64 @@ export function detaillerJoueur(
   });
 
   return { lignes, eTotal };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  3 bis. SCORE RÉELLEMENT MARQUÉ                                             */
+/* -------------------------------------------------------------------------- */
+
+/** Statuts d'un match dont l'issue est connue. */
+const DECIDES: MatchStatus[] = ['completed', 'walkover', 'retired', 'bye'];
+
+/** Ce qu'un joueur a réellement marqué à un tour donné. */
+export interface LigneReelle {
+  round: string;
+  multiplicateur: number;
+  /** Points réels au barème du jeu. 0 si le match n'est pas encore joué. */
+  points: number;
+  /** `points` × `multiplicateur`. */
+  pondere: number;
+  /**
+   * Le match de ce tour a une issue connue.
+   *
+   * Distingue les deux façons de valoir 0 : « pas encore joué » et « joué mais
+   * rien marqué » (une défaite sèche ne rapporte rien). Sans ce drapeau, les
+   * deux se confondraient à l'affichage.
+   */
+  joue: boolean;
+}
+
+/**
+ * Ventilation des points RÉELLEMENT marqués par un joueur sur le tournoi, et
+ * leur total, pondérés par le même barème que l'espérance.
+ *
+ * Ne recompose jamais l'équipe : c'est la performance de l'équipe déjà figée,
+ * mesurée sur les résultats importés. Un tour non encore joué vaut 0, si bien
+ * que le total croît au fil des imports jusqu'au score final.
+ */
+export function detailReelJoueur(
+  matches: Match[],
+  playerId: string,
+  rounds: string[],
+  bareme: number[],
+  bestOf: 3 | 5 = 3,
+): { lignes: LigneReelle[]; total: number } {
+  const lignes: LigneReelle[] = [];
+  let total = 0;
+
+  rounds.forEach((round, i) => {
+    const multiplicateur = bareme[i] ?? 1;
+    const match = matches.find(
+      (m) => m.round === round && m.players.some((p) => p.id === playerId),
+    );
+    const joue = match ? DECIDES.includes(match.status) : false;
+    const points = joue ? pointsAtRound(matches, playerId, round, bestOf) : 0;
+    const pondere = points * multiplicateur;
+    total += pondere;
+    lignes.push({ round, multiplicateur, points, pondere, joue });
+  });
+
+  return { lignes, total };
 }
 
 /* -------------------------------------------------------------------------- */

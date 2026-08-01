@@ -9,7 +9,12 @@ import {
   computeAndStoreProjections,
   invaliderProjections,
 } from '@/supabase/projections';
-import { computeAndStoreFantasy, invaliderFantasy } from '@/supabase/fantasy';
+import {
+  computeAndStoreFantasy,
+  enregistrerHistorique,
+  equipeEvaluee,
+  invaliderFantasy,
+} from '@/supabase/fantasy';
 import {
   parseExtract,
   extraireJoueurs,
@@ -272,7 +277,13 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     if (engine) {
       const rc = tourCourantMatches(engine.matchRows, engine.tournament.rounds ?? []);
       if (rc) await computeAndStoreProjections(engine, rc);
-      await computeAndStoreFantasy(engine);
+      const fantasy = await computeAndStoreFantasy(engine);
+
+      // 7 bis. Couple prédit / réalisé. L'import est le moment où les résultats
+      //        arrivent : c'est donc là que le score de l'équipe figée bouge.
+      //        On enregistre, sans rien ajuster (cf. supabase/fantasy.ts).
+      const hist = await enregistrerHistorique(engine, equipeEvaluee(engine, fantasy));
+      if (!hist.ok) avertissements.push(`Historique Fantasy : ${hist.error}`);
     }
   } catch (e) {
     // La simulation ne doit pas faire échouer l'import lui-même.
@@ -280,6 +291,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   }
 
   revalidatePath('/');
+  revalidatePath('/fantasy');
   revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/fantasy`);
