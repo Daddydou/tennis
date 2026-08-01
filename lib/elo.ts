@@ -24,9 +24,43 @@ export function facteurK(matchsJoues: number): number {
   return 250 / Math.pow(matchsJoues + 5, 0.4);
 }
 
-/** Probabilité que A batte B selon l'écart Elo. */
-export function pVictoire(eloA: number, eloB: number): number {
-  return 1 / (1 + Math.pow(10, (eloB - eloA) / 400));
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  ÉCHELLE DE LA COURBE ELO → PROBABILITÉ — LA SEULE VALEUR À MODIFIER
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Écart d'Elo qui correspond à une probabilité de victoire de 10/11 (≈ 90,9 %).
+ * Plus elle est BASSE, plus la courbe est raide : un même écart d'Elo y pèse
+ * davantage.
+ *
+ * 400 est la valeur héritée des échecs. Elle vaut pour tout le moteur —
+ * `pVictoire` ci-dessous, et donc la simulation Monte Carlo comme la
+ * propagation analytique de `lib/optimizer.ts`, qui l'appellent sans surcharge.
+ * La changer ici la change partout.
+ *
+ * Deux mesures existent pour éclairer ce choix, aucune ne l'applique :
+ *   - /calibration          — la courbe face aux matchs réellement joués ;
+ *   - /calibration/echelle  — l'effet d'une autre échelle sur l'écart
+ *                             prédit/réalisé du jeu Fantasy.
+ * Les deux partagent un biais de circularité (Elo actuels sur matchs passés)
+ * qui tire l'optimum vers le bas : à confirmer sur des tournois à venir avant
+ * de toucher à cette ligne.
+ */
+export const ECHELLE_ELO = 400;
+
+/**
+ * Probabilité que A batte B selon l'écart Elo.
+ *
+ * `echelle` n'existe que pour permettre aux écrans de calibration de rejouer
+ * le calcul sous une autre valeur, sans rien changer à la production : omise,
+ * c'est toujours `ECHELLE_ELO` qui s'applique.
+ */
+export function pVictoire(
+  eloA: number,
+  eloB: number,
+  echelle: number = ECHELLE_ELO
+): number {
+  return 1 / (1 + Math.pow(10, (eloB - eloA) / echelle));
 }
 
 /**

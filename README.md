@@ -125,6 +125,16 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   actuels, qui intègrent le résultat des matchs testés — la fréquence de
   victoire du favori en ressort surestimée et la constante ajustée, plus basse
   que la vraie. Même sortie en JSON via `POST /api/calibration/elo`.
+- `/calibration/echelle` — le même choix, jugé sur ce qui compte pour l'app :
+  pour chaque échelle candidate (400, 370, 350, 305), on **rejoue** chaque
+  tournoi terminé (simulation, espérances, composition de l'équipe, score réel
+  de cette équipe) et on affiche l'écart prédit/réalisé, global et par
+  catégorie (GC / M1000 / autres). La colonne « pire catégorie » sert de
+  garde-fou : une échelle peut annuler l'écart global en compensant une
+  catégorie trop optimiste par une autre trop pessimiste. Déclenché au bouton
+  (une simulation par tournoi ET par échelle), `POST /api/calibration/echelle`.
+  Même réserve de circularité, et **même corpus** que `/calibration` : ce n'est
+  pas une seconde preuve, c'est la même vue autrement.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -238,6 +248,7 @@ app/
   page.tsx                       liste des tournois
   fantasy/                       historique prédit / réalisé + bouton de reprise
   calibration/                   courbe Elo→proba confrontée aux matchs joués
+  calibration/echelle/           effet d'une autre échelle sur le jeu Fantasy
   import/                        import du JSON + action serveur
   tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
@@ -255,6 +266,7 @@ supabase/
   projections.ts                 simulation Monte Carlo + cache tn_projections
   fantasy.ts                     espérances a priori, score réel, historique
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
+  comparaison-echelle.ts         rejoue le Fantasy sous d'autres échelles Elo
   migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
@@ -281,3 +293,22 @@ export const BAREMES_EXPLICITES: Record<string, readonly number[]> = {
 
 Le cache `tn_fantasy` mémorise les multiplicateurs utilisés : changer le barème
 le périme de lui-même, sans invalidation manuelle.
+
+### Où corriger l'échelle Elo → probabilité
+
+La constante de `pVictoire` vit dans **`ECHELLE_ELO` (`lib/elo.ts`)**, une seule
+ligne dont dépend tout le moteur — simulation Monte Carlo comme propagation
+analytique, qui appellent `pVictoire` sans surcharge :
+
+```ts
+export const ECHELLE_ELO = 400;   // ← hérité des échecs, jamais calibré tennis
+```
+
+`pVictoire`, `simulerMatch`, `simulerTournoi` et `simulerDepuis` acceptent un
+paramètre `echelle` optionnel : il n'existe que pour les écrans de calibration,
+qui rejouent le calcul sous d'autres valeurs **sans rien changer à la
+production**. Omis, c'est toujours `ECHELLE_ELO` qui s'applique.
+
+Après un changement, vider les caches dérivés (`tn_projections`, `tn_fantasy`) :
+ils ont été calculés sous l'ancienne échelle. Le bouton « Rafraîchir les Elo »
+le fait déjà pour les deux.

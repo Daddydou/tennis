@@ -12,7 +12,7 @@
  * quand les probabilites individuelles sont faibles.
  */
 
-import { pVictoire } from './elo';
+import { ECHELLE_ELO, pVictoire } from './elo';
 import { POINTS_VICTOIRE, POINTS_PAR_NET_SET } from './scoring';
 import {
   distributionSets,
@@ -34,14 +34,18 @@ export function creerRandom(seed = 42): () => number {
 /**
  * Tire un score de match au hasard selon les Elo, et retourne les points
  * marques par chacun selon le bareme du jeu.
+ *
+ * `echelle` : voir ECHELLE_ELO (lib/elo.ts). Omise, c'est celle du moteur —
+ * elle n'est surchargee que par les ecrans de calibration.
  */
 export function simulerMatch(
   eloA: number,
   eloB: number,
   bestOf: 3 | 5,
-  rnd: () => number
+  rnd: () => number,
+  echelle: number = ECHELLE_ELO
 ): { gagnantEstA: boolean; ptsA: number; ptsB: number } {
-  const pm = pVictoire(eloA, eloB);
+  const pm = pVictoire(eloA, eloB, echelle);
   const ps = pSetDepuisMatch(pm, bestOf);
   const seuil = Math.floor(bestOf / 2) + 1;
 
@@ -118,6 +122,9 @@ export interface ResultatMonteCarlo {
  * @param players  Joueurs avec leurs Elo.
  * @param rounds   Ordre des tours.
  * @param n        Nombre de simulations (10000 par defaut).
+ * @param echelle  Echelle de la courbe Elo -> proba (cf. ECHELLE_ELO). Omise,
+ *                 c'est celle du moteur : seuls les ecrans de calibration la
+ *                 surchargent, pour rejouer un tournoi sous une autre valeur.
  */
 export function simulerTournoi(
   matches: Match[],
@@ -127,7 +134,8 @@ export function simulerTournoi(
   bestOf: 3 | 5 = 3,
   surface: 'hard' | 'clay' | 'grass' = 'clay',
   poidsSurface = 0.6,
-  seed = 42
+  seed = 42,
+  echelle: number = ECHELLE_ELO
 ): ResultatMonteCarlo {
   const rnd = creerRandom(seed);
 
@@ -199,7 +207,7 @@ export function simulerTournoi(
         ajouter(cumulPresence, a!, round, 1);
         ajouter(cumulPresence, b!, round, 1);
 
-        const res = simulerMatch(eloDe(a!), eloDe(b!), bestOf, rnd);
+        const res = simulerMatch(eloDe(a!), eloDe(b!), bestOf, rnd, echelle);
         ajouter(cumulPoints, a!, round, res.ptsA);
         ajouter(cumulPoints, b!, round, res.ptsB);
 
@@ -252,11 +260,22 @@ export function simulerDepuis(
   bestOf: 3 | 5 = 3,
   surface: 'hard' | 'clay' | 'grass' = 'clay',
   poidsSurface = 0.6,
-  seed = 42
+  seed = 42,
+  echelle: number = ECHELLE_ELO
 ): ResultatMonteCarlo {
   const idx = rounds.indexOf(roundDepart);
   if (idx <= 0) {
-    return simulerTournoi(matches, players, rounds, n, bestOf, surface, poidsSurface, seed);
+    return simulerTournoi(
+      matches,
+      players,
+      rounds,
+      n,
+      bestOf,
+      surface,
+      poidsSurface,
+      seed,
+      echelle
+    );
   }
 
   const roundsRestants = rounds.slice(idx);
@@ -275,6 +294,7 @@ export function simulerDepuis(
     bestOf,
     surface,
     poidsSurface,
-    seed
+    seed,
+    echelle
   );
 }

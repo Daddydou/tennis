@@ -42,9 +42,17 @@ export default async function CalibrationPage() {
         <h1 className="text-lg font-semibold">
           Calibration Elo → probabilité
         </h1>
-        <Link href="/" className="text-sm text-zinc-500 hover:underline">
-          ← Tournois
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/calibration/echelle"
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+          >
+            Effet sur le Fantasy →
+          </Link>
+          <Link href="/" className="text-sm text-zinc-500 hover:underline">
+            ← Tournois
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-1 text-sm text-zinc-500">
