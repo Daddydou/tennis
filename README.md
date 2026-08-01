@@ -114,6 +114,17 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   de ces chiffres, ni aujourd'hui ni automatiquement demain. Sur quelques
   tournois, l'écart est dominé par le bruit ; s'y ajuster serait du
   sur-apprentissage. On accumule pour pouvoir regarder, et décider à la main.
+- `/calibration` — la courbe Elo → probabilité du moteur
+  (`P = 1 / (1 + 10^(−Δ/400))`, cf. `pVictoire` dans `lib/elo.ts`) confrontée à
+  tous les matchs terminés en base : fréquence réelle de victoire du favori par
+  tranche d'écart d'Elo, face à la probabilité prédite, plus la constante qui
+  minimise l'écart. Le favori est celui au plus haut **Elo effectif**, pas la
+  tête de série. Tranches sous 20 matchs signalées « non significatif » et
+  exclues de l'ajustement. **Mesure seulement** : `lib/elo.ts` n'est pas touché.
+  Réserve importante, rappelée sur la page : les Elo utilisés sont les Elo
+  actuels, qui intègrent le résultat des matchs testés — la fréquence de
+  victoire du favori en ressort surestimée et la constante ajustée, plus basse
+  que la vraie. Même sortie en JSON via `POST /api/calibration/elo`.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -226,12 +237,14 @@ app/
   login/                         mot de passe unique → cookie de session
   page.tsx                       liste des tournois
   fantasy/                       historique prédit / réalisé + bouton de reprise
+  calibration/                   courbe Elo→proba confrontée aux matchs joués
   import/                        import du JSON + action serveur
   tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
   api/recompute/route.ts         POST → tn_recompute_picks()
   api/elo/refresh/route.ts       POST → import des Elo Tennis Abstract
   api/fantasy/backfill/route.ts  POST → historique des tournois déjà en base
+  api/calibration/elo/route.ts   POST → calibration Elo→proba, en JSON
   EloRefreshButton.tsx           bouton de rafraîchissement (accueil)
 supabase/
   anon.ts                        client clé publique — LECTURES uniquement
@@ -241,6 +254,7 @@ supabase/
   elo-refresh.ts                 récupération TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
   fantasy.ts                     espérances a priori, score réel, historique
+  calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
   migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe

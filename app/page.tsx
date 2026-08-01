@@ -69,6 +69,12 @@ export default async function Home() {
           >
             Fantasy — prédit vs réalisé
           </Link>
+          <Link
+            href="/calibration"
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+          >
+            Calibration Elo
+          </Link>
           <EloRefreshButton />
           <Link
             href="/import"
