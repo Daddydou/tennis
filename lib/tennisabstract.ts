@@ -149,16 +149,40 @@ export function parserRapportElo(html: string, tour: TourTa): RapportElo {
   return { tour, misAJourLe: maj?.[1] ?? null, lignes };
 }
 
+/**
+ * En-têtes d'un navigateur ordinaire. Tennis Abstract renvoie 403 aux requêtes
+ * portant un User-Agent d'outil : la page est publique, mais le serveur filtre
+ * ce qui n'a pas l'air d'un navigateur. On imite donc Chrome, avec les Accept
+ * qui vont avec — un User-Agent seul, sans `Accept`, reste suspect.
+ */
+const ENTETES_NAVIGATEUR: Record<string, string> = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
 /** Télécharge et parse le rapport d'un circuit. */
 export async function recupererRapportElo(tour: TourTa): Promise<RapportElo> {
-  const res = await fetch(URLS_RAPPORTS[tour], {
+  const url = URLS_RAPPORTS[tour];
+  const res = await fetch(url, {
     // Rapport hebdomadaire : rien à mettre en cache côté Next, le refresh
     // est déclenché à la main et doit voir la page telle qu'elle est.
     cache: 'no-store',
-    headers: { 'User-Agent': 'tennis-picks/1.0 (import Elo hebdomadaire)' },
+    headers: ENTETES_NAVIGATEUR,
   });
   if (!res.ok) {
-    throw new Error(`${URLS_RAPPORTS[tour]} : HTTP ${res.status}`);
+    // Un 403 qui survit aux en-têtes navigateur ne vient pas du User-Agent :
+    // c'est plus probablement l'IP (datacenter Vercel) ou un WAF. Les en-têtes
+    // de la réponse (server, cf-ray, retry-after…) permettent de trancher, et
+    // le corps porte souvent la page d'explication du filtre.
+    const entetes = Object.fromEntries(res.headers.entries());
+    const extrait = texte(await res.text().catch(() => '')).slice(0, 300);
+    console.error(
+      `[elo] ${url} : HTTP ${res.status} ${res.statusText}`,
+      JSON.stringify({ entetes, extrait }),
+    );
+    throw new Error(`${url} : HTTP ${res.status} ${res.statusText}`);
   }
   return parserRapportElo(await res.text(), tour);
 }
