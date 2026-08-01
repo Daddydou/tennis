@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { validerPick, supprimerPick } from './actions';
+import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
 import type { Half } from '@/lib/types';
 
 export interface Candidat {
@@ -22,78 +23,6 @@ export interface Candidat {
   /** Écart d'Elo effectif joueur − adversaire (indicateur de mismatch). */
   ecartElo: number | null;
   utilise: boolean;
-}
-
-/**
- * Badge de source d'Elo.
- *
- * Un Elo Tennis Abstract est la normale : il ne porte aucune marque. Seuls
- * les replis sont signalés, pour qu'un joueur fort affiché en « défaut » ou
- * avec un Elo aberrant saute aux yeux.
- */
-const STYLE_BADGE: Record<
-  Exclude<Candidat['sourceElo'], 'ta'>,
-  { classes: string; libelle: string; titre: string }
-> = {
-  maison: {
-    classes:
-      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
-    libelle: 'maison',
-    titre:
-      'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.',
-  },
-  defaut: {
-    classes:
-      'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
-    libelle: 'défaut',
-    titre: 'Ni Elo Tennis Abstract ni Elo maison : valeur par défaut. À vérifier.',
-  },
-  ambigu: {
-    classes:
-      'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300',
-    libelle: 'ambigu',
-    titre:
-      'Plusieurs joueurs Tennis Abstract portent ce nom : aucun n’a été choisi.',
-  },
-};
-
-function BadgeSource({
-  source,
-  taName,
-  candidats,
-}: {
-  source: Candidat['sourceElo'];
-  taName: string | null;
-  candidats: string[];
-}) {
-  if (source === 'ta') {
-    return taName ? (
-      <span
-        className="w-14 truncate text-right text-[10px] text-zinc-300 dark:text-zinc-700"
-        title={`Tennis Abstract : ${taName}`}
-      >
-        {taName}
-      </span>
-    ) : (
-      <span className="w-14" />
-    );
-  }
-
-  const s = STYLE_BADGE[source];
-  return (
-    <span className="w-14 text-right">
-      <span
-        className={`rounded border px-1 py-px text-[10px] font-medium ${s.classes}`}
-        title={
-          candidats.length
-            ? `${s.titre} Candidats : ${candidats.join(', ')}. Déclarer le bon ta_slug dans ta_name_exceptions.`
-            : s.titre
-        }
-      >
-        {s.libelle}
-      </span>
-    </span>
-  );
 }
 
 export interface Colonne {
@@ -214,20 +143,14 @@ function ColonnePick({
                 {c.adversaire ? `vs ${c.adversaire}` : '—'}
               </span>
               <span
-                className={`w-11 text-right font-mono text-xs tabular-nums ${
-                  c.sourceElo === 'defaut'
-                    ? 'text-red-600 dark:text-red-400'
-                    : c.sourceElo === 'ambigu'
-                      ? 'text-violet-600 dark:text-violet-400'
-                      : c.sourceElo === 'maison'
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-zinc-900 dark:text-zinc-100'
-                }`}
+                className={`w-11 text-right font-mono text-xs tabular-nums ${classeElo(
+                  c.sourceElo,
+                )}`}
                 title="Elo effectif utilisé par la simulation (pondéré surface)"
               >
                 {c.elo ?? '—'}
               </span>
-              <BadgeSource
+              <BadgeSourceElo
                 source={c.sourceElo}
                 taName={c.taName}
                 candidats={c.candidats}

@@ -65,6 +65,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0002_elo_tennis_abstract.sql   (tables ta_elo, ta_name_exceptions)
 #    supabase/migrations/0003_elo_identite_par_slug.sql (identité TA par slug — vide ta_elo)
 #    supabase/migrations/0004_exceptions_par_circuit.sql (clé d'exception = nom + circuit)
+#    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
 # 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
 #        migration vide ta_elo, que seul l'import repeuple (slug compris).
 
@@ -86,6 +87,12 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
 - `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
   pickés grisés. Validation → `tn_picks`.
+- `/tournoi/[id]/fantasy` — **second jeu**, à côté des picks et sans interaction
+  avec eux : une équipe figée pour tout le tournoi, un joueur par palier de
+  classement (5 en Grand Chelem, 4 ailleurs). Chaque joueur y marque sur *tous*
+  ses matchs, au même barème, pondéré par un multiplicateur croissant selon le
+  tour. L'écran propose la composition optimale, le détail tour par tour au clic,
+  et le total de l'équipe. Lit le même cache `tn_projections` que les picks.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -198,7 +205,8 @@ app/
   login/                         mot de passe unique → cookie de session
   page.tsx                       liste des tournois
   import/                        import du JSON + action serveur
-  tournoi/[id]/                  tableau, picks, resultats, sous-nav
+  tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
+  tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
   api/recompute/route.ts         POST → tn_recompute_picks()
   api/elo/refresh/route.ts       POST → import des Elo Tennis Abstract
   EloRefreshButton.tsx           bouton de rafraîchissement (accueil)
@@ -209,8 +217,29 @@ supabase/
   elo.ts                         cascade TA → maison → défaut + sources
   elo-refresh.ts                 récupération TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
-  migrations/                    RLS, puis tables ta_elo / ta_name_exceptions
+  fantasy.ts                     espérances sur tout le tournoi + cache tn_fantasy
+  migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
+scripts/appliquer-migration.mjs  joue un .sql via l'API Management Supabase
 lib/                             moteur fourni (non modifié)
+lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale
+                                 (réutilise optimizer/scoring/montecarlo tels quels)
 ```
+
+### Où corriger le barème de multiplicateurs
+
+Les valeurs Grand Chelem sont officielles ; celles des Masters 1000 ne le sont
+pas encore et sont **dérivées** du barème Grand Chelem, ramené au nombre de tours
+du tournoi (premier tour ×1, finale ×2, progression régulière). Pour les corriger,
+une seule ligne à ajouter dans `BAREMES_EXPLICITES` (`lib/fantasy.ts`) :
+
+```ts
+export const BAREMES_EXPLICITES: Record<string, readonly number[]> = {
+  'GC:7': BAREME_GRAND_CHELEM,
+  'M1000:7': [1, 1.15, 1.3, 1.5, 1.7, 1.85, 2],   // ← clé = famille:nombre de tours
+};
+```
+
+Le cache `tn_fantasy` mémorise les multiplicateurs utilisés : changer le barème
+le périme de lui-même, sans invalidation manuelle.

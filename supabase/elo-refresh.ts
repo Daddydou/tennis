@@ -1,5 +1,6 @@
 import 'server-only';
 import { supabaseAdmin } from './server';
+import { invaliderToutesFantasy } from './fantasy';
 import { normaliserNom } from '@/lib/matching';
 import { recupererRapportElo, type TourTa } from '@/lib/tennisabstract';
 
@@ -117,6 +118,9 @@ export async function rafraichirElos(
     const resumes: ResumeTour[] = [];
     for (const t of tours) resumes.push(await rafraichirTour(t));
     await invaliderToutesProjections();
+    // Les espérances Fantasy sont dérivées des projections : les garder
+    // afficherait des totaux calculés avec les Elo de la semaine précédente.
+    await invaliderToutesFantasy();
     return { ok: true, tours: resumes, projectionsInvalidees: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message, tours: [] };

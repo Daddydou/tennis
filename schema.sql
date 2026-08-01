@@ -140,6 +140,37 @@ create table if not exists tn_projections (
 create index if not exists idx_tn_proj_lookup
   on tn_projections(tournament_id, round, e_points desc);
 
+-- ---------------------------------------------------------------------
+-- FANTASY — ESPÉRANCE D'UN JOUEUR SUR TOUT LE TOURNOI
+--
+-- Le jeu Fantasy compose une équipe figée pour tout le tournoi : chaque
+-- joueur y porte UNE espérance globale (somme de ses espérances par tour,
+-- pondérées par le multiplicateur du tour), là où les picks raisonnent
+-- tour par tour. Cache dérivable de tn_projections + des matchs joués,
+-- indexé comme lui par le tour de départ de la simulation.
+--
+-- La composition de l'équipe (quel joueur pour quel palier) n'est pas
+-- stockée : c'est une affectation instantanée sur ces espérances
+-- (lib/fantasy.ts), que figer rendrait périmée au moindre changement de
+-- barème ou de paliers.
+-- ---------------------------------------------------------------------
+create table if not exists tn_fantasy (
+  id            uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references tn_tournaments(id) on delete cascade,
+  from_round    text not null,                    -- tour de départ de la simulation
+  player_id     text not null references tn_players(id),
+
+  e_total       numeric not null,                 -- espérance sur tout le tournoi
+  detail        jsonb   not null default '[]',    -- ventilation tour par tour
+
+  computed_at   timestamptz default now(),
+
+  unique (tournament_id, from_round, player_id)
+);
+
+create index if not exists idx_tn_fantasy_lookup
+  on tn_fantasy(tournament_id, from_round, e_total desc);
+
 -- =====================================================================
 -- FONCTION DE SCORING
 -- Règles : 5 pts victoire | net sets x3 (plancher 0)
@@ -333,12 +364,13 @@ alter table tn_tournaments enable row level security;
 alter table tn_matches     enable row level security;
 alter table tn_picks       enable row level security;
 alter table tn_projections enable row level security;
+alter table tn_fantasy     enable row level security;
 
 do $$
 declare t text;
 begin
   foreach t in array array['tn_players','tn_tournaments','tn_matches',
-                           'tn_picks','tn_projections']
+                           'tn_picks','tn_projections','tn_fantasy']
   loop
     execute format(
       'drop policy if exists %I on %I', t || '_all', t);
@@ -352,10 +384,10 @@ end $$;
 
 -- Lecture seule aussi au niveau des privilèges SQL (service_role non touché).
 revoke all on table
-  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections
+  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections, tn_fantasy
   from anon, authenticated;
 grant select on table
-  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections
+  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections, tn_fantasy
   to anon, authenticated;
 
 -- Sans SECURITY INVOKER, une vue s'exécute avec les droits de son

@@ -9,6 +9,7 @@ import {
   computeAndStoreProjections,
   invaliderProjections,
 } from '@/supabase/projections';
+import { computeAndStoreFantasy, invaliderFantasy } from '@/supabase/fantasy';
 import {
   parseExtract,
   extraireJoueurs,
@@ -257,12 +258,20 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   //    le tour courant. Les autres tours seront simulés à la demande (et mis en
   //    cache) au premier affichage. Chaque simulation part des survivants réels
   //    du tour concerné (simulerDepuis) et coûte plusieurs secondes.
+  //
+  //    Le cache Fantasy (tn_fantasy) dérive des mêmes projections, plus des
+  //    points réellement marqués aux tours joués : il se périme donc aux mêmes
+  //    moments, et se préchauffe dans la foulée sans resimuler quoi que ce soit.
   try {
     await invaliderProjections(tournamentId);
+    await invaliderFantasy(tournamentId);
     const engine = await loadEngineData(tournamentId);
     if (engine) {
       const rc = tourCourantMatches(engine.matchRows, engine.tournament.rounds ?? []);
-      if (rc) await computeAndStoreProjections(engine, rc);
+      if (rc) {
+        await computeAndStoreProjections(engine, rc);
+        await computeAndStoreFantasy(engine, rc);
+      }
     }
   } catch (e) {
     // La simulation ne doit pas faire échouer l'import lui-même.
@@ -272,6 +281,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   revalidatePath('/');
   revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
+  revalidatePath(`/tournoi/${tournamentId}/fantasy`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
 
   return {

@@ -1,10 +1,11 @@
 import Link from 'next/link';
 
-type Onglet = 'tableau' | 'picks' | 'predictions' | 'resultats';
+type Onglet = 'tableau' | 'picks' | 'fantasy' | 'predictions' | 'resultats';
 
 const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = [
   { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}` },
   { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks` },
+  { key: 'fantasy', label: 'Fantasy', href: (id) => `/tournoi/${id}/fantasy` },
   {
     key: 'predictions',
     label: 'Prédictions',
