@@ -95,23 +95,72 @@
     return;
   }
 
+  /*
+   * Cellules PROPRES à la ligne, pas ses descendantes.
+   *
+   * `tr.querySelectorAll('td')` traverse les tables imbriquées : la ligne du
+   * menu de navigation en compte 55 alors qu'elle n'a que 7 cellules. Compter
+   * les descendantes ferait passer un menu pour une ligne de données bien
+   * fournie, et décalerait les colonnes de toute ligne contenant un tableau.
+   */
+  function cellules(tr) {
+    var out = [];
+    for (var i = 0; i < tr.children.length; i++) {
+      if (tr.children[i].tagName === 'TD') out.push(tr.children[i]);
+    }
+    return out;
+  }
+
+  /*
+   * LIGNE DE DONNÉES OU LIGNE DE MENU ?
+   *
+   * navbar.js injecte au chargement un menu déroulant qui n'existe pas dans le
+   * HTML servi : sous « Players », il liste les joueuses (wplayer.cgi) et les
+   * joueurs (player.cgi) côte à côte, deux cellules par ligne. Lues comme des
+   * lignes du rapport, ces lignes livrent Sabalenka avec la valeur qui traîne
+   * à l'indice de la colonne « rang » — un rang aberrant, et une ligne de
+   * plus qui n'est pas un classement.
+   *
+   * Quatre garde-fous, du plus précis au plus général : un menu porte une
+   * cellule `td.navbar`, vit dans un `.dropdown`, n'a qu'une poignée de
+   * cellules là où le rapport en compte 17, et appartient à une table
+   * imbriquée — jamais à `#reportable` lui-même.
+   */
+  function estLigneDeDonnees(tr, tds) {
+    if (tr.querySelector('td.navbar')) return false;
+    if (tr.closest && tr.closest('td.navbar, .dropdown, .dropdown-content')) return false;
+    if (tds.length < 10) return false;
+    if (tr.closest && tr.closest('table') !== table) return false;
+    return true;
+  }
+
   var lignes = table.querySelectorAll('tbody tr');
   var joueurs = [];
+  var ignorees = 0;
   for (var k = 0; k < lignes.length; k++) {
-    var tds = lignes[k].querySelectorAll('td');
+    var tds = cellules(lignes[k]);
+    if (!estLigneDeDonnees(lignes[k], tds)) {
+      ignorees++;
+      continue;
+    }
     if (tds.length <= iElo) continue;
 
     var nom = texte(tds[iNom]);
     if (!nom) continue;
 
     /*
-     * Le slug vit dans le lien de la cellule « Player »
-     * (player.cgi?p=AndresMartin). C'est la SEULE identité fiable : deux
-     * homonymes ont des slugs distincts là où leurs noms normalisés sont
-     * identiques. Repli sur le nom sans espaces, qui est la règle de
-     * construction des slugs TA.
+     * Le slug vit dans le lien de la cellule « Player ». C'est la SEULE
+     * identité fiable : deux homonymes ont des slugs distincts là où leurs
+     * noms normalisés sont identiques. Repli sur le nom sans espaces, qui est
+     * la règle de construction des slugs TA.
+     *
+     * Les deux circuits ont leur script : player.cgi chez les hommes,
+     * wplayer.cgi chez les femmes. Les deux sont cités explicitement — le
+     * premier sélecteur suffirait (« wplayer.cgi » contient « player.cgi »),
+     * mais l'écrire ne laisse pas la compatibilité WTA à un hasard de
+     * sous-chaîne.
      */
-    var lien = tds[iNom].querySelector('a[href*="player.cgi"]');
+    var lien = tds[iNom].querySelector('a[href*="player.cgi"], a[href*="wplayer.cgi"]');
     var m = lien ? String(lien.getAttribute('href')).match(/[?&]p=([^&#]+)/) : null;
     var slug = m ? decodeURIComponent(m[1]) : nom.replace(/\s+/g, '');
 
@@ -147,7 +196,10 @@
     ' : ' +
     joueurs.length +
     ' joueurs' +
-    (extrait.updated ? ' (maj ' + extrait.updated + ')' : '');
+    (extrait.updated ? ' (maj ' + extrait.updated + ')' : '') +
+    /* Compte affiché : un menu qui grossirait, ou une refonte du rapport, se
+       verrait ici avant de se voir en base. */
+    (ignorees ? ' — ' + ignorees + ' ligne(s) hors rapport ignorée(s)' : '');
 
   /*
    * Copie : l'API presse-papier d'abord, execCommand ensuite (elle marche même
