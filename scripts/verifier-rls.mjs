@@ -1,10 +1,15 @@
 /**
  * Vérifie, avec la CLÉ PUBLIQUE uniquement, que :
- *   - la lecture des 5 tables tn_* fonctionne  (policy `for select to anon`)
- *   - toute écriture est refusée               (aucune policy insert/update/delete)
- *   - tn_recompute_picks n'est pas appelable en RPC
+ *   - la lecture des 9 tables fonctionne  (policy `for select to anon`)
+ *   - toute écriture est refusée          (aucune policy insert/update/delete)
+ *   - les deux fonctions SQL ne sont pas appelables en RPC
  *
- * À lancer après avoir appliqué supabase/migrations/0001_rls_lecture_publique.sql
+ * La liste des tables doit suivre les migrations : elle a longtemps couvert les
+ * 5 tables d'origine, alors que 0002 (ta_elo, ta_name_exceptions), 0005
+ * (tn_fantasy) et 0007 (tn_fantasy_historique) en avaient ajouté quatre autres
+ * — le « tout est conforme » ne disait donc rien de la moitié du schéma.
+ *
+ * À lancer après avoir appliqué les migrations de supabase/migrations/.
  *
  *   node --env-file=.env.local scripts/verifier-rls.mjs
  */
@@ -27,7 +32,27 @@ const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ref = secret ? createClient(url, secret, { auth }) : null;
 if (!ref) console.log('\n(SUPABASE_SERVICE_ROLE_KEY absente : lecture vérifiée sans référence)');
 
-const TABLES = ['tn_players', 'tn_tournaments', 'tn_matches', 'tn_picks', 'tn_projections'];
+const TABLES = [
+  // 0001 — tables du jeu
+  'tn_players',
+  'tn_tournaments',
+  'tn_matches',
+  'tn_picks',
+  'tn_projections',
+  // 0002 — Elo Tennis Abstract
+  'ta_elo',
+  'ta_name_exceptions',
+  // 0005 / 0007 — Fantasy
+  'tn_fantasy',
+  'tn_fantasy_historique',
+];
+
+/** Fonctions SQL révoquées pour anon (cf. migration 0001). */
+const FONCTIONS = [
+  ['tn_recompute_picks', { p_tournament_id: '00000000-0000-0000-0000-000000000000' }],
+  ['tn_score_match', { p_sets: [], p_won: true, p_status: 'completed', p_best_of: 3 }],
+];
+
 let ko = 0;
 
 const ok = (m) => console.log(`  \x1b[32mOK\x1b[0m   ${m}`);
@@ -59,13 +84,11 @@ for (const t of TABLES) {
   else bad(`${t} : refusé mais pas par la RLS → ${error.code} ${error.message}`);
 }
 
-console.log('\nRPC tn_recompute_picks (doit être refusé)');
-{
-  const { error } = await sb.rpc('tn_recompute_picks', {
-    p_tournament_id: '00000000-0000-0000-0000-000000000000',
-  });
-  if (!error) bad('appelable avec la clé publique !');
-  else ok(`refusé (${error.code ?? '—'}) ${error.message.slice(0, 60)}`);
+console.log('\nRPC (doivent être refusés)');
+for (const [nom, args] of FONCTIONS) {
+  const { error } = await sb.rpc(nom, args);
+  if (!error) bad(`${nom} : appelable avec la clé publique !`);
+  else ok(`${nom} : refusé (${error.code ?? '—'}) ${error.message.slice(0, 50)}`);
 }
 
 console.log(ko === 0 ? '\n\x1b[32mTout est conforme.\x1b[0m\n' : `\n\x1b[31m${ko} problème(s).\x1b[0m\n`);

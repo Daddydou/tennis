@@ -19,6 +19,11 @@
  * La solution est l'affectation globale (algorithme hongrois) : on résout
  * les N slots simultanément sur la matrice des espérances, ce qui répartit
  * naturellement les joueurs sur toute la durée du tournoi.
+ *
+ * ⚠ Ce backtest compare des STRATÉGIES, il ne décrit pas ce que fait l'app :
+ * `optimiser()` n'est pas branchée, l'écran Picks recommande tour par tour
+ * (cf. la note sur la fonction). À lire comme un argument en faveur d'un
+ * futur écran « plan de tournoi », pas comme l'état des lieux.
  */
 
 import { pVictoire } from './elo';
@@ -302,10 +307,21 @@ export interface PickPropose {
 }
 
 /**
- * Résout l'affectation optimale joueur → slot sous contrainte d'unicité.
+ * Résout l'affectation optimale joueur → slot sous contrainte d'unicité :
+ * tous les slots sont traités simultanément, ce qui évite d'épuiser les
+ * favoris en début de tournoi.
  *
- * C'est LA fonction centrale : elle traite tous les slots simultanément,
- * ce qui évite d'épuiser les favoris en début de tournoi.
+ * ⚠ EN RÉSERVE — NON BRANCHÉE. L'application ne l'appelle pas : l'écran Picks
+ * travaille TOUR PAR TOUR (`genererSlots` + `recommanderPourTour`, qui classe
+ * les survivants du tour affiché par espérance décroissante et grise les
+ * joueurs déjà pickés). L'unicité est donc respectée, mais la répartition des
+ * favoris sur la durée du tournoi reste à la main de l'utilisateur — c'est
+ * exactement ce que le backtest ci-dessus mesure comme « glouton ».
+ *
+ * La fonction est conservée pour un éventuel écran « plan de tournoi » qui
+ * proposerait les 12 picks d'un coup ; en l'état, elle n'influence rien.
+ * L'algorithme hongrois qu'elle utilise, lui, sert bien en production : c'est
+ * `composerEquipe` (lib/fantasy.ts) qui l'appelle pour l'équipe Fantasy.
  */
 export function optimiser(
   esperances: Esperances,

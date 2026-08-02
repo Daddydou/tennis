@@ -1,6 +1,7 @@
 import 'server-only';
 import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
+import { POIDS_SURFACE } from './elo';
 import { surfacePourElo, type TournamentRow } from './queries';
 import { simulerDepuis } from '@/lib/montecarlo';
 import type { Match, Player } from '@/lib/types';
@@ -50,6 +51,10 @@ export async function computeAndStoreProjections(
   const bestOf = (tournament.best_of ?? 3) as 3 | 5;
   const surface = surfacePourElo(tournament.surface);
 
+  // `POIDS_SURFACE` plutôt qu'un 0.6 en dur : c'est ici que se calculent les
+  // projections de production, donc l'endroit où la constante doit faire foi.
+  // Écrite en clair, elle laissait la valeur affichée par l'écran Picks
+  // (`eloEffectifResolu`, qui l'importe) diverger de celle simulée.
   const mc = simulerDepuis(
     matches,
     players,
@@ -58,7 +63,7 @@ export async function computeAndStoreProjections(
     N_SIMULATIONS,
     bestOf,
     surface,
-    0.6,
+    POIDS_SURFACE,
     SEED,
   );
 
