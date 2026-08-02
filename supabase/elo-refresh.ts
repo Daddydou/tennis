@@ -2,14 +2,27 @@ import 'server-only';
 import { supabaseAdmin } from './server';
 import { invaliderToutesFantasy } from './fantasy';
 import { normaliserNom } from '@/lib/matching';
-import { recupererRapportElo, type TourTa } from '@/lib/tennisabstract';
+import {
+  parserCollageElo,
+  recupererRapportElo,
+  type RapportElo,
+  type TourTa,
+} from '@/lib/tennisabstract';
 
 /**
  * RAFRAÎCHISSEMENT DES ELO TENNIS ABSTRACT
  *
- * Écrit dans `ta_elo` (service role). Déclenché à la main depuis l'accueil :
- * Tennis Abstract republie ses rapports une fois par semaine, il n'y a rien à
- * gagner à le faire à chaque import de tableau.
+ * Écrit dans `ta_elo` (service role). Déclenché à la main : Tennis Abstract
+ * republie ses rapports une fois par semaine, il n'y a rien à gagner à le
+ * faire à chaque import de tableau.
+ *
+ * DEUX SOURCES, UNE SEULE ÉCRITURE :
+ *   - le COLLAGE d'un extrait produit par public/extract-elo.js (méthode
+ *     principale — Tennis Abstract répond 403 aux IP de datacenter Vercel) ;
+ *   - le FETCH serveur historique, gardé en repli au cas où le blocage
+ *     tomberait.
+ * Les deux convergent vers `ecrireRapport` : le parsing des Elo, la
+ * déduplication par slug et l'upsert ne sont écrits qu'une fois.
  *
  * Les joueurs absents du rapport de la semaine ne sont PAS supprimés : un
  * joueur qui sort de la liste (blessure, moins de 10 matchs sur 52 semaines)
@@ -43,8 +56,9 @@ export interface ResumeRefresh {
   projectionsInvalidees?: boolean;
 }
 
-async function rafraichirTour(tour: TourTa): Promise<ResumeTour> {
-  const rapport = await recupererRapportElo(tour);
+/** Écrit un rapport (fetché ou collé) dans `ta_elo`. */
+async function ecrireRapport(rapport: RapportElo): Promise<ResumeTour> {
+  const tour = rapport.tour;
 
   // L'identité est le slug : deux homonymes (« Andrej Martin » et « Andres
   // Martin », tous deux réduits à « a martin ») sont désormais DEUX lignes.
@@ -110,13 +124,16 @@ async function invaliderToutesProjections(): Promise<void> {
   if (error) throw new Error(`tn_projections : ${error.message}`);
 }
 
-/** Rafraîchit les deux circuits. Un circuit en échec fait échouer l'ensemble. */
-export async function rafraichirElos(
-  tours: TourTa[] = ['atp', 'wta'],
+/**
+ * Écrit une série de rapports, puis périme les caches qui en dépendent.
+ * Un rapport en échec fait échouer l'ensemble.
+ */
+async function enregistrerRapports(
+  rapports: RapportElo[],
 ): Promise<ResumeRefresh> {
   try {
     const resumes: ResumeTour[] = [];
-    for (const t of tours) resumes.push(await rafraichirTour(t));
+    for (const r of rapports) resumes.push(await ecrireRapport(r));
     await invaliderToutesProjections();
     // Les espérances Fantasy sont dérivées des projections : les garder
     // afficherait des totaux calculés avec les Elo de la semaine précédente.
@@ -125,4 +142,42 @@ export async function rafraichirElos(
   } catch (e) {
     return { ok: false, error: (e as Error).message, tours: [] };
   }
+}
+
+/**
+ * MÉTHODE PRINCIPALE — import d'un extrait collé (public/extract-elo.js).
+ *
+ * Le collage peut porter un circuit ou les deux (tableau JSON d'extraits).
+ * Rien d'autre ne change par rapport au fetch : mêmes lignes, même upsert par
+ * (ta_slug, tour), mêmes caches invalidés.
+ */
+export async function importerElosColles(
+  jsonText: string,
+): Promise<ResumeRefresh> {
+  let rapports: RapportElo[];
+  try {
+    rapports = parserCollageElo(jsonText);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, tours: [] };
+  }
+  return enregistrerRapports(rapports);
+}
+
+/**
+ * REPLI — récupération par fetch serveur.
+ *
+ * Bloquée depuis les IP Vercel (403), gardée au cas où Tennis Abstract
+ * lèverait le filtre : en local, elle fonctionne toujours.
+ */
+export async function rafraichirElos(
+  tours: TourTa[] = ['atp', 'wta'],
+): Promise<ResumeRefresh> {
+  let rapports: RapportElo[];
+  try {
+    rapports = [];
+    for (const t of tours) rapports.push(await recupererRapportElo(t));
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, tours: [] };
+  }
+  return enregistrerRapports(rapports);
 }

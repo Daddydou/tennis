@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import EloRefreshButton from './EloRefreshButton';
 import { listTournaments } from '@/supabase/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 
@@ -75,7 +74,12 @@ export default async function Home() {
           >
             Calibration Elo
           </Link>
-          <EloRefreshButton />
+          <Link
+            href="/import/elo"
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+          >
+            Elo Tennis Abstract
+          </Link>
           <Link
             href="/import"
             className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"

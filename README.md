@@ -68,8 +68,8 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
 #    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
 #    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
-# 1 bis. Après 0003, cliquer « Rafraîchir les Elo Tennis Abstract » : la
-#        migration vide ta_elo, que seul l'import repeuple (slug compris).
+# 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
+#        et seul un import la remplit — slug compris).
 
 # 2. Vérifier depuis la clé publique : lecture OK, écritures et RPC refusées
 npm run verify:rls
@@ -85,6 +85,19 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   `tn_tournaments`, `tn_players`, `tn_matches` (réimportable après chaque tour).
   Le circuit du tournoi décide du rapport Elo interrogé : un tableau WTA n'est
   jamais rapproché des joueurs ATP, et inversement.
+- `/import/elo` — **mise à jour des Elo Tennis Abstract, par collage**. Tennis
+  Abstract répond **403** aux requêtes venant des IP de datacenter (Vercel) :
+  le fetch serveur n'aboutit plus en production, alors que la page s'ouvre
+  normalement dans un navigateur. C'est donc le navigateur qui lit le rapport —
+  snippet `public/extract-elo.js`, servi par l'app (derrière le mot de passe) et
+  copiable en un clic depuis l'écran — et l'app qui reçoit le JSON par collage,
+  `POST /api/elo/import`. Un circuit à la fois, ou les deux en collant
+  `[extraitAtp, extraitWta]`. L'écriture en base est **rigoureusement la même**
+  que celle du fetch (mêmes lignes, même upsert par `(ta_slug, tour)`, mêmes
+  caches invalidés) : seule la source change.
+  `POST /api/elo/refresh` est **conservé en repli** — inutilisable depuis
+  Vercel, mais fonctionnel en local, et prêt à resservir si le filtre tombe. Le
+  bouton « Tenter le fetch serveur » est en bas de l'écran.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
 - `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
@@ -209,6 +222,15 @@ et par Next.js 16 :
   normalisé (`lib/matching.ts`) ; les cas irréductibles se déclarent dans
   `ta_name_exceptions`. L'écran Picks affiche l'Elo effectif de chaque joueur et
   sa source, pour repérer d'un coup d'œil une mauvaise correspondance.
+- **Les Elo arrivent par le presse-papier, comme les tableaux.** Tennis Abstract
+  répond 403 aux requêtes venant des IP de datacenter : imiter les en-têtes d'un
+  navigateur n'y change rien, c'est l'IP qui est filtrée, et le fetch serveur est
+  donc mort en production. Plutôt que de chercher un contournement fragile
+  (proxy, cache tiers), on reprend le chemin qui marche déjà pour les tableaux :
+  un snippet lit la page **dans le navigateur**, l'app reçoit le JSON par
+  collage. Le parsing des Elo et l'upsert ne sont écrits qu'une fois
+  (`ecrireRapport`) — collage et fetch y convergent, si bien que le repli reste
+  vérifiable en local sans code parallèle à maintenir.
 - **Homonymes : l'identité est le slug TA, pas le nom.** « Andrej Martin » (SVK)
   et « Andres Martin » (USA) se normalisent tous deux en `a martin` ; le rapport
   Elo ne publie **aucun pays**, donc rien dans la source ne les départage.
@@ -250,19 +272,21 @@ app/
   calibration/                   courbe Elo→proba confrontée aux matchs joués
   calibration/echelle/           effet d'une autre échelle sur le jeu Fantasy
   import/                        import du JSON + action serveur
+  import/elo/                    collage des Elo TA (snippet public/extract-elo.js)
   tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
   api/recompute/route.ts         POST → tn_recompute_picks()
-  api/elo/refresh/route.ts       POST → import des Elo Tennis Abstract
+  api/elo/import/route.ts        POST → Elo TA collés (méthode principale)
+  api/elo/refresh/route.ts       POST → Elo TA par fetch (repli, 403 sur Vercel)
   api/fantasy/backfill/route.ts  POST → historique des tournois déjà en base
   api/calibration/elo/route.ts   POST → calibration Elo→proba, en JSON
-  EloRefreshButton.tsx           bouton de rafraîchissement (accueil)
+  EloRefreshButton.tsx           bouton du repli par fetch (écran /import/elo)
 supabase/
   anon.ts                        client clé publique — LECTURES uniquement
   server.ts                      client service-role (server-only) — ÉCRITURES
   queries.ts                     lectures + reconstruction Match[]/Player
   elo.ts                         cascade TA → maison → défaut + sources
-  elo-refresh.ts                 récupération TA → ta_elo (server-only)
+  elo-refresh.ts                 collage OU fetch TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
   fantasy.ts                     espérances a priori, score réel, historique
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
@@ -310,5 +334,5 @@ qui rejouent le calcul sous d'autres valeurs **sans rien changer à la
 production**. Omis, c'est toujours `ECHELLE_ELO` qui s'applique.
 
 Après un changement, vider les caches dérivés (`tn_projections`, `tn_fantasy`) :
-ils ont été calculés sous l'ancienne échelle. Le bouton « Rafraîchir les Elo »
+ils ont été calculés sous l'ancienne échelle. Un import d'Elo (`/import/elo`)
 le fait déjà pour les deux.

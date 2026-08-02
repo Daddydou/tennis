@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import ImportForm from './ImportForm';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,13 @@ export default function ImportPage() {
         </p>
       </div>
       <ImportForm />
+      <p className="text-sm text-zinc-500">
+        Les Elo Tennis Abstract s&apos;importent de la même façon, par collage :{' '}
+        <Link href="/import/elo" className="underline">
+          importer les Elo
+        </Link>
+        .
+      </p>
     </div>
   );
 }

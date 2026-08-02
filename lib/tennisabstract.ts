@@ -3,12 +3,18 @@
  *
  * https://tennisabstract.com/reports/atp_elo_ratings.html (et wta_)
  *
- * Pages HTML statiques, rendues côté serveur : un simple fetch suffit, aucun
- * JS à exécuter. Le tableau utile porte `id="reportable"`. On repère les
- * colonnes par leur INTITULÉ et non par leur position : le rapport en compte
- * 17, dont des colonnes d'espacement vides, et l'ordre peut bouger.
+ * Pages HTML statiques, rendues côté serveur : aucun JS à exécuter. Le tableau
+ * utile porte `id="reportable"`. On repère les colonnes par leur INTITULÉ et
+ * non par leur position : le rapport en compte 17, dont des colonnes
+ * d'espacement vides, et l'ordre peut bouger.
  *
- * Le parsing est volontairement séparé du fetch : il est testable sur un
+ * Ce module contient DEUX entrées, pour un même `RapportElo` :
+ *   - `parserExtraitElo` / `parserCollageElo` — le JSON extrait par le
+ *     navigateur (public/extract-elo.js), collé dans /import/elo. C'est la
+ *     méthode principale : Tennis Abstract répond 403 aux IP de datacenter ;
+ *   - `recupererRapportElo` — fetch + `parserRapportElo`, gardé en repli.
+ *
+ * Le parsing HTML est volontairement séparé du fetch : il est testable sur un
  * fichier HTML capturé, sans réseau.
  */
 
@@ -147,6 +153,123 @@ export function parserRapportElo(html: string, tour: TourTa): RapportElo {
   const maj = html.match(/Last update:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
 
   return { tour, misAJourLe: maj?.[1] ?? null, lignes };
+}
+
+/* ------------------------------------------------------------------ *
+ * EXTRAIT COLLÉ (public/extract-elo.js)
+ *
+ * Tennis Abstract répond 403 aux requêtes venant des IP de datacenter
+ * (Vercel) : `recupererRapportElo` n'aboutit plus en production. La page
+ * restant accessible depuis un navigateur, c'est lui qui parse le tableau
+ * et l'app qui reçoit le résultat par collage — même chemin que les
+ * tableaux de tournoi. Seule la SOURCE change : l'écriture en base est
+ * strictement la même (cf. supabase/elo-refresh.ts).
+ * ------------------------------------------------------------------ */
+
+function champ(o: Record<string, unknown>, ...noms: string[]): unknown {
+  for (const n of noms) if (o[n] !== undefined && o[n] !== null) return o[n];
+  return undefined;
+}
+
+function nombreLache(v: unknown): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v === 'string') return nombre(v);
+  return null;
+}
+
+/**
+ * Parse le JSON produit par le snippet d'extraction Elo.
+ *
+ * Tolérant sur les noms de champs (nom/name, players/joueurs/lignes…) : le
+ * snippet vit hors du dépôt, une version plus ancienne collée par erreur doit
+ * rester lisible. Strict, en revanche, sur ce qui fait l'identité — circuit
+ * connu, slug et Elo présents — parce qu'un extrait à moitié compris
+ * remplirait `ta_elo` de lignes fausses.
+ *
+ * @throws si le circuit est absent/inconnu ou si aucune ligne exploitable
+ *         n'est trouvée.
+ */
+export function parserExtraitElo(raw: unknown): RapportElo {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error("L'extrait doit être un objet JSON { tour, players: [...] }.");
+  }
+  const o = raw as Record<string, unknown>;
+
+  const tourBrut = champ(o, 'tour', 'circuit', 'tourTa');
+  const tour = String(tourBrut ?? '').toLowerCase();
+  if (tour !== 'atp' && tour !== 'wta') {
+    throw new Error(
+      `Circuit absent ou inconnu (« ${String(tourBrut ?? '')} ») : attendu « atp » ou « wta ».`,
+    );
+  }
+
+  const brutes = champ(o, 'players', 'joueurs', 'lignes', 'rows');
+  if (!Array.isArray(brutes)) {
+    throw new Error('Aucune liste de joueurs dans l’extrait (champ « players »).');
+  }
+
+  const lignes: LigneRapport[] = [];
+  for (const b of brutes) {
+    if (!b || typeof b !== 'object') continue;
+    const l = b as Record<string, unknown>;
+
+    const nom = String(champ(l, 'nom', 'name', 'ta_name', 'player') ?? '').trim();
+    const slug = String(champ(l, 'ta_slug', 'slug') ?? '').trim();
+    const eloOverall = nombreLache(champ(l, 'elo_overall', 'eloOverall', 'elo'));
+    // Un joueur sans slug ni Elo n'a rien à faire en base : le slug est
+    // l'identité (deux homonymes en dépendent), l'Elo global est la seule
+    // valeur dont la cascade de résolution ne se passe pas.
+    if (!nom || !slug || eloOverall === null) continue;
+
+    lignes.push({
+      nom,
+      slug,
+      eloOverall,
+      eloHard: nombreLache(champ(l, 'elo_hard', 'eloHard', 'helo')),
+      eloClay: nombreLache(champ(l, 'elo_clay', 'eloClay', 'celo')),
+      eloGrass: nombreLache(champ(l, 'elo_grass', 'eloGrass', 'gelo')),
+      rang: nombreLache(champ(l, 'atp_rank', 'rank', 'rang')),
+    });
+  }
+
+  if (lignes.length === 0) {
+    throw new Error(
+      `Aucune ligne exploitable dans l’extrait ${tour.toUpperCase()} (${brutes.length} entrée(s) lue(s)) : ` +
+        'chaque joueur doit porter ta_slug, nom et elo_overall.',
+    );
+  }
+
+  const majBrute = champ(o, 'updated', 'updated_at', 'misAJourLe', 'maj');
+  const maj =
+    typeof majBrute === 'string' && /^\d{4}-\d{2}-\d{2}/.test(majBrute)
+      ? majBrute.slice(0, 10)
+      : null;
+
+  return { tour, misAJourLe: maj, lignes };
+}
+
+/**
+ * Parse un collage pouvant contenir UN extrait ou un tableau d'extraits (ATP
+ * et WTA collés ensemble). Un circuit présent deux fois est une erreur : le
+ * second écraserait silencieusement le premier.
+ */
+export function parserCollageElo(jsonText: string): RapportElo[] {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(jsonText);
+  } catch {
+    throw new Error('JSON invalide : impossible à parser.');
+  }
+
+  const extraits = Array.isArray(raw) ? raw : [raw];
+  if (extraits.length === 0) throw new Error('Collage vide.');
+
+  const rapports = extraits.map(parserExtraitElo);
+  const tours = rapports.map((r) => r.tour);
+  if (new Set(tours).size !== tours.length) {
+    throw new Error(`Le même circuit apparaît deux fois dans le collage (${tours.join(', ')}).`);
+  }
+  return rapports;
 }
 
 /**
