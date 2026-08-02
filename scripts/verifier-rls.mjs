@@ -45,6 +45,8 @@ const TABLES = [
   // 0005 / 0007 — Fantasy
   'tn_fantasy',
   'tn_fantasy_historique',
+  // 0008 — cache des cotes bookmakers
+  'tn_odds',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

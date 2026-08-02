@@ -68,6 +68,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
 #    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
 #    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
+#    supabase/migrations/0008_cotes.sql                 (cache tn_odds, cotes bookmakers)
 # 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
 #        et seul un import la remplit — slug compris).
 
@@ -172,6 +173,27 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   (une simulation par tournoi ET par échelle), `POST /api/calibration/echelle`.
   Même réserve de circularité, et **même corpus** que `/calibration` : ce n'est
   pas une seconde preuve, c'est la même vue autrement.
+- `/calibration/cotes` — **le blend Elo / cotes, mesuré avant d'être branché.**
+  Trois méthodes concourent sur les mêmes matchs : Elo seul, cotes seules, et
+  leur mélange 50/50 (`blendAvecCotes`, `lib/elo.ts`). Chacune est jugée au
+  **score de Brier** et à la **log-loss**, tous deux « plus bas = mieux » — les
+  deux sont affichés parce que la log-loss punit bien plus durement une
+  prédiction confiante et fausse. **Rien n'est branché** : ni les picks, ni le
+  fantasy, ni la simulation ne lisent ces cotes.
+  Source : The Odds API v4, clé dans `ODDS_API_KEY` (variable d'environnement,
+  jamais dans le code). Les probabilités sont **dévigorisées** (1/cote puis
+  normalisation à somme 1, ce qui retire la marge du book) et agrégées par la
+  **médiane** des bookmakers — un book en retard sur une blessure déplacerait
+  une moyenne, pas une médiane. Le rapprochement des noms réutilise
+  `lib/matching.ts` ; une rencontre non appariée est **affichée et exclue du
+  score**, jamais ignorée en silence.
+  **Quota et fenêtre de capture.** Le palier gratuit plafonne à 500 requêtes par
+  mois : seul le bouton « Récupérer les cotes » appelle l'API (1 crédit :
+  un marché, une région), l'affichage ne lit que le cache `tn_odds`. Surtout,
+  ce palier ne sert que les rencontres **à venir ou en cours** — l'historique
+  est payant. Une cote doit donc être capturée AVANT que le match ne se joue ;
+  sur un tournoi déjà terminé sans capture préalable, il n'y a rien à
+  récupérer, et l'écran le dit.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -347,6 +369,7 @@ app/
   fantasy/                       historique prédit / réalisé + bouton de reprise
   calibration/                   courbe Elo→proba confrontée aux matchs joués
   calibration/echelle/           effet d'une autre échelle sur le jeu Fantasy
+  calibration/cotes/             blend Elo/cotes — mesure isolée, rien de branché
   import/                        import du JSON + action serveur
   import/elo/                    collage des Elo TA (snippet public/extract-elo.js)
   tournoi/[id]/                  tableau, bracket, picks, fantasy, predictions, resultats
@@ -356,6 +379,7 @@ app/
   api/elo/refresh/route.ts       POST → Elo TA par fetch (repli, 403 sur Vercel)
   api/fantasy/backfill/route.ts  POST → historique des tournois déjà en base
   api/calibration/elo/route.ts   POST → calibration Elo→proba, en JSON
+  api/cotes/refresh/route.ts     POST → cotes The Odds API → cache tn_odds
   EloRefreshButton.tsx           bouton du repli par fetch (écran /import/elo)
 supabase/
   anon.ts                        client clé publique — LECTURES uniquement
@@ -378,6 +402,8 @@ lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optim
                                  tels quels)
 lib/bracket.ts                   AJOUT : arbre pronostiqué depuis le tirage
                                  (déterministe, sans Monte Carlo ni résultats)
+lib/cotes.ts                     AJOUT : dévigorisation, consensus des books,
+                                 scores de Brier et log-loss (mesure seule)
 ```
 
 ### Où corriger le barème de multiplicateurs

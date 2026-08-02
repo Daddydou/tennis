@@ -49,6 +49,12 @@ export default async function CalibrationPage() {
           >
             Effet sur le Fantasy →
           </Link>
+          <Link
+            href="/calibration/cotes"
+            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+          >
+            Blend Elo / cotes →
+          </Link>
           <Link href="/" className="text-sm text-zinc-500 hover:underline">
             ← Tournois
           </Link>
