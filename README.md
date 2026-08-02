@@ -99,6 +99,23 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   Vercel, mais fonctionnel en local, et prêt à resservir si le filtre tombe. Le
   bouton « Tenter le fetch serveur » est en bas de l'écran.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
+- `/tournoi/[id]/bracket` — **arbre pronostiqué depuis le tirage**, du premier
+  tour au champion. Pronostic *déterministe* : à chaque match, le plus haut
+  **Elo effectif** sur la surface du tournoi (mélange 60/40, le même que
+  l'écran Picks et que la simulation) l'emporte et avance ; un exempté passe
+  sans match. À Elo strictement égal, le mieux classé ; à rang égal, un
+  départage stable par identifiant, pour que deux affichages ne donnent jamais
+  deux champions. Aucun Monte Carlo — un simple parcours de l'arbre, calculé à
+  chaque affichage (quelques millisecondes).
+  **Ni `winner_id` ni les scores ne sont lus** : seul `rounds[0]` alimente le
+  calcul, la suite est déduite. L'arbre est donc identique que le tournoi soit
+  à venir, en cours ou terminé — même parti pris que l'espérance Fantasy. Il
+  n'y a rien à invalider, et un tour intermédiaire manquant en base ne
+  l'empêche pas de se remplir.
+  Rendu pensé pour le téléphone : un tour à la fois (sélecteur de tours),
+  duels en liste verticale, filtre par moitié de tableau au-delà de 4 duels, et
+  la carte du champion prédit avec son parcours tour par tour en tête d'écran.
+  La logique vit dans `lib/bracket.ts`, module pur sans I/O.
 - `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
   basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
   pickés grisés. Validation → `tn_picks`.
@@ -305,7 +322,7 @@ app/
   calibration/echelle/           effet d'une autre échelle sur le jeu Fantasy
   import/                        import du JSON + action serveur
   import/elo/                    collage des Elo TA (snippet public/extract-elo.js)
-  tournoi/[id]/                  tableau, picks, fantasy, predictions, resultats
+  tournoi/[id]/                  tableau, bracket, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
   api/recompute/route.ts         POST → tn_recompute_picks()
   api/elo/import/route.ts        POST → Elo TA collés (méthode principale)
@@ -331,6 +348,8 @@ lib/                             moteur fourni (non modifié)
 lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale,
                                  score réel (réutilise optimizer/scoring/montecarlo
                                  tels quels)
+lib/bracket.ts                   AJOUT : arbre pronostiqué depuis le tirage
+                                 (déterministe, sans Monte Carlo ni résultats)
 ```
 
 ### Où corriger le barème de multiplicateurs
