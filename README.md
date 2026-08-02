@@ -211,7 +211,32 @@ et par Next.js 16 :
   date, `start_date` — colonne déjà présente au schéma mais jamais remplie — est
   reconstituée depuis la semaine ISO habituelle du tournoi. `npm run
   backfill:tournois` corrige les lignes existantes (aperçu par défaut,
-  `--appliquer` pour écrire).
+  `--appliquer` pour écrire), noms d'affichage compris, et liste les slugs
+  qu'il ne reconnaît pas.
+- **Les clés du calendrier WTA sont les slugs réels de wtatennis.com**, relevés
+  dans `/sitemap/tournaments.xml` — pas les noms courants. Le site emploie deux
+  formes d'URL, `/tournaments/{slug}/draws` pour les Grands Chelems et les
+  1000, `/tournaments/{id}/{slug}/{annee}/draws` pour le reste : d'où
+  `canadian-open` (et non montreal), `china-open` (et non beijing),
+  `miami-open`, `madrid-open`, `cincinnati-open`, `wuhan-open`. Surface,
+  catégorie et semaine viennent de l'API publique de la WTA, calendrier 2026 ;
+  les noms courants et les variantes d'une saison à l'autre restent acceptés
+  via `ALIAS_WTA`. Un slug de WTA 125 (`madrid-125`) n'hérite jamais de la
+  fiche du tournoi principal de la même ville : mieux vaut un tournoi non
+  reconnu, donc signalé, qu'un WTA 125 classé WTA 1000.
+- **Identité du tournoi retrouvée dans l'URL source.** Le bookmarklet WTA ne
+  renseigne ni `tournament.slug`, ni l'identifiant, ni l'année : ses imports
+  arrivaient en « Tournoi 2026 », sans surface ni catégorie, et — faute de clé
+  — une ligne de plus à chaque réimport. `identiteDepuisUrl` les relit dans
+  `source_url` (le champ explicite prime toujours). Le premier segment
+  numérique est l'identifiant, les suivants l'année : les identifiants WTA
+  récents (2014 Adélaïde, 2088 Abu Dhabi) ressemblent à des années, seule leur
+  position les distingue.
+- **Un slug inconnu s'affiche brut et se signale.** « wuhan-open 2026 » dans la
+  liste des tournois dit quelle fiche ajouter ; « Tournoi 2026 » ne disait
+  rien. L'import le remonte dans ses avertissements — surface, catégorie et
+  date ne sont alors que des défauts — et le journalise côté serveur avec
+  l'URL source.
 - **Elo : source externe Tennis Abstract, avec repli.** Les Elo maison (colonnes
   `elo_*` de `tn_players`) ne sont calculés que sur les tournois importés ici,
   donc bruités. `ta_elo` reçoit les rapports hebdomadaires de Tennis Abstract

@@ -33,14 +33,26 @@ if (error) {
 }
 
 let modifies = 0;
+const inconnus: string[] = [];
 for (const t of data ?? []) {
   const meta = metaTournoi(t.slug, t.tour, t.year, t.draw_size);
+
+  // Un slug absent du référentiel donne surface, catégorie et date par défaut :
+  // le corriger ici serait figer un défaut. On le liste pour qu'il rejoigne
+  // `lib/calendrier.ts`.
+  if (!meta.reconnu) {
+    inconnus.push(`${t.tour} ${t.year} · ${t.slug ?? '(sans slug)'} · ${t.name}`);
+    continue;
+  }
 
   const patch: Record<string, unknown> = {};
   if (t.surface !== meta.surface) patch.surface = meta.surface;
   if (t.category !== meta.categorie) patch.category = meta.categorie;
   // On ne remplace jamais une date déjà présente : elle peut venir de l'export.
   if (!t.start_date && meta.startDate) patch.start_date = meta.startDate;
+  // Nom d'affichage du référentiel : « Canadian Open » → « Open du Canada ».
+  const nomAttendu = meta.nom ? `${meta.nom} ${t.year}` : null;
+  if (nomAttendu && t.name !== nomAttendu) patch.name = nomAttendu;
 
   if (Object.keys(patch).length === 0) continue;
   modifies++;
@@ -54,6 +66,11 @@ for (const t of data ?? []) {
     const { error: e } = await sb.from('tn_tournaments').update(patch).eq('id', t.id);
     if (e) console.error(`  échec : ${e.message}`);
   }
+}
+
+if (inconnus.length) {
+  console.log(`\n${inconnus.length} slug(s) inconnu(s) du calendrier, laissés tels quels :`);
+  for (const i of inconnus) console.log(`  ${i}`);
 }
 
 console.log(

@@ -47,12 +47,31 @@ const DRAW_FROM_ROUND: Record<string, number> = {
   F: 2,
 };
 
-function prettifyName(slug: string | null): string {
-  if (!slug) return 'Tournoi';
+/**
+ * Nom affiché d'un tournoi.
+ *
+ * Priorité au libellé du référentiel (`lib/calendrier.ts`) : « canadian-open »
+ * est l'Open du Canada, « china-open » Pékin — le slug seul induirait en
+ * erreur. À défaut, on l'embellit ; et si l'extraction n'a même pas de slug,
+ * on renvoie null pour que l'appelant décide (cf. `nomTournoi`).
+ */
+function prettifyName(slug: string | null): string | null {
+  if (!slug) return null;
   return slug
     .split('-')
-    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+/**
+ * Un slug non reconnu s'affiche BRUT plutôt que sous un nom générique : voir
+ * « wuhan-open 2026 » dans la liste des tournois dit quelle fiche ajouter au
+ * calendrier, là où « Tournoi 2026 » ne disait rien. Le générique ne reste
+ * que pour une extraction sans slug du tout.
+ */
+function nomTournoi(nomFiche: string | null, slug: string | null): string {
+  return nomFiche ?? prettifyName(slug) ?? 'Tournoi';
 }
 
 /** Sets orientés joueur1 : [{g1,g2,tb1,tb2}], sets vides ignorés. */
@@ -134,6 +153,33 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     drawSize,
   );
 
+  // Slug absent ou inconnu du référentiel : surface, catégorie et date ne sont
+  // alors que des défauts. On le dit — dans le résultat de l'import, lu par
+  // celui qui vient de coller le tableau, et dans les logs du serveur, qui
+  // gardent la trace du slug exact à ajouter dans `lib/calendrier.ts`.
+  if (!slug) {
+    avertissements.push(
+      "Extraction sans slug de tournoi (ni dans le JSON, ni dans son URL source) : " +
+        'nom, surface et catégorie sont des valeurs par défaut.',
+    );
+    console.warn('[calendrier] extraction sans slug', {
+      tour: extract.tour,
+      sourceUrl: extract.sourceUrl,
+    });
+  } else if (!meta.reconnu) {
+    avertissements.push(
+      `Slug « ${slug} » inconnu du calendrier ${extract.tour} : surface ` +
+        `« ${meta.surface} », catégorie « ${meta.categorie} » et date de début ` +
+        'sont des valeurs par défaut. À ajouter dans lib/calendrier.ts.',
+    );
+    console.warn('[calendrier] slug inconnu', {
+      slug,
+      tour: extract.tour,
+      annee: extract.tournament.year,
+      sourceUrl: extract.sourceUrl,
+    });
+  }
+
   // Une date fournie par l'extraction prime sur celle du référentiel : le
   // bookmarklet n'en produit pas aujourd'hui, mais s'il évolue on la prend.
   const dateExtraite = (
@@ -154,7 +200,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   const tournamentPayload = {
     external_id: extract.tournament.externalId,
     slug,
-    name: `${prettifyName(slug)} ${extract.tournament.year}`,
+    name: `${nomTournoi(meta.nom, slug)} ${extract.tournament.year}`,
     tour: extract.tour,
     surface: meta.surface,
     category: meta.categorie,

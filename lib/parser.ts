@@ -64,6 +64,68 @@ export function normaliserTour(brut: unknown, sourceUrl = ''): Tour {
 }
 
 /**
+ * Identité d'un tournoi lue dans l'URL d'où vient l'extraction.
+ *
+ * Le bookmarklet WTA ne renseigne PAS `tournament.slug` : ses extractions
+ * arrivaient donc sans slug ni identifiant, ce qui laissait un tournoi
+ * « Tournoi 2026 » sans surface ni catégorie — et, faute de clé, une nouvelle
+ * ligne insérée à chaque réimport. L'URL, elle, porte les deux.
+ *
+ *   WTA court  /tournaments/madrid-open/draws
+ *   WTA long   /tournaments/1075/wuhan/2026/draws
+ *   ATP        /en/scores/archive/madrid/1536/2026/draws
+ *
+ * Le PREMIER segment numérique est l'identifiant du tournoi, les suivants sont
+ * l'année. On ne peut pas les distinguer à leur forme : les identifiants WTA
+ * récents (2014 Adélaïde, 2042 Hambourg, 2088 Abu Dhabi…) ressemblent tous à
+ * des années. Seule la position tranche, et elle suffit : l'identifiant précède
+ * l'année sur les deux sites, que le slug vienne avant (ATP) ou après (WTA).
+ *
+ * Rien n'est deviné : sans URL reconnaissable, on renvoie deux `null`.
+ */
+export function identiteDepuisUrl(url: string): {
+  slug: string | null;
+  externalId: string | null;
+  annee: number | null;
+} {
+  const vide = { slug: null, externalId: null, annee: null };
+  if (!url) return vide;
+
+  // On travaille sur le chemin seul : un slug ne doit jamais être capté dans
+  // le nom d'hôte ni dans une chaîne de requête.
+  const chemin = url
+    .replace(/^[a-z]+:\/\/[^/]+/i, '')
+    .split(/[?#]/)[0]
+    .toLowerCase();
+
+  const segments = chemin.split('/').filter(Boolean);
+  const ancre = segments.findIndex((s) => s === 'tournaments' || s === 'archive');
+  if (ancre === -1) return vide;
+
+  const suite = segments.slice(ancre + 1);
+  // « draws », « scores », « results »… ne sont pas des slugs.
+  const NON_SLUGS = new Set(['draws', 'draw', 'results', 'scores', 'overview', 'live']);
+
+  let slug: string | null = null;
+  let externalId: string | null = null;
+  let annee: number | null = null;
+  for (const s of suite) {
+    if (/^\d+$/.test(s)) {
+      // Premier nombre : l'identifiant. Ceux d'après : l'année, quand ils en
+      // ont la forme. Une extraction d'archive sans année (le bookmarklet WTA
+      // n'en produit pas) se retrouvait sinon datée de l'année courante — un
+      // tableau de 2022 rangé en 2026.
+      if (externalId === null) externalId = s;
+      else if (annee === null && /^(19|20)\d{2}$/.test(s)) annee = Number(s);
+      continue;
+    }
+    if (!NON_SLUGS.has(s)) slug ??= s;
+  }
+
+  return { slug, externalId, annee };
+}
+
+/**
  * Parse le JSON du bookmarklet.
  * Tolérant aux variations de casse des clés (camelCase / snake_case).
  */
@@ -88,11 +150,16 @@ export function parseExtract(raw: unknown): DrawExtract {
 
   const roundsFound = trierRounds([...new Set(matches.map((m) => m.round))]);
 
+  // Repli sur l'URL source quand l'extraction ne porte ni slug ni identifiant
+  // — c'est le cas de toutes les extractions WTA. Le champ explicite prime
+  // toujours : l'URL ne sert qu'à combler un trou.
+  const url = identiteDepuisUrl(sourceUrl);
+
   return {
     extractedAt: String(o.extracted_at ?? o.extractedAt ?? new Date().toISOString()),
     sourceUrl,
     tournament: {
-      slug: (t.slug ?? null) as string | null,
+      slug: ((t.slug ?? url.slug) || null) as string | null,
       // Le bookmarklet WTA reprend le format ATP (`atp_id`) ; on accepte
       // néanmoins les clés propres au circuit féminin si elles apparaissent.
       externalId: (t.atp_id ??
@@ -100,8 +167,9 @@ export function parseExtract(raw: unknown): DrawExtract {
         t.wta_id ??
         t.wtaId ??
         t.tournament_id ??
+        url.externalId ??
         null) as string | null,
-      year: Number(t.year ?? new Date().getFullYear()),
+      year: Number(t.year ?? url.annee ?? new Date().getFullYear()),
     },
     tour: normaliserTour(o.tour, sourceUrl),
     roundsFound,
