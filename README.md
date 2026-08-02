@@ -261,16 +261,43 @@ et par Next.js 16 :
   rien. L'import le remonte dans ses avertissements — surface, catégorie et
   date ne sont alors que des défauts — et le journalise côté serveur avec
   l'URL source.
-- **Elo : source externe Tennis Abstract, avec repli.** Les Elo maison (colonnes
-  `elo_*` de `tn_players`) ne sont calculés que sur les tournois importés ici,
-  donc bruités. `ta_elo` reçoit les rapports hebdomadaires de Tennis Abstract
-  (~540 joueurs par circuit, Elo global + dur/terre/gazon), et la simulation
-  applique la cascade **TA → maison → défaut (1650)** (`supabase/elo.ts`).
-  L'import de tableau n'écrit toujours pas les colonnes `elo_*`.
+- **Elo : source externe Tennis Abstract, avec repli — deux niveaux, pas trois.**
+  `ta_elo` reçoit les rapports hebdomadaires de Tennis Abstract (~540 joueurs par
+  circuit, Elo global + dur/terre/gazon). `resoudreElos` (`supabase/elo.ts`) écrit
+  une cascade à trois étages — TA, puis Elo maison, puis défaut — mais **l'étage
+  du milieu n'est jamais atteint** : en pratique la cascade est
+  **TA → défaut (1650)**.
+
+  La raison tient à ce qui alimente `tn_players` : l'import de tableau n'y écrit
+  que l'identité (id, circuit, nom, pays). Il n'écrit **ni `rank`, ni les
+  colonnes `elo_*`**, et rien d'autre ne les alimente — le code qui calculerait
+  les Elo maison n'est pas branché (voir plus bas). Sur la base actuelle :
+  `rank` est NULL sur les 365 lignes, 96 lignes portent encore un `elo_*`
+  hérité, et ces 96-là sont toutes appariées à Tennis Abstract, qui prime. Sur
+  1 404 résolutions (tous tournois confondus) : **1 388 TA, 0 maison, 12 défaut,
+  4 ambigus**.
+
+  **Conséquence à connaître.** Un joueur non apparié dans Tennis Abstract ne
+  tombe pas seulement à 1650 : il se retrouve aussi **sans rang**, puisque le
+  rang affiché vient de `ta_elo.atp_rank` (`p.rank ?? e.rangTa`, cf.
+  `rowsToPlayers`). Or `estEligible` (`lib/fantasy.ts`) rejette un rang nul :
+  ces joueurs sont donc **inéligibles à tous les paliers Fantasy**. C'est ce qui
+  explique les équipes à 3 paliers pourvus sur 4 de Marrakech, Hong Kong et
+  Adélaïde. Aujourd'hui 16 joueurs sont dans ce cas sur l'ensemble des tournois.
+
   Tennis Abstract ne publiant pas d'ID ATP, le rapprochement se fait par nom
   normalisé (`lib/matching.ts`) ; les cas irréductibles se déclarent dans
   `ta_name_exceptions`. L'écran Picks affiche l'Elo effectif de chaque joueur et
-  sa source, pour repérer d'un coup d'œil une mauvaise correspondance.
+  sa source, pour repérer d'un coup d'œil une mauvaise correspondance — un badge
+  « défaut » y signale exactement un joueur tombé au bout de cette cascade.
+- **Le calcul d'Elo maison existe mais n'est pas branché.** `calculerElos`,
+  `majElo`, `nouvelEloRecord` et `facteurK` (`lib/elo.ts`) forment une chaîne
+  complète pour recalculer des Elo match par match depuis les tournois importés.
+  **Aucune n'est appelée**, ni par l'app ni par un script : elles subsistent en
+  réserve, pour le jour où l'on voudrait un repli entre Tennis Abstract et le
+  défaut. Tant qu'elles ne le sont pas, l'étage « maison » de `resoudreElos`
+  reste du code atteignable mais jamais emprunté — il ne se déclencherait que
+  pour un joueur portant un `elo_*` hérité ET absent des rapports TA.
 - **Les Elo arrivent par le presse-papier, comme les tableaux.** Tennis Abstract
   répond 403 aux requêtes venant des IP de datacenter : imiter les en-têtes d'un
   navigateur n'y change rien, c'est l'IP qui est filtrée, et le fetch serveur est
@@ -334,7 +361,8 @@ supabase/
   anon.ts                        client clé publique — LECTURES uniquement
   server.ts                      client service-role (server-only) — ÉCRITURES
   queries.ts                     lectures + reconstruction Match[]/Player
-  elo.ts                         cascade TA → maison → défaut + sources
+  elo.ts                         cascade TA → défaut + sources (étage « maison »
+                                 écrit mais jamais atteint, cf. plus haut)
   elo-refresh.ts                 collage OU fetch TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
   fantasy.ts                     espérances a priori, score réel, historique
