@@ -14,6 +14,12 @@ export interface LigneTourVue {
   pondere: number;
   /** Points réels marqués à ce tour, pondérés. null si le match n'est pas joué. */
   reel: number | null;
+  /**
+   * Tour passé sur exemption. La ligne n'est alors pas une espérance : le bye
+   * vaut une victoire 6/4 6/4, acquise dès le tirage — d'où une présence à
+   * 100 % et des points identiques en espéré et en réel.
+   */
+  bye?: boolean;
 }
 
 export interface MembreVue {
@@ -85,7 +91,17 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
               key={l.round}
               className="border-t border-zinc-100 dark:border-zinc-900"
             >
-              <td className="py-1 pr-3">{l.round}</td>
+              <td className="py-1 pr-3">
+                {l.round}
+                {l.bye && (
+                  <span
+                    className="ml-1.5 rounded border border-sky-300 px-1 text-[10px] font-medium text-sky-700 dark:border-sky-800 dark:text-sky-300"
+                    title="Exempté : au Fantasy, un bye vaut une victoire 6/4 6/4, soit 15 points avant multiplicateur. Acquis dès le tirage, donc sans aléa."
+                  >
+                    bye
+                  </span>
+                )}
+              </td>
               <td className="py-1 pr-3 text-right tabular-nums text-zinc-500">
                 {pourcent(l.pReach)}
               </td>

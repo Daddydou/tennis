@@ -10,6 +10,7 @@ import {
   composerEquipe,
   detailReelJoueur,
   detaillerJoueur,
+  toursAvecBye,
   type CandidatFantasy,
   type FamilleFantasy,
 } from '@/lib/fantasy';
@@ -165,10 +166,17 @@ function rejouer(
   );
 
   const candidats: CandidatFantasy[] = Object.keys(players).map((playerId) => {
-    const { eTotal } = detaillerJoueur(rounds, bareme, (round) => ({
-      pReach: mc.presence[playerId]?.[round] ?? 0,
-      points: mc.esperances[playerId]?.[round] ?? 0,
-    }));
+    // Même règle du bye que l'écran Fantasy : le comparatif doit rejouer le
+    // jeu tel qu'il est, pas une variante.
+    const { eTotal } = detaillerJoueur(
+      rounds,
+      bareme,
+      (round) => ({
+        pReach: mc.presence[playerId]?.[round] ?? 0,
+        points: mc.esperances[playerId]?.[round] ?? 0,
+      }),
+      toursAvecBye(matches, playerId),
+    );
     return { playerId, rang: players[playerId]?.rank ?? null, eTotal };
   });
 

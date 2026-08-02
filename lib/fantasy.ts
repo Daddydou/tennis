@@ -25,8 +25,69 @@
  */
 
 import { affectationHongroise } from './optimizer';
-import { pointsAtRound } from './scoring';
+import { pointsAtRound, scoreMatch, type SetPair } from './scoring';
 import type { Match, MatchStatus } from './types';
+
+/* -------------------------------------------------------------------------- */
+/*  0. LE BYE, RÈGLE PROPRE AU FANTASY                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Un bye vaut une victoire 6/4 6/4 — AU FANTASY SEULEMENT.
+ *
+ * Le moteur de scoring, lui, ne bouge pas : `scoreMatch` continue de rendre 0
+ * sur un statut `bye` (cf. STATUTS_SANS_POINTS), et le jeu des picks reste
+ * inchangé — un joueur pické au tour de son bye n'y marque toujours rien.
+ * La règle est ici, dans le module du second jeu, et nulle part ailleurs.
+ *
+ * Les points ne sont pas écrits en dur : on fait passer un score fictif dans
+ * le barème commun (lib/scoring.ts). Une correction du barème — 5 points la
+ * victoire, 3 le net set — se répercute donc d'elle-même sur le bye.
+ *
+ *   victoire ................ 5
+ *   net sets (2 − 0) × 3 .... 6
+ *   net games (6−4)+(6−4) ... 4
+ *   total ................... 15
+ */
+const SCORE_FICTIF_BYE: SetPair[] = [
+  { for: 6, against: 4 },
+  { for: 6, against: 4 },
+];
+
+/** Points de base d'un bye au fantasy, avant multiplicateur de tour. */
+export const POINTS_BYE = scoreMatch(SCORE_FICTIF_BYE, true, 'completed', 3).total;
+
+/**
+ * Ce match est-il un bye ACQUIS par ce joueur ?
+ *
+ * Deux conditions, et la seconde n'est pas une précaution de style : un
+ * tableau importé en cours de route porte des lignes `bye` qui n'en sont pas.
+ * Sur le tableau féminin de Montréal 2026, les 32 lignes du R64 sont au statut
+ * `bye` avec une seule joueuse — non parce qu'elle est exemptée, mais parce
+ * que son adversaire n'est pas encore connue. Ces lignes-là n'ont PAS de
+ * vainqueur désigné, là où les 32 vraies exemptions du R128 en ont un
+ * (idem à Madrid, 32/32, et à Delray Beach, 4/4).
+ *
+ * Le vainqueur désigné est donc le seul signal fiable, et il est disponible
+ * dès le tirage : un bye est gagné par construction, le bookmarklet le note
+ * comme tel avant même que le tournoi commence. Un tableau qui l'omettrait
+ * ferait retomber le bye à 0 point — l'ancien comportement, jamais un gain
+ * accordé à tort.
+ */
+export function estByeAcquis(match: Match, playerId: string): boolean {
+  if (match.status !== 'bye') return false;
+  return match.players.some((p) => p.id === playerId && p.winner);
+}
+
+/**
+ * Tours où ce joueur est exempté. Vide dans l'immense majorité des cas — un
+ * joueur n'a qu'un bye, et seulement dans un tableau qui en comporte.
+ */
+export function toursAvecBye(matches: Match[], playerId: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of matches) if (estByeAcquis(m, playerId)) out.add(m.round);
+  return out;
+}
 
 /* -------------------------------------------------------------------------- */
 /*  1. MULTIPLICATEURS PAR TOUR                                                */
@@ -212,6 +273,11 @@ export interface LigneTour {
   points: number;
   /** `points` × `multiplicateur` — ce qui alimente le total. */
   pondere: number;
+  /**
+   * Le joueur est exempté à ce tour. Ce n'est alors pas une espérance mais un
+   * acquis : `points` vaut exactement `POINTS_BYE`, sans aléa.
+   */
+  bye: boolean;
 }
 
 /**
@@ -224,11 +290,23 @@ export interface LigneTour {
  * Tout est espérance, du premier tour à la finale : l'équipe Fantasy se
  * compose une fois pour toutes avant le coup d'envoi, aucun résultat réel
  * n'entre dans ce calcul (cf. supabase/fantasy.ts).
+ *
+ * `byes` — les tours où le joueur est exempté (`toursAvecBye`). Un bye n'est
+ * pas un match à simuler : il est acquis au tirage, donc certain. Sa ligne ne
+ * passe pas par `parTour` et vaut `POINTS_BYE` avec une présence de 1, dans
+ * toutes les simulations. La simulation Monte Carlo, elle, fait avancer
+ * l'exempté sans lui compter de points (cf. lib/montecarlo.ts) : la valeur
+ * substituée ici ne se superpose donc à rien.
+ *
+ * Le paramètre a une valeur par défaut pour les appels d'analyse, mais TOUT
+ * calcul Fantasy doit le passer, sans quoi deux écrans donneraient deux
+ * totaux différents pour la même équipe.
  */
 export function detaillerJoueur(
   rounds: string[],
   bareme: number[],
   parTour: (round: string, index: number) => { pReach: number; points: number },
+  byes: ReadonlySet<string> = new Set(),
 ): { lignes: LigneTour[]; eTotal: number } {
   const lignes: LigneTour[] = [];
   let eTotal = 0;
@@ -238,10 +316,13 @@ export function detaillerJoueur(
     // dimensionné écarté en amont, mais on ne présume rien ici) : le
     // multiplicateur neutre laisse les points bruts intacts.
     const multiplicateur = bareme[i] ?? 1;
-    const { pReach, points } = parTour(round, i);
+    const bye = byes.has(round);
+    const { pReach, points } = bye
+      ? { pReach: 1, points: POINTS_BYE }
+      : parTour(round, i);
     const pondere = points * multiplicateur;
     eTotal += pondere;
-    lignes.push({ round, multiplicateur, pReach, points, pondere });
+    lignes.push({ round, multiplicateur, pReach, points, pondere, bye });
   });
 
   return { lignes, eTotal };
@@ -270,6 +351,8 @@ export interface LigneReelle {
    * deux se confondraient à l'affichage.
    */
   joue: boolean;
+  /** Tour passé sur exemption : `points` vaut `POINTS_BYE`, pas 0. */
+  bye: boolean;
 }
 
 /**
@@ -279,6 +362,11 @@ export interface LigneReelle {
  * Ne recompose jamais l'équipe : c'est la performance de l'équipe déjà figée,
  * mesurée sur les résultats importés. Un tour non encore joué vaut 0, si bien
  * que le total croît au fil des imports jusqu'au score final.
+ *
+ * Un bye réellement obtenu vaut `POINTS_BYE`, comme en espérance : les deux
+ * mesures d'une même équipe doivent compter le bye de la même façon, sans quoi
+ * l'écart prédit/réalisé de l'historique s'ouvrirait sur une différence de
+ * convention et non sur une différence de résultats.
  */
 export function detailReelJoueur(
   matches: Match[],
@@ -295,11 +383,18 @@ export function detailReelJoueur(
     const match = matches.find(
       (m) => m.round === round && m.players.some((p) => p.id === playerId),
     );
+    const bye = match ? estByeAcquis(match, playerId) : false;
     const joue = match ? DECIDES.includes(match.status) : false;
-    const points = joue ? pointsAtRound(matches, playerId, round, bestOf) : 0;
+    // `pointsAtRound` rend 0 sur un bye (barème du jeu des picks, inchangé) :
+    // la substitution est donc faite ici, dans le seul module du Fantasy.
+    const points = bye
+      ? POINTS_BYE
+      : joue
+        ? pointsAtRound(matches, playerId, round, bestOf)
+        : 0;
     const pondere = points * multiplicateur;
     total += pondere;
-    lignes.push({ round, multiplicateur, points, pondere, joue });
+    lignes.push({ round, multiplicateur, points, pondere, joue, bye });
   });
 
   return { lignes, total };

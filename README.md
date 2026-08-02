@@ -118,6 +118,13 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   figée** — ce qu'elle a marqué sur les résultats importés, joueur par joueur,
   tour par tour et en total. C'est une mesure, jamais un critère : la
   composition ne tient aucun compte des résultats.
+  **Le bye vaut une victoire 6/4 6/4** — 5 (victoire) + 6 (net sets) + 4 (net
+  games) = 15 points, multipliés par le coefficient du tour où il tombe.
+  Règle propre au Fantasy : aux picks, un bye reste à 0 point, et `lib/scoring.ts`
+  n'est pas touché. Comme l'exemption est acquise au tirage, elle entre en
+  espérance comme un **gain certain** (présence 100 %, aucune simulation), et
+  au même montant dans le score réel — sans quoi l'écart prédit/réalisé
+  s'ouvrirait sur une différence de convention.
 - `/fantasy` — **historique prédit / réalisé**, un tournoi par ligne. Écrit à
   chaque import ; le bouton « Reprendre les tournois déjà en base » rattrape
   l'existant (`POST /api/fantasy/backfill`, borné dans le temps, à recliquer

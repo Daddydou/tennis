@@ -9,6 +9,7 @@ import {
   detailReelJoueur,
   detaillerJoueur,
   famillePourCategorie,
+  toursAvecBye,
   type CandidatFantasy,
   type FamilleFantasy,
   type LigneReelle,
@@ -118,10 +119,17 @@ export async function computeAndStoreFantasy(
 
   const joueurs: Record<string, FantasyJoueur> = {};
   for (const playerId of Object.keys(players)) {
-    const { lignes, eTotal } = detaillerJoueur(rounds, bareme, (round) => ({
-      pReach: presence[playerId]?.[round] ?? 0,
-      points: esperances[playerId]?.[round] ?? 0,
-    }));
+    // Les exemptions sont lues dans le TIRAGE, pas dans la simulation : un bye
+    // est acquis dès le tableau publié, donc certain (cf. `detaillerJoueur`).
+    const { lignes, eTotal } = detaillerJoueur(
+      rounds,
+      bareme,
+      (round) => ({
+        pReach: presence[playerId]?.[round] ?? 0,
+        points: esperances[playerId]?.[round] ?? 0,
+      }),
+      toursAvecBye(engine.matches, playerId),
+    );
     joueurs[playerId] = { playerId, eTotal, detail: lignes };
   }
 
@@ -165,10 +173,21 @@ export async function invaliderToutesFantasy(): Promise<void> {
   if (error) throw new Error(`tn_fantasy : ${error.message}`);
 }
 
-/** La ligne en cache a-t-elle été calculée avec le barème courant ? */
-function baremeInchange(ligne: LigneCache, bareme: number[]): boolean {
+/**
+ * La ligne en cache est-elle encore calculée selon les règles courantes ?
+ *
+ * Deux marqueurs, tous deux lus dans la ventilation stockée :
+ *   - les multiplicateurs, qui périment le cache dès qu'un barème change
+ *     (cf. BAREMES_EXPLICITES) ;
+ *   - le drapeau `bye`, absent des lignes écrites avant que l'exemption ne
+ *     rapporte des points. `undefined` ne peut venir que de là — les calculs
+ *     actuels l'écrivent toujours, à `true` comme à `false`. Le cache se
+ *     périme donc tout seul, sans invalidation manuelle à penser.
+ */
+function calculAJour(ligne: LigneCache, bareme: number[]): boolean {
   const detail = ligne.detail ?? [];
   if (detail.length !== bareme.length) return false;
+  if (detail.some((l) => typeof l.bye !== 'boolean')) return false;
   return detail.every((l, i) => Number(l.multiplicateur) === bareme[i]);
 }
 
@@ -189,10 +208,10 @@ export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
     .eq('tournament_id', engine.tournament.id);
   if (error) throw new Error(error.message);
 
-  // Le cache porte les multiplicateurs avec lesquels il a été calculé : une
-  // correction du barème (cf. BAREMES_EXPLICITES, lib/fantasy.ts) le périme
-  // donc d'elle-même, sans invalidation manuelle ni redéploiement à penser.
-  if (data && data.length > 0 && baremeInchange(data[0] as LigneCache, bareme)) {
+  // Le cache porte la trace des règles qui l'ont produit (cf. `calculAJour`) :
+  // un barème corrigé ou une ligne d'avant la règle du bye le périment
+  // d'eux-mêmes, sans invalidation manuelle ni redéploiement à penser.
+  if (data && data.length > 0 && calculAJour(data[0] as LigneCache, bareme)) {
     const joueurs: Record<string, FantasyJoueur> = {};
     for (const r of data as LigneCache[]) {
       joueurs[r.player_id] = {
