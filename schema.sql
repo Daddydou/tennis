@@ -73,8 +73,12 @@ create table if not exists tn_matches (
   winner_id     text references tn_players(id),
 
   sets          jsonb default '[]'::jsonb,
+  -- 'live' et 'in_progress' désignent la même chose : un match en train de
+  -- se jouer. Le bookmarklet produit le second sur un tableau en direct, les
+  -- extractions plus anciennes portent le premier ; on accepte les deux
+  -- plutôt que de réécrire la valeur de la source (cf. migration 0009).
   status        text default 'scheduled'
-                check (status in ('scheduled','live','completed',
+                check (status in ('scheduled','live','in_progress','completed',
                                   'walkover','retired','bye')),
   scheduled_at  timestamptz,
   updated_at    timestamptz default now(),
@@ -239,8 +243,9 @@ declare
 begin
   v_needed := p_best_of / 2 + 1;
 
-  -- Cas sans points
-  if p_status in ('bye','scheduled','live') then
+  -- Cas sans points : le bye, et tout match sans issue connue — un match
+  -- EN COURS ('live', 'in_progress') est ici un match pas encore joué.
+  if p_status in ('bye','scheduled','live','in_progress') then
     return query select 0, 0, 0, 0;
     return;
   end if;

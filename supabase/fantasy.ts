@@ -16,6 +16,7 @@ import {
   type LigneTour,
   type MembreEquipe,
 } from '@/lib/fantasy';
+import { estIndecis } from '@/lib/types';
 
 /**
  * ESPÉRANCES FANTASY — CALCUL ET CACHE
@@ -288,15 +289,13 @@ export function equipeEvaluee(
     },
   );
 
-  const indecis = ['scheduled', 'live'];
   return {
     membres,
     eTotal: membres.reduce((s, m) => s + (m.playerId ? m.eTotal : 0), 0),
     reelTotal: membres.reduce((s, m) => s + m.reel, 0),
     // Un tableau vide n'est pas un tournoi terminé, seulement un tournoi
     // sans matchs connus.
-    termine:
-      matches.length > 0 && !matches.some((m) => indecis.includes(m.status)),
+    termine: matches.length > 0 && !matches.some((m) => estIndecis(m.status)),
   };
 }
 

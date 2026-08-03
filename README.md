@@ -69,6 +69,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
 #    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
 #    supabase/migrations/0008_cotes.sql                 (cache tn_odds, cotes bookmakers)
+#    supabase/migrations/0009_statut_in_progress.sql    (statut in_progress, tableaux en direct)
 # 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
 #        et seul un import la remplit — slug compris).
 
@@ -339,6 +340,28 @@ et par Next.js 16 :
   Picks affiche les candidats avec l'`insert` prêt à coller dans
   `ta_name_exceptions` (colonne `ta_slug`). Un Elo faux et silencieux est pire
   qu'un signalement.
+- **Un match en cours est un match pas encore joué — une seule liste le dit.**
+  Le bookmarklet marque `in_progress` les rencontres en train de se jouer sur un
+  tableau en direct ; la contrainte `tn_matches_status_check` ne connaissait que
+  `live`, et l'upsert étant atomique, importer Montréal WTA en cours perdait les
+  **128 lignes pour 4 matchs sur le court**. `in_progress` est donc accepté au
+  schéma (migration 0009) à côté de `live`, sans réécriture à l'import : la
+  valeur stockée reste celle de la source.
+
+  Ce qu'il vaut : **rien**. Pas d'issue connue, donc pas de vainqueur, pas de
+  points (`scoreMatch` et `tn_score_match` le rendent à 0 comme un `scheduled`,
+  ses sets partiels compris), pas d'entrée dans le score réel — picks comme
+  fantasy — et un tournoi qui en contient un n'est pas terminé. La simulation le
+  rejoue depuis zéro : à Elo égal, une joueuse menant 6-0 4-0 reste à 50 % de
+  passer le tour, et le bracket, qui ne lit aucun résultat, ne bouge pas.
+
+  La liste des statuts sans issue était **recopiée dans huit modules** ; c'est
+  ce qui a fait mentir le code un fichier à la fois. Elle vit désormais dans
+  `STATUTS_INDECIS` / `STATUTS_DECIDES` (`lib/types.ts`) et nulle part ailleurs.
+  Par sécurité, l'import **neutralise le vainqueur** d'un match indécis (un
+  tableau en direct peut désigner la joueuse qui mène) et `verifierExtraction`
+  **nomme tout statut hors vocabulaire** plutôt que de laisser remonter une
+  erreur SQL brute.
 - **`best_of` et `surface`** déduits à l'import (`devinerBestOf`, `devinerSurface`),
   stockés sur `tn_tournaments` et propagés au scoring (un walkover en Grand Chelem
   masculin vaut 20 pts, pas 15) comme à la simulation.

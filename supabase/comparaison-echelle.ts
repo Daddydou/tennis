@@ -5,6 +5,7 @@ import { POIDS_SURFACE } from './elo';
 import { loadEngineData, surfacePourElo } from './queries';
 import { simulerTournoi } from '@/lib/montecarlo';
 import { ECHELLE_ELO } from '@/lib/elo';
+import { estIndecis } from '@/lib/types';
 import {
   COMPOSITIONS,
   composerEquipe,
@@ -220,7 +221,6 @@ export async function comparerEchelles(): Promise<Comparaison> {
     .order('start_date', { ascending: false, nullsFirst: false });
   if (error) throw new Error(error.message);
 
-  const indecis = ['scheduled', 'live'];
   const tournois: LigneTournoi[] = [];
   // Résultats par échelle, en attente d'agrégation.
   const parEchelle = new Map<number, { groupe: GroupeCategorie; predit: number; reel: number }[]>(
@@ -236,7 +236,7 @@ export async function comparerEchelles(): Promise<Comparaison> {
 
     const termine =
       engine.matches.length > 0 &&
-      !engine.matches.some((m) => indecis.includes(m.status));
+      !engine.matches.some((m) => estIndecis(m.status));
     if (!termine) continue;
     candidats++;
 

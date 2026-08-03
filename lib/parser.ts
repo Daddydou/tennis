@@ -7,6 +7,7 @@
  */
 
 import { eloDepuisRang, ELO_DEFAUT } from './elo';
+import { STATUTS_DECIDES, STATUTS_INDECIS } from './types';
 import type {
   DrawExtract,
   Half,
@@ -16,6 +17,9 @@ import type {
   Surface,
   Tour,
 } from './types';
+
+/** Vocabulaire complet des statuts acceptés (cf. lib/types.ts). */
+const STATUTS_CONNUS: MatchStatus[] = [...STATUTS_INDECIS, ...STATUTS_DECIDES];
 
 /** Ordre canonique des tours, du plus large au plus étroit. */
 const ORDRE_CANONIQUE = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
@@ -387,6 +391,23 @@ export function verifierExtraction(extract: DrawExtract): {
   );
   if (incomplets.length) {
     av.push(`${incomplets.length} match(s) terminé(s) sans vainqueur désigné`);
+  }
+
+  // Un statut hors vocabulaire fait échouer l'insertion sur la contrainte
+  // tn_matches_status_check, avec un message SQL brut. On le nomme ici : c'est
+  // ainsi qu'`in_progress` s'était présenté, sur un tableau en direct.
+  const inconnus = [
+    ...new Set(
+      extract.matches
+        .map((m) => m.status)
+        .filter((s) => !STATUTS_CONNUS.includes(s))
+    ),
+  ];
+  if (inconnus.length) {
+    av.push(
+      `Statut(s) de match inconnu(s) : ${inconnus.join(', ')} — à ajouter dans ` +
+        'MatchStatus (lib/types.ts) et dans la contrainte tn_matches_status_check.'
+    );
   }
 
   return { ok: av.length === 0, avertissements: av };

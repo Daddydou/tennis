@@ -10,6 +10,7 @@
  * sans distinction de surface ni de niveau d'adversaire.
  */
 
+import { estIndecis } from './types';
 import type { Match, Surface, Tour } from './types';
 
 /** Elo de départ pour un joueur inconnu. */
@@ -166,9 +167,10 @@ export function calculerElos(
     );
 
     for (const m of tries) {
-      // Byes, matchs non joués et walkovers n'informent pas sur le niveau
-      if (m.status === 'bye' || m.status === 'scheduled' || m.status === 'live') continue;
-      if (m.status === 'walkover') continue;
+      // Byes, matchs non joués (un match EN COURS compris : son issue n'est
+      // pas connue) et walkovers n'informent pas sur le niveau
+      if (estIndecis(m.status)) continue;
+      if (m.status === 'bye' || m.status === 'walkover') continue;
 
       const [p1, p2] = m.players;
       if (!p1.id || !p2.id || p1.isBye || p2.isBye) continue;

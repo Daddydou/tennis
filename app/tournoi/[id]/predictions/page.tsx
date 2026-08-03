@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
 import { getProjections, ROUND_TITRE } from '@/supabase/projections';
+import { estIndecis } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,9 +43,8 @@ export default async function PredictionsPage({
   // Tournoi entièrement joué : tourCourantMatches se replie sur le premier
   // tour, et la simulation redevient donc celle d'avant-tournoi. Personne
   // n'est plus « en lice » — on le dit plutôt que d'afficher 96 survivants.
-  const indecis: string[] = ['scheduled', 'live'];
   const termine =
-    matchRows.length > 0 && !matchRows.some((m) => indecis.includes(m.status));
+    matchRows.length > 0 && !matchRows.some((m) => estIndecis(m.status));
 
   if (!tourCourant) {
     return (

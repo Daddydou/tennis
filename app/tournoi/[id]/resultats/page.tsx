@@ -9,6 +9,7 @@ import {
   etatsSlots,
 } from '@/supabase/queries';
 import { genererSlots } from '@/lib/optimizer';
+import { estEnCours, estIndecis } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,10 +61,9 @@ export default async function ResultatsPage({
     return m?.status ?? null;
   };
 
-  const enAttenteCount = picks.filter((p) => {
-    const st = statutMatch(p.round, p.player_id);
-    return st === null || st === 'scheduled' || st === 'live';
-  }).length;
+  const enAttenteCount = picks.filter((p) =>
+    estIndecis(statutMatch(p.round, p.player_id)),
+  ).length;
 
   // Slots que la contrainte d'unicité a rendus impossibles : ils expliquent
   // pourquoi le nombre de picks peut rester sous les 12 sur un tournoi fini.
@@ -116,7 +116,7 @@ export default async function ResultatsPage({
           <tbody>
             {picksTries.map((p) => {
               const st = statutMatch(p.round, p.player_id);
-              const enAttente = st === 'scheduled' || st === 'live' || st === null;
+              const enAttente = estIndecis(st);
               return (
                 <tr
                   key={p.id}
@@ -130,7 +130,7 @@ export default async function ResultatsPage({
                     {nomDe.get(p.player_id) ?? p.player_id}
                     {enAttente && (
                       <span className="ml-1 text-xs text-zinc-400">
-                        ({st === 'live' ? 'en cours' : 'à jouer'})
+                        ({estEnCours(st) ? 'en cours' : 'à jouer'})
                       </span>
                     )}
                   </td>

@@ -15,6 +15,7 @@
  * Validé sur 7 cas de référence (voir scoring.test.ts).
  */
 
+import { STATUTS_INDECIS } from './types';
 import type { Match, MatchStatus, ScoreBreakdown, SetScore } from './types';
 
 export const POINTS_VICTOIRE = 5;
@@ -22,8 +23,12 @@ export const POINTS_PAR_NET_SET = 3;
 export const WO_POINTS_SET = 3;
 export const WO_POINTS_GAMES = 2;
 
-/** Statuts qui ne rapportent aucun point. */
-const STATUTS_SANS_POINTS: MatchStatus[] = ['bye', 'scheduled', 'live'];
+/**
+ * Statuts qui ne rapportent aucun point : le bye, et tout match sans issue
+ * connue — un match en cours (`live`, `in_progress`) est à cet égard un match
+ * pas encore joué, ses sets partiels ne valent rien tant qu'il n'est pas fini.
+ */
+const STATUTS_SANS_POINTS: MatchStatus[] = [...STATUTS_INDECIS, 'bye'];
 
 /** Une paire de jeux (pour le joueur, contre le joueur) sur un set joué. */
 export interface SetPair {

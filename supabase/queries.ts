@@ -6,6 +6,7 @@ import {
   type ElosResolus,
   type IndexElo,
 } from './elo';
+import { STATUTS_DECIDES, STATUTS_INDECIS } from '@/lib/types';
 import type {
   Half,
   Match,
@@ -180,15 +181,12 @@ export function tourCourantMatches(
   matchRows: MatchRow[],
   rounds: string[],
 ): string | null {
-  const decides: MatchStatus[] = ['completed', 'walkover', 'retired', 'bye'];
   const aJouer =
     rounds.find((r) =>
-      matchRows.some(
-        (m) => m.round === r && (m.status === 'scheduled' || m.status === 'live'),
-      ),
+      matchRows.some((m) => m.round === r && STATUTS_INDECIS.includes(m.status)),
     ) ??
     rounds.find((r) =>
-      matchRows.some((m) => m.round === r && !decides.includes(m.status)),
+      matchRows.some((m) => m.round === r && !STATUTS_DECIDES.includes(m.status)),
     );
   return aJouer ?? rounds[0] ?? null;
 }

@@ -26,7 +26,8 @@
 
 import { affectationHongroise } from './optimizer';
 import { pointsAtRound, scoreMatch, type SetPair } from './scoring';
-import type { Match, MatchStatus } from './types';
+import { STATUTS_DECIDES } from './types';
+import type { Match } from './types';
 
 /* -------------------------------------------------------------------------- */
 /*  0. LE BYE, RÈGLE PROPRE AU FANTASY                                         */
@@ -332,9 +333,6 @@ export function detaillerJoueur(
 /*  3 bis. SCORE RÉELLEMENT MARQUÉ                                             */
 /* -------------------------------------------------------------------------- */
 
-/** Statuts d'un match dont l'issue est connue. */
-const DECIDES: MatchStatus[] = ['completed', 'walkover', 'retired', 'bye'];
-
 /** Ce qu'un joueur a réellement marqué à un tour donné. */
 export interface LigneReelle {
   round: string;
@@ -384,7 +382,7 @@ export function detailReelJoueur(
       (m) => m.round === round && m.players.some((p) => p.id === playerId),
     );
     const bye = match ? estByeAcquis(match, playerId) : false;
-    const joue = match ? DECIDES.includes(match.status) : false;
+    const joue = match ? STATUTS_DECIDES.includes(match.status) : false;
     // `pointsAtRound` rend 0 sur un bye (barème du jeu des picks, inchangé) :
     // la substitution est donc faite ici, dans le seul module du Fantasy.
     const points = bye

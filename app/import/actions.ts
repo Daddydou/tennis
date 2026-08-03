@@ -22,6 +22,7 @@ import {
   devinerBestOf,
 } from '@/lib/parser';
 import { metaTournoi } from '@/lib/calendrier';
+import { estIndecis } from '@/lib/types';
 import type { DrawExtract, Match } from '@/lib/types';
 
 export interface ImportResult {
@@ -271,8 +272,13 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
     const [p1, p2] = m.players;
     const p1id = p1.isBye ? null : p1.id;
     const p2id = p2.isBye ? null : p2.id;
-    const winnerId =
-      (p1.winner && p1id) || (p2.winner && p2id) || null;
+    // Un match sans issue connue n'a PAS de vainqueur, quoi qu'en dise
+    // l'extraction : sur un tableau en direct, le bookmarklet peut marquer le
+    // joueur qui mène. Le stocker ferait apparaître un vainqueur acquis là où
+    // il n'y a qu'un score provisoire.
+    const winnerId = estIndecis(m.status)
+      ? null
+      : (p1.winner && p1id) || (p2.winner && p2id) || null;
     return {
       tournament_id: tournamentId,
       external_id: m.matchId,
