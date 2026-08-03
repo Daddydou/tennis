@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# Sauvegardes de tournoi exportées par l'app : des dumps de données, parfois
+# gros (700 Ko pour un tableau de 128), qui n'ont pas à entrer dans l'historique.
+sauvegarde-tournoi-*.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
