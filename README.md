@@ -201,6 +201,23 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   n'est resimulé si les picks ont déjà été affichés.
 - `/tournoi/[id]/resultats` — points par pick (match / net sets / net games) et
   total du tournoi. Bouton « Recalculer » → `/api/recompute`.
+  À côté du total, le **score de référence** : ce qu'auraient rapporté les picks
+  si l'on avait suivi l'app à la lettre. À chaque tour on prend la (les)
+  recommandation(s) de l'écran Picks — espérance de points maximale parmi les
+  survivants réels, deux par tour tant que le tableau a deux moitiés, une seule
+  en demies et en finale — sous la **même contrainte d'unicité** que le jeu :
+  un joueur déjà pris descend d'un cran dans l'ordre des espérances, et un tour
+  dont tous les survivants sont utilisés reste vide (« aucun pick possible »,
+  exactement comme dans le jeu réel). Le total est la somme de leurs points
+  **réels** ; un match indécis vaut 0, comme pour le score de l'utilisateur.
+  Détail tour par tour au clic, avec le pick réel en regard.
+  **Lecture seule** : ni les picks ni le score ne sont modifiés. Les espérances
+  viennent du **même cache `tn_projections`** que l'écran Picks (une entrée par
+  tour de départ), donc aucune divergence possible avec ce que l'app affichait.
+  Seuls les tours effectivement joués comptent, ce qui borne le calcul ; il est
+  malgré tout **rendu en flux** (`<Suspense>`) — sur un tableau de 128 au cache
+  froid, il faut une simulation par tour (une quinzaine de secondes) et le reste
+  de la page ne doit pas l'attendre.
 - `POST /api/recompute` — appelle la fonction Supabase `tn_recompute_picks()`.
 
 ## Décisions d'architecture
@@ -412,6 +429,8 @@ supabase/
                                  écrit mais jamais atteint, cf. plus haut)
   elo-refresh.ts                 collage OU fetch TA → ta_elo (server-only)
   projections.ts                 simulation Monte Carlo + cache tn_projections
+  reference.ts                   score de référence : projections par tour puis
+                                 lib/reference.ts (mémoïsé par requête)
   fantasy.ts                     espérances a priori, score réel, historique
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
   comparaison-echelle.ts         rejoue le Fantasy sous d'autres échelles Elo
@@ -427,6 +446,8 @@ lib/bracket.ts                   AJOUT : arbre pronostiqué depuis le tirage
                                  (déterministe, sans Monte Carlo ni résultats)
 lib/cotes.ts                     AJOUT : dévigorisation, consensus des books,
                                  scores de Brier et log-loss (mesure seule)
+lib/reference.ts                 AJOUT : picks recommandés tour par tour sous
+                                 contrainte d'unicité, et leurs points réels
 ```
 
 ### Où corriger le barème de multiplicateurs

@@ -1,6 +1,13 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import RecomputeButton from './RecomputeButton';
+import {
+  DetailReference,
+  ReferenceEnCours,
+  TotalReference,
+  type PickUtilisateur,
+} from './ScoreReference';
 import {
   getTournament,
   getPicks,
@@ -70,30 +77,51 @@ export default async function ResultatsPage({
   const etats = etatsSlots(genererSlots(rounds), matchRows, picks);
   const sansPickPossible = etats.filter((e) => e.impossible && !e.pick).length;
 
+  // Picks réels réduits à ce que la comparaison avec la référence affiche.
+  const miens: PickUtilisateur[] = picks.map((p) => ({
+    round: p.round,
+    half: p.half,
+    nom: nomDe.get(p.player_id) ?? p.player_id,
+    points: p.points,
+  }));
+
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournoi.name} active="resultats" />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm">
-          <span className="text-zinc-500">Total du tournoi : </span>
-          <span className="text-lg font-semibold tabular-nums">{total}</span>
-          <span className="text-zinc-500"> pts</span>
-          {enAttenteCount > 0 && (
-            <span className="ml-2 text-xs text-zinc-500">
-              ({enAttenteCount} pick{enAttenteCount > 1 ? 's' : ''} en attente de
-              résultat)
-            </span>
-          )}
-          {sansPickPossible > 0 && (
-            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-              ({sansPickPossible} slot{sansPickPossible > 1 ? 's' : ''} sans pick
-              possible)
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+          <div className="text-sm">
+            <span className="text-zinc-500">Total du tournoi : </span>
+            <span className="text-lg font-semibold tabular-nums">{total}</span>
+            <span className="text-zinc-500"> pts</span>
+            {enAttenteCount > 0 && (
+              <span className="ml-2 text-xs text-zinc-500">
+                ({enAttenteCount} pick{enAttenteCount > 1 ? 's' : ''} en attente
+                de résultat)
+              </span>
+            )}
+            {sansPickPossible > 0 && (
+              <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                ({sansPickPossible} slot{sansPickPossible > 1 ? 's' : ''} sans
+                pick possible)
+              </span>
+            )}
+          </div>
+
+          {/* Le score de référence peut demander une simulation Monte Carlo par
+              tour quand le cache de projections est froid : on le laisse
+              arriver en flux plutôt que de retarder tout le tableau. */}
+          <Suspense fallback={<ReferenceEnCours />}>
+            <TotalReference id={id} reel={total} />
+          </Suspense>
         </div>
         <RecomputeButton tournamentId={id} />
       </div>
+
+      <Suspense fallback={null}>
+        <DetailReference id={id} picks={miens} />
+      </Suspense>
 
       {picks.length === 0 ? (
         <p className="text-sm text-zinc-500">
