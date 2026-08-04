@@ -17,6 +17,16 @@ export const dynamic = 'force-dynamic';
 /** Poids de l'Elo dans le mélange. 50/50 au départ, comme demandé. */
 const POIDS_ELO = 0.5;
 
+/**
+ * Second mélange, qui pèse davantage le marché que l'Elo. Il ne remplace pas le
+ * 50/50 : les deux sont mesurés côte à côte, pour voir lequel calibre le mieux.
+ */
+const POIDS_ELO_MARCHE = 0.3;
+
+/** « Blend 30/70 » — poids Elo d'abord, poids cotes ensuite. */
+const libelleBlend = (poidsElo: number) =>
+  `Blend ${Math.round(poidsElo * 100)}/${Math.round((1 - poidsElo) * 100)}`;
+
 const pct = (p: number | null) =>
   p === null || !Number.isFinite(p) ? '—' : `${(p * 100).toFixed(1)} %`;
 
@@ -89,6 +99,7 @@ export default async function CotesPage({
     pEloFavori: number | null;
     pCotesFavori: number | null;
     pBlendFavori: number | null;
+    pBlendMarcheFavori: number | null;
     vainqueur: string | null;
     favoriGagne: boolean | null;
     bookmakers: number;
@@ -99,6 +110,7 @@ export default async function CotesPage({
   const predElo: Prediction[] = [];
   const predCotes: Prediction[] = [];
   const predBlend: Prediction[] = [];
+  const predBlendMarche: Prediction[] = [];
 
   for (const c of cotes) {
     const a = c.player_a_id;
@@ -109,10 +121,11 @@ export default async function CotesPage({
     const eloB = b ? eloDe(b) : null;
     const pEloA = eloA !== null && eloB !== null ? pVictoire(eloA, eloB) : null;
     const pCotesA = c.proba_a;
-    const pBlendA =
-      pEloA !== null && pCotesA !== null
-        ? blendAvecCotes(pEloA, pCotesA, POIDS_ELO)
-        : null;
+    const melangeable = pEloA !== null && pCotesA !== null;
+    const pBlendA = melangeable ? blendAvecCotes(pEloA, pCotesA, POIDS_ELO) : null;
+    const pBlendMarcheA = melangeable
+      ? blendAvecCotes(pEloA, pCotesA, POIDS_ELO_MARCHE)
+      : null;
 
     // Résultat réel : on lit ici le vainqueur, ce que les écrans de pronostic
     // s'interdisent — c'est précisément l'objet de la mesure.
@@ -126,10 +139,17 @@ export default async function CotesPage({
     const vainqueurId = match?.players.find((p) => p.winner)?.id ?? null;
     const aGagne = vainqueurId === null ? null : vainqueurId === a;
 
-    if (aGagne !== null && pEloA !== null && pCotesA !== null && pBlendA !== null) {
+    if (
+      aGagne !== null &&
+      pEloA !== null &&
+      pCotesA !== null &&
+      pBlendA !== null &&
+      pBlendMarcheA !== null
+    ) {
       predElo.push({ p: pEloA, gagne: aGagne });
       predCotes.push({ p: pCotesA, gagne: aGagne });
       predBlend.push({ p: pBlendA, gagne: aGagne });
+      predBlendMarche.push({ p: pBlendMarcheA, gagne: aGagne });
     }
 
     // Affichage orienté sur le favori de l'Elo, comme demandé.
@@ -143,6 +163,12 @@ export default async function CotesPage({
       pEloFavori: pEloA === null ? null : favoriEstA ? pEloA : 1 - pEloA,
       pCotesFavori: pCotesA === null ? null : favoriEstA ? pCotesA : 1 - pCotesA,
       pBlendFavori: pBlendA === null ? null : favoriEstA ? pBlendA : 1 - pBlendA,
+      pBlendMarcheFavori:
+        pBlendMarcheA === null
+          ? null
+          : favoriEstA
+            ? pBlendMarcheA
+            : 1 - pBlendMarcheA,
       vainqueur: vainqueurId ? nomJoueur(vainqueurId, '—') : null,
       favoriGagne:
         aGagne === null ? null : favoriEstA ? aGagne : !aGagne,
@@ -154,7 +180,8 @@ export default async function CotesPage({
   const scores = [
     scorerMethode('Elo seul', predElo),
     scorerMethode('Cotes seules', predCotes),
-    scorerMethode(`Blend ${POIDS_ELO * 100}/${100 - POIDS_ELO * 100}`, predBlend),
+    scorerMethode(libelleBlend(POIDS_ELO), predBlend),
+    scorerMethode(libelleBlend(POIDS_ELO_MARCHE), predBlendMarche),
   ];
   const refBrier = scores[0].brier;
   const refLog = scores[0].logLoss;
@@ -171,8 +198,9 @@ export default async function CotesPage({
           Le marché intègre ce que l&apos;Elo ignore : blessures, forme, motivation.
           Cet écran mesure si le mélanger améliore vraiment les prédictions —{' '}
           <strong>rien n&apos;est branché</strong> : ni les picks, ni le fantasy, ni la
-          simulation ne lisent ces cotes. Les trois méthodes sont jugées au score de
-          Brier et à la log-loss, tous deux «&nbsp;plus bas = mieux&nbsp;».
+          simulation ne lisent ces cotes. Les quatre méthodes — dont deux mélanges,
+          l&apos;un équilibré, l&apos;autre penché vers le marché — sont jugées au score
+          de Brier et à la log-loss, tous deux «&nbsp;plus bas = mieux&nbsp;».
         </p>
       </div>
 
@@ -350,7 +378,12 @@ export default async function CotesPage({
                 <th className="py-2 pr-3 font-medium">Match</th>
                 <th className="py-2 pr-3 text-right font-medium">P(favori) Elo</th>
                 <th className="py-2 pr-3 text-right font-medium">P(favori) cotes</th>
-                <th className="py-2 pr-3 text-right font-medium">P(favori) blend</th>
+                <th className="py-2 pr-3 text-right font-medium">
+                  P(favori) {libelleBlend(POIDS_ELO).toLowerCase()}
+                </th>
+                <th className="py-2 pr-3 text-right font-medium">
+                  P(favori) {libelleBlend(POIDS_ELO_MARCHE).toLowerCase()}
+                </th>
                 <th className="py-2 pr-3 font-medium">Vainqueur réel</th>
               </tr>
             </thead>
@@ -387,6 +420,9 @@ export default async function CotesPage({
                   <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
                     {pct(v.pBlendFavori)}
                   </td>
+                  <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
+                    {pct(v.pBlendMarcheFavori)}
+                  </td>
                   <td className="py-1.5 pr-3">
                     {v.vainqueur === null ? (
                       <span className="text-zinc-400">pas encore joué</span>
@@ -422,9 +458,11 @@ export default async function CotesPage({
 
       <p className="text-xs text-zinc-400">
         Probabilités dévigorisées (1/cote, puis normalisation à somme 1) et agrégées
-        par la médiane des bookmakers. Le mélange applique{' '}
-        <code>blendAvecCotes</code> (<code>lib/elo.ts</code>) à{' '}
-        {POIDS_ELO * 100} % d&apos;Elo. Les cotes sont mises en cache dans{' '}
+        par la médiane des bookmakers. Les deux mélanges appliquent{' '}
+        <code>blendAvecCotes</code> (<code>lib/elo.ts</code>) aux mêmes entrées, à{' '}
+        {Math.round(POIDS_ELO * 100)} % puis {Math.round(POIDS_ELO_MARCHE * 100)} %
+        d&apos;Elo — ils ne diffèrent que par ce poids. Les cotes sont mises en cache
+        dans{' '}
         <code>tn_odds</code> : l&apos;affichage ne consomme jamais de quota, seul le
         bouton le fait.{' '}
         <Link href="/calibration" className="underline">

@@ -5,10 +5,12 @@
  * chose à l'Elo ? Il ne touche ni aux picks, ni au fantasy, ni à la simulation
  * — c'est un instrument de mesure, pas un composant du moteur.
  *
- * Trois méthodes sont mises en concurrence sur les mêmes matchs :
+ * Quatre méthodes sont mises en concurrence sur les mêmes matchs :
  *   - Elo seul   — `pVictoire` (lib/elo.ts), ce que fait l'app aujourd'hui ;
  *   - cotes seules — le consensus du marché, dévigorisé ;
- *   - blend      — `blendAvecCotes` (lib/elo.ts), 50/50 au départ.
+ *   - blend 50/50 — `blendAvecCotes` (lib/elo.ts) à poids égaux ;
+ *   - blend 30/70 — le même, penché vers le marché, pour voir si peser
+ *     davantage les cotes calibre mieux que l'équilibre.
  *
  * Elles sont jugées au score de Brier et à la log-loss, tous deux « plus bas
  * = mieux ». Les deux répondent à des questions différentes et c'est pourquoi
