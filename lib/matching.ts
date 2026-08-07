@@ -220,3 +220,73 @@ export function chercherCorrespondance<T extends LigneTa>(
 
   return { statut: 'absent' };
 }
+
+/* -------------------------------------------------------------------------- */
+/*  CAS PARTICULIER : LES JOUEURS D'UN TABLEAU                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Rapprocher un nom d'une source externe (The Odds API) des joueurs d'un
+ * tableau est le même problème, avec une autre identité : ce n'est plus un
+ * slug Tennis Abstract mais l'ID officiel du joueur. Les deux fonctions qui
+ * suivent ne font que présenter ces joueurs au module sous la forme qu'il
+ * attend, et vivent ici pour être utilisables hors du serveur — c'est ce qui
+ * permet de rejouer l'appariement sur des lignes déjà en cache, sans rappeler
+ * l'API (cf. scripts/reapparier-cotes.mts).
+ */
+
+/** Joueur d'un tableau, indexable. Son ID lui sert d'identité. */
+export interface JoueurIndexe extends LigneTa {
+  id: string;
+}
+
+/**
+ * Indexe les joueurs d'un tableau. On récupère telles quelles les clés
+ * candidates ci-dessus (initiale + nom, seconds prénoms, noms composés
+ * tronqués) qui rapprochent déjà « J. Sinner » de « Jannik Sinner ».
+ *
+ * Aucune exception n'est passée : `ta_name_exceptions` vise des slugs Tennis
+ * Abstract, pas des IDs de joueurs — les deux espaces d'identité ne se
+ * recouvrent pas.
+ */
+export function indexerJoueursTableau(
+  joueurs: { id: string; name: string }[],
+): IndexTa<JoueurIndexe> {
+  const lignes: JoueurIndexe[] = joueurs.map((p) => ({
+    id: p.id,
+    ta_name: p.name,
+    ta_name_normalized: normaliserNom(p.name),
+    ta_slug: p.id,
+  }));
+  return construireIndex(lignes);
+}
+
+/** Pourquoi un nom n'a pas été rattaché à un joueur du tableau. */
+export interface EchecAppariement {
+  nom: string;
+  raison: 'absent' | 'ambigu';
+  /** Noms des joueurs candidats, quand la clé en désigne plusieurs. */
+  candidats?: string[];
+}
+
+/**
+ * Rattache un nom externe à un joueur du tableau.
+ *
+ * `ambigu` n'est pas rabattu sur un choix par défaut : deux joueuses partageant
+ * la clé (« X. Wang »), rien dans le seul nom ne permet de trancher. Un mauvais
+ * lien serait silencieux et fausserait la mesure ; un NULL, lui, se voit.
+ */
+export function apparierNom(
+  index: IndexTa<JoueurIndexe>,
+  nom: string,
+): { id: string | null; echec?: EchecAppariement } {
+  const r = chercherCorrespondance(index, nom);
+  if (r.statut === 'trouve') return { id: r.ligne.id };
+  if (r.statut === 'ambigu') {
+    return {
+      id: null,
+      echec: { nom, raison: 'ambigu', candidats: r.candidats.map((c) => c.ta_name) },
+    };
+  }
+  return { id: null, echec: { nom, raison: 'absent' } };
+}

@@ -2,12 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
 import { consensusMarche, type CoteBookmaker } from '@/lib/cotes';
-import {
-  chercherCorrespondance,
-  construireIndex,
-  normaliserNom,
-  type LigneTa,
-} from '@/lib/matching';
+import { apparierNom, indexerJoueursTableau } from '@/lib/matching';
 
 /**
  * COTES BOOKMAKERS — RÉCUPÉRATION ET CACHE (The Odds API v4)
@@ -126,31 +121,6 @@ export async function listerSportsTennis(): Promise<SportApi[]> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Rapprochement des noms                                                     */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Le module de rapprochement travaille sur l'index qu'on lui donne : on lui
- * présente donc les joueurs du tableau sous la forme qu'il attend, en prenant
- * l'ID du joueur comme identité. On récupère ainsi telles quelles les clés
- * candidates (initiale + nom, seconds prénoms, noms composés tronqués) qui
- * rapprochent déjà « J. Sinner » de « Jannik Sinner ».
- */
-interface JoueurIndexe extends LigneTa {
-  id: string;
-}
-
-function indexerJoueurs(joueurs: { id: string; name: string }[]) {
-  const lignes: JoueurIndexe[] = joueurs.map((p) => ({
-    id: p.id,
-    ta_name: p.name,
-    ta_name_normalized: normaliserNom(p.name),
-    ta_slug: p.id,
-  }));
-  return construireIndex(lignes);
-}
-
-/* -------------------------------------------------------------------------- */
 /*  Lecture du cache                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -233,14 +203,13 @@ export async function rafraichirCotes(
     }
 
     const evenements = (await res.json()) as EvenementApi[];
-    const index = indexerJoueurs(joueurs);
+    const index = indexerJoueursTableau(joueurs);
     const nonApparies: { nom: string; raison: 'absent' | 'ambigu' }[] = [];
 
     const apparier = (nom: string): string | null => {
-      const r = chercherCorrespondance(index, nom);
-      if (r.statut === 'trouve') return r.ligne.id;
-      nonApparies.push({ nom, raison: r.statut === 'ambigu' ? 'ambigu' : 'absent' });
-      return null;
+      const { id, echec } = apparierNom(index, nom);
+      if (echec) nonApparies.push({ nom: echec.nom, raison: echec.raison });
+      return id;
     };
 
     const lignes = evenements.map((e) => {
