@@ -17,6 +17,8 @@ interface ResumeRefresh {
     importees: number;
     homonymes: { cle: string; slugs: string[] }[];
     misAJourLe: string | null;
+    archivees: number | null;
+    releveLe: string;
   }[];
 }
 
@@ -114,6 +116,23 @@ export default function ImportEloForm() {
                 Cache des projections Monte Carlo et des équipes Fantasy vidé :
                 chaque tour consulté sera resimulé au premier affichage.
               </p>
+              {result.tours.some((t) => t.archivees === null) ? (
+                <p className="text-xs">
+                  Archive datée non écrite : la table{' '}
+                  <code>ta_elo_historique</code> n&apos;existe pas encore
+                  (migration 0010). L&apos;import courant, lui, est bien pris en
+                  compte — seule l&apos;évaluation sans look-ahead perd cette
+                  semaine.
+                </p>
+              ) : (
+                <p className="text-xs">
+                  Instantané archivé au{' '}
+                  {[...new Set(result.tours.map((t) => t.releveLe))].join(' / ')} : les écrans
+                  de mesure pourront juger un match futur sur l&apos;Elo qui
+                  précède, et non sur celui d&apos;aujourd&apos;hui, qui aurait
+                  déjà intégré son résultat.
+                </p>
+              )}
             </>
           ) : (
             <>

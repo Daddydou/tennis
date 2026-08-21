@@ -70,6 +70,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
 #    supabase/migrations/0008_cotes.sql                 (cache tn_odds, cotes bookmakers)
 #    supabase/migrations/0009_statut_in_progress.sql    (statut in_progress, tableaux en direct)
+#    supabase/migrations/0010_elo_historique.sql        (archive ta_elo_historique, Elo sans look-ahead)
 # 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
 #        et seul un import la remplit — slug compris).
 
@@ -97,6 +98,13 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   `[extraitAtp, extraitWta]`. L'écriture en base est **rigoureusement la même**
   que celle du fetch (mêmes lignes, même upsert par `(ta_slug, tour)`, mêmes
   caches invalidés) : seule la source change.
+  **Chaque import laisse une trace datée.** `ta_elo` est écrasée — c'est
+  l'état courant, celui que lisent les picks, le fantasy et la simulation —
+  mais le même rapport est aussi versé dans `ta_elo_historique`, sous la date
+  qu'il annonce (« Last update »). Sans cette archive, juger un match passé se
+  ferait sur l'Elo d'aujourd'hui, qui a déjà intégré son résultat. L'archive ne
+  remonte pas le temps : elle part de l'instantané courant et n'accumule que
+  vers l'avant, donc les tournois déjà en base n'auront jamais d'Elo antérieur.
   `POST /api/elo/refresh` est **conservé en repli** — inutilisable depuis
   Vercel, mais fonctionnel en local, et prêt à resservir si le filtre tombe. Le
   bouton « Tenter le fetch serveur » est en bas de l'écran.
@@ -153,6 +161,14 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   de ces chiffres, ni aujourd'hui ni automatiquement demain. Sur quelques
   tournois, l'écart est dominé par le bruit ; s'y ajuster serait du
   sur-apprentissage. On accumule pour pouvoir regarder, et décider à la main.
+  **Deux colonnes de prédit, et la seconde est la bonne** : la première rejoue
+  l'équipe avec les Elo d'aujourd'hui, qui ont déjà intégré les résultats du
+  tournoi (les joueurs allés loin en sont ressortis relevés, donc l'équipe
+  reconstituée est en partie choisie POUR avoir bien fini) ; la colonne « sans
+  look-ahead » repart du dernier relevé Elo **antérieur au tirage**
+  (`supabase/fantasy-anterieur.ts`). Un tournoi antérieur à l'archive Elo
+  affiche « — » et reste hors de la synthèse propre, plutôt que d'y entrer avec
+  un chiffre flatté.
 - `/calibration` — la courbe Elo → probabilité du moteur
   (`P = 1 / (1 + 10^(−Δ/400))`, cf. `pVictoire` dans `lib/elo.ts`) confrontée à
   tous les matchs terminés en base : fréquence réelle de victoire du favori par
@@ -181,6 +197,14 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   deux sont affichés parce que la log-loss punit bien plus durement une
   prédiction confiante et fausse. **Rien n'est branché** : ni les picks, ni le
   fantasy, ni la simulation ne lisent ces cotes.
+  **L'Elo comparé aux cotes est celui d'AVANT le match** (dernier relevé
+  Tennis Abstract strictement antérieur, cf. `supabase/elo-historique.ts`) :
+  une cote est capturée avant la rencontre, l'Elo doit l'être aussi, sinon on
+  compare une prédiction à une rétrodiction. Les matchs sans Elo antérieur —
+  aucun relevé plus ancien, ou un joueur absent du relevé — sont **affichés,
+  comptés et exclus** de cette évaluation, jamais remplis avec l'Elo courant.
+  Celui-ci reste affiché en second tableau, « pour mémoire », pour que l'écart
+  entre les deux se lise.
   Source : The Odds API v4, clé dans `ODDS_API_KEY` (variable d'environnement,
   jamais dans le code). Les probabilités sont **dévigorisées** (1/cote puis
   normalisation à somme 1, ce qui retire la marge du book) et agrégées par la
@@ -225,6 +249,29 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
 Ces points s'écartent légèrement de l'énoncé, pour des raisons dictées par la base
 et par Next.js 16 :
 
+- **Elo courant pour prédire, Elo archivé pour juger.** `ta_elo` ne garde qu'un
+  instantané : le dernier import écrase le précédent. C'est ce qu'il faut pour
+  la production — prédire un match à venir avec l'Elo du jour n'est pas un
+  biais, c'est la seule chose à faire — mais pas pour les écrans de mesure. Sur
+  un match déjà joué, l'Elo d'aujourd'hui a intégré son résultat : le vainqueur
+  en est ressorti relevé, le perdant abaissé, si bien qu'a posteriori le favori
+  d'une affiche est en partie désigné **par** son résultat. Le biais est
+  orienté — le favori gagne trop souvent, l'Elo paraît meilleur qu'il ne l'est,
+  et la courbe plus raide qu'elle ne l'est.
+  D'où `ta_elo_historique` (migration 0010) : chaque import y ajoute un
+  instantané daté du rapport, et la fonction SQL `ta_elo_a_la_date(tour, date)`
+  rend, pour chaque joueur, sa dernière valeur **strictement antérieure** à une
+  date. Par joueur et non par rapport, parce qu'un rapport hebdomadaire ne
+  republie pas tout le monde — même règle que `ta_elo`, qui ne supprime jamais
+  un joueur absent du rapport de la semaine.
+  Deux frontières, tenues explicitement : la production n'appelle jamais
+  `supabase/elo-historique.ts`, et les écrans de mesure ne remplacent jamais un
+  Elo antérieur manquant par l'Elo courant — ni par l'Elo maison, recalculé sur
+  les matchs importés, qui rentrerait le look-ahead par la porte de derrière.
+  Un trou se **signale** (compté et affiché), il ne se remplit pas. Enfin
+  l'archive ne remonte pas le temps : Tennis Abstract ne publie que le rapport
+  de la semaine, donc l'évaluation propre ne portera que sur les tournois joués
+  après sa mise en place.
 - **Séparation lecture / écriture des clés Supabase.** Les lectures passent par la
   clé publique (`supabase/anon.ts`), adossée à des policies RLS
   `for select to anon using (true)` sur les 5 tables `tn_*` : ce client ne peut
@@ -427,7 +474,12 @@ supabase/
   queries.ts                     lectures + reconstruction Match[]/Player
   elo.ts                         cascade TA → défaut + sources (étage « maison »
                                  écrit mais jamais atteint, cf. plus haut)
-  elo-refresh.ts                 collage OU fetch TA → ta_elo (server-only)
+  elo-refresh.ts                 collage OU fetch TA → ta_elo (écrasée) ET
+                                 ta_elo_historique (instantané daté ajouté)
+  elo-historique.ts              Elo tel qu'il était AVANT une date — lecture de
+                                 l'archive, pour les seuls écrans de mesure
+  fantasy-anterieur.ts           équipe Fantasy rejouée sur l'Elo d'avant le
+                                 tirage (sans look-ahead, hors cache)
   projections.ts                 simulation Monte Carlo + cache tn_projections
   reference.ts                   score de référence : projections par tour puis
                                  lib/reference.ts (mémoïsé par requête)

@@ -8,6 +8,10 @@ interface Resume {
   ignores: number;
   restants: number;
   definitifs: number;
+  /** Tournois évalués aussi sur l'Elo antérieur au tirage. */
+  propres: number;
+  /** Tournois antérieurs à toute l'archive Elo : pas d'évaluation propre. */
+  sansEloAnterieur: number;
 }
 
 /**
@@ -57,7 +61,16 @@ export default function BackfillButton() {
       {resume && (
         <span className="text-xs text-zinc-500">
           {resume.traites} enregistré(s)
+          {resume.propres > 0 && `, dont ${resume.propres} sans look-ahead`}
           {resume.ignores > 0 && `, ${resume.ignores} sans équipe possible`}
+          {resume.sansEloAnterieur > 0 && (
+            <span
+              className="ml-1 text-violet-600 dark:text-violet-400"
+              title="Aucun relevé Elo n'est antérieur à ces tournois : l'archive ne remonte pas le temps, seuls les tournois joués après sa mise en place peuvent être évalués sans look-ahead."
+            >
+              , {resume.sansEloAnterieur} sans Elo antérieur
+            </span>
+          )}
           {resume.definitifs > 0 && `, ${resume.definitifs} déjà définitif(s)`}
           {resume.restants > 0 && (
             <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">

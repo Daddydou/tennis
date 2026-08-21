@@ -47,6 +47,8 @@ const TABLES = [
   'tn_fantasy_historique',
   // 0008 — cache des cotes bookmakers
   'tn_odds',
+  // 0010 — archive datée des Elo (évaluation sans look-ahead)
+  'ta_elo_historique',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

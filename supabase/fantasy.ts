@@ -336,13 +336,34 @@ export interface LigneHistorique {
 }
 
 /**
+ * Volet « sans look-ahead » du même tournoi : la même équipe recomposée sur
+ * l'Elo qui précédait le tirage (cf. supabase/fantasy-anterieur.ts).
+ *
+ * Facultatif, et son absence veut dire quelque chose : aucun relevé Elo n'est
+ * antérieur à ce tournoi, il n'entre donc pas dans l'évaluation propre.
+ */
+export interface VoletAnterieur {
+  releveLe: string;
+  ePredit: number;
+  reel: number;
+  joueursSansElo: number;
+  equipe: LigneHistorique['equipe'];
+}
+
+/**
  * Enregistre (ou met à jour) le couple prédit/réalisé d'un tournoi.
  * Ne lève jamais : l'historique est une collecte annexe, il ne doit pas faire
  * échouer l'import qui le déclenche.
+ *
+ * `anterieur` omis laisse les colonnes propres INTACTES plutôt que de les
+ * effacer : le chemin d'import ne les calcule pas (il coûterait une simulation
+ * de plus à chaque import), et il ne doit pas défaire ce que le backfill a
+ * écrit.
  */
 export async function enregistrerHistorique(
   engine: EngineInput,
   evaluation: EquipeEvaluee,
+  anterieur?: VoletAnterieur | null,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     const { tournament, players } = engine;
@@ -361,10 +382,44 @@ export async function enregistrerHistorique(
           ePoints: m.playerId ? m.eTotal : 0,
           reel: m.reel,
         })),
+        ...(anterieur ? colonnesAnterieures(anterieur) : {}),
         computed_at: new Date().toISOString(),
       },
       { onConflict: 'tournament_id' },
     );
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+function colonnesAnterieures(a: VoletAnterieur) {
+  return {
+    e_predit_anterieur: a.ePredit,
+    score_reel_anterieur: a.reel,
+    equipe_anterieure: a.equipe,
+    elo_releve_le: a.releveLe,
+    joueurs_sans_elo: a.joueursSansElo,
+  };
+}
+
+/**
+ * Met à jour le SEUL volet propre d'un tournoi déjà enregistré.
+ *
+ * Cas d'un tournoi terminé dont le couple courant est définitif : rejouer le
+ * calcul de production pour n'en changer que les colonnes propres serait une
+ * simulation Monte Carlo pour rien.
+ */
+export async function enregistrerAnterieur(
+  tournamentId: string,
+  anterieur: VoletAnterieur,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { error } = await supabaseAdmin()
+      .from('tn_fantasy_historique')
+      .update(colonnesAnterieures(anterieur))
+      .eq('tournament_id', tournamentId);
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e) {
@@ -379,6 +434,15 @@ export interface HistoriqueRow {
   termine: boolean;
   equipe: LigneHistorique['equipe'] | null;
   computed_at: string | null;
+  /**
+   * Volet sans look-ahead. NULL = aucun relevé Elo n'est antérieur à ce
+   * tournoi, il n'entre pas dans l'évaluation propre (cf. migration 0010).
+   */
+  e_predit_anterieur: number | string | null;
+  score_reel_anterieur: number | string | null;
+  equipe_anterieure: LigneHistorique['equipe'] | null;
+  elo_releve_le: string | null;
+  joueurs_sans_elo: number | null;
 }
 
 /** Tout l'historique, du tournoi le plus récent au plus ancien. */
@@ -386,7 +450,9 @@ export async function listerHistorique(): Promise<HistoriqueRow[]> {
   const sb = supabaseAnon();
   const { data, error } = await sb
     .from('tn_fantasy_historique')
-    .select('tournament_id, e_predit, score_reel, termine, equipe, computed_at');
+    .select(
+      'tournament_id, e_predit, score_reel, termine, equipe, computed_at, e_predit_anterieur, score_reel_anterieur, equipe_anterieure, elo_releve_le, joueurs_sans_elo',
+    );
   if (error) throw new Error(error.message);
   return (data ?? []) as HistoriqueRow[];
 }

@@ -31,6 +31,14 @@ import {
  * L'identité d'une ligne est le SLUG Tennis Abstract (player.cgi?p=AndresMartin),
  * pas le nom normalisé : deux homonymes coexistent en base, et c'est au
  * rapprochement de les départager (cf. lib/matching.ts).
+ *
+ * DEUX ÉCRITURES, PAS UNE. `ta_elo` est ÉCRASÉE — c'est l'état courant, celui
+ * que lisent les picks, le fantasy et la simulation. `ta_elo_historique`, elle,
+ * est AUGMENTÉE d'un instantané daté du rapport. Sans cette archive, juger un
+ * match passé se ferait sur l'Elo d'aujourd'hui, qui a déjà intégré son
+ * résultat : le favori y est en partie désigné par ce qu'il a fait (cf.
+ * supabase/elo-historique.ts). La table courante ne perd rien à ce doublon, et
+ * les écrans de mesure y gagnent la seule chose qui les rende valides.
  */
 
 export interface ResumeTour {
@@ -46,6 +54,15 @@ export interface ResumeTour {
    */
   homonymes: { cle: string; slugs: string[] }[];
   misAJourLe: string | null;
+  /**
+   * Lignes versées à l'archive datée (`ta_elo_historique`). `null` quand la
+   * table n'existe pas encore : l'import courant reste valable, seule
+   * l'évaluation sans look-ahead perd cette semaine — ça se dit, ça ne fait
+   * pas échouer l'import.
+   */
+  archivees: number | null;
+  /** Date sous laquelle l'instantané a été archivé. */
+  releveLe: string;
 }
 
 export interface ResumeRefresh {
@@ -84,26 +101,73 @@ async function ecrireRapport(rapport: RapportElo): Promise<ResumeTour> {
       elo_clay: l.eloClay,
       elo_grass: l.eloGrass,
       atp_rank: l.rang,
-      updated_at: rapport.misAJourLe,
     });
   }
 
-  const payload = [...parSlug.values()];
+  const lignes = [...parSlug.values()];
   const sb = supabaseAdmin();
+
+  // 1. État COURANT — écrasé. C'est lui que lit la production.
   const { error } = await sb
     .from('ta_elo')
-    .upsert(payload, { onConflict: 'ta_slug,tour' });
+    .upsert(
+      lignes.map((l) => ({ ...l, updated_at: rapport.misAJourLe })),
+      { onConflict: 'ta_slug,tour' },
+    );
   if (error) throw new Error(`ta_elo (${tour}) : ${error.message}`);
+
+  // 2. ARCHIVE datée — ajoutée.
+  const releveLe = rapport.misAJourLe ?? new Date().toISOString().slice(0, 10);
+  const archivees = await archiver(lignes, releveLe, tour);
 
   return {
     tour,
     lues: rapport.lignes.length,
-    importees: payload.length,
+    importees: lignes.length,
     homonymes: [...clesVues.entries()]
       .filter(([, slugs]) => slugs.length > 1)
       .map(([cle, slugs]) => ({ cle, slugs })),
     misAJourLe: rapport.misAJourLe,
+    archivees,
+    releveLe,
   };
+}
+
+/**
+ * Verse un rapport dans l'archive datée, sous la date du rapport.
+ *
+ * `releve_le` vient du rapport (« Last update »), pas de l'heure d'import :
+ * c'est la date à laquelle ces Elo étaient vrais, et c'est elle qu'on
+ * comparera à la date d'un match. Un rapport importé en retard, ou deux fois,
+ * atterrit donc au bon endroit dans le temps — le second import met à jour les
+ * mêmes lignes au lieu d'empiler un doublon (clé tour, releve_le, ta_slug).
+ *
+ * À défaut de date annoncée, celle du jour : un instantané mal daté reste
+ * mieux qu'aucun, tant que la date retenue ne peut pas être POSTÉRIEURE à la
+ * publication — elle ne l'est pas.
+ */
+async function archiver(
+  lignes: Record<string, unknown>[],
+  releveLe: string,
+  tour: TourTa,
+): Promise<number | null> {
+  if (lignes.length === 0) return 0;
+
+  const { error } = await supabaseAdmin()
+    .from('ta_elo_historique')
+    .upsert(
+      lignes.map((l) => ({ ...l, releve_le: releveLe })),
+      { onConflict: 'tour,releve_le,ta_slug' },
+    );
+
+  // 42P01 : migration 0010 pas encore appliquée. L'import courant a réussi et
+  // fait tout ce que la production attend de lui : on ne le fait pas échouer
+  // pour une archive de mesure. Le `null` remonte jusqu'à l'écran d'import.
+  if (error) {
+    if (error.code === '42P01') return null;
+    throw new Error(`ta_elo_historique (${tour}) : ${error.message}`);
+  }
+  return lignes.length;
 }
 
 /**

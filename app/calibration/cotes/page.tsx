@@ -9,8 +9,18 @@ import {
   compterCotesParTournoi,
   listerSportsTennis,
 } from '@/supabase/cotes';
+import {
+  creerLecteurEloAnterieur,
+  eloAnterieur,
+  type EloALaDate,
+} from '@/supabase/elo-historique';
 import { blendAvecCotes, pVictoire } from '@/lib/elo';
-import { ecartRelatif, scorerMethode, type Prediction } from '@/lib/cotes';
+import {
+  ecartRelatif,
+  scorerMethode,
+  type Prediction,
+  type ScoreMethode,
+} from '@/lib/cotes';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +39,97 @@ const libelleBlend = (poidsElo: number) =>
 
 const pct = (p: number | null) =>
   p === null || !Number.isFinite(p) ? '—' : `${(p * 100).toFixed(1)} %`;
+
+/** Cellule d'écart relatif : vert si meilleur que la référence, rouge sinon. */
+function CelluleEcart({ valeur }: { valeur: number | null }) {
+  return (
+    <td
+      className={`py-1.5 pr-3 text-right font-mono tabular-nums ${
+        valeur === null || Math.abs(valeur) < 0.05
+          ? 'text-zinc-400'
+          : valeur < 0
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : 'text-red-600 dark:text-red-400'
+      }`}
+    >
+      {valeur === null ? '—' : `${valeur > 0 ? '+' : ''}${valeur.toFixed(1)} %`}
+    </td>
+  );
+}
+
+/**
+ * Les quatre méthodes d'un corpus, jugées au Brier et à la log-loss.
+ *
+ * Les colonnes « vs Elo » comparent à la PREMIÈRE ligne du tableau, donc à
+ * l'Elo du corpus considéré : dans le tableau propre c'est l'Elo antérieur,
+ * dans celui d'en dessous l'Elo courant. Comparer un blend à l'Elo d'un autre
+ * corpus ne voudrait rien dire.
+ */
+function TableScores({
+  scores,
+  refBrier,
+  refLog,
+  meilleurBrier,
+}: {
+  scores: ScoreMethode[];
+  refBrier: number;
+  refLog: number;
+  meilleurBrier: number | null;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+            <th className="py-2 pr-3 font-medium">Méthode</th>
+            <th className="py-2 pr-3 text-right font-medium">Matchs</th>
+            <th className="py-2 pr-3 text-right font-medium">Brier</th>
+            <th className="py-2 pr-3 text-right font-medium">vs Elo</th>
+            <th className="py-2 pr-3 text-right font-medium">Log-loss</th>
+            <th className="py-2 pr-3 text-right font-medium">vs Elo</th>
+            <th className="py-2 pr-3 text-right font-medium">Favori gagnant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scores.map((s) => {
+            const gagnant = meilleurBrier !== null && s.brier === meilleurBrier;
+            return (
+              <tr
+                key={s.methode}
+                className={`border-b border-zinc-100 dark:border-zinc-900 ${
+                  gagnant ? 'bg-emerald-50 dark:bg-emerald-950/40' : ''
+                }`}
+              >
+                <td className="py-1.5 pr-3 font-medium">
+                  {s.methode}
+                  {gagnant && (
+                    <span className="ml-1.5 text-[10px] uppercase text-emerald-700 dark:text-emerald-400">
+                      meilleur
+                    </span>
+                  )}
+                </td>
+                <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
+                  {s.n}
+                </td>
+                <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
+                  {s.brier.toFixed(4)}
+                </td>
+                <CelluleEcart valeur={ecartRelatif(s.brier, refBrier)} />
+                <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
+                  {s.logLoss.toFixed(4)}
+                </td>
+                <CelluleEcart valeur={ecartRelatif(s.logLoss, refLog)} />
+                <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
+                  {pct(s.exactitude)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 /**
  * Devine la clé de sport correspondant au tournoi, pour présélectionner la
@@ -85,32 +186,85 @@ export default async function CotesPage({
   const engine = tournoiId ? await loadEngineData(tournoiId) : null;
   const cotes = tournoiId ? await chargerCotes(tournoiId) : [];
 
-  /* ── Confrontation des trois méthodes sur les matchs joués ── */
+  /* ── Confrontation des méthodes sur les matchs joués ──────────────────────
+   *
+   * DEUX ÉVALUATIONS, JAMAIS CONFONDUES.
+   *
+   * 1. PROPRE — l'Elo de chaque joueur tel qu'il était AVANT le match (dernier
+   *    relevé Tennis Abstract strictement antérieur, cf. elo-historique.ts).
+   *    C'est la seule méthodologiquement valide : les cotes, elles, sont par
+   *    construction capturées avant la rencontre, et les comparer à un Elo
+   *    postérieur reviendrait à faire courir les deux sur des pistes de
+   *    longueurs différentes.
+   *
+   * 2. POUR MÉMOIRE — l'Elo COURANT, celui de `ta_elo`. Il a déjà intégré le
+   *    résultat du match : le vainqueur en est ressorti relevé, le perdant
+   *    abaissé, si bien qu'a posteriori le favori est en partie désigné PAR
+   *    son résultat. Le biais a un sens connu — l'Elo paraît meilleur qu'il
+   *    ne l'est. On garde la mesure pour pouvoir LIRE cet écart, pas pour
+   *    conclure avec.
+   *
+   * L'archive ne remonte pas le temps (cf. migration 0010) : sur les tournois
+   * déjà en base, l'évaluation propre est vide, et c'est normal. Elle se
+   * remplira avec les tournois à venir.
+   */
   const surfElo = engine ? surfacePourElo(engine.tournament.surface) : 'hard';
   const eloDe = (pid: string): number | null => {
     const e = engine?.elos[pid] as ElosResolus | undefined;
     return e ? eloEffectifResolu(e, surfElo) : null;
   };
 
+  const lecteur = creerLecteurEloAnterieur();
+  const joueurDe = new Map((engine?.playerRows ?? []).map((p) => [p.id, p]));
+
+  /** Elo effectif d'un joueur dans un état daté. null s'il n'y figure pas. */
+  const eloAvantDe = (pid: string | null, etat: EloALaDate | null): number | null => {
+    const p = pid ? joueurDe.get(pid) : undefined;
+    const e = p ? eloAnterieur(p, etat) : null;
+    return e ? eloEffectifResolu(e, surfElo) : null;
+  };
+
+  /** Pourquoi un match n'entre pas dans l'évaluation propre. */
+  type SansAnterieur = 'instantane' | 'joueur';
+
   interface LigneVue {
     nomA: string;
     nomB: string;
     favori: string | null;
     pEloFavori: number | null;
+    pEloAvantFavori: number | null;
     pCotesFavori: number | null;
+    /** Mélanges de l'évaluation PROPRE : ils partent de l'Elo antérieur. */
     pBlendFavori: number | null;
     pBlendMarcheFavori: number | null;
     vainqueur: string | null;
     favoriGagne: boolean | null;
     bookmakers: number;
     apparie: boolean;
+    /** Relevé Elo utilisé pour ce match, quand il en existe un. */
+    releveLe: string | null;
+    sansAnterieur: SansAnterieur | null;
   }
 
   const vues: LigneVue[] = [];
+
+  // Corpus « pour mémoire » : Elo courant.
   const predElo: Prediction[] = [];
   const predCotes: Prediction[] = [];
   const predBlend: Prediction[] = [];
   const predBlendMarche: Prediction[] = [];
+
+  // Corpus « propre » : Elo antérieur au match. Sous-ensemble du précédent.
+  const predEloAvant: Prediction[] = [];
+  const predCotesPropre: Prediction[] = [];
+  const predBlendAvant: Prediction[] = [];
+  const predBlendMarcheAvant: Prediction[] = [];
+
+  // Matchs évaluables aujourd'hui mais exclus de l'évaluation propre, par
+  // motif. Comptés et affichés : une mesure qui porte silencieusement sur un
+  // sous-ensemble ne vaut rien.
+  let sansInstantane = 0;
+  let sansEloJoueur = 0;
 
   for (const c of cotes) {
     const a = c.player_a_id;
@@ -127,6 +281,28 @@ export default async function CotesPage({
       ? blendAvecCotes(pEloA, pCotesA, POIDS_ELO_MARCHE)
       : null;
 
+    // Date du match : l'heure de coup d'envoi annoncée par le bookmaker, la
+    // seule date par match dont on dispose. À défaut, le début du tournoi —
+    // antérieur à toutes ses rencontres, donc jamais optimiste.
+    const dateMatch = c.commence_time ?? engine?.tournament.start_date ?? null;
+    const etat = engine
+      ? await lecteur.avant(engine.tournament.tour, dateMatch)
+      : null;
+
+    const eloAvantA = eloAvantDe(a, etat);
+    const eloAvantB = eloAvantDe(b, etat);
+    const pEloAvantA =
+      eloAvantA !== null && eloAvantB !== null
+        ? pVictoire(eloAvantA, eloAvantB)
+        : null;
+    const melangeableAvant = pEloAvantA !== null && pCotesA !== null;
+    const pBlendAvantA = melangeableAvant
+      ? blendAvecCotes(pEloAvantA, pCotesA, POIDS_ELO)
+      : null;
+    const pBlendMarcheAvantA = melangeableAvant
+      ? blendAvecCotes(pEloAvantA, pCotesA, POIDS_ELO_MARCHE)
+      : null;
+
     // Résultat réel : on lit ici le vainqueur, ce que les écrans de pronostic
     // s'interdisent — c'est précisément l'objet de la mesure.
     const match =
@@ -139,56 +315,107 @@ export default async function CotesPage({
     const vainqueurId = match?.players.find((p) => p.winner)?.id ?? null;
     const aGagne = vainqueurId === null ? null : vainqueurId === a;
 
-    if (
+    const evaluable =
       aGagne !== null &&
       pEloA !== null &&
       pCotesA !== null &&
       pBlendA !== null &&
-      pBlendMarcheA !== null
-    ) {
+      pBlendMarcheA !== null;
+
+    if (evaluable) {
       predElo.push({ p: pEloA, gagne: aGagne });
       predCotes.push({ p: pCotesA, gagne: aGagne });
       predBlend.push({ p: pBlendA, gagne: aGagne });
       predBlendMarche.push({ p: pBlendMarcheA, gagne: aGagne });
     }
 
-    // Affichage orienté sur le favori de l'Elo, comme demandé.
-    const favoriEstA = pEloA === null ? true : pEloA >= 0.5;
+    // Un match n'est exclu de l'évaluation propre que s'il aurait pu y entrer :
+    // compter comme « sans Elo antérieur » une rencontre non appariée ou non
+    // jouée mélangerait deux motifs différents.
+    let sansAnterieur: SansAnterieur | null = null;
+    if (evaluable) {
+      if (pEloAvantA !== null && pBlendAvantA !== null && pBlendMarcheAvantA !== null) {
+        predEloAvant.push({ p: pEloAvantA, gagne: aGagne });
+        predCotesPropre.push({ p: pCotesA, gagne: aGagne });
+        predBlendAvant.push({ p: pBlendAvantA, gagne: aGagne });
+        predBlendMarcheAvant.push({ p: pBlendMarcheAvantA, gagne: aGagne });
+      } else if (etat === null) {
+        sansAnterieur = 'instantane';
+        sansInstantane++;
+      } else {
+        sansAnterieur = 'joueur';
+        sansEloJoueur++;
+      }
+    }
+
+    // Affichage orienté sur le favori de l'Elo — celui d'AVANT le match quand
+    // on l'a, sinon celui d'aujourd'hui. Les scores, eux, sont indifférents à
+    // l'orientation (cf. lib/cotes.ts) : elle ne joue que sur la lisibilité.
+    const pOrientation = pEloAvantA ?? pEloA;
+    const favoriEstA = pOrientation === null ? true : pOrientation >= 0.5;
+    const orienter = (p: number | null) =>
+      p === null ? null : favoriEstA ? p : 1 - p;
     const nomJoueur = (pid: string | null, repli: string) =>
       (pid && engine?.players[pid]?.name) || repli;
     vues.push({
       nomA: nomJoueur(a, c.nom_a),
       nomB: nomJoueur(b, c.nom_b),
       favori: favoriEstA ? nomJoueur(a, c.nom_a) : nomJoueur(b, c.nom_b),
-      pEloFavori: pEloA === null ? null : favoriEstA ? pEloA : 1 - pEloA,
-      pCotesFavori: pCotesA === null ? null : favoriEstA ? pCotesA : 1 - pCotesA,
-      pBlendFavori: pBlendA === null ? null : favoriEstA ? pBlendA : 1 - pBlendA,
-      pBlendMarcheFavori:
-        pBlendMarcheA === null
-          ? null
-          : favoriEstA
-            ? pBlendMarcheA
-            : 1 - pBlendMarcheA,
+      pEloFavori: orienter(pEloA),
+      pEloAvantFavori: orienter(pEloAvantA),
+      pCotesFavori: orienter(pCotesA),
+      // Le détail montre les mélanges de l'évaluation propre : ceux de l'Elo
+      // courant n'existent que pour situer le biais, en agrégé.
+      pBlendFavori: orienter(pBlendAvantA),
+      pBlendMarcheFavori: orienter(pBlendMarcheAvantA),
       vainqueur: vainqueurId ? nomJoueur(vainqueurId, '—') : null,
       favoriGagne:
         aGagne === null ? null : favoriEstA ? aGagne : !aGagne,
       bookmakers: c.bookmakers,
       apparie,
+      releveLe: etat?.releveLePlusRecent ?? null,
+      sansAnterieur,
     });
   }
 
-  const scores = [
-    scorerMethode('Elo seul', predElo),
-    scorerMethode('Cotes seules', predCotes),
-    scorerMethode(libelleBlend(POIDS_ELO), predBlend),
-    scorerMethode(libelleBlend(POIDS_ELO_MARCHE), predBlendMarche),
-  ];
-  const refBrier = scores[0].brier;
-  const refLog = scores[0].logLoss;
-  const meilleurBrier = Math.min(...scores.filter((s) => s.n > 0).map((s) => s.brier));
+  /** Les quatre méthodes d'un corpus, la première servant de référence. */
+  const scorer = (libelleElo: string, p: Prediction[][]) => {
+    const scores = [
+      scorerMethode(libelleElo, p[0]),
+      scorerMethode('Cotes seules', p[1]),
+      scorerMethode(libelleBlend(POIDS_ELO), p[2]),
+      scorerMethode(libelleBlend(POIDS_ELO_MARCHE), p[3]),
+    ];
+    const evalues = scores.filter((s) => s.n > 0);
+    return {
+      scores,
+      refBrier: scores[0].brier,
+      refLog: scores[0].logLoss,
+      meilleurBrier: evalues.length
+        ? Math.min(...evalues.map((s) => s.brier))
+        : null,
+    };
+  };
+
+  const propre = scorer('Elo antérieur au match', [
+    predEloAvant,
+    predCotesPropre,
+    predBlendAvant,
+    predBlendMarcheAvant,
+  ]);
+  const courant = scorer('Elo courant', [
+    predElo,
+    predCotes,
+    predBlend,
+    predBlendMarche,
+  ]);
 
   const nonApparies = vues.filter((v) => !v.apparie);
   const tournoiCourant = tournois.find((t) => t.id === tournoiId);
+  /** Relevés effectivement utilisés — l'âge des Elo qui ont servi. */
+  const relevesUtilises = [
+    ...new Set(vues.map((v) => v.releveLe).filter((r): r is string => r !== null)),
+  ].sort();
 
   return (
     <div className="max-w-5xl space-y-5">
@@ -201,6 +428,15 @@ export default async function CotesPage({
           simulation ne lisent ces cotes. Les quatre méthodes — dont deux mélanges,
           l&apos;un équilibré, l&apos;autre penché vers le marché — sont jugées au score
           de Brier et à la log-loss, tous deux «&nbsp;plus bas = mieux&nbsp;».
+        </p>
+        <p className="mt-2 text-sm text-zinc-500">
+          L&apos;Elo comparé aux cotes est celui{' '}
+          <strong>publié avant la rencontre</strong>, repris dans
+          l&apos;archive datée des rapports Tennis Abstract. L&apos;Elo courant
+          aurait déjà intégré le résultat du match : le comparer à une cote,
+          elle, capturée avant, ferait courir les deux sur des pistes de
+          longueurs différentes. Il reste affiché en second, pour que
+          l&apos;écart entre les deux se lise.
         </p>
       </div>
 
@@ -248,7 +484,7 @@ export default async function CotesPage({
             <span className="text-zinc-500">
               — {cotes.length} rencontre(s) en cache
               {cotes.length > 0 &&
-                ` · ${scores[0].n} évaluable(s) (appariées et jouées)`}
+                ` · ${courant.scores[0].n} appariée(s) et jouée(s) · ${propre.scores[0].n} avec un Elo antérieur`}
             </span>
           </p>
           {cleOk && !erreurSports && (
@@ -270,85 +506,78 @@ export default async function CotesPage({
         </div>
       )}
 
-      {/* ── Scores de calibration ── */}
-      {scores[0].n > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
-                <th className="py-2 pr-3 font-medium">Méthode</th>
-                <th className="py-2 pr-3 text-right font-medium">Matchs</th>
-                <th className="py-2 pr-3 text-right font-medium">Brier</th>
-                <th className="py-2 pr-3 text-right font-medium">vs Elo</th>
-                <th className="py-2 pr-3 text-right font-medium">Log-loss</th>
-                <th className="py-2 pr-3 text-right font-medium">vs Elo</th>
-                <th className="py-2 pr-3 text-right font-medium">Favori gagnant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scores.map((s) => {
-                const eb = ecartRelatif(s.brier, refBrier);
-                const el = ecartRelatif(s.logLoss, refLog);
-                const gagnant = s.brier === meilleurBrier;
-                return (
-                  <tr
-                    key={s.methode}
-                    className={`border-b border-zinc-100 dark:border-zinc-900 ${
-                      gagnant ? 'bg-emerald-50 dark:bg-emerald-950/40' : ''
-                    }`}
-                  >
-                    <td className="py-1.5 pr-3 font-medium">
-                      {s.methode}
-                      {gagnant && (
-                        <span className="ml-1.5 text-[10px] uppercase text-emerald-700 dark:text-emerald-400">
-                          meilleur
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
-                      {s.n}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
-                      {s.brier.toFixed(4)}
-                    </td>
-                    <td
-                      className={`py-1.5 pr-3 text-right font-mono tabular-nums ${
-                        eb === null || Math.abs(eb) < 0.05
-                          ? 'text-zinc-400'
-                          : eb < 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      {eb === null ? '—' : `${eb > 0 ? '+' : ''}${eb.toFixed(1)} %`}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
-                      {s.logLoss.toFixed(4)}
-                    </td>
-                    <td
-                      className={`py-1.5 pr-3 text-right font-mono tabular-nums ${
-                        el === null || Math.abs(el) < 0.05
-                          ? 'text-zinc-400'
-                          : el < 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
-                      }`}
-                    >
-                      {el === null ? '—' : `${el > 0 ? '+' : ''}${el.toFixed(1)} %`}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
-                      {pct(s.exactitude)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-zinc-400">
-            {scores[0].n} match(s) évalué(s). Un écart lu sur si peu de matchs est
-            dominé par le bruit : c&apos;est une collecte, pas encore une conclusion —
-            même prudence que les autres écrans de calibration.
-          </p>
+      {/* ── Évaluation propre : Elo antérieur au match ── */}
+      {courant.scores[0].n > 0 ? (
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold">
+              Évaluation propre — Elo antérieur au match
+            </h2>
+            {propre.scores[0].n > 0 ? (
+              <>
+                <TableScores {...propre} />
+                <p className="text-xs text-zinc-400">
+                  {propre.scores[0].n} match(s) jugé(s) sur l&apos;Elo publié{' '}
+                  <strong>avant</strong> la rencontre
+                  {relevesUtilises.length > 0 &&
+                    ` (relevé${relevesUtilises.length > 1 ? 's' : ''} du ${relevesUtilises.join(', ')})`}
+                  . C&apos;est la seule comparaison valide : les cotes sont
+                  capturées avant le match, l&apos;Elo doit l&apos;être aussi. Un
+                  écart lu sur si peu de matchs reste dominé par le bruit —
+                  c&apos;est une collecte, pas encore une conclusion.
+                </p>
+                {(sansInstantane > 0 || sansEloJoueur > 0) && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    {sansInstantane + sansEloJoueur} match(s) écarté(s) de cette
+                    évaluation :{' '}
+                    {sansInstantane > 0 &&
+                      `${sansInstantane} sans aucun relevé antérieur à la rencontre`}
+                    {sansInstantane > 0 && sansEloJoueur > 0 && ', '}
+                    {sansEloJoueur > 0 &&
+                      `${sansEloJoueur} dont un joueur au moins est absent du relevé`}
+                    . Ils restent listés plus bas, jamais remplacés par
+                    l&apos;Elo courant : un trou se signale, il ne se remplit
+                    pas.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                <p className="font-medium">
+                  Aucun match ne dispose d&apos;un Elo antérieur.
+                </p>
+                <p className="mt-1">
+                  L&apos;archive des Elo (<code>ta_elo_historique</code>) ne
+                  remonte pas le temps : Tennis Abstract ne publie que le
+                  rapport de la semaine, et l&apos;archive n&apos;accumule que
+                  depuis sa mise en place. Aucun tournoi déjà joué n&apos;aura
+                  donc d&apos;Elo antérieur — ce sont les tournois à venir qui
+                  rempliront cette évaluation, à raison d&apos;un instantané par
+                  import d&apos;Elo. Le tableau ci-dessous, lui, reste lisible
+                  avec la réserve qui l&apos;accompagne.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Pour mémoire : Elo courant, donc biaisé ── */}
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-zinc-500">
+              Pour mémoire — Elo courant{' '}
+              <span className="font-normal">(biais de look-ahead)</span>
+            </h2>
+            <TableScores {...courant} />
+            <p className="text-xs text-zinc-400">
+              {courant.scores[0].n} match(s), jugés sur l&apos;Elo{' '}
+              <strong>d&apos;aujourd&apos;hui</strong>, qui a déjà intégré leur
+              résultat : le vainqueur en est ressorti relevé, le perdant
+              abaissé, si bien qu&apos;a posteriori le favori est en partie
+              désigné par ce qu&apos;il a fait. Le biais a un sens connu —
+              l&apos;Elo y paraît meilleur qu&apos;il ne l&apos;est, donc les
+              mélanges moins utiles. À lire comme un repère, pas comme un
+              résultat.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="rounded border border-zinc-200 p-3 text-sm text-zinc-500 dark:border-zinc-800">
@@ -376,7 +605,12 @@ export default async function CotesPage({
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
                 <th className="py-2 pr-3 font-medium">Match</th>
-                <th className="py-2 pr-3 text-right font-medium">P(favori) Elo</th>
+                <th className="py-2 pr-3 text-right font-medium">
+                  P(favori) Elo antérieur
+                </th>
+                <th className="py-2 pr-3 text-right font-medium">
+                  P(favori) Elo courant
+                </th>
                 <th className="py-2 pr-3 text-right font-medium">P(favori) cotes</th>
                 <th className="py-2 pr-3 text-right font-medium">
                   P(favori) {libelleBlend(POIDS_ELO).toLowerCase()}
@@ -405,13 +639,38 @@ export default async function CotesPage({
                         non apparié
                       </span>
                     )}
+                    {v.sansAnterieur !== null && (
+                      <span
+                        className="ml-1.5 rounded border border-violet-300 px-1 text-[10px] text-violet-700 dark:border-violet-800 dark:text-violet-400"
+                        title={
+                          v.sansAnterieur === 'instantane'
+                            ? "Aucun relevé Elo n'est antérieur à ce match : il est exclu de l'évaluation propre."
+                            : "Au moins un des deux joueurs est absent du relevé antérieur : il est exclu de l'évaluation propre."
+                        }
+                      >
+                        {v.sansAnterieur === 'instantane'
+                          ? 'pas d’Elo antérieur'
+                          : 'joueur hors relevé'}
+                      </span>
+                    )}
                     {v.bookmakers > 0 && (
                       <span className="ml-1.5 text-[10px] text-zinc-400">
                         {v.bookmakers} book{v.bookmakers > 1 ? 's' : ''}
                       </span>
                     )}
+                    {v.releveLe && (
+                      <span
+                        className="ml-1.5 text-[10px] text-zinc-400"
+                        title="Relevé Tennis Abstract le plus récent antérieur à ce match."
+                      >
+                        Elo du {v.releveLe}
+                      </span>
+                    )}
                   </td>
                   <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
+                    {pct(v.pEloAvantFavori)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right font-mono tabular-nums text-zinc-500">
                     {pct(v.pEloFavori)}
                   </td>
                   <td className="py-1.5 pr-3 text-right font-mono tabular-nums">

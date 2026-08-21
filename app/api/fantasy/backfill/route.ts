@@ -1,7 +1,10 @@
 import { sessionValide } from '@/auth/garde';
 import { supabaseAnon } from '@/supabase/anon';
 import { loadEngineData } from '@/supabase/queries';
+import { creerLecteurEloAnterieur } from '@/supabase/elo-historique';
+import { evaluerFantasyAnterieur } from '@/supabase/fantasy-anterieur';
 import {
+  enregistrerAnterieur,
   enregistrerHistorique,
   equipeEvaluee,
   getFantasy,
@@ -18,10 +21,28 @@ import {
  * l'existant : équipe optimale a priori, puis score réel de cette équipe sur
  * les résultats déjà en base. Rien n'est ajusté, on enregistre des couples.
  *
+ * DEUX VOLETS PAR TOURNOI :
+ *   - COURANT — l'équipe reconstituée avec les Elo d'aujourd'hui, qui ont
+ *     déjà intégré les résultats du tournoi. C'est le calcul historique, celui
+ *     que l'import écrit aussi ;
+ *   - PROPRE — la même équipe recomposée sur le dernier relevé Elo antérieur
+ *     au tirage (cf. supabase/fantasy-anterieur.ts). C'est celui dont la
+ *     comparaison prédit/réalisé a un sens, et il n'existe que si l'archive
+ *     contient un relevé plus ancien que le tournoi.
+ *
+ * L'archive ne remonte pas le temps : aucun tournoi déjà en base n'a d'Elo
+ * antérieur, et aucun n'en aura. Le volet propre ne se remplira que pour les
+ * tournois à venir — d'où `sansEloAnterieur` dans la réponse, qui dit
+ * combien de tournois sont restés hors de l'évaluation propre plutôt que de
+ * le taire.
+ *
  * Traite en priorité ce qui manque ou ce qui a bougé :
- *   - pas de ligne          → à calculer ;
- *   - ligne « en cours »    → le tournoi a pu avancer depuis, à recalculer ;
- *   - ligne « terminé »     → définitive, on n'y touche plus.
+ *   - pas de ligne             → à calculer ;
+ *   - ligne « en cours »       → le tournoi a pu avancer depuis, à recalculer ;
+ *   - ligne « terminé » sans
+ *     volet propre             → seul ce volet est recalculé, si possible ;
+ *   - ligne « terminé » avec
+ *     les deux volets          → définitive, on n'y touche plus.
  *
  * BORNÉ DANS LE TEMPS. Un tournoi sans projection en cache déclenche une
  * simulation Monte Carlo (jusqu'à ~30 s sur un tableau de 128) : tout traiter
@@ -47,34 +68,78 @@ export async function POST() {
     const [tournois, historique] = await Promise.all([
       sb
         .from('tn_tournaments')
-        .select('id, name')
+        .select('id, name, tour, start_date')
         .order('start_date', { ascending: false, nullsFirst: false }),
-      sb.from('tn_fantasy_historique').select('tournament_id, termine'),
+      sb
+        .from('tn_fantasy_historique')
+        .select('tournament_id, termine, e_predit_anterieur'),
     ]);
     if (tournois.error) throw new Error(tournois.error.message);
     if (historique.error) throw new Error(historique.error.message);
 
-    const definitifs = new Set(
-      (historique.data ?? [])
-        .filter((h) => h.termine)
-        .map((h) => h.tournament_id as string),
+    const lignes = new Map(
+      (historique.data ?? []).map((h) => [h.tournament_id as string, h]),
     );
 
-    const aFaire = (tournois.data ?? []).filter((t) => !definitifs.has(t.id));
+    // Définitif = terminé ET déjà jugé sans look-ahead. Un tournoi terminé
+    // dont le volet propre manque reste à reprendre : il peut s'agir d'un
+    // tournoi récent, joué après la mise en place de l'archive.
+    const definitif = (id: string) => {
+      const h = lignes.get(id);
+      return Boolean(h?.termine && h.e_predit_anterieur !== null);
+    };
+
+    const aFaire = (tournois.data ?? []).filter((t) => !definitif(t.id));
+    const lecteur = creerLecteurEloAnterieur();
 
     let traites = 0;
     let ignores = 0;
     let restants = 0;
+    let propres = 0;
+    let sansEloAnterieur = 0;
+    /** Tournois traités dans cette passe, quelle qu'en soit l'issue. */
+    let vus = 0;
 
     for (const t of aFaire) {
       if (Date.now() - debut > BUDGET_MS) {
-        restants = aFaire.length - traites - ignores;
+        restants = aFaire.length - vus;
         break;
+      }
+      vus++;
+
+      const dejaTermine = lignes.get(t.id)?.termine === true;
+
+      // Un tournoi terminé n'a plus que son volet propre à gagner. La question
+      // « un relevé Elo lui est-il antérieur ? » coûte une requête ; charger
+      // le moteur et resimuler pour s'entendre dire non coûterait bien plus.
+      if (dejaTermine) {
+        const dispo = await lecteur.avant(t.tour, t.start_date);
+        if (!dispo) {
+          sansEloAnterieur++;
+          continue;
+        }
       }
 
       const engine = await loadEngineData(t.id);
       if (!engine || (engine.tournament.rounds ?? []).length === 0) {
         ignores++;
+        continue;
+      }
+
+      const anterieur = await evaluerFantasyAnterieur(engine, lecteur);
+      if (anterieur) propres++;
+      else if (!dejaTermine) sansEloAnterieur++;
+
+      // Le couple courant d'un tournoi terminé est définitif : on ne réécrit
+      // que ce qui manquait.
+      if (dejaTermine) {
+        if (!anterieur) {
+          ignores++;
+          continue;
+        }
+        const r = await enregistrerAnterieur(t.id, anterieur);
+        if (!r.ok) throw new Error(`${t.name} : ${r.error}`);
+        traites++;
         continue;
       }
 
@@ -87,7 +152,7 @@ export async function POST() {
         continue;
       }
 
-      const r = await enregistrerHistorique(engine, evaluation);
+      const r = await enregistrerHistorique(engine, evaluation, anterieur);
       if (!r.ok) throw new Error(`${t.name} : ${r.error}`);
       traites++;
     }
@@ -97,7 +162,9 @@ export async function POST() {
       traites,
       ignores,
       restants,
-      definitifs: definitifs.size,
+      definitifs: (tournois.data ?? []).filter((t) => definitif(t.id)).length,
+      propres,
+      sansEloAnterieur,
     });
   } catch (e) {
     return Response.json(
