@@ -71,6 +71,7 @@ Les tables `tn_*` sont en **lecture publique / écriture service-role** :
 #    supabase/migrations/0008_cotes.sql                 (cache tn_odds, cotes bookmakers)
 #    supabase/migrations/0009_statut_in_progress.sql    (statut in_progress, tableaux en direct)
 #    supabase/migrations/0010_elo_historique.sql        (archive ta_elo_historique, Elo sans look-ahead)
+#    supabase/migrations/0011_corrections_joueurs.sql   (fusion R. Jodar, exception Kyrgios, doublons sans match)
 # 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
 #        et seul un import la remplit — slug compris).
 
@@ -249,6 +250,19 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
 Ces points s'écartent légèrement de l'énoncé, pour des raisons dictées par la base
 et par Next.js 16 :
 
+- **Un joueur, plusieurs espaces d'identifiants.** `tn_players.id` est l'ID de
+  la source qui l'a fait entrer en base. Les extractions ne partagent pas
+  toutes le même espace : à côté des ID officiels (`J0DZ`, `KE17`, `326160`)
+  on trouve des identifiants Sportradar (`SR:COMPETITOR:972327`) et un second
+  espace numérique WTA. Une même personne peut donc arriver sous deux lignes,
+  chacune avec ses matchs et son Elo maison — et le rapprochement Tennis
+  Abstract ne s'accroche qu'à l'une d'elles, l'autre tombant en Elo « défaut ».
+  Corrigé au cas par cas (migration 0011), jamais automatiquement : deux lignes
+  de même nom sont parfois **deux vraies personnes**. Les deux « X. Wang »
+  (`326160` et `326376`) sont deux joueuses distinctes, avec chacune leurs
+  matchs ; les fusionner créerait le bug qu'on corrige. Le critère de fusion
+  n'est donc pas le nom mais la **preuve** : mêmes tournois impossibles à
+  cumuler, ou une ligne sans le moindre match face à une ligne peuplée.
 - **Elo courant pour prédire, Elo archivé pour juger.** `ta_elo` ne garde qu'un
   instantané : le dernier import écrase le précédent. C'est ce qu'il faut pour
   la production — prédire un match à venir avec l'Elo du jour n'est pas un
