@@ -157,7 +157,31 @@ where p.id in ('845268', '501894', '460837', '906723', '721779', '325729')
                   where o.player_a_id = p.id or o.player_b_id = p.id);
 
 -- ---------------------------------------------------------------------
--- 4. CONTRÔLE — un joueur deux fois dans le même tableau
+-- 4. HISTORIQUE FANTASY DE L'AUSTRALIAN OPEN — à recalculer
+--
+-- La ligne prédit/réalisé de ce tournoi a été calculée quand Jodar y
+-- valait l'Elo par DÉFAUT (1650), faute d'être rattaché à sa ligne ATP.
+-- Il vaut 1961. L'écart est marginal — un joueur entré en R128 d'un
+-- tableau de 128 — mais la ligne ne décrit plus le tableau tel qu'il est.
+--
+-- On la SUPPRIME plutôt que de la corriger : elle n'est pas une donnée
+-- saisie, c'est un calcul dérivé (`supabase/fantasy.ts`), entièrement
+-- reproductible depuis les matchs et les Elo. Sans cette suppression elle
+-- ne serait jamais reprise : le backfill tient une ligne « terminé » pour
+-- définitive et ne la recalcule plus (cf. api/fantasy/backfill).
+--
+-- Les caches `tn_projections` et `tn_fantasy` de ce tournoi, eux, étaient
+-- déjà vides — vidés par le dernier import d'Elo — il n'y a rien d'autre
+-- à périmer.
+--
+-- Rejouable : supprimer une ligne absente ne fait rien, et un backfill
+-- ultérieur la réécrit à l'identique (simulation à graine fixe).
+-- ---------------------------------------------------------------------
+delete from tn_fantasy_historique
+where tournament_id = 'bd18e652-3abb-4101-b306-184b87d62f0d';  -- Australian Open 2026
+
+-- ---------------------------------------------------------------------
+-- 5. CONTRÔLE — un joueur deux fois dans le même tableau
 --
 -- La fusion du point 1 est la seule opération capable de produire ce
 -- défaut. On le cherche sur TOUTE la base, pas seulement sur J0DZ : si un
