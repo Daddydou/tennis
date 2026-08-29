@@ -1,0 +1,68 @@
+-- =====================================================================
+-- NOUVEAUX PALIERS DU GRAND CHELEM — HISTORIQUE FANTASY À RECALCULER
+--
+-- Les cinq paliers de classement du Grand Chelem changent de découpage
+-- (cf. `COMPOSITIONS.GC` dans lib/fantasy.ts) :
+--
+--   palier   avant                  après
+--   1        1 à 10                 1 à 10
+--   2        11 à 30                11 à 20
+--   3        31 à 60                21 à 40
+--   4        61 et au-delà          41 à 70
+--   5        41 et au-delà          71 et au-delà
+--
+-- Les nouveaux paliers sont CONTIGUS ET DISJOINTS : chaque rang tombe
+-- dans exactement un palier, le rang 70 clôt le palier 4 et le palier 5
+-- ouvre à 71. Les anciens se recoupaient (« 61 et + » ⊂ « 41 et + »).
+--
+-- Les Masters 1000, ATP/WTA 500 et 250 ne sont PAS touchés.
+--
+-- ---------------------------------------------------------------------
+-- CE QUI DOIT ÊTRE PÉRIMÉ, ET CE QUI N'A PAS À L'ÊTRE
+--
+-- `tn_fantasy_historique` porte la COMPOSITION retenue (colonne `equipe`,
+-- un joueur par numéro de palier) et les totaux qui en découlent. Les
+-- lignes déjà écrites décrivent donc l'ancien découpage : les garder
+-- ferait cohabiter deux définitions du palier 4 dans la même table, et
+-- toute synthèse prédit/réalisé mélangerait les deux.
+--
+-- `tn_fantasy`, en revanche, n'est PAS touché — et ce n'est pas un oubli.
+-- Ce cache stocke une espérance PAR JOUEUR (`e_total` + ventilation par
+-- tour), calculée sur la seule simulation du tirage : aucun palier n'y
+-- entre. La composition, elle, est refaite à chaque lecture
+-- (`equipeEvaluee`, supabase/fantasy.ts). Les écrans Fantasy des Grands
+-- Chelems se recomposent donc d'eux-mêmes avec les nouvelles bornes, sans
+-- resimuler quoi que ce soit. Vider ce cache ne changerait rien au
+-- résultat et coûterait une simulation Monte Carlo par tournoi.
+--
+-- ---------------------------------------------------------------------
+-- POURQUOI SUPPRIMER PLUTÔT QUE RECALCULER ICI
+--
+-- Ces lignes ne sont pas des données saisies : c'est un calcul dérivé,
+-- entièrement reproductible depuis les matchs et les Elo. Le backfill
+-- (`POST /api/fantasy/backfill`) les réécrit — mais il ne le ferait pas
+-- sans cette suppression : il tient une ligne « terminé » pour définitive
+-- et ne la reprend plus. C'est le même geste qu'à la migration 0011.
+--
+-- ⚠ À FAIRE APRÈS CETTE MIGRATION : rejouer le backfill Fantasy depuis
+-- l'écran Calibration, sans quoi les Grands Chelems restent sans ligne
+-- d'historique.
+--
+-- Rejouable : supprimer des lignes absentes ne fait rien, et le backfill
+-- les réécrit à l'identique (simulation à graine fixe).
+-- ---------------------------------------------------------------------
+
+-- Le filtre porte sur la CATÉGORIE, pas sur une liste d'identifiants : la
+-- règle est « tout Grand Chelem », et elle reste juste si un tableau de
+-- plus est importé avant que la migration ne soit jouée.
+--
+-- La seconde branche reprend le repli de `famillePourCategorie` (lib/
+-- fantasy.ts) : une ligne ancienne sans catégorie est tenue pour un Grand
+-- Chelem si elle tire 128 joueurs. Aucune ligne n'est dans ce cas
+-- aujourd'hui — elle est là pour que le filtre dise la même règle que le
+-- code, et non une approximation.
+delete from tn_fantasy_historique h
+using tn_tournaments t
+where t.id = h.tournament_id
+  and (t.category = 'GS'
+       or (t.category is null and coalesce(t.draw_size, 0) >= 128));

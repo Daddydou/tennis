@@ -13,11 +13,13 @@
  *             UNE espérance globale, celle du tirage — aucun résultat réel n'y
  *             entre jamais (cf. supabase/fantasy.ts).
  *
- * L'équipe se compose d'un joueur par palier de classement. Comme les derniers
- * paliers se recoupent (« 61 et au-delà » ⊂ « 41 et au-delà »), prendre le
+ * L'équipe se compose d'un joueur par palier de classement. Hors Grand Chelem,
+ * les derniers paliers se recoupent (« 31 et au-delà » deux fois) : prendre le
  * meilleur de chaque palier indépendamment produirait un doublon. On résout
  * donc l'affectation palier → joueur globalement, en réutilisant l'algorithme
- * hongrois déjà écrit pour les picks (lib/optimizer.ts).
+ * hongrois déjà écrit pour les picks (lib/optimizer.ts). Les paliers du Grand
+ * Chelem, eux, sont désormais disjoints — l'affectation globale y rend le même
+ * résultat qu'un maximum palier par palier, et reste le chemin unique.
  *
  * Module PUR : aucune I/O, aucune dépendance à Supabase. Les espérances par
  * tour lui sont fournies (elles viennent de la simulation Monte Carlo, cf.
@@ -202,11 +204,20 @@ function palier(
 }
 
 /**
- * Composition de l'équipe par famille de tournoi. Les paliers de fin se
- * recoupent volontairement (« 61 et + » est inclus dans « 41 et + ») : c'est
- * ce recoupement qui interdit un simple maximum palier par palier.
+ * Composition de l'équipe par famille de tournoi.
+ *
+ * GRAND CHELEM — cinq paliers CONTIGUS ET DISJOINTS : 1-10, 11-20, 21-40,
+ * 41-70, 71 et au-delà. Chaque rang tombe dans exactement un palier, et les
+ * bornes se touchent sans se recouvrir — le rang 70 est le dernier du palier 4,
+ * le palier 5 commence à 71. C'est un changement de découpage : les anciens
+ * paliers de fin se recoupaient (« 61 et + » inclus dans « 41 et + »), si bien
+ * qu'un même joueur pouvait être candidat à deux paliers.
  *
  * Le circuit féminin suit exactement les mêmes paliers que le masculin.
+ *
+ * M1000 / AUTRE — inchangés, et leurs deux derniers paliers restent
+ * identiques (« 31 et au-delà » deux fois). C'est ce recoupement-là qui
+ * interdit encore un simple maximum palier par palier (cf. `composerEquipe`).
  *
  * `AUTRE` (ATP/WTA 500, 250, Finals) reprend la composition des Masters 1000 :
  * le jeu ne définit pas de barème propre à ces catégories, et 4 joueurs sur un
@@ -216,10 +227,10 @@ function palier(
 export const COMPOSITIONS: Record<FamilleFantasy, Palier[]> = {
   GC: [
     palier(1, 1, 10),
-    palier(2, 11, 30),
-    palier(3, 31, 60),
-    palier(4, 61, null),
-    palier(5, 41, null),
+    palier(2, 11, 20),
+    palier(3, 21, 40),
+    palier(4, 41, 70),
+    palier(5, 71, null),
   ],
   M1000: [
     palier(1, 1, 10),
@@ -431,9 +442,11 @@ export interface MembreEquipe {
  * des espérances.
  *
  * Résolu par affectation globale (algorithme hongrois de lib/optimizer.ts) et
- * non palier par palier : avec des paliers qui se recoupent, le meilleur
- * joueur du palier « 41 et + » est souvent aussi le meilleur du palier
- * « 61 et + », et un choix glouton laisserait l'un des deux vide.
+ * non palier par palier : hors Grand Chelem, les paliers 3 et 4 sont le même
+ * intervalle (« 31 et au-delà »), et un choix glouton donnerait deux fois le
+ * même joueur — ou laisserait un palier vide. Sur des paliers disjoints, comme
+ * ceux du Grand Chelem, l'affectation rend simplement le meilleur de chaque
+ * palier : le chemin de calcul reste unique, sans cas particulier.
  */
 export function composerEquipe(
   paliers: Palier[],
