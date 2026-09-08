@@ -3,7 +3,9 @@
 import { useMemo } from 'react';
 import {
   chercherScenariosGagnants,
-  filtrerDepuisTour,
+  ensemblesAtteignables,
+  maxAtteignable,
+  predictionsDepuisAncre,
   scoreDuStock,
   type ArbreResolu,
   type EvenementSimple,
@@ -29,13 +31,16 @@ function libelleEvenement(
 }
 
 /**
- * Classement en direct : pour chaque stock, points déjà gagnés (saisis à la
- * main, jamais calculés — ce sont les tours d'AVANT le tour choisi) + points
- * sur les tours simulés (son pronostic comparé au bracket réel/scénario de
- * l'onglet Bracket réel, au barème 2^tour). Recalculé à chaque clic là-bas.
+ * Classement en direct — modèle à ANCRE UNIQUE : le pronostic de chaque
+ * stock (lib/bracketSim.ts `predictionsDepuisAncre`) se déduit entièrement
+ * de son ancre et du tour de départ, sans rien à stocker par tour. Pour
+ * chaque stock : points déjà gagnés (saisis à la main — les tours d'AVANT
+ * le tour de départ) + points sur les tours simulés (l'ancre comparée au
+ * bracket réel/scénario de l'onglet Bracket réel, au barème 2^tour).
+ * Recalculé à chaque clic là-bas.
  *
- * En dessous : la probabilité de victoire de chacun (simulation Monte Carlo
- * depuis l'état courant du bracket réel/scénario) et, quand la situation le
+ * En dessous : la probabilité de victoire de chacun (Monte Carlo depuis
+ * l'état courant du bracket réel/scénario) et, quand la situation le
  * permet, le scénario minimal qui garantirait la victoire d'un participant.
  */
 export default function ClassementPanel({
@@ -47,7 +52,7 @@ export default function ClassementPanel({
   surface,
   joueurs,
   participants,
-  predictions,
+  ancres,
   arbreScenario,
   dejaGagne,
   onChangerDejaGagne,
@@ -60,62 +65,81 @@ export default function ClassementPanel({
   surface: 'hard' | 'clay' | 'grass';
   joueurs: Record<string, Joueur>;
   participants: Participant[];
-  predictions: Record<string, Map<string, string>>;
+  ancres: Record<string, string | null>;
   arbreScenario: ArbreResolu;
   dejaGagne: Record<string, number>;
   onChangerDejaGagne: (stockId: string, valeur: number) => void;
 }) {
   const stocks = useMemo(() => [MOI, ...participants.map((p) => p.id)], [participants]);
 
+  // Carte de pronostics virtuelle de chaque stock, déduite de sa seule
+  // ancre — c'est la SEULE différence avec l'ancien modèle multi-tours,
+  // tout le reste (scoreDuStock, maxAtteignable, Monte Carlo, recherche de
+  // scénario) est le moteur déjà existant, inchangé.
+  const predictionsParStock = useMemo(() => {
+    const out: Record<string, Map<string, string>> = {};
+    for (const s of stocks) {
+      const ancre = ancres[s];
+      out[s] = ancre ? predictionsDepuisAncre(matches, rounds, roundDepart, ancre) : new Map();
+    }
+    return out;
+  }, [stocks, ancres, matches, rounds, roundDepart]);
+
   const classement = useMemo(() => {
     return stocks
       .map((s) => {
-        const preds = filtrerDepuisTour(predictions[s] ?? new Map(), rounds, roundDepart);
-        const pointsSimules = scoreDuStock(preds, arbreScenario, rounds);
+        const pointsSimules = scoreDuStock(predictionsParStock[s], arbreScenario, rounds);
         const deja = dejaGagne[s] ?? 0;
-        return { id: s, nom: nomStock(s, participants), deja, pointsSimules, total: deja + pointsSimules };
+        return {
+          id: s,
+          nom: nomStock(s, participants),
+          ancre: ancres[s] ? (joueurs[ancres[s]!]?.nom ?? ancres[s]) : null,
+          deja,
+          pointsSimules,
+          total: deja + pointsSimules,
+        };
       })
       .sort((a, b) => b.total - a.total);
-  }, [stocks, predictions, arbreScenario, rounds, roundDepart, dejaGagne, participants]);
+  }, [stocks, predictionsParStock, arbreScenario, rounds, dejaGagne, participants, ancres, joueurs]);
 
-  // Simulation Monte Carlo depuis l'état courant du bracket réel/scénario :
-  // aucun résultat déjà tranché n'est retiré, seul ce qui reste ouvert est
-  // tiré au sort (cf. lib/montecarlo.ts `tirerFinDeTournoi`).
   const probabilites = useMemo(() => {
     const stocksMC: StockBracket[] = stocks.map((s) => ({
       id: s,
       dejaGagne: dejaGagne[s] ?? 0,
-      predictions: filtrerDepuisTour(predictions[s] ?? new Map(), rounds, roundDepart),
+      predictions: predictionsParStock[s],
     }));
-    return simulerProbabilitesVictoire(
-      matches,
-      scenario,
-      players,
-      rounds,
-      stocksMC,
-      SIMULATIONS,
-      surface,
-    ).victoires;
-  }, [stocks, predictions, dejaGagne, matches, scenario, players, rounds, roundDepart, surface]);
+    return simulerProbabilitesVictoire(matches, scenario, players, rounds, stocksMC, SIMULATIONS, surface)
+      .victoires;
+  }, [stocks, predictionsParStock, dejaGagne, matches, scenario, players, rounds, surface]);
 
-  // Scénarios garantis : indépendants du scénario en cours d'exploration,
-  // fondés sur la réalité + les pronostics — « si tel événement se réalise,
-  // quel que soit le reste ». Recherche pure, aucune probabilité.
   const scenariosGagnants = useMemo(() => {
     const stocksGarantie: StockGarantie[] = stocks.map((s) => ({
       id: s,
       dejaGagne: dejaGagne[s] ?? 0,
-      predictions: predictions[s] ?? new Map(),
+      predictions: predictionsParStock[s],
     }));
     return chercherScenariosGagnants(matches, rounds, roundDepart, stocksGarantie);
-  }, [stocks, predictions, dejaGagne, matches, rounds, roundDepart]);
+  }, [stocks, predictionsParStock, dejaGagne, matches, rounds, roundDepart]);
+
+  // Plafond de chaque stock — informatif : déjà gagné + tout le reste si son
+  // ancre remporte le tournoi. `ensemblesAtteignables` est déjà calculée par
+  // chercherScenariosGagnants en interne ; on la refait ici une fois pour
+  // l'affichage, coût négligeable.
+  const atteignables = useMemo(() => ensemblesAtteignables(matches, rounds), [matches, rounds]);
+  const plafonds = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const s of stocks) {
+      out[s] = (dejaGagne[s] ?? 0) + maxAtteignable(predictionsParStock[s], matches, rounds, atteignables);
+    }
+    return out;
+  }, [stocks, dejaGagne, predictionsParStock, matches, rounds, atteignables]);
 
   return (
     <div className="space-y-4">
       <p className="text-xs text-zinc-500">
         Points déjà gagnés (avant {roundDepart}, à saisir à la main) + points
-        sur le bracket simulé dans l&apos;onglet « Bracket réel », au barème
-        2^(tour−1) depuis le premier tour.
+        de l&apos;ancre de chacun (onglet Ancres) sur le bracket simulé dans
+        l&apos;onglet « Bracket réel », au barème 2^(tour−1) depuis le premier tour.
       </p>
 
       <div className="space-y-2">
@@ -128,6 +152,7 @@ export default function ClassementPanel({
             <span className="flex-1 truncate text-sm font-medium">
               {i === 0 && c.total > 0 && '🏆 '}
               {c.nom}
+              {c.ancre && <span className="ml-1.5 text-xs font-normal text-zinc-400">· ancre {c.ancre}</span>}
             </span>
 
             <label className="flex items-center gap-1 text-xs text-zinc-500">
@@ -149,6 +174,9 @@ export default function ClassementPanel({
             </span>
             <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
               {Math.round((probabilites[c.id] ?? 0) * 100)}% de victoire
+            </span>
+            <span className="shrink-0 text-xs text-zinc-400" title="Plafond : déjà gagné + tout le reste si son ancre remporte le tournoi">
+              plafond {plafonds[c.id]}
             </span>
           </div>
         ))}

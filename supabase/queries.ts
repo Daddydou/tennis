@@ -98,16 +98,26 @@ export interface ParticipantRow {
 }
 
 /**
- * Un pronostic du simulateur de bracket : le joueur prédit vainqueur d'un
- * emplacement (tour + position) donné, pour un stock donné (cf. tn_picks
- * pour la même convention `participant_id` null = moi).
+ * L'ancre d'un stock dans le simulateur de bracket : UN joueur, choisi au
+ * tour de départ (cf. tn_picks pour la même convention `participant_id`
+ * null = moi). Son chemin dans le tableau — donc les tours où elle marque
+ * des points — se déduit à la volée (lib/bracketSim.ts
+ * `predictionsDepuisAncre`), jamais stocké tour par tour.
  */
-export interface BracketPredictionRow {
+export interface BracketAnchorRow {
+  id: string;
+  tournament_id: string;
+  participant_id: string | null;
+  player_id: string;
+}
+
+/** Un pick hypothétique du bac à sable de picks du simulateur (tn_simulated_picks). */
+export interface SimulatedPickRow {
   id: string;
   tournament_id: string;
   participant_id: string | null;
   round: string;
-  position: number;
+  half: Half | null;
   player_id: string;
 }
 
@@ -194,6 +204,19 @@ export async function getPicks(
   return (data ?? []) as PickRow[];
 }
 
+/**
+ * TOUS les vrais picks d'un tournoi, moi et tous les participants confondus.
+ * Réservé aux écrans qui comparent les stocks (section Picks du
+ * simulateur, pour les points déjà inscrits) : ne pas s'en servir pour
+ * « mes » picks, cf. `getPicks`.
+ */
+export async function getTousLesPicks(tournamentId: string): Promise<PickRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb.from('tn_picks').select('*').eq('tournament_id', tournamentId);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PickRow[];
+}
+
 /** Participants du groupe, par ordre alphabétique — configurables, cf. /participants. */
 export async function getParticipants(): Promise<ParticipantRow[]> {
   const sb = supabaseAnon();
@@ -225,17 +248,26 @@ export async function compterPicksParParticipant(): Promise<Record<string, numbe
   return out;
 }
 
-/** Tous les pronostics du simulateur de bracket, pour un tournoi, tous stocks confondus. */
-export async function getBracketPredictions(
-  tournamentId: string,
-): Promise<BracketPredictionRow[]> {
+/** Ancres du simulateur de bracket, pour un tournoi, tous stocks confondus. */
+export async function getBracketAnchors(tournamentId: string): Promise<BracketAnchorRow[]> {
   const sb = supabaseAnon();
   const { data, error } = await sb
-    .from('tn_bracket_predictions')
+    .from('tn_bracket_anchors')
     .select('*')
     .eq('tournament_id', tournamentId);
   if (error) throw new Error(error.message);
-  return (data ?? []) as BracketPredictionRow[];
+  return (data ?? []) as BracketAnchorRow[];
+}
+
+/** Picks hypothétiques du bac à sable de picks du simulateur, tous stocks confondus. */
+export async function getSimulatedPicks(tournamentId: string): Promise<SimulatedPickRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_simulated_picks')
+    .select('*')
+    .eq('tournament_id', tournamentId);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SimulatedPickRow[];
 }
 
 /**

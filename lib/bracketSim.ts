@@ -341,6 +341,35 @@ export function cheminDuJoueur(
 }
 
 /**
+ * Carte de pronostics « virtuelle » pour un stock à ANCRE UNIQUE : le
+ * joueur ancre occupe, par construction, tous SES PROPRES emplacements du
+ * tableau à partir du tour de départ (son chemin, déterministe, cf.
+ * `cheminDuJoueur`) — sans qu'il soit besoin de stocker un pronostic par
+ * tour. Directement réutilisable par `scoreDuStock` / `maxAtteignable` /
+ * `chercherScenariosGagnants`, qui ne connaissent qu'une carte plate
+ * emplacement → joueur prédit : le modèle à ancre unique n'est donc qu'une
+ * façon particulière de CONSTRUIRE cette carte, tout le reste du moteur
+ * (score, plafond, recherche de scénario) reste inchangé.
+ *
+ * Si le joueur n'est pas trouvé au premier tour (identifiant inconnu,
+ * tableau non constitué), la carte est vide — aucun pronostic à noter.
+ */
+export function predictionsDepuisAncre(
+  matches: MatchReel[],
+  rounds: string[],
+  roundDepart: string,
+  ancreId: string,
+): Map<string, string> {
+  const idxDepart = rounds.indexOf(roundDepart);
+  const out = new Map<string, string>();
+  if (idxDepart === -1) return out;
+  for (const { round, position } of cheminDuJoueur(matches, rounds, ancreId)) {
+    if (rounds.indexOf(round) >= idxDepart) out.set(cleDuel(round, position), ancreId);
+  }
+  return out;
+}
+
+/**
  * Matchs réels, augmentés d'une hypothèse : `playerId` gagne tous ses matchs
  * jusqu'à `jusquauRound` inclus (un tour déjà décidé pour de vrai avec
  * `playerId` vainqueur ne change rien). Sert à évaluer « si ce joueur va

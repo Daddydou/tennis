@@ -1,31 +1,21 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import {
-  cleDuel,
-  ensemblesAtteignables,
-  resoudreArbre,
-  vainqueursReels,
-  type MatchReel,
-} from '@/lib/bracketSim';
-import { enregistrerPronostic, effacerPronostic } from './actions';
+import { cleDuel, resoudreArbre, type MatchReel } from '@/lib/bracketSim';
+import { definirAncre, effacerAncre } from './actions';
+import AncrePanel from './AncrePanel';
 import BracketReelPanel from './BracketReelPanel';
 import ClassementPanel from './ClassementPanel';
-import PronosticsPanel from './PronosticsPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
 
-type Onglet = 'bracket' | 'classement' | 'pronostics';
+type Onglet = 'bracket' | 'classement' | 'ancres';
 
 const ONGLETS: { key: Onglet; label: string }[] = [
   { key: 'bracket', label: 'Bracket réel' },
   { key: 'classement', label: 'Classement & probabilités' },
-  { key: 'pronostics', label: 'Pronostics des participants' },
+  { key: 'ancres', label: 'Ancres des participants' },
 ];
-
-function versMap(obj: Record<string, string> | undefined): Map<string, string> {
-  return new Map(Object.entries(obj ?? {}));
-}
 
 export default function SimulateurBracket({
   tournamentId,
@@ -35,7 +25,7 @@ export default function SimulateurBracket({
   players,
   surface,
   participants,
-  predictionsInitiales,
+  ancresInitiales,
   roundParDefaut,
 }: {
   tournamentId: string;
@@ -46,7 +36,8 @@ export default function SimulateurBracket({
   players: Record<string, Player>;
   surface: 'hard' | 'clay' | 'grass';
   participants: Participant[];
-  predictionsInitiales: Record<string, Record<string, string>>;
+  /** stock ('moi' ou id participant) -> ancre actuelle, ou null si aucune. */
+  ancresInitiales: Record<string, string | null>;
   roundParDefaut: string;
 }) {
   const stocks = useMemo(() => [MOI, ...participants.map((p) => p.id)], [participants]);
@@ -55,9 +46,9 @@ export default function SimulateurBracket({
   const [onglet, setOnglet] = useState<Onglet>('bracket');
   const [scenario, setScenario] = useState<Map<string, string>>(new Map());
   const [dejaGagne, setDejaGagne] = useState<Record<string, number>>({});
-  const [predictions, setPredictions] = useState<Record<string, Map<string, string>>>(() => {
-    const out: Record<string, Map<string, string>> = {};
-    for (const s of stocks) out[s] = versMap(predictionsInitiales[s]);
+  const [ancres, setAncres] = useState<Record<string, string | null>>(() => {
+    const out: Record<string, string | null> = {};
+    for (const s of stocks) out[s] = ancresInitiales[s] ?? null;
     return out;
   });
   const [erreur, setErreur] = useState<string | null>(null);
@@ -67,10 +58,6 @@ export default function SimulateurBracket({
     () => resoudreArbre(matches, rounds, (r, p) => scenario.get(cleDuel(r, p)) ?? null),
     [matches, rounds, scenario],
   );
-  // Toujours fondé sur la RÉALITÉ, jamais sur le scénario en cours
-  // d'exploration : les pronostics portent sur ce qui va vraiment se passer.
-  const ensembles = useMemo(() => ensemblesAtteignables(matches, rounds), [matches, rounds]);
-  const reels = useMemo(() => vainqueursReels(matches), [matches]);
 
   function onChoisirScenario(round: string, position: number, playerId: string) {
     setScenario((prev) => {
@@ -88,35 +75,20 @@ export default function SimulateurBracket({
     });
   }
 
-  function appliquerLocalement(stockId: string, round: string, position: number, playerId: string | null) {
-    setPredictions((prev) => {
-      const copie = new Map(prev[stockId] ?? []);
-      if (playerId) copie.set(cleDuel(round, position), playerId);
-      else copie.delete(cleDuel(round, position));
-      return { ...prev, [stockId]: copie };
-    });
-  }
-
-  function onChangerPronostic(stockId: string, round: string, position: number, playerId: string) {
+  function onChoisirAncre(stockId: string, playerId: string) {
     setErreur(null);
-    appliquerLocalement(stockId, round, position, playerId);
+    setAncres((prev) => ({ ...prev, [stockId]: playerId }));
     startTransition(async () => {
-      const r = await enregistrerPronostic(
-        tournamentId,
-        stockId === MOI ? null : stockId,
-        round,
-        position,
-        playerId,
-      );
+      const r = await definirAncre(tournamentId, stockId === MOI ? null : stockId, playerId);
       if (!r.ok) setErreur(r.error ?? 'Erreur');
     });
   }
 
-  function onEffacerPronostic(stockId: string, round: string, position: number) {
+  function onEffacerAncre(stockId: string) {
     setErreur(null);
-    appliquerLocalement(stockId, round, position, null);
+    setAncres((prev) => ({ ...prev, [stockId]: null }));
     startTransition(async () => {
-      const r = await effacerPronostic(tournamentId, stockId === MOI ? null : stockId, round, position);
+      const r = await effacerAncre(tournamentId, stockId === MOI ? null : stockId);
       if (!r.ok) setErreur(r.error ?? 'Erreur');
     });
   }
@@ -186,27 +158,24 @@ export default function SimulateurBracket({
           surface={surface}
           joueurs={joueurs}
           participants={participants}
-          predictions={predictions}
+          ancres={ancres}
           arbreScenario={arbreScenario}
           dejaGagne={dejaGagne}
           onChangerDejaGagne={onChangerDejaGagne}
         />
       )}
 
-      {onglet === 'pronostics' && (
-        <PronosticsPanel
+      {onglet === 'ancres' && (
+        <AncrePanel
           key={roundDepart}
-          rounds={rounds}
           roundDepart={roundDepart}
           matches={matches}
           joueurs={joueurs}
           participants={participants}
-          predictions={predictions}
-          ensembles={ensembles}
-          reels={reels}
+          ancres={ancres}
           pending={pending}
-          onChanger={onChangerPronostic}
-          onEffacer={onEffacerPronostic}
+          onChoisir={onChoisirAncre}
+          onEffacer={onEffacerAncre}
         />
       )}
     </div>
