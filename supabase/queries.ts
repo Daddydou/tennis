@@ -97,6 +97,20 @@ export interface ParticipantRow {
   created_at: string;
 }
 
+/**
+ * Un pronostic du simulateur de bracket : le joueur prédit vainqueur d'un
+ * emplacement (tour + position) donné, pour un stock donné (cf. tn_picks
+ * pour la même convention `participant_id` null = moi).
+ */
+export interface BracketPredictionRow {
+  id: string;
+  tournament_id: string;
+  participant_id: string | null;
+  round: string;
+  position: number;
+  player_id: string;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Lectures — clé anon uniquement (policies RLS `for select to anon`).        */
 /*  Ce module ne contient aucune écriture : il est donc utilisable aussi bien  */
@@ -223,6 +237,19 @@ export async function compterPicksParParticipant(): Promise<Record<string, numbe
     out[id] = (out[id] ?? 0) + 1;
   }
   return out;
+}
+
+/** Tous les pronostics du simulateur de bracket, pour un tournoi, tous stocks confondus. */
+export async function getBracketPredictions(
+  tournamentId: string,
+): Promise<BracketPredictionRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_bracket_predictions')
+    .select('*')
+    .eq('tournament_id', tournamentId);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as BracketPredictionRow[];
 }
 
 /**

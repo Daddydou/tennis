@@ -5,6 +5,7 @@ type Onglet =
   | 'bracket'
   | 'picks'
   | 'participants'
+  | 'simulateur'
   | 'fantasy'
   | 'predictions'
   | 'resultats';
@@ -18,6 +19,11 @@ const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = 
     key: 'participants',
     label: 'Participants',
     href: (id) => `/tournoi/${id}/participants`,
+  },
+  {
+    key: 'simulateur',
+    label: 'Simulateur',
+    href: (id) => `/tournoi/${id}/simulateur`,
   },
   { key: 'fantasy', label: 'Fantasy', href: (id) => `/tournoi/${id}/fantasy` },
   {
