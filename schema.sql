@@ -180,6 +180,38 @@ create unique index if not exists idx_tn_bracket_anchors_participant
   on tn_bracket_anchors (tournament_id, participant_id) where participant_id is not null;
 
 -- ---------------------------------------------------------------------
+-- SIMULATEUR — BAC À SABLE DE PICKS (section Picks, distincte de Bracket)
+--
+-- Picks hypothétiques sur un tableau TESTÉ, mêmes règles que le jeu de
+-- picks réel (2 par tour, 1 en demies/finale) mais entièrement séparé de
+-- tn_picks, qui ne doit contenir que les vrais picks soumis. Aucun point
+-- stocké : le barème détaillé (lib/scoring.ts) ne peut pas s'appliquer à un
+-- tour pas encore joué pour de vrai — l'écran substitue l'espérance du
+-- moteur Monte Carlo existant (tn_projections), recalculée à la volée.
+-- ---------------------------------------------------------------------
+create table if not exists tn_simulated_picks (
+  id             uuid primary key default gen_random_uuid(),
+  tournament_id  uuid not null references tn_tournaments(id) on delete cascade,
+  participant_id uuid references tn_participants(id) on delete cascade,
+  round          text not null,
+  half           text check (half in ('top','bottom')),
+  player_id      text not null references tn_players(id),
+  created_at     timestamptz default now()
+);
+
+create index if not exists idx_tn_simulated_picks_tournament
+  on tn_simulated_picks(tournament_id);
+
+create unique index if not exists idx_tn_simulated_picks_moi_joueur
+  on tn_simulated_picks (tournament_id, player_id) where participant_id is null;
+create unique index if not exists idx_tn_simulated_picks_moi_slot
+  on tn_simulated_picks (tournament_id, round, half) where participant_id is null;
+create unique index if not exists idx_tn_simulated_picks_participant_joueur
+  on tn_simulated_picks (tournament_id, participant_id, player_id) where participant_id is not null;
+create unique index if not exists idx_tn_simulated_picks_participant_slot
+  on tn_simulated_picks (tournament_id, participant_id, round, half) where participant_id is not null;
+
+-- ---------------------------------------------------------------------
 -- SIMULATIONS / ESPÉRANCES
 -- Recalculé avant chaque tour par le moteur.
 -- ---------------------------------------------------------------------
@@ -478,6 +510,7 @@ alter table tn_matches     enable row level security;
 alter table tn_participants enable row level security;
 alter table tn_picks       enable row level security;
 alter table tn_bracket_anchors enable row level security;
+alter table tn_simulated_picks enable row level security;
 alter table tn_projections        enable row level security;
 alter table tn_fantasy            enable row level security;
 alter table tn_fantasy_historique enable row level security;
@@ -487,7 +520,7 @@ declare t text;
 begin
   foreach t in array array['tn_players','tn_tournaments','tn_matches',
                            'tn_participants',
-                           'tn_picks','tn_bracket_anchors',
+                           'tn_picks','tn_bracket_anchors','tn_simulated_picks',
                            'tn_projections','tn_fantasy',
                            'tn_fantasy_historique']
   loop
@@ -504,11 +537,11 @@ end $$;
 -- Lecture seule aussi au niveau des privilèges SQL (service_role non touché).
 revoke all on table
   tn_players, tn_tournaments, tn_matches, tn_participants, tn_picks,
-  tn_bracket_anchors, tn_projections, tn_fantasy, tn_fantasy_historique
+  tn_bracket_anchors, tn_simulated_picks, tn_projections, tn_fantasy, tn_fantasy_historique
   from anon, authenticated;
 grant select on table
   tn_players, tn_tournaments, tn_matches, tn_participants, tn_picks,
-  tn_bracket_anchors, tn_projections, tn_fantasy, tn_fantasy_historique
+  tn_bracket_anchors, tn_simulated_picks, tn_projections, tn_fantasy, tn_fantasy_historique
   to anon, authenticated;
 
 -- Sans SECURITY INVOKER, une vue s'exécute avec les droits de son
