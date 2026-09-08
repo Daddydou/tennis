@@ -7,7 +7,14 @@
  *   - Net games .............. somme sur les SETS GAGNÉS UNIQUEMENT
  *                              de (jeux gagnés − jeux perdus)
  *                              un set perdu rapporte 0
- *   - Walkover ............... 5 pts + 3/set incomplet + 2/set incomplet
+ *   - Walkover (w/o) ......... le match n'a pas eu lieu : +5 pts de base
+ *                              uniquement pour le vainqueur. Aucun bonus
+ *                              de set ni de dominance.
+ *   - Abandon (ret.) ......... seuls les sets entièrement joués avant
+ *                              l'abandon sont comptés ; mêmes règles pour
+ *                              le vainqueur et le perdant sur ces sets.
+ *                              Aucun crédit pour les sets non joués, ni pour
+ *                              le set interrompu en cours de route.
  *
  * Le perdant conserve ses points. Chaque poste a un plancher à 0.
  * Le tie-break compte pour un seul jeu de net (7-6 → +1).
@@ -20,8 +27,6 @@ import type { Match, MatchStatus, ScoreBreakdown, SetScore } from './types';
 
 export const POINTS_VICTOIRE = 5;
 export const POINTS_PAR_NET_SET = 3;
-export const WO_POINTS_SET = 3;
-export const WO_POINTS_GAMES = 2;
 
 /**
  * Statuts qui ne rapportent aucun point : le bye, et tout match sans issue
@@ -34,6 +39,20 @@ const STATUTS_SANS_POINTS: MatchStatus[] = [...STATUTS_INDECIS, 'bye'];
 export interface SetPair {
   for: number;
   against: number;
+}
+
+/**
+ * Un set est-il allé à son terme (6 jeux avec deux d'écart, 7-5, ou 7-6 au
+ * jeu décisif) ? Sert à écarter, sur un abandon, le set interrompu en cours
+ * de route : `setsPourJoueur` ne filtre que les sets NON JOUÉS (`games` nul),
+ * pas ceux entamés puis coupés net par l'abandon (ex. 2-1, ou 0-0 quand
+ * l'abandon tombe dès l'entame du set).
+ */
+function setTermine(a: number, b: number): boolean {
+  const haut = Math.max(a, b);
+  const bas = Math.min(a, b);
+  if (haut < 6) return false;
+  return haut - bas >= 2 || (haut === 7 && bas === 6);
 }
 
 /**
@@ -54,13 +73,14 @@ export function scoreMatch(
     return { match: 0, netSets: 0, netGames: 0, total: 0 };
   }
 
-  const setsToWin = Math.floor(bestOf / 2) + 1;
-
   let setsWon = 0;
   let setsLost = 0;
   let netGames = 0;
 
   for (const s of sets) {
+    // Abandon : le set en cours au moment de l'abandon n'est pas « entièrement
+    // joué » — ni gagné ni perdu, il ne compte pas (cf. règle officielle).
+    if (status === 'retired' && !setTermine(s.for, s.against)) continue;
     if (s.for > s.against) {
       setsWon += 1;
       // Seuls les sets gagnés rapportent du net games
@@ -71,15 +91,14 @@ export function scoreMatch(
   }
 
   const match = won ? POINTS_VICTOIRE : 0;
-  let netSetsPts = Math.max(0, setsWon - setsLost) * POINTS_PAR_NET_SET;
-  let netGamesPts = Math.max(0, netGames);
+  const netSetsPts = Math.max(0, setsWon - setsLost) * POINTS_PAR_NET_SET;
+  const netGamesPts = Math.max(0, netGames);
 
-  // Walkover / abandon : les sets non joués sont crédités au vainqueur
-  if ((status === 'walkover' || status === 'retired') && won) {
-    const incomplets = Math.max(0, setsToWin - setsWon);
-    netSetsPts += incomplets * WO_POINTS_SET;
-    netGamesPts += incomplets * WO_POINTS_GAMES;
-  }
+  // Walkover : le match n'a pas eu lieu, `sets` est vide, netSetsPts et
+  // netGamesPts valent donc déjà 0 — seul le point de match compte.
+  // Abandon : le filtre ci-dessus n'a laissé passer que les sets entièrement
+  // joués, donc netSetsPts/netGamesPts ne portent déjà que sur ces sets,
+  // symétriquement pour le vainqueur et le perdant.
 
   return {
     match,

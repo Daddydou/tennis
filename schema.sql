@@ -211,7 +211,11 @@ create index if not exists idx_tn_fantasy_hist_lookup
 -- FONCTION DE SCORING
 -- Règles : 5 pts victoire | net sets x3 (plancher 0)
 --          net games sur SETS GAGNÉS uniquement
---          walkover : 5 + 3/set incomplet + 2/set incomplet
+--          walkover (w/o) : le match n'a pas eu lieu, 5 pts de base
+--          uniquement pour le vainqueur, aucun bonus de set ni de jeux
+--          abandon (ret.) : seuls les sets entièrement joués avant
+--          l'abandon comptent, mêmes règles pour le vainqueur et le
+--          perdant sur ces sets
 -- =====================================================================
 create or replace function tn_score_match(
   p_sets      jsonb,      -- [{"g1":6,"g2":4}, ...] du point de vue du joueur
@@ -232,17 +236,15 @@ declare
   v_sets_won    integer := 0;
   v_sets_lost   integer := 0;
   v_net_games   integer := 0;
-  v_incomplete  integer := 0;
-  v_needed      integer;
   v_set         jsonb;
   v_g1          integer;
   v_g2          integer;
+  v_haut        integer;
+  v_bas         integer;
   v_match       integer := 0;
   v_psets       integer := 0;
   v_pgames      integer := 0;
 begin
-  v_needed := p_best_of / 2 + 1;
-
   -- Cas sans points : le bye, et tout match sans issue connue — un match
   -- EN COURS ('live', 'in_progress') est ici un match pas encore joué.
   if p_status in ('bye','scheduled','live','in_progress') then
@@ -257,6 +259,15 @@ begin
     v_g2 := (v_set->>'g2')::integer;
     if v_g1 is null or v_g2 is null then
       continue;
+    end if;
+    -- Abandon : un set entamé puis coupé net par l'abandon (2-1, 0-0...)
+    -- n'est pas « entièrement joué » — ni gagné ni perdu, on l'ignore.
+    if p_status = 'retired' then
+      v_haut := greatest(v_g1, v_g2);
+      v_bas  := least(v_g1, v_g2);
+      if v_haut < 6 or not (v_haut - v_bas >= 2 or (v_haut = 7 and v_bas = 6)) then
+        continue;
+      end if;
     end if;
     if v_g1 > v_g2 then
       v_sets_won  := v_sets_won + 1;
@@ -277,12 +288,12 @@ begin
   -- Net games, plancher à 0
   v_pgames := greatest(0, v_net_games);
 
-  -- Walkover / abandon : créditer les sets non joués
-  if p_status in ('walkover','retired') and p_won then
-    v_incomplete := greatest(0, v_needed - v_sets_won);
-    v_psets  := v_psets  + v_incomplete * 3;
-    v_pgames := v_pgames + v_incomplete * 2;
-  end if;
+  -- Walkover (w/o) : le match n'a pas eu lieu, aucun set n'est parcouru
+  -- ci-dessus — v_psets et v_pgames valent déjà 0, seul le point de match
+  -- compte.
+  -- Abandon (ret.) : seuls les sets entièrement joués sont parcourus
+  -- ci-dessus, donc v_psets/v_pgames ne portent déjà que sur ces sets,
+  -- symétriquement pour le vainqueur et le perdant.
 
   return query select v_match, v_psets, v_pgames, v_match + v_psets + v_pgames;
 end;
