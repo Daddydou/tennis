@@ -4,6 +4,7 @@ type Onglet =
   | 'tableau'
   | 'bracket'
   | 'picks'
+  | 'participants'
   | 'fantasy'
   | 'predictions'
   | 'resultats';
@@ -13,6 +14,11 @@ const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = 
   // Juste après le tableau réel : c'est le même arbre, mais pronostiqué.
   { key: 'bracket', label: 'Bracket', href: (id) => `/tournoi/${id}/bracket` },
   { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks` },
+  {
+    key: 'participants',
+    label: 'Participants',
+    href: (id) => `/tournoi/${id}/participants`,
+  },
   { key: 'fantasy', label: 'Fantasy', href: (id) => `/tournoi/${id}/fantasy` },
   {
     key: 'predictions',

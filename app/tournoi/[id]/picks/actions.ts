@@ -16,24 +16,33 @@ export interface PickActionResult {
  */
 const REFUS: PickActionResult = { ok: false, error: 'Non authentifié.' };
 
+/**
+ * @param participantId null = mon pick (comportement historique, INCHANGÉ) ;
+ *   sinon celui d'un participant du groupe — même règles, stock indépendant
+ *   (cf. tn_picks, migration 0014).
+ */
 export async function validerPick(
   tournamentId: string,
   round: string,
   half: 'top' | 'bottom' | null,
   playerId: string,
   ePoints: number | null,
+  participantId: string | null = null,
 ): Promise<PickActionResult> {
   if (!(await sessionValide())) return REFUS;
 
   const sb = supabaseAdmin();
 
-  // Un joueur ne peut être pické qu'une fois par tournoi (contrainte du jeu).
-  // On vérifie explicitement pour donner un message clair plutôt qu'une 23505.
-  const { data: conflits, error: eConf } = await sb
+  // Un joueur ne peut être pické qu'une fois par tournoi ET PAR STOCK
+  // (contrainte du jeu). On vérifie explicitement pour donner un message
+  // clair plutôt qu'une 23505.
+  let qConf = sb
     .from('tn_picks')
     .select('round, half')
     .eq('tournament_id', tournamentId)
     .eq('player_id', playerId);
+  qConf = participantId === null ? qConf.is('participant_id', null) : qConf.eq('participant_id', participantId);
+  const { data: conflits, error: eConf } = await qConf;
   if (eConf) return { ok: false, error: eConf.message };
 
   const ailleurs = (conflits ?? []).find(
@@ -44,7 +53,7 @@ export async function validerPick(
       ok: false,
       error: `Ce joueur est déjà pické au tour ${ailleurs.round}${
         ailleurs.half ? ` (${ailleurs.half})` : ''
-      }. Un joueur ne peut être utilisé qu'une fois par tournoi.`,
+      }. Un joueur ne peut être utilisé qu'une fois par tournoi (par ce stock).`,
     };
   }
 
@@ -55,11 +64,13 @@ export async function validerPick(
     .eq('tournament_id', tournamentId)
     .eq('round', round);
   sel = half === null ? sel.is('half', null) : sel.eq('half', half);
+  sel = participantId === null ? sel.is('participant_id', null) : sel.eq('participant_id', participantId);
   const { data: existant, error: eSel } = await sel.maybeSingle();
   if (eSel) return { ok: false, error: eSel.message };
 
   const payload = {
     tournament_id: tournamentId,
+    participant_id: participantId,
     round,
     half,
     player_id: playerId,
@@ -81,6 +92,7 @@ export async function validerPick(
 
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
+  revalidatePath(`/tournoi/${tournamentId}/participants`);
   return { ok: true };
 }
 
@@ -88,6 +100,7 @@ export async function supprimerPick(
   tournamentId: string,
   round: string,
   half: 'top' | 'bottom' | null,
+  participantId: string | null = null,
 ): Promise<PickActionResult> {
   if (!(await sessionValide())) return REFUS;
 
@@ -98,6 +111,7 @@ export async function supprimerPick(
     .eq('tournament_id', tournamentId)
     .eq('round', round);
   del = half === null ? del.is('half', null) : del.eq('half', half);
+  del = participantId === null ? del.is('participant_id', null) : del.eq('participant_id', participantId);
   const { error } = await del;
   if (error) return { ok: false, error: error.message };
 
@@ -105,5 +119,6 @@ export async function supprimerPick(
 
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
+  revalidatePath(`/tournoi/${tournamentId}/participants`);
   return { ok: true };
 }

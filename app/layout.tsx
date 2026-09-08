@@ -31,6 +31,12 @@ export default async function RootLayout({
               >
                 Importer
               </Link>
+              <Link
+                href="/participants"
+                className="hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                Participants
+              </Link>
             </nav>
             {connecte && (
               <form action={seDeconnecter} className="ml-auto">

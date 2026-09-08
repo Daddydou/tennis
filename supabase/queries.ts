@@ -77,6 +77,8 @@ export interface MatchRow {
 export interface PickRow {
   id: string;
   tournament_id: string;
+  /** null = mon pick (comportement historique) ; sinon celui d'un participant. */
+  participant_id: string | null;
   round: string;
   half: Half | null;
   player_id: string;
@@ -85,6 +87,13 @@ export interface PickRow {
   points_sets: number | null;
   points_games: number | null;
   e_points: number | null;
+  created_at: string;
+}
+
+/** Un participant du groupe (Laki, Thomas...) — configurable, jamais codé en dur. */
+export interface ParticipantRow {
+  id: string;
+  name: string;
   created_at: string;
 }
 
@@ -148,7 +157,33 @@ export async function getPlayerRows(ids: string[]): Promise<PlayerRow[]> {
   return (data ?? []) as PlayerRow[];
 }
 
-export async function getPicks(tournamentId: string): Promise<PickRow[]> {
+/**
+ * Picks d'un tournoi pour UN stock : le mien (`participantId` omis ou null —
+ * comportement historique, INCHANGÉ) ou celui d'un participant du groupe.
+ *
+ * Chaque stock est indépendant (cf. tn_picks, migration 0014) : appeler cette
+ * fonction sans argument continue de ne renvoyer QUE mes picks, exactement
+ * comme avant l'existence des participants — les deux call sites historiques
+ * (écrans Picks et Résultats) n'ont pas eu à changer.
+ */
+export async function getPicks(
+  tournamentId: string,
+  participantId: string | null = null,
+): Promise<PickRow[]> {
+  const sb = supabaseAnon();
+  let q = sb.from('tn_picks').select('*').eq('tournament_id', tournamentId);
+  q = participantId === null ? q.is('participant_id', null) : q.eq('participant_id', participantId);
+  const { data, error } = await q.order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PickRow[];
+}
+
+/**
+ * TOUS les picks d'un tournoi, moi et tous les participants confondus.
+ * Réservé à l'écran Participants (comparaison des stocks) : ne pas s'en
+ * servir pour « mes » picks, cf. `getPicks`.
+ */
+export async function getTousLesPicks(tournamentId: string): Promise<PickRow[]> {
   const sb = supabaseAnon();
   const { data, error } = await sb
     .from('tn_picks')
@@ -157,6 +192,59 @@ export async function getPicks(tournamentId: string): Promise<PickRow[]> {
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as PickRow[];
+}
+
+/** Participants du groupe, par ordre alphabétique — configurables, cf. /participants. */
+export async function getParticipants(): Promise<ParticipantRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_participants')
+    .select('*')
+    .order('name', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ParticipantRow[];
+}
+
+/**
+ * Nombre de picks de chaque participant, tous tournois confondus — pour
+ * avertir avant suppression (/participants) plutôt que de retirer quelqu'un
+ * sans dire ce que ça efface.
+ */
+export async function compterPicksParParticipant(): Promise<Record<string, number>> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_picks')
+    .select('participant_id')
+    .not('participant_id', 'is', null);
+  if (error) throw new Error(error.message);
+  const out: Record<string, number> = {};
+  for (const r of data ?? []) {
+    const id = (r as { participant_id: string }).participant_id;
+    out[id] = (out[id] ?? 0) + 1;
+  }
+  return out;
+}
+
+/**
+ * Joueurs encore en lice dans le tableau : ceux qui n'ont perdu aucun match
+ * décidé. Un fait du tableau, pas une probabilité — contrairement à la
+ * présence Monte Carlo de l'écran Prédictions, on n'a pas besoin de
+ * simulation pour savoir qui est déjà éliminé.
+ */
+export function joueursEnLice(matchRows: MatchRow[]): Set<string> {
+  const tous = new Set<string>();
+  const elimines = new Set<string>();
+  for (const m of matchRows) {
+    for (const id of [m.player1_id, m.player2_id]) {
+      if (id) tous.add(id);
+    }
+    if (STATUTS_DECIDES.includes(m.status) && m.winner_id) {
+      for (const id of [m.player1_id, m.player2_id]) {
+        if (id && id !== m.winner_id) elimines.add(id);
+      }
+    }
+  }
+  return new Set([...tous].filter((id) => !elimines.has(id)));
 }
 
 /* -------------------------------------------------------------------------- */

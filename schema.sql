@@ -91,15 +91,37 @@ create index if not exists idx_tn_matches_players
   on tn_matches(player1_id, player2_id);
 
 -- ---------------------------------------------------------------------
--- MES PICKS
--- Contrainte clé : un joueur ne peut être pické qu'UNE FOIS par tournoi.
+-- PARTICIPANTS DU GROUPE (Laki, Thomas...)
+-- Configurable : on en ajoute ou on en retire une ligne, rien n'est codé en
+-- dur. « Moi » n'y figure PAS — c'est le stock implicite (participant_id
+-- null dans tn_picks ci-dessous), inchangé depuis l'origine du jeu.
+-- ---------------------------------------------------------------------
+create table if not exists tn_participants (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null unique,
+  created_at timestamptz default now()
+);
+
+-- ---------------------------------------------------------------------
+-- PICKS — LES MIENS ET CEUX DES PARTICIPANTS
+-- Contrainte clé : un joueur ne peut être pické qu'UNE FOIS par tournoi ET
+-- PAR STOCK. Le stock est individuel : `participant_id` null désigne le
+-- mien (comportement historique), une valeur non nulle celui d'un
+-- participant — un même joueur peut donc être pické par moi ET par Laki,
+-- mais pas deux fois par Laki.
+--
+-- Un `unique(...)` de table ne suffit pas à l'exprimer : SQL considère deux
+-- NULL comme distincts, donc `unique(tournament_id, participant_id,
+-- player_id)` laisserait plusieurs de MES lignes partager un joueur. D'où
+-- les quatre index partiels plus bas plutôt qu'une contrainte inline.
 -- ---------------------------------------------------------------------
 create table if not exists tn_picks (
-  id            uuid primary key default gen_random_uuid(),
-  tournament_id uuid not null references tn_tournaments(id) on delete cascade,
-  round         text not null,
-  half          text check (half in ('top','bottom')),
-  player_id     text not null references tn_players(id),
+  id             uuid primary key default gen_random_uuid(),
+  tournament_id  uuid not null references tn_tournaments(id) on delete cascade,
+  participant_id uuid references tn_participants(id) on delete cascade,
+  round          text not null,
+  half           text check (half in ('top','bottom')),
+  player_id      text not null references tn_players(id),
 
   points        integer,                          -- calculé après le match
   points_match  integer,
@@ -108,14 +130,24 @@ create table if not exists tn_picks (
 
   e_points      numeric,                          -- espérance au moment du pick
   locked_at     timestamptz,
-  created_at    timestamptz default now(),
-
-  -- LA contrainte structurante du jeu
-  unique (tournament_id, player_id),
-  unique (tournament_id, round, half)
+  created_at    timestamptz default now()
 );
 
 create index if not exists idx_tn_picks_tournament on tn_picks(tournament_id);
+create index if not exists idx_tn_picks_participant on tn_picks(participant_id);
+
+-- Mon stock (participant_id null) : exactement les deux contraintes
+-- d'origine du jeu, réexprimées en index partiels.
+create unique index if not exists idx_tn_picks_moi_joueur
+  on tn_picks (tournament_id, player_id) where participant_id is null;
+create unique index if not exists idx_tn_picks_moi_slot
+  on tn_picks (tournament_id, round, half) where participant_id is null;
+
+-- Le stock de chaque participant, indépendant du mien et des autres.
+create unique index if not exists idx_tn_picks_participant_joueur
+  on tn_picks (tournament_id, participant_id, player_id) where participant_id is not null;
+create unique index if not exists idx_tn_picks_participant_slot
+  on tn_picks (tournament_id, participant_id, round, half) where participant_id is not null;
 
 -- ---------------------------------------------------------------------
 -- SIMULATIONS / ESPÉRANCES
@@ -387,7 +419,9 @@ left join tn_picks p on p.tournament_id = t.id
 group by t.id
 order by t.start_date desc;
 
--- Joueurs déjà utilisés sur un tournoi (pour griser l'UI)
+-- Joueurs déjà utilisés sur un tournoi (pour griser l'UI) — MON stock
+-- uniquement (participant_id null) : les stocks des participants sont
+-- indépendants du mien, cf. tn_picks plus haut.
 create or replace view tn_used_players as
 select
   p.tournament_id,
@@ -396,7 +430,8 @@ select
   p.round as used_in_round,
   p.points
 from tn_picks p
-join tn_players pl on pl.id = p.player_id;
+join tn_players pl on pl.id = p.player_id
+where p.participant_id is null;
 
 -- =====================================================================
 -- RLS — lecture publique, écritures réservées à la service role
@@ -410,6 +445,7 @@ join tn_players pl on pl.id = p.player_id;
 alter table tn_players     enable row level security;
 alter table tn_tournaments enable row level security;
 alter table tn_matches     enable row level security;
+alter table tn_participants enable row level security;
 alter table tn_picks       enable row level security;
 alter table tn_projections        enable row level security;
 alter table tn_fantasy            enable row level security;
@@ -419,6 +455,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['tn_players','tn_tournaments','tn_matches',
+                           'tn_participants',
                            'tn_picks','tn_projections','tn_fantasy',
                            'tn_fantasy_historique']
   loop
@@ -434,12 +471,12 @@ end $$;
 
 -- Lecture seule aussi au niveau des privilèges SQL (service_role non touché).
 revoke all on table
-  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections, tn_fantasy,
-  tn_fantasy_historique
+  tn_players, tn_tournaments, tn_matches, tn_participants, tn_picks,
+  tn_projections, tn_fantasy, tn_fantasy_historique
   from anon, authenticated;
 grant select on table
-  tn_players, tn_tournaments, tn_matches, tn_picks, tn_projections, tn_fantasy,
-  tn_fantasy_historique
+  tn_players, tn_tournaments, tn_matches, tn_participants, tn_picks,
+  tn_projections, tn_fantasy, tn_fantasy_historique
   to anon, authenticated;
 
 -- Sans SECURITY INVOKER, une vue s'exécute avec les droits de son
