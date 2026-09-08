@@ -92,7 +92,6 @@ export async function validerPick(
 
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
-  revalidatePath(`/tournoi/${tournamentId}/participants`);
   return { ok: true };
 }
 
@@ -119,6 +118,5 @@ export async function supprimerPick(
 
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
-  revalidatePath(`/tournoi/${tournamentId}/participants`);
   return { ok: true };
 }

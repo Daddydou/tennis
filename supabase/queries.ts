@@ -177,8 +177,10 @@ export async function getPlayerRows(ids: string[]): Promise<PlayerRow[]> {
  *
  * Chaque stock est indépendant (cf. tn_picks, migration 0014) : appeler cette
  * fonction sans argument continue de ne renvoyer QUE mes picks, exactement
- * comme avant l'existence des participants — les deux call sites historiques
- * (écrans Picks et Résultats) n'ont pas eu à changer.
+ * comme avant l'existence des participants. L'écran Picks passe désormais le
+ * stock sélectionné (sélecteur Moi / participant en haut de l'écran) ;
+ * l'écran Résultats, lui, n'a jamais eu à changer — il ne montre que mon
+ * propre score.
  */
 export async function getPicks(
   tournamentId: string,
@@ -188,22 +190,6 @@ export async function getPicks(
   let q = sb.from('tn_picks').select('*').eq('tournament_id', tournamentId);
   q = participantId === null ? q.is('participant_id', null) : q.eq('participant_id', participantId);
   const { data, error } = await q.order('created_at', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as PickRow[];
-}
-
-/**
- * TOUS les picks d'un tournoi, moi et tous les participants confondus.
- * Réservé à l'écran Participants (comparaison des stocks) : ne pas s'en
- * servir pour « mes » picks, cf. `getPicks`.
- */
-export async function getTousLesPicks(tournamentId: string): Promise<PickRow[]> {
-  const sb = supabaseAnon();
-  const { data, error } = await sb
-    .from('tn_picks')
-    .select('*')
-    .eq('tournament_id', tournamentId)
-    .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as PickRow[];
 }

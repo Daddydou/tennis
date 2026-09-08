@@ -4,7 +4,9 @@ import TournoiNav from '../TournoiNav';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import {
   etatsSlots,
+  getParticipants,
   getPicks,
+  joueursEnLice,
   loadEngineData,
   surfacePourElo,
 } from '@/supabase/queries';
@@ -25,23 +27,34 @@ const HALF_LABEL: Record<string, string> = {
   top: 'Moitié haute',
   bottom: 'Moitié basse',
 };
+const HALF_LABEL_COURT: Record<string, string> = { top: 'haut', bottom: 'bas' };
 
 export default async function PicksPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ round?: string }>;
+  searchParams: Promise<{ round?: string; participant?: string }>;
 }) {
   const { id } = await params;
-  const { round: roundParam } = await searchParams;
+  const { round: roundParam, participant: participantParam } = await searchParams;
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();
   const { tournament, matches, matchRows, players, playerRows, elos } = engine;
   const rounds = tournament.rounds ?? [];
 
-  const picks = await getPicks(id);
+  const participants = await getParticipants();
+  // null = moi — comportement historique, strictement inchangé ; sinon un
+  // participant configuré (cf. tn_participants). Un id inconnu dans l'URL
+  // (participant retiré depuis /participants) retombe sur moi plutôt que
+  // de planter.
+  const stockId =
+    participantParam && participants.some((p) => p.id === participantParam)
+      ? participantParam
+      : null;
+
+  const picks = await getPicks(id, stockId);
 
   // Slots du tournoi (2/tour jusqu'aux QF, puis 1 en SF et F → 12 au total)
   const slots = genererSlots(rounds);
@@ -77,7 +90,8 @@ export default async function PicksPage({
     (slotsParRound.get(r) ?? []).length - requis(r);
 
   // Tour courant = premier tour dont les picks remplissables ne sont pas
-  // tous posés.
+  // tous posés — calculé sur LE STOCK AFFICHÉ : Laki et Thomas avancent à
+  // leur propre rythme, indépendamment du mien.
   const tourCourant =
     rounds.find((r) => faits(r) < requis(r)) ?? rounds[rounds.length - 1] ?? null;
 
@@ -87,6 +101,7 @@ export default async function PicksPage({
   // Projections Monte Carlo À PARTIR DU TOUR AFFICHÉ (simulerDepuis) : seuls les
   // survivants réels de ce tour sont simulés. Lues depuis le cache tn_projections
   // (indexé par from_round), ou calculées puis mises en cache au premier accès.
+  // Indépendantes du stock affiché : c'est une propriété du tableau, pas de qui picke.
   let esperances: Record<string, Record<string, number>> = {};
   if (roundSelectionne) {
     const proj = await getProjections(engine, roundSelectionne);
@@ -104,6 +119,7 @@ export default async function PicksPage({
 
   // Répartition des sources sur TOUS les joueurs du tournoi (pas seulement les
   // survivants du tour affiché) : c'est le tableau entier qu'on veut contrôler.
+  // Propriété du tournoi, pas du stock affiché.
   const sources = compterSources(elos);
   const tourTa = tournament.tour.toLowerCase();
   const aCompleter = playerRows
@@ -147,7 +163,7 @@ export default async function PicksPage({
       );
 
       // Toutes les recommandations du slot (dejaUtilises vide), puis on grise
-      // les joueurs déjà pris ailleurs.
+      // les joueurs déjà pris ailleurs — PAR CE STOCK.
       const reco = recommanderPourTour(
         esperances,
         players,
@@ -201,9 +217,71 @@ export default async function PicksPage({
   const totalPossibles = slots.length - totalNeutralises;
   const totalFaits = picks.length;
 
+  // ── Récapitulatif, pour un participant sélectionné uniquement (jamais
+  //    pour moi : la vue « Moi » reste exactement celle d'avant) ──
+  const nomJoueur = (pid: string) => players[pid]?.name ?? pid;
+  const rangJoueur = (pid: string) => players[pid]?.rank ?? null;
+  const ordreRound = (r: string) => {
+    const i = rounds.indexOf(r);
+    return i === -1 ? 99 : i;
+  };
+
+  const recap =
+    stockId !== null
+      ? (() => {
+          const nomParticipant =
+            participants.find((p) => p.id === stockId)?.name ?? stockId;
+          const total = picks.reduce((s, p) => s + (p.points ?? 0), 0);
+          const picksTries = [...picks].sort(
+            (a, b) =>
+              ordreRound(a.round) - ordreRound(b.round) ||
+              (a.half ?? '').localeCompare(b.half ?? ''),
+          );
+          const disponibles = [...joueursEnLice(matchRows)]
+            .filter((pid) => !dejaUtilises.has(pid))
+            .map((pid) => ({ playerId: pid, nom: nomJoueur(pid), rang: rangJoueur(pid) }))
+            .sort((a, b) => (a.rang ?? 9999) - (b.rang ?? 9999));
+          return { nomParticipant, total, picksTries, disponibles };
+        })()
+      : null;
+
+  const lienParticipant = (participantId: string | null) =>
+    `/tournoi/${id}/picks${participantId ? `?participant=${participantId}` : ''}`;
+  const lienRound = (r: string) =>
+    `/tournoi/${id}/picks?round=${r}${stockId ? `&participant=${stockId}` : ''}`;
+
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="picks" />
+
+      {/* ── Sélecteur de stock : moi, ou un participant configuré ── */}
+      {participants.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1">
+          <Link
+            href={lienParticipant(null)}
+            className={`rounded border px-2.5 py-1 text-xs font-medium ${
+              stockId === null
+                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
+            }`}
+          >
+            Moi
+          </Link>
+          {participants.map((p) => (
+            <Link
+              key={p.id}
+              href={lienParticipant(p.id)}
+              className={`rounded border px-2.5 py-1 text-xs font-medium ${
+                stockId === p.id
+                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
+              }`}
+            >
+              {p.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Provenance des Elo du tableau. Un joueur fort en « maison » ou en
           « défaut » signale une correspondance de nom à corriger. */}
@@ -327,7 +405,7 @@ export default async function PicksPage({
           return (
             <Link
               key={r}
-              href={`/tournoi/${id}/picks?round=${r}`}
+              href={lienRound(r)}
               title={
                 nt > 0
                   ? `${nt} slot(s) sans pick possible : tous les survivants étaient déjà utilisés`
@@ -366,7 +444,54 @@ export default async function PicksPage({
           tournamentId={id}
           round={roundSelectionne}
           colonnes={colonnes}
+          participantId={stockId}
         />
+      )}
+
+      {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
+      {recap && (
+        <div className="space-y-3 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold">{recap.nomParticipant}</h2>
+            <span className="text-sm font-semibold tabular-nums">
+              {recap.total} <span className="font-normal text-zinc-500">pts</span>
+            </span>
+          </div>
+
+          {recap.picksTries.length === 0 ? (
+            <p className="text-xs text-zinc-500">Aucun pick pour l&apos;instant.</p>
+          ) : (
+            <ul className="space-y-0.5 text-xs">
+              {recap.picksTries.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-zinc-600 dark:text-zinc-400">
+                    {p.round}
+                    {p.half ? ` (${HALF_LABEL_COURT[p.half]})` : ''} — {nomJoueur(p.player_id)}
+                  </span>
+                  <span className="tabular-nums text-zinc-500">{p.points ?? '—'}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <details className="text-xs">
+            <summary className="cursor-pointer text-zinc-500">
+              {recap.disponibles.length} encore en lice et disponible(s)
+            </summary>
+            {recap.disponibles.length === 0 ? (
+              <p className="mt-1 text-zinc-400">Aucun.</p>
+            ) : (
+              <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 dark:text-zinc-400 sm:grid-cols-3">
+                {recap.disponibles.map((d) => (
+                  <li key={d.playerId} className="truncate">
+                    {d.nom}
+                    {d.rang ? <span className="text-zinc-400"> #{d.rang}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        </div>
       )}
     </div>
   );

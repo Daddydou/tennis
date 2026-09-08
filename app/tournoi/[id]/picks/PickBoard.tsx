@@ -42,10 +42,13 @@ function ColonnePick({
   tournamentId,
   round,
   colonne,
+  participantId,
 }: {
   tournamentId: string;
   round: string;
   colonne: Colonne;
+  /** null = mon pick (comportement historique) ; sinon celui d'un participant. */
+  participantId: string | null;
 }) {
   const [choix, setChoix] = useState<string | null>(colonne.pickActuel);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -65,6 +68,7 @@ function ColonnePick({
         colonne.half,
         choix,
         cand?.ePoints ?? null,
+        participantId,
       );
       if (r.ok) router.refresh();
       else setErreur(r.error ?? 'Erreur');
@@ -74,7 +78,7 @@ function ColonnePick({
   function retirer() {
     setErreur(null);
     startTransition(async () => {
-      const r = await supprimerPick(tournamentId, round, colonne.half);
+      const r = await supprimerPick(tournamentId, round, colonne.half, participantId);
       if (r.ok) {
         setChoix(null);
         router.refresh();
@@ -214,10 +218,13 @@ export default function PickBoard({
   tournamentId,
   round,
   colonnes,
+  participantId = null,
 }: {
   tournamentId: string;
   round: string;
   colonnes: Colonne[];
+  /** null = mes picks (comportement historique) ; sinon ceux d'un participant. */
+  participantId?: string | null;
 }) {
   return (
     <div className="space-y-1">
@@ -240,6 +247,7 @@ export default function PickBoard({
             tournamentId={tournamentId}
             round={round}
             colonne={c}
+            participantId={participantId}
           />
         ))}
       </div>
