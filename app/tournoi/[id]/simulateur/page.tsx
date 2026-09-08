@@ -54,7 +54,7 @@ export default async function SimulateurPage({
     (predictions[stock] ??= {})[cleDuel(pr.round, pr.position)] = pr.player_id;
   }
 
-  const tourParDefaut = tourCourantMatches(matchRows, rounds);
+  const roundParDefaut = tourCourantMatches(matchRows, rounds);
 
   if (rounds.length === 0 || matches.length === 0) {
     return (
@@ -71,15 +71,6 @@ export default async function SimulateurPage({
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="simulateur" />
 
-      <p className="text-sm text-zinc-500">
-        Prédis le vainqueur de chaque match à partir d&apos;un tour de départ,
-        pour toi et pour chaque participant. Une bonne prédiction rapporte
-        2<sup>tour−1</sup> points depuis le premier tour du tournoi — 1 pt au
-        1er tour, 2, 4, 8, 16, 32, 64 en finale sur un tableau de 128. Les
-        matchs déjà joués comptent leurs vrais résultats ; clique sur les tours
-        à venir pour simuler un scénario et voir le score de chacun en direct.
-      </p>
-
       <SimulateurBracket
         tournamentId={id}
         rounds={rounds}
@@ -87,7 +78,7 @@ export default async function SimulateurPage({
         joueurs={joueurs}
         participants={participants.map((p) => ({ id: p.id, nom: p.name }))}
         predictionsInitiales={predictions}
-        tourParDefaut={tourParDefaut}
+        roundParDefaut={roundParDefaut ?? rounds[0]}
       />
     </div>
   );

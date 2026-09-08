@@ -7,22 +7,28 @@
  * − 1) points, le numéro se comptant depuis le PREMIER TOUR DU TOURNOI — 1er
  * tour 1 pt, 2e tour 2 pts, 4, 8, 16, 32, 64 en finale sur un tableau de 128.
  *
- * Module PUR : ni I/O, ni Supabase. Il ne connaît que la structure du
- * tableau (qui joue qui, à quelle position) et des résultats, réels ou
- * hypothétiques — jamais l'Elo ni les probabilités : ce n'est pas un
- * pronostic automatique, c'est un simulateur que l'humain remplit.
+ * Module PUR : ni I/O, ni Supabase, ni Elo — jamais de probabilité ici (cf.
+ * lib/montecarlo.ts pour la partie tirage au sort). Il ne connaît que la
+ * structure du tableau (qui joue qui, à quelle position) et des résultats,
+ * réels ou hypothétiques.
  *
- * Trois usages d'un même moteur :
- *   - la RÉALITÉ pure (`choix` qui ne répond jamais) : ce qui s'est déjà
- *     joué, propagé aussi loin que les résultats connus le permettent ;
- *   - le PRONOSTIC d'un participant (`choix` = ses prédictions enregistrées) :
- *     sert à afficher, tour après tour, QUI il a fait avancer, pour lui
- *     proposer les bons adversaires au tour suivant ;
- *   - le SCÉNARIO interactif (`choix` = les clics du moment, non persistés) :
- *     la référence contre laquelle chaque pronostic est noté en direct.
+ * DEUX ARBRES DE NATURE DIFFÉRENTE partagent ce module :
+ *   - le BRACKET RÉEL/SCÉNARIO (`resoudreArbre`) : UNE seule ligne de jeu
+ *     cohérente — chaque tour découle du precédent par cascade (qui a gagné
+ *     alimente qui affronte qui ensuite). C'est la référence contre laquelle
+ *     on note tout le monde, réelle jusqu'à un point puis hypothétique au-delà
+ *     (clics du scénario interactif, ou tirage Monte Carlo).
+ *   - les PRONOSTICS d'un participant (`tn_bracket_predictions`, lus tels
+ *     quels) : une prédiction INDÉPENDANTE par emplacement, jamais cascadée.
+ *     Prédire qui gagnera la finale n'exige pas d'avoir correctement deviné
+ *     les demies — chaque emplacement se juge seul (`scoreDuStock`), ce qui
+ *     est aussi ce qui rend une prédiction sur un joueur déjà éliminé
+ *     automatiquement nulle, sans code spécial : il ne peut plus être
+ *     vainqueur d'aucun emplacement réel/simulé.
  *
- * Un match déjà joué verrouille TOUJOURS son vrai vainqueur, quel que soit
- * `choix` — « les matchs déjà joués comptent leurs vrais résultats ».
+ * Un match déjà joué verrouille TOUJOURS son vrai vainqueur dans l'arbre
+ * réel/scénario, quel que soit `choix` — « les matchs déjà joués comptent
+ * leurs vrais résultats ».
  */
 
 /** Un match réel, tel qu'il est en base — jamais une hypothèse. */
@@ -196,6 +202,26 @@ export function ensemblesAtteignables(
 export function vainqueursReels(matches: MatchReel[]): Map<string, string> {
   const out = new Map<string, string>();
   for (const m of matches) if (m.winnerId) out.set(cleDuel(m.round, m.position), m.winnerId);
+  return out;
+}
+
+/**
+ * Ne garde, dans une carte de pronostics, que les emplacements À PARTIR d'un
+ * tour donné (inclus). Les points des tours antérieurs au tour de départ
+ * sont saisis à la main (« déjà gagnés »), jamais recalculés : les compter
+ * aussi via `scoreDuStock` les compterait deux fois.
+ */
+export function filtrerDepuisTour(
+  predictions: ReadonlyMap<string, string>,
+  rounds: string[],
+  roundDepart: string,
+): Map<string, string> {
+  const idxDepart = rounds.indexOf(roundDepart);
+  const out = new Map<string, string>();
+  for (const [cle, playerId] of predictions) {
+    const idx = rounds.indexOf(cle.split('|')[0]);
+    if (idx >= idxDepart) out.set(cle, playerId);
+  }
   return out;
 }
 

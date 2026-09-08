@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
 import { supabaseAdmin } from '@/supabase/server';
-import { getTournament } from '@/supabase/queries';
 
 export interface PronosticActionResult {
   ok: boolean;
@@ -12,46 +11,18 @@ export interface PronosticActionResult {
 
 const REFUS: PronosticActionResult = { ok: false, error: 'Non authentifié.' };
 
-type Client = ReturnType<typeof supabaseAdmin>;
-
-/**
- * Efface, pour un stock donné, tout pronostic aux tours SUIVANT `round` qui
- * dépendait structurellement de l'emplacement (round, position) — un
- * changement à un tour se répercute sur un unique emplacement par tour
- * suivant (round+1, position÷2), puis (round+2, position÷4), etc.
- *
- * Sans ça, changer un pronostic de quart de finale laisserait une demie ou
- * une finale prédite sur un adversaire qui ne peut plus l'atteindre.
- */
-async function effacerEnCascade(
-  sb: Client,
-  tournamentId: string,
-  participantId: string | null,
-  rounds: string[],
-  idxRound: number,
-  position: number,
-): Promise<string | null> {
-  let pos = position;
-  for (let i = idxRound + 1; i < rounds.length; i++) {
-    pos = Math.floor(pos / 2);
-    let del = sb
-      .from('tn_bracket_predictions')
-      .delete()
-      .eq('tournament_id', tournamentId)
-      .eq('round', rounds[i])
-      .eq('position', pos);
-    del = participantId === null ? del.is('participant_id', null) : del.eq('participant_id', participantId);
-    const { error } = await del;
-    if (error) return error.message;
-  }
-  return null;
-}
-
 /**
  * Enregistre le pronostic d'un stock (moi si `participantId` est null, sinon
  * un participant — même convention que les picks) pour un emplacement du
- * tableau, et invalide en cascade tout pronostic plus tardif qui en
- * dépendait (cf. `effacerEnCascade`).
+ * tableau.
+ *
+ * Chaque emplacement se note INDÉPENDAMMENT des autres (cf. lib/bracketSim.ts
+ * `scoreDuStock` : une prédiction ne vaut que si le joueur prédit est
+ * effectivement le vainqueur RÉEL/SIMULÉ de CET emplacement, sans exiger de
+ * cheminement cohérent en amont) — changer un pronostic de quart de finale
+ * ne remet donc plus en cause ceux de demie ou de finale, même bâtis sur un
+ * autre joueur : aucune cascade à effacer ici, contrairement à l'ancienne
+ * version de cet écran.
  */
 export async function enregistrerPronostic(
   tournamentId: string,
@@ -61,12 +32,6 @@ export async function enregistrerPronostic(
   playerId: string,
 ): Promise<PronosticActionResult> {
   if (!(await sessionValide())) return REFUS;
-
-  const tournoi = await getTournament(tournamentId);
-  if (!tournoi) return { ok: false, error: 'Tournoi introuvable.' };
-  const rounds = tournoi.rounds ?? [];
-  const idx = rounds.indexOf(round);
-  if (idx === -1) return { ok: false, error: 'Tour inconnu.' };
 
   const sb = supabaseAdmin();
 
@@ -96,14 +61,11 @@ export async function enregistrerPronostic(
     if (error) return { ok: false, error: error.message };
   }
 
-  const erreurCascade = await effacerEnCascade(sb, tournamentId, participantId, rounds, idx, position);
-  if (erreurCascade) return { ok: false, error: erreurCascade };
-
   revalidatePath(`/tournoi/${tournamentId}/simulateur`);
   return { ok: true };
 }
 
-/** Efface le pronostic d'un stock à un emplacement, et sa cascade. */
+/** Efface le pronostic d'un stock à un emplacement — lui seul, sans cascade. */
 export async function effacerPronostic(
   tournamentId: string,
   participantId: string | null,
@@ -111,12 +73,6 @@ export async function effacerPronostic(
   position: number,
 ): Promise<PronosticActionResult> {
   if (!(await sessionValide())) return REFUS;
-
-  const tournoi = await getTournament(tournamentId);
-  if (!tournoi) return { ok: false, error: 'Tournoi introuvable.' };
-  const rounds = tournoi.rounds ?? [];
-  const idx = rounds.indexOf(round);
-  if (idx === -1) return { ok: false, error: 'Tour inconnu.' };
 
   const sb = supabaseAdmin();
 
@@ -129,9 +85,6 @@ export async function effacerPronostic(
   del = participantId === null ? del.is('participant_id', null) : del.eq('participant_id', participantId);
   const { error } = await del;
   if (error) return { ok: false, error: error.message };
-
-  const erreurCascade = await effacerEnCascade(sb, tournamentId, participantId, rounds, idx, position);
-  if (erreurCascade) return { ok: false, error: erreurCascade };
 
   revalidatePath(`/tournoi/${tournamentId}/simulateur`);
   return { ok: true };
