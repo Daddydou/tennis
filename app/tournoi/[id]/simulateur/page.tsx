@@ -5,6 +5,7 @@ import {
   getBracketPredictions,
   getParticipants,
   loadEngineData,
+  surfacePourElo,
   tourCourantMatches,
 } from '@/supabase/queries';
 import { cleDuel, type MatchReel } from '@/lib/bracketSim';
@@ -76,6 +77,8 @@ export default async function SimulateurPage({
         rounds={rounds}
         matches={matches}
         joueurs={joueurs}
+        players={players}
+        surface={surfacePourElo(tournament.surface)}
         participants={participants.map((p) => ({ id: p.id, nom: p.name }))}
         predictionsInitiales={predictions}
         roundParDefaut={roundParDefaut ?? rounds[0]}

@@ -13,6 +13,7 @@ import BracketReelPanel from './BracketReelPanel';
 import ClassementPanel from './ClassementPanel';
 import PronosticsPanel from './PronosticsPanel';
 import { MOI, type Joueur, type Participant } from './types';
+import type { Player } from '@/lib/types';
 
 type Onglet = 'bracket' | 'classement' | 'pronostics';
 
@@ -31,6 +32,8 @@ export default function SimulateurBracket({
   rounds,
   matches,
   joueurs,
+  players,
+  surface,
   participants,
   predictionsInitiales,
   roundParDefaut,
@@ -39,6 +42,9 @@ export default function SimulateurBracket({
   rounds: string[];
   matches: MatchReel[];
   joueurs: Record<string, Joueur>;
+  /** Elo par joueur — uniquement pour la simulation Monte Carlo (onglet Classement). */
+  players: Record<string, Player>;
+  surface: 'hard' | 'clay' | 'grass';
   participants: Participant[];
   predictionsInitiales: Record<string, Record<string, string>>;
   roundParDefaut: string;
@@ -174,6 +180,11 @@ export default function SimulateurBracket({
         <ClassementPanel
           rounds={rounds}
           roundDepart={roundDepart}
+          matches={matches}
+          scenario={scenario}
+          players={players}
+          surface={surface}
+          joueurs={joueurs}
           participants={participants}
           predictions={predictions}
           arbreScenario={arbreScenario}
