@@ -404,5 +404,10 @@ export function simulerProbabilitesVictoire(
     for (const g of gagnants) victoires[g.id] += 1 / gagnants.length;
   }
 
+  // Compte brut -> fraction : c'est le contrat documenté de `victoires`
+  // (« fraction des tirages gagnés »), et donc ce que l'écran peut multiplier
+  // par 100 directement sans re-diviser par `n` de son côté.
+  for (const id of Object.keys(victoires)) victoires[id] /= n;
+
   return { victoires, simulations: n };
 }

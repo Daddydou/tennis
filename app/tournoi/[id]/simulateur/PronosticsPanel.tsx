@@ -14,6 +14,13 @@ import { MOI, nomStock, type Joueur, type Participant } from './types';
  * tour) est pré-rempli s'il tient encore ; « Éliminé » s'affiche sinon, et
  * la liste ne propose alors que les joueurs réellement encore qualifiés
  * pour cet emplacement.
+ *
+ * Le tour d'affichage max n'est qu'un CONFORT DE SAISIE : il limite les
+ * onglets de tour montrés ici (pour ne pas empiler des demies et une
+ * finale avant que l'utilisateur les ait réfléchies), rien de plus — les
+ * pronostics déjà enregistrés sur des tours plus tardifs restent en base
+ * et continuent de compter normalement dans le classement et le Monte
+ * Carlo (onglet Classement), qu'ils soient affichés ici ou non.
  */
 export default function PronosticsPanel({
   rounds,
@@ -41,16 +48,27 @@ export default function PronosticsPanel({
   onEffacer: (stockId: string, round: string, position: number) => void;
 }) {
   const stocks = [MOI, ...participants.map((p) => p.id)];
-  const roundsAffiches = rounds.slice(rounds.indexOf(roundDepart));
+  const roundsDepuisDepart = rounds.slice(rounds.indexOf(roundDepart));
 
   const [stockActif, setStockActif] = useState<string>(MOI);
+  // Par défaut, seul le tour de départ est proposé à l'édition — on étend
+  // au besoin, sans jamais restreindre ce qui est déjà enregistré ni ce
+  // qui compte dans les calculs (cf. docstring).
+  const [tourMaxAffiche, setTourMaxAffiche] = useState(roundDepart);
+  const roundsAffiches = roundsDepuisDepart.slice(0, roundsDepuisDepart.indexOf(tourMaxAffiche) + 1);
+
   const [roundAffiche, setRoundAffiche] = useState(roundDepart);
+  // Si le plafond redescend sous le tour actuellement consulté, on retombe
+  // sur le dernier tour encore proposé plutôt que d'afficher un onglet fantôme.
+  const roundAfficheValide = roundsAffiches.includes(roundAffiche)
+    ? roundAffiche
+    : roundsAffiches[roundsAffiches.length - 1];
 
   const nom = (id: string) => joueurs[id]?.nom ?? id;
   const rang = (id: string) => joueurs[id]?.rang ?? null;
 
   const slotsDuRound = matches
-    .filter((m) => m.round === roundAffiche)
+    .filter((m) => m.round === roundAfficheValide)
     .map((m) => m.position)
     .sort((a, b) => a - b);
 
@@ -80,13 +98,35 @@ export default function PronosticsPanel({
         ))}
       </div>
 
+      <div>
+        <p className="mb-1 text-[11px] text-zinc-400">
+          Afficher les tours jusqu&apos;à — les tours plus tardifs déjà
+          renseignés ne sont pas affectés, juste masqués ici
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {roundsDepuisDepart.map((r) => (
+            <button
+              key={r}
+              onClick={() => setTourMaxAffiche(r)}
+              className={`rounded border px-2.5 py-1 text-xs ${
+                r === tourMaxAffiche
+                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-1">
         {roundsAffiches.map((r) => (
           <button
             key={r}
             onClick={() => setRoundAffiche(r)}
             className={`rounded border px-2.5 py-1 text-xs ${
-              r === roundAffiche
+              r === roundAfficheValide
                 ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
                 : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
             }`}
@@ -101,7 +141,7 @@ export default function PronosticsPanel({
           <p className="text-sm text-zinc-500">Aucun match à ce tour.</p>
         )}
         {slotsDuRound.map((position) => {
-          const cle = cleDuel(roundAffiche, position);
+          const cle = cleDuel(roundAfficheValide, position);
           const reel = reels.get(cle) ?? null;
           const options = [...(ensembles.get(cle) ?? [])].sort(
             (a, b) => (rang(a) ?? 9999) - (rang(b) ?? 9999) || nom(a).localeCompare(nom(b)),
@@ -114,7 +154,7 @@ export default function PronosticsPanel({
               key={cle}
               className="flex items-center gap-2 rounded border border-zinc-200 px-2.5 py-2 text-sm dark:border-zinc-800"
             >
-              <span className="w-10 shrink-0 text-xs text-zinc-400">{roundAffiche}</span>
+              <span className="w-10 shrink-0 text-xs text-zinc-400">{roundAfficheValide}</span>
 
               {reel ? (
                 <span className="flex-1 truncate">
@@ -137,8 +177,8 @@ export default function PronosticsPanel({
                     disabled={pending || options.length === 0}
                     value={enLice ? (predit ?? '') : ''}
                     onChange={(e) => {
-                      if (e.target.value) onChanger(stockActif, roundAffiche, position, e.target.value);
-                      else onEffacer(stockActif, roundAffiche, position);
+                      if (e.target.value) onChanger(stockActif, roundAfficheValide, position, e.target.value);
+                      else onEffacer(stockActif, roundAfficheValide, position);
                     }}
                     className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                   >

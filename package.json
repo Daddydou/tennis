@@ -10,7 +10,8 @@
     "verify:rls": "node --env-file=.env.local scripts/verifier-rls.mjs",
     "verify:auth": "node --env-file=.env.local scripts/verifier-auth.mjs",
     "backfill:tournois": "node --env-file=.env.local scripts/backfill-tournois.mts",
-    "cotes:reapparier": "node --env-file=.env.local scripts/reapparier-cotes.mts"
+    "cotes:reapparier": "node --env-file=.env.local scripts/reapparier-cotes.mts",
+    "test:bracketsim": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-bracketsim.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
