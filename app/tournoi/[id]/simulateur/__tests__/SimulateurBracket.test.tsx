@@ -30,6 +30,31 @@ vi.mock('../actions', () => ({
     sauvegarderPronosticsBracketMock(...args),
 }));
 
+type ImportPicks = { round: string; position: number; playerId: string }[];
+type ImporterBracketParticipant = (
+  tournamentId: string,
+  jsonText: string,
+) => Promise<{
+  ok: boolean;
+  stockId?: string;
+  picks?: ImportPicks;
+  toursIgnores: { tour: string; raison: string }[];
+  nonApparies: { nom: string; raison: 'absent' | 'ambigu'; contexte: string }[];
+  incoherences: { contexte: string; pronostique: string; joueurs: [string, string] }[];
+}>;
+const importerBracketParticipantMock = vi.fn<ImporterBracketParticipant>(async () => ({
+  ok: true,
+  stockId: 'p1',
+  picks: [],
+  toursIgnores: [],
+  nonApparies: [],
+  incoherences: [],
+}));
+vi.mock('../importActions', () => ({
+  importerBracketParticipant: (...args: Parameters<ImporterBracketParticipant>) =>
+    importerBracketParticipantMock(...args),
+}));
+
 // Importé APRÈS le mock (le module doit être intercepté avant son import).
 const { default: SimulateurBracket } = await import('../SimulateurBracket');
 
@@ -106,6 +131,7 @@ function renderEcran() {
 
 beforeEach(() => {
   sauvegarderPronosticsBracketMock.mockClear();
+  importerBracketParticipantMock.mockClear();
 });
 afterEach(() => {
   cleanup();
@@ -198,5 +224,43 @@ describe('SimulateurBracket', () => {
     expect(screen.getByTestId('pick-SF-1')).toHaveValue(DELTA);
     expect(screen.getByTestId('participants-stock-tab-p1')).toHaveTextContent('Laki');
     expect(screen.getByTestId('participants-stock-tab-p1').textContent).not.toContain('●');
+  });
+
+  it('bloc import : un import réussi (Server Action moquée) pré-remplit le bloc 3 et alimente le bloc 4', async () => {
+    const user = userEvent.setup();
+    importerBracketParticipantMock.mockResolvedValueOnce({
+      ok: true,
+      stockId: 'p1',
+      picks: [{ round: 'SF', position: 0, playerId: BRAVO }],
+      toursIgnores: [],
+      nonApparies: [],
+      incoherences: [],
+    });
+    renderEcran();
+
+    await user.click(screen.getByRole('button', { name: 'Importer' }));
+    // `user.paste`, pas `.type` : le JSON est plein de `{`/`}`, qu'userEvent
+    // interpréterait sinon comme des séquences de touches spéciales.
+    await user.click(screen.getByPlaceholderText(/participant/));
+    await user.paste('{"participant":"Laki","tours":[]}');
+    await user.click(screen.getByTestId('import-submit'));
+
+    expect(importerBracketParticipantMock).toHaveBeenCalledTimes(1);
+    expect(importerBracketParticipantMock).toHaveBeenCalledWith('t1', '{"participant":"Laki","tours":[]}');
+    expect(screen.getByText(/Import réussi/)).toBeInTheDocument();
+
+    // Pré-rempli au bloc 3 : Laki n'avait rien pronostiqué sur SF/0 avant
+    // l'import (seulement SF/1, dans la fixture initiale).
+    await user.click(screen.getByRole('button', { name: 'Bracket des participants' }));
+    await user.click(screen.getByTestId('participants-stock-tab-p1'));
+    expect(screen.getByTestId('pick-SF-0')).toHaveValue(BRAVO);
+
+    // Alimente le bloc 4 : une fois Bravo vainqueur réel/cliqué de SF/0, le
+    // pronostic importé de Laki rapporte ses points comme un pronostic saisi
+    // à la main.
+    await user.click(screen.getByRole('button', { name: 'Bracket réel' }));
+    await user.click(screen.getByRole('button', { name: /Bravo/ }));
+    await user.click(screen.getByRole('button', { name: 'Classement & probabilités' }));
+    expect(screen.getByTestId('classement-p1')).toHaveAttribute('data-simules', '1');
   });
 });

@@ -5,24 +5,28 @@ import { cleDuel, resoudreArbre, type MatchReel } from '@/lib/bracketSim';
 import { sauvegarderPronosticsBracket } from './actions';
 import BracketRoundPanel from './BracketRoundPanel';
 import ClassementBracketPanel from './ClassementBracketPanel';
+import ImportBracketPanel from './ImportBracketPanel';
 import ParticipantsBracketPanel from './ParticipantsBracketPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
 
-type Onglet = 'reel' | 'participants' | 'classement';
+type Onglet = 'reel' | 'participants' | 'classement' | 'import';
 
 const ONGLETS: { key: Onglet; label: string }[] = [
   { key: 'reel', label: 'Bracket réel' },
   { key: 'participants', label: 'Bracket des participants' },
   { key: 'classement', label: 'Classement & probabilités' },
+  { key: 'import', label: 'Importer' },
 ];
 
 /**
  * Section Bracket du simulateur — bloc 1 (choix du tour, pilote tout le
- * reste), puis 3 onglets qui en sont les blocs 2/3/4 : Bracket réel
+ * reste), puis les onglets qui en sont les blocs 2/3/4 : Bracket réel
  * (cliquable, tour choisi seulement), Bracket des participants (un
  * pronostic de vainqueur par match, persisté tour par tour,
- * tn_bracket_round_picks) et Classement & probabilités.
+ * tn_bracket_round_picks) et Classement & probabilités. Un 4e onglet
+ * (Importer) pré-remplit le bloc 3 depuis l'extracteur externe (Game
+ * Tracker) — même table, toujours corrigeable à la main ensuite.
  *
  * `picksBracket` (committé, TOUS tours confondus, par stock) vit ici : le
  * bloc 4 en a besoin pour les tours au-delà du tour choisi (probabilité
@@ -144,6 +148,18 @@ export default function SimulateurBracket({
     });
   }
 
+  // Import (Game Tracker) : fusionne dans `picksBracket`, quel que soit le
+  // tour affiché — un import peut couvrir plusieurs tours à la fois, déjà
+  // écrits en base par la Server Action ; ceci ne fait que refléter côté
+  // écran, sans recharger la page.
+  function onImporte(stockId: string, picks: { round: string; position: number; playerId: string }[]) {
+    setPicksBracket((prev) => {
+      const copie = new Map(prev[stockId] ?? []);
+      for (const p of picks) copie.set(cleDuel(p.round, p.position), p.playerId);
+      return { ...prev, [stockId]: copie };
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -223,6 +239,10 @@ export default function SimulateurBracket({
           dejaGagne={dejaGagne}
           onChangerDejaGagne={onChangerDejaGagne}
         />
+      )}
+
+      {onglet === 'import' && (
+        <ImportBracketPanel tournamentId={tournamentId} participants={participants} onImporte={onImporte} />
       )}
     </div>
   );

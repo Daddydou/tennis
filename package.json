@@ -12,6 +12,7 @@
     "backfill:tournois": "node --env-file=.env.local scripts/backfill-tournois.mts",
     "cotes:reapparier": "node --env-file=.env.local scripts/reapparier-cotes.mts",
     "test:bracketsim": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-bracketsim.mts",
+    "test:bracketimport": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-bracketimport.mts",
     "test:components": "vitest run"
   },
   "dependencies": {

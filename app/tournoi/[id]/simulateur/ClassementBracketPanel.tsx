@@ -1,7 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { filtrerDepuisTour, scoreDuStock, type ArbreResolu, type MatchReel } from '@/lib/bracketSim';
+import {
+  ensemblesAtteignables,
+  filtrerDepuisTour,
+  maxAtteignable,
+  scoreDuStock,
+  type ArbreResolu,
+  type MatchReel,
+} from '@/lib/bracketSim';
 import { classerScenariosVictoire, simulerProbabilitesVictoire, type StockBracket } from '@/lib/montecarlo';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
@@ -24,7 +31,10 @@ const TOP_SCENARIOS = 3;
  *    pronostics du stock sur le tour choisi ET AU-DELÀ (tous les tours déjà
  *    enregistrés, pas seulement celui affiché : `filtrerDepuisTour`) —
  *    c'est ce qui fait avancer les probabilités des joueurs encore en lice
- *    pour les tours suivants, sans modèle séparé.
+ *    pour les tours suivants, sans modèle séparé. Max possible : déjà gagné
+ *    + `maxAtteignable` sur TOUS les pronostics du stock (tous tours, y
+ *    compris importés au-delà du tour choisi) — utile surtout après un
+ *    import Game Tracker, qui peut couvrir plusieurs tours d'un coup.
  *
  * b) Par stock : les 3 scénarios (« si le joueur X remporte le tournoi »)
  *    qui maximisent sa probabilité de victoire, parmi les joueurs qu'il a
@@ -83,15 +93,28 @@ export default function ClassementBracketPanel({
     return out;
   }, [stocks, picksBracket, rounds, roundChoisi]);
 
+  // Max possible : point de vue GLOBAL (tous les tours pronostiqués par le
+  // stock, pas seulement celui affiché) — déjà gagné + tout ce qui reste
+  // atteignable, cf. lib/bracketSim.ts `maxAtteignable`. Distinct de
+  // « simulés », qui ne porte que sur le tour choisi.
+  const atteignables = useMemo(() => ensemblesAtteignables(matches, rounds), [matches, rounds]);
+  const maxPossible = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const s of stocks) {
+      out[s] = (dejaGagne[s] ?? 0) + maxAtteignable(picksBracket[s] ?? new Map(), matches, rounds, atteignables);
+    }
+    return out;
+  }, [stocks, dejaGagne, picksBracket, matches, rounds, atteignables]);
+
   const classement = useMemo(() => {
     return stocks
       .map((s) => {
         const simules = scoreDuStock(predictionsRoundChoisi[s], arbreScenario, rounds);
         const deja = dejaGagne[s] ?? 0;
-        return { id: s, nom: nomStock(s, participants), deja, simules, total: deja + simules };
+        return { id: s, nom: nomStock(s, participants), deja, simules, total: deja + simules, maxPossible: maxPossible[s] };
       })
       .sort((a, b) => b.total - a.total);
-  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds, dejaGagne, participants]);
+  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds, dejaGagne, participants, maxPossible]);
 
   const stocksMC: StockBracket[] = useMemo(
     () => stocks.map((s) => ({ id: s, dejaGagne: dejaGagne[s] ?? 0, predictions: predictionsDepuisTourChoisi[s] })),
@@ -144,6 +167,7 @@ export default function ClassementBracketPanel({
             data-simules={c.simules}
             data-total={c.total}
             data-proba={probabilites[c.id] ?? 0}
+            data-max-possible={c.maxPossible}
             className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
           >
             <span className="w-5 shrink-0 text-xs text-zinc-400">{i + 1}.</span>
@@ -169,6 +193,12 @@ export default function ClassementBracketPanel({
             <span className="w-14 shrink-0 text-right text-base font-semibold tabular-nums">{c.total}</span>
             <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
               {Math.round((probabilites[c.id] ?? 0) * 100)}% de victoire
+            </span>
+            <span
+              className="shrink-0 text-xs text-zinc-400"
+              title="Déjà gagné + tout ce qui reste atteignable sur l'ensemble de ses pronostics (tous tours)"
+            >
+              max possible {c.maxPossible}
             </span>
           </div>
         ))}
