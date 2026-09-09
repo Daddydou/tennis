@@ -126,22 +126,29 @@ export default function SimulateurPicks({
   return (
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {stocks.map((s) => (
-          <div
-            key={s}
-            className="flex items-center justify-between rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
-          >
-            <span className="text-sm font-medium">{nomStock(s, participants)}</span>
-            <span className="text-xs text-zinc-500">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{dejaInscrits[s] ?? 0}</span>{' '}
-              déjà inscrits +{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {Math.round(pointsPossibles[s] ?? 0)}
-              </span>{' '}
-              possibles
-            </span>
-          </div>
-        ))}
+        {stocks.map((s) => {
+          const reel = dejaInscrits[s] ?? 0;
+          const simule = Math.round(pointsPossibles[s] ?? 0);
+          return (
+            <div
+              key={s}
+              className="flex items-center justify-between rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
+            >
+              <span className="text-sm font-medium">{nomStock(s, participants)}</span>
+              <span className="flex items-center gap-3 text-xs text-zinc-500">
+                <span>
+                  réel <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reel}</span>
+                </span>
+                <span>
+                  simulé <span className="font-semibold text-zinc-900 dark:text-zinc-100">{simule}</span>
+                </span>
+                <span>
+                  total <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reel + simule}</span>
+                </span>
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <nav className="flex flex-wrap gap-1 border-b border-zinc-200 pb-2 dark:border-zinc-800">
