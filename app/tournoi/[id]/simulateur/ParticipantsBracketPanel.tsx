@@ -97,6 +97,7 @@ export default function ParticipantsBracketPanel({
         {stocks.map((s) => (
           <button
             key={s}
+            data-testid={`participants-stock-tab-${s}`}
             onClick={() => setStockActif(s)}
             className={`rounded border px-2.5 py-1 text-xs ${
               s === stockActif
@@ -137,6 +138,8 @@ export default function ParticipantsBracketPanel({
                 disabled={pending || candidats.length === 0}
                 value={valeur}
                 onChange={(e) => onChangerDraft(m.position, e.target.value)}
+                data-testid={`pick-${roundChoisi}-${m.position}`}
+                aria-label={caption}
                 className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
               >
                 <option value="">— aucun joueur en lice</option>

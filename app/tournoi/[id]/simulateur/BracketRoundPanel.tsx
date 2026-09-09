@@ -34,7 +34,7 @@ export default function BracketRoundPanel({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500" data-testid="bracket-reel-round">
         Bracket réel du tour <span className="font-medium text-zinc-700 dark:text-zinc-300">{roundChoisi}</span> —
         les matchs déjà joués sont figés sur leur vrai résultat ; clique un joueur pour désigner le vainqueur des
         autres.

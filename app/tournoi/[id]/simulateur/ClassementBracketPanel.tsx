@@ -140,6 +140,10 @@ export default function ClassementBracketPanel({
         {classement.map((c, i) => (
           <div
             key={c.id}
+            data-testid={`classement-${c.id}`}
+            data-simules={c.simules}
+            data-total={c.total}
+            data-proba={probabilites[c.id] ?? 0}
             className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
           >
             <span className="w-5 shrink-0 text-xs text-zinc-400">{i + 1}.</span>
