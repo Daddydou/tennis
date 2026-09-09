@@ -15,11 +15,12 @@
  * appariements du quart de tableau sont ceux de l'US Open 2026 (ATP) tels
  * qu'observés en base au moment des signalements.
  *
- * Modèle à ANCRE UNIQUE (chaque stock = un seul joueur, choisi au tour de
- * départ) : les cartes de pronostics utilisées ci-dessous viennent toutes
- * de `predictionsDepuisAncre`, exactement comme l'écran — jamais construites
- * à la main comme au temps du pronostic multi-tours (tn_bracket_predictions,
- * abandonné).
+ * Modèle BRACKET, UN TOUR À LA FOIS : chaque stock pronostique le vainqueur
+ * de chaque MATCH, tour par tour, indépendamment d'un tour à l'autre (table
+ * tn_bracket_round_picks) — les cartes de pronostics ci-dessous sont donc
+ * construites À LA MAIN, un `cleDuel` par match pronostiqué, exactement
+ * comme l'écran les assemble à partir de plusieurs tours enregistrés
+ * séparément. Aucune ancre unique (`predictionsDepuisAncre`, abandonnée).
  */
 import {
   augmenterAvecPlusieursVictoires,
@@ -28,14 +29,19 @@ import {
   cheminDuJoueur,
   cleDuel,
   ensemblesAtteignables,
-  predictionsDepuisAncre,
+  filtrerDepuisTour,
   resoudreArbre,
   scoreDuStock,
   vainqueursReels,
   type MatchReel,
   type StockGarantie,
 } from '../lib/bracketSim.ts';
-import { simulerProbabilitesVictoire, tirerFinDeTournoi, type StockBracket } from '../lib/montecarlo.ts';
+import {
+  classerScenariosVictoire,
+  simulerProbabilitesVictoire,
+  tirerFinDeTournoi,
+  type StockBracket,
+} from '../lib/montecarlo.ts';
 import type { Player } from '../lib/types.ts';
 
 let echecs = 0;
@@ -73,11 +79,18 @@ const matches: MatchReel[] = [
 
 const roundDepart = 'QF';
 
-// Ancres du fixture : Moi et Laki sur des joueurs différents de Thomas, qui
-// ancre Tiafoe — le cas concret du signalement.
-const ancreMoi = ZVEREV;
-const ancreLaki = SHELTON;
-const ancreThomas = TIAFOE;
+// Pronostics du fixture, un `cleDuel` par tour REGISTRÉ séparément (comme
+// l'écran, qui persiste chaque tour indépendamment) : Moi et Laki suivent
+// des joueurs différents de Thomas, qui suit Tiafoe à chaque tour — le cas
+// concret du signalement historique, transposé au nouveau modèle.
+function predsSuivant(playerId: string): Map<string, string> {
+  return new Map(
+    cheminDuJoueur(matches, rounds, playerId).map(({ round, position }) => [cleDuel(round, position), playerId]),
+  );
+}
+const predsMoi = predsSuivant(ZVEREV);
+const predsLaki = predsSuivant(SHELTON);
+const predsThomas = predsSuivant(TIAFOE);
 
 /* ========================================================================
  * BUG (corrigé) — resoudreArbre : un trou dans un tour suivant n'est PAS un
@@ -103,19 +116,13 @@ const ancreThomas = TIAFOE;
 }
 
 /* ========================================================================
- * predictionsDepuisAncre — le modèle à ancre unique
+ * filtrerDepuisTour — les tours avant le tour choisi sortent du pronostic
+ * (couverts par la saisie manuelle « déjà gagné », jamais recalculés).
  * ======================================================================== */
 {
-  const predsThomas = predictionsDepuisAncre(matches, rounds, roundDepart, ancreThomas);
-  assert(predsThomas.size === 3, `l'ancre de Thomas (Tiafoe) couvre ses 3 emplacements QF/SF/F (obtenu ${predsThomas.size})`);
-  assert(predsThomas.get(cleDuel('QF', 2)) === TIAFOE, 'Tiafoe occupe QF/2 (sa place réelle)');
-  assert(predsThomas.get(cleDuel('SF', 1)) === TIAFOE, "Tiafoe occupe SF/1 (déduit de son chemin, sans rien stocker par tour)");
-  assert(predsThomas.get(cleDuel('F', 0)) === TIAFOE, 'Tiafoe occupe F/0');
-
-  const predsDepuisSF = predictionsDepuisAncre(matches, rounds, 'SF', ancreThomas);
-  assert(predsDepuisSF.size === 2 && !predsDepuisSF.has(cleDuel('QF', 2)), 'depuis SF, QF/2 sort du pronostic (avant le tour de départ)');
-
-  assert(predictionsDepuisAncre(matches, rounds, roundDepart, 'ZZZ').size === 0, 'ancre inconnue -> carte vide, pas une erreur');
+  assert(predsThomas.size === 3, `Thomas a pronostiqué Tiafoe sur ses 3 emplacements QF/SF/F (obtenu ${predsThomas.size})`);
+  const depuisSF = filtrerDepuisTour(predsThomas, rounds, 'SF');
+  assert(depuisSF.size === 2 && !depuisSF.has(cleDuel('QF', 2)), 'depuis SF, QF/2 sort du pronostic (avant le tour choisi)');
 }
 
 /* ========================================================================
@@ -133,67 +140,64 @@ const ancreThomas = TIAFOE;
 }
 
 /* ========================================================================
- * CAS CONCRET DU SIGNALEMENT — Thomas ancre Tiafoe, seul à le faire.
- *
- * Si Tiafoe remporte le tournoi, Thomas doit gagner à coup sûr : ni Moi
- * (ancre Zverev) ni Laki (ancre Shelton) ne peuvent l'égaler par leur
- * propre ancre si elle est éliminée avant la finale.
+ * CAS CONCRET DU SIGNALEMENT — Thomas suit Tiafoe à chaque tour, seul à le
+ * faire. Si Tiafoe remporte le tournoi, Thomas doit gagner à coup sûr : ni
+ * Moi (Zverev) ni Laki (Shelton) ne peuvent l'égaler si leur propre suivi
+ * est éliminé avant la finale.
  * ======================================================================== */
 {
   const stocks: StockGarantie[] = [
-    { id: 'moi', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreMoi) },
-    { id: 'laki', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreLaki) },
-    { id: 'thomas', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreThomas) },
+    { id: 'moi', dejaGagne: 0, predictions: predsMoi },
+    { id: 'laki', dejaGagne: 0, predictions: predsLaki },
+    { id: 'thomas', dejaGagne: 0, predictions: predsThomas },
   ];
   const scenarios = chercherScenariosGagnants(matches, rounds, roundDepart, stocks);
   const evThomas = scenarios.get('thomas');
   assert(
     !!evThomas && evThomas.length === 1 && evThomas[0].playerId === TIAFOE && evThomas[0].round === 'F',
-    `Thomas (ancre Tiafoe, seul) : « Tiafoe remporte le tournoi » détecté (obtenu ${JSON.stringify(evThomas)})`,
+    `Thomas (suit Tiafoe, seul) : « Tiafoe remporte le tournoi » détecté (obtenu ${JSON.stringify(evThomas)})`,
   );
 
-  // Si Laki ancre AUSSI Tiafoe (même ancre que Thomas), plus personne n'est
-  // seul à en profiter : le scénario doit disparaître pour les deux.
-  const stocksMemeAncre: StockGarantie[] = [
+  // Si Laki suit AUSSI Tiafoe (mêmes pronostics que Thomas), plus personne
+  // n'est seul à en profiter : le scénario doit disparaître pour les deux.
+  const stocksMemeSuivi: StockGarantie[] = [
     stocks[0],
-    { id: 'laki', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreThomas) },
+    { id: 'laki', dejaGagne: 0, predictions: predsThomas },
     stocks[2],
   ];
-  const scenariosMemeAncre = chercherScenariosGagnants(matches, rounds, roundDepart, stocksMemeAncre);
-  assert(!scenariosMemeAncre.has('thomas') && !scenariosMemeAncre.has('laki'), 'ancre partagée (Laki = Thomas = Tiafoe) : plus aucun scénario garanti pour l\'un ou l\'autre');
+  const scenariosMemeSuivi = chercherScenariosGagnants(matches, rounds, roundDepart, stocksMemeSuivi);
+  assert(!scenariosMemeSuivi.has('thomas') && !scenariosMemeSuivi.has('laki'), 'pronostic partagé (Laki = Thomas = Tiafoe) : plus aucun scénario garanti pour l\'un ou l\'autre');
 }
 
 /* ========================================================================
  * Points simulés : réagissent bien à un clic sur un tour à venir, pour un
- * stock dont l'ancre correspond.
+ * stock dont le pronostic correspond.
  * ======================================================================== */
 {
-  const predsMoi = predictionsDepuisAncre(matches, rounds, roundDepart, ancreMoi);
-  const predsThomas = predictionsDepuisAncre(matches, rounds, roundDepart, ancreThomas);
   const scenarioClic = new Map([[cleDuel('QF', 0), ZVEREV]]);
   const arbreScenario = resoudreArbre(matches, rounds, (r, p) => scenarioClic.get(cleDuel(r, p)) ?? null);
   const ptsMoi = scoreDuStock(predsMoi, arbreScenario, rounds);
   const ptsThomas = scoreDuStock(predsThomas, arbreScenario, rounds);
-  assert(ptsMoi === 1, `un clic sur QF/0 -> Zverev rapporte des points à Moi qui l'ancre (obtenu ${ptsMoi}, attendu 1)`);
-  assert(ptsThomas === 0, "le même clic ne rapporte rien à Thomas, dont l'ancre (Tiafoe) ne joue pas QF/0 (0 attendu, pas un bug)");
+  assert(ptsMoi === 1, `un clic sur QF/0 -> Zverev rapporte des points à Moi qui l'a pronostiqué (obtenu ${ptsMoi}, attendu 1)`);
+  assert(ptsThomas === 0, "le même clic ne rapporte rien à Thomas, dont le pronostic (Tiafoe) ne joue pas QF/0 (0 attendu, pas un bug)");
 }
 
 /* ========================================================================
  * Probabilités Monte Carlo : somment à 1 (jamais 500 %), quel que soit le
  * nombre de stocks.
  * ======================================================================== */
+const players: Record<string, Player> = Object.fromEntries(
+  [
+    [ZVEREV, 2054], [VDZ, 1748], [KHACHANOV, 1761], [BLOCKX, 1810],
+    [TIAFOE, 1904], [MICHELSEN, 1835], [SHELTON, 1960], [ALCARAZ, 2103],
+  ].map(([id, elo]) => [id, { id, eloOverall: elo, eloHard: elo, eloClay: elo, eloGrass: elo } as unknown as Player]),
+);
+const stocksMC: StockBracket[] = [
+  { id: 'moi', dejaGagne: 0, predictions: predsMoi },
+  { id: 'laki', dejaGagne: 0, predictions: predsLaki },
+  { id: 'thomas', dejaGagne: 0, predictions: predsThomas },
+];
 {
-  const players: Record<string, Player> = Object.fromEntries(
-    [
-      [ZVEREV, 2054], [VDZ, 1748], [KHACHANOV, 1761], [BLOCKX, 1810],
-      [TIAFOE, 1904], [MICHELSEN, 1835], [SHELTON, 1960], [ALCARAZ, 2103],
-    ].map(([id, elo]) => [id, { id, eloOverall: elo, eloHard: elo, eloClay: elo, eloGrass: elo } as unknown as Player]),
-  );
-  const stocksMC: StockBracket[] = [
-    { id: 'moi', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreMoi) },
-    { id: 'laki', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreLaki) },
-    { id: 'thomas', dejaGagne: 0, predictions: predictionsDepuisAncre(matches, rounds, roundDepart, ancreThomas) },
-  ];
   const resultat = simulerProbabilitesVictoire(matches, new Map(), players, rounds, stocksMC, 2000, 'hard');
   const somme = Object.values(resultat.victoires).reduce((a, b) => a + b, 0);
   assert(Math.abs(somme - 1) < 1e-9, `les probabilités somment à 1, jamais 5 (500 %) — obtenu ${somme}`);
@@ -213,6 +217,37 @@ const ancreThomas = TIAFOE;
   assert(tirage.duels.every((d) => d.vainqueur !== null), 'un tirage complet tranche les 7 duels');
   assert(vainqueursReels(matches).size === 0, "la fixture elle-même n'a aucun résultat réel décidé (tout est simulé)");
   assert(ensemblesAtteignables(matches, rounds).get(cleDuel('F', 0))!.size === 8, 'les 8 joueurs du quart sont encore atteignables en finale avant tout résultat');
+}
+
+/* ========================================================================
+ * classerScenariosVictoire — les 3 meilleurs scénarios par stock,
+ * remplaçant la recherche de garantie absolue.
+ * ======================================================================== */
+{
+  // Thomas ne suit que Tiafoe : un seul candidat, forcément classé en tête
+  // (aucun autre concurrent), avec la même probabilité que le classement
+  // Monte Carlo brut ci-dessus une fois Tiafoe acquis vainqueur.
+  const scenariosThomas = classerScenariosVictoire(
+    matches, new Map(), players, rounds, stocksMC, 'thomas', [TIAFOE], 1500, 'hard',
+  );
+  assert(scenariosThomas.length === 1 && scenariosThomas[0].playerId === TIAFOE, 'Thomas : un seul scénario candidat (Tiafoe), présent');
+  assert(scenariosThomas[0].probabilite > 0.9, `si Tiafoe remporte le tournoi, Thomas (seul à le suivre) gagne quasi sûrement (obtenu ${scenariosThomas[0].probabilite})`);
+
+  // Un candidat déjà éliminé réellement est omis, pas affiché à 0 %.
+  const eliminee = { ...matches[0], winnerId: VDZ } as MatchReel; // Zverev perd son QF pour de vrai
+  const matchesZverevElimine = [eliminee, ...matches.slice(1)];
+  const scenariosMoiElimine = classerScenariosVictoire(
+    matchesZverevElimine, new Map(), players, rounds, stocksMC, 'moi', [ZVEREV], 500, 'hard',
+  );
+  assert(scenariosMoiElimine.length === 0, 'Zverev réellement éliminé : aucun scénario "Zverev remporte le tournoi", pas un scénario à 0 %');
+
+  // Classement décroissant sur plusieurs candidats.
+  const scenariosMulti = classerScenariosVictoire(
+    matches, new Map(), players, rounds, stocksMC, 'moi', [ZVEREV, VDZ, TIAFOE], 800, 'hard',
+  );
+  for (let i = 1; i < scenariosMulti.length; i++) {
+    assert(scenariosMulti[i - 1].probabilite >= scenariosMulti[i].probabilite, 'classerScenariosVictoire trie par probabilité décroissante');
+  }
 }
 
 if (echecs > 0) {

@@ -20,7 +20,13 @@ import {
   eNetGamesParSetGagne,
   type Esperances,
 } from './optimizer';
-import { cleDuel, resoudreArbre, scoreDuStock, type MatchReel } from './bracketSim';
+import {
+  augmenterAvecVictoires,
+  cleDuel,
+  resoudreArbre,
+  scoreDuStock,
+  type MatchReel,
+} from './bracketSim';
 import type { Match, Player } from './types';
 
 /** Generateur pseudo-aleatoire deterministe (pour des runs reproductibles). */
@@ -410,4 +416,73 @@ export function simulerProbabilitesVictoire(
   for (const id of Object.keys(victoires)) victoires[id] /= n;
 
   return { victoires, simulations: n };
+}
+
+/**
+ * Un scénario candidat pour un stock : « et si CE joueur remportait le
+ * tournoi ? », avec la probabilité de victoire du stock CONDITIONNELLE à
+ * cet événement.
+ */
+export interface ScenarioVictoire {
+  playerId: string;
+  /** Toujours le dernier tour du tableau (rounds[rounds.length - 1]) — remporter CE tour, c'est remporter le tournoi. */
+  round: string;
+  /** P(le stock termine premier | ce joueur remporte le tournoi) — PAS la probabilité que le joueur gagne lui-même. */
+  probabilite: number;
+}
+
+/**
+ * Classe, pour UN stock, les joueurs candidats par probabilité DÉCROISSANTE
+ * de faire gagner ce stock s'ils remportent le tournoi — « les scénarios qui
+ * maximisent sa probabilité de victoire », sans rechercher de garantie
+ * absolue (cf. `chercherScenariosGagnants` pour ça).
+ *
+ * Un candidat déjà éliminé réellement (`augmenterAvecVictoires` renvoie
+ * `null`) est simplement omis — pas un scénario à 0 %, un scénario
+ * IMPOSSIBLE, ce qui n'est pas la même chose.
+ *
+ * Réutilise `simulerProbabilitesVictoire` telle quelle, une fois par
+ * candidat, sur un tableau `matches` où ce candidat est acquis vainqueur de
+ * tous ses matchs jusqu'à la finale (`augmenterAvecVictoires`) : le reste du
+ * tableau (les autres stocks, les tours non liés à ce chemin) continue
+ * d'être tiré au hasard normalement, `dejaTranche` (résultats réels + clics
+ * du bracket réel) restant respecté partout où il s'applique.
+ */
+export function classerScenariosVictoire(
+  matches: MatchReel[],
+  dejaTranche: ReadonlyMap<string, string>,
+  players: Record<string, Player>,
+  rounds: string[],
+  stocks: StockBracket[],
+  idCible: string,
+  candidats: readonly string[],
+  n = 1000,
+  surface: 'hard' | 'clay' | 'grass' = 'clay',
+  poidsSurface = 0.6,
+  seed = 42,
+  echelle: number = ECHELLE_ELO,
+): ScenarioVictoire[] {
+  const dernierRound = rounds[rounds.length - 1];
+  if (!dernierRound) return [];
+
+  const scenarios: ScenarioVictoire[] = [];
+  for (const playerId of candidats) {
+    const augmente = augmenterAvecVictoires(matches, rounds, playerId, dernierRound);
+    if (!augmente) continue; // déjà éliminé réellement : pas un scénario à 0 %, impossible.
+    const resultat = simulerProbabilitesVictoire(
+      augmente,
+      dejaTranche,
+      players,
+      rounds,
+      stocks,
+      n,
+      surface,
+      poidsSurface,
+      seed,
+      echelle,
+    );
+    scenarios.push({ playerId, round: dernierRound, probabilite: resultat.victoires[idCible] ?? 0 });
+  }
+
+  return scenarios.sort((a, b) => b.probabilite - a.probabilite);
 }

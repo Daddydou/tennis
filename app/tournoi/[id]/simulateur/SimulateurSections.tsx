@@ -25,7 +25,7 @@ export default function SimulateurSections({
   players,
   surface,
   participants,
-  ancresInitiales,
+  picksBracketInitiaux,
   esperances,
   dejaInscrits,
   picksSimulesInitiaux,
@@ -39,7 +39,8 @@ export default function SimulateurSections({
   players: Record<string, Player>;
   surface: 'hard' | 'clay' | 'grass';
   participants: Participant[];
-  ancresInitiales: Record<string, string | null>;
+  /** stock -> { cleDuel -> playerId } — pronostics de bracket déjà enregistrés, tous tours confondus. */
+  picksBracketInitiaux: Record<string, Record<string, string>>;
   esperances: Record<string, Record<string, number>>;
   dejaInscrits: Record<string, number>;
   picksSimulesInitiaux: Record<string, Record<string, string>>;
@@ -81,7 +82,7 @@ export default function SimulateurSections({
           players={players}
           surface={surface}
           participants={participants}
-          ancresInitiales={ancresInitiales}
+          picksBracketInitiaux={picksBracketInitiaux}
           roundParDefaut={roundParDefaut}
         />
       ) : (

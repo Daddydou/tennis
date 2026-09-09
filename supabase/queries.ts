@@ -98,16 +98,18 @@ export interface ParticipantRow {
 }
 
 /**
- * L'ancre d'un stock dans le simulateur de bracket : UN joueur, choisi au
- * tour de départ (cf. tn_picks pour la même convention `participant_id`
- * null = moi). Son chemin dans le tableau — donc les tours où elle marque
- * des points — se déduit à la volée (lib/bracketSim.ts
- * `predictionsDepuisAncre`), jamais stocké tour par tour.
+ * Un pronostic de bracket simulé : le vainqueur pronostiqué par un stock
+ * pour UN match (round + position) d'UN tour, indépendant des autres tours
+ * (cf. tn_picks pour la même convention `participant_id` null = moi). Le
+ * barème (2^(tour−1)) et le score se calculent à la volée
+ * (lib/bracketSim.ts `scoreDuStock`), jamais stockés.
  */
-export interface BracketAnchorRow {
+export interface BracketRoundPickRow {
   id: string;
   tournament_id: string;
   participant_id: string | null;
+  round: string;
+  position: number;
   player_id: string;
 }
 
@@ -248,15 +250,15 @@ export async function compterPicksParParticipant(): Promise<Record<string, numbe
   return out;
 }
 
-/** Ancres du simulateur de bracket, pour un tournoi, tous stocks confondus. */
-export async function getBracketAnchors(tournamentId: string): Promise<BracketAnchorRow[]> {
+/** Pronostics de bracket simulés, pour un tournoi, tous stocks et tous tours confondus. */
+export async function getBracketRoundPicks(tournamentId: string): Promise<BracketRoundPickRow[]> {
   const sb = supabaseAnon();
   const { data, error } = await sb
-    .from('tn_bracket_anchors')
+    .from('tn_bracket_round_picks')
     .select('*')
     .eq('tournament_id', tournamentId);
   if (error) throw new Error(error.message);
-  return (data ?? []) as BracketAnchorRow[];
+  return (data ?? []) as BracketRoundPickRow[];
 }
 
 /** Picks hypothétiques du bac à sable de picks du simulateur, tous stocks confondus. */

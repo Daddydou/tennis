@@ -2,21 +2,32 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { cleDuel, resoudreArbre, type MatchReel } from '@/lib/bracketSim';
-import { definirAncre, effacerAncre } from './actions';
-import AncrePanel from './AncrePanel';
-import BracketReelPanel from './BracketReelPanel';
-import ClassementPanel from './ClassementPanel';
+import { sauvegarderPronosticsBracket } from './actions';
+import BracketRoundPanel from './BracketRoundPanel';
+import ClassementBracketPanel from './ClassementBracketPanel';
+import ParticipantsBracketPanel from './ParticipantsBracketPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
 
-type Onglet = 'bracket' | 'classement' | 'ancres';
+type Onglet = 'reel' | 'participants' | 'classement';
 
 const ONGLETS: { key: Onglet; label: string }[] = [
-  { key: 'bracket', label: 'Bracket réel' },
+  { key: 'reel', label: 'Bracket réel' },
+  { key: 'participants', label: 'Bracket des participants' },
   { key: 'classement', label: 'Classement & probabilités' },
-  { key: 'ancres', label: 'Ancres des participants' },
 ];
 
+/**
+ * Section Bracket du simulateur — bloc 1 (choix du tour, pilote tout le
+ * reste), puis 3 onglets qui en sont les blocs 2/3/4 : Bracket réel
+ * (cliquable, tour choisi seulement), Bracket des participants (un
+ * pronostic de vainqueur par match, persisté tour par tour,
+ * tn_bracket_round_picks) et Classement & probabilités.
+ *
+ * `picksBracket` (committé, TOUS tours confondus, par stock) vit ici : le
+ * bloc 4 en a besoin pour les tours au-delà du tour choisi (probabilité
+ * d'avancement), pas seulement celui affiché au bloc 3.
+ */
 export default function SimulateurBracket({
   tournamentId,
   rounds,
@@ -25,7 +36,7 @@ export default function SimulateurBracket({
   players,
   surface,
   participants,
-  ancresInitiales,
+  picksBracketInitiaux,
   roundParDefaut,
 }: {
   tournamentId: string;
@@ -36,22 +47,23 @@ export default function SimulateurBracket({
   players: Record<string, Player>;
   surface: 'hard' | 'clay' | 'grass';
   participants: Participant[];
-  /** stock ('moi' ou id participant) -> ancre actuelle, ou null si aucune. */
-  ancresInitiales: Record<string, string | null>;
+  /** stock -> { cleDuel -> playerId }, pronostics déjà enregistrés, tous tours confondus. */
+  picksBracketInitiaux: Record<string, Record<string, string>>;
   roundParDefaut: string;
 }) {
   const stocks = useMemo(() => [MOI, ...participants.map((p) => p.id)], [participants]);
 
-  const [roundDepart, setRoundDepart] = useState(roundParDefaut);
-  const [onglet, setOnglet] = useState<Onglet>('bracket');
+  const [roundChoisi, setRoundChoisi] = useState(roundParDefaut);
+  const [onglet, setOnglet] = useState<Onglet>('reel');
+  // Bloc 2 : vainqueurs cliqués dans le bracket réel — remis à zéro à chaque
+  // changement de tour (bloc 1), puisque seul le tour affiché est simulé.
   const [scenario, setScenario] = useState<Map<string, string>>(new Map());
   const [dejaGagne, setDejaGagne] = useState<Record<string, number>>({});
-  const [ancres, setAncres] = useState<Record<string, string | null>>(() => {
-    const out: Record<string, string | null> = {};
-    for (const s of stocks) out[s] = ancresInitiales[s] ?? null;
+  const [picksBracket, setPicksBracket] = useState<Record<string, Map<string, string>>>(() => {
+    const out: Record<string, Map<string, string>> = {};
+    for (const s of stocks) out[s] = new Map(Object.entries(picksBracketInitiaux[s] ?? {}));
     return out;
   });
-  const [erreur, setErreur] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const arbreScenario = useMemo(
@@ -59,37 +71,24 @@ export default function SimulateurBracket({
     [matches, rounds, scenario],
   );
 
-  function onChoisirScenario(round: string, position: number, playerId: string) {
+  function onChangerRound(round: string) {
+    setRoundChoisi(round);
+    setScenario(new Map()); // seul le tour choisi est simulé — pas de scénario reporté d'un tour à l'autre.
+  }
+
+  function onChoisirScenario(position: number, playerId: string) {
     setScenario((prev) => {
       const copie = new Map(prev);
-      copie.set(cleDuel(round, position), playerId);
+      copie.set(cleDuel(roundChoisi, position), playerId);
       return copie;
     });
   }
 
-  function onEffacerScenario(round: string, position: number) {
+  function onEffacerScenario(position: number) {
     setScenario((prev) => {
       const copie = new Map(prev);
-      copie.delete(cleDuel(round, position));
+      copie.delete(cleDuel(roundChoisi, position));
       return copie;
-    });
-  }
-
-  function onChoisirAncre(stockId: string, playerId: string) {
-    setErreur(null);
-    setAncres((prev) => ({ ...prev, [stockId]: playerId }));
-    startTransition(async () => {
-      const r = await definirAncre(tournamentId, stockId === MOI ? null : stockId, playerId);
-      if (!r.ok) setErreur(r.error ?? 'Erreur');
-    });
-  }
-
-  function onEffacerAncre(stockId: string) {
-    setErreur(null);
-    setAncres((prev) => ({ ...prev, [stockId]: null }));
-    startTransition(async () => {
-      const r = await effacerAncre(tournamentId, stockId === MOI ? null : stockId);
-      if (!r.ok) setErreur(r.error ?? 'Erreur');
     });
   }
 
@@ -97,25 +96,75 @@ export default function SimulateurBracket({
     setDejaGagne((prev) => ({ ...prev, [stockId]: valeur }));
   }
 
+  // Pronostics déjà enregistrés pour LE TOUR AFFICHÉ, position -> playerId —
+  // sert de valeur initiale au brouillon du bloc 3 (remonté à chaque
+  // changement de tour via sa `key`).
+  const committeThisRound = useMemo(() => {
+    const out: Record<string, Map<number, string>> = {};
+    for (const s of stocks) {
+      const out2 = new Map<number, string>();
+      for (const [cle, playerId] of picksBracket[s] ?? []) {
+        const [r, pos] = cle.split('|');
+        if (r === roundChoisi) out2.set(Number(pos), playerId);
+      }
+      out[s] = out2;
+    }
+    return out;
+  }, [stocks, picksBracket, roundChoisi]);
+
+  async function onValiderPronostics(
+    stockId: string,
+    picks: { position: number; playerId: string | null }[],
+  ): Promise<{ ok: boolean; error?: string }> {
+    const r = await sauvegarderPronosticsBracket(
+      tournamentId,
+      stockId === MOI ? null : stockId,
+      roundChoisi,
+      picks,
+    );
+    if (r.ok) {
+      setPicksBracket((prev) => {
+        const copie = new Map(prev[stockId] ?? []);
+        for (const [cle] of copie) if (cle.split('|')[0] === roundChoisi) copie.delete(cle);
+        for (const p of picks) if (p.playerId) copie.set(cleDuel(roundChoisi, p.position), p.playerId);
+        return { ...prev, [stockId]: copie };
+      });
+    }
+    return r;
+  }
+
+  function onValiderEtTransition(
+    stockId: string,
+    picks: { position: number; playerId: string | null }[],
+  ): Promise<{ ok: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        resolve(await onValiderPronostics(stockId, picks));
+      });
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-1 text-xs text-zinc-500">Tour de départ de la simulation</p>
-        <div className="flex flex-wrap gap-1">
+        <label className="mb-1 block text-xs text-zinc-500" htmlFor="round-choisi">
+          Tour de simulation
+        </label>
+        <select
+          id="round-choisi"
+          value={roundChoisi}
+          onChange={(e) => onChangerRound(e.target.value)}
+          className="rounded border border-zinc-300 bg-white px-2.5 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+        >
           {rounds.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRoundDepart(r)}
-              className={`rounded border px-2.5 py-1 text-xs ${
-                r === roundDepart
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-              }`}
-            >
+            <option key={r} value={r}>
               {r}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
+        <p className="mt-1 text-[11px] text-zinc-400">
+          Seul ce tour est simulé (bloc 2 et bloc 3) — pas les tours suivants.
+        </p>
       </div>
 
       <nav className="flex flex-wrap gap-1 border-b border-zinc-200 pb-2 dark:border-zinc-800">
@@ -134,13 +183,10 @@ export default function SimulateurBracket({
         ))}
       </nav>
 
-      {erreur && <p className="text-xs text-red-600 dark:text-red-400">{erreur}</p>}
-
-      {onglet === 'bracket' && (
-        <BracketReelPanel
-          key={roundDepart}
-          rounds={rounds}
-          roundDepart={roundDepart}
+      {onglet === 'reel' && (
+        <BracketRoundPanel
+          key={roundChoisi}
+          roundChoisi={roundChoisi}
           joueurs={joueurs}
           arbre={arbreScenario}
           onChoisir={onChoisirScenario}
@@ -148,34 +194,34 @@ export default function SimulateurBracket({
         />
       )}
 
-      {onglet === 'classement' && (
-        <ClassementPanel
+      {onglet === 'participants' && (
+        <ParticipantsBracketPanel
+          key={roundChoisi}
+          roundChoisi={roundChoisi}
+          matches={matches}
           rounds={rounds}
-          roundDepart={roundDepart}
+          joueurs={joueurs}
+          participants={participants}
+          committe={committeThisRound}
+          pending={pending}
+          onValider={onValiderEtTransition}
+        />
+      )}
+
+      {onglet === 'classement' && (
+        <ClassementBracketPanel
+          rounds={rounds}
+          roundChoisi={roundChoisi}
           matches={matches}
           scenario={scenario}
+          arbreScenario={arbreScenario}
           players={players}
           surface={surface}
           joueurs={joueurs}
           participants={participants}
-          ancres={ancres}
-          arbreScenario={arbreScenario}
+          picksBracket={picksBracket}
           dejaGagne={dejaGagne}
           onChangerDejaGagne={onChangerDejaGagne}
-        />
-      )}
-
-      {onglet === 'ancres' && (
-        <AncrePanel
-          key={roundDepart}
-          roundDepart={roundDepart}
-          matches={matches}
-          joueurs={joueurs}
-          participants={participants}
-          ancres={ancres}
-          pending={pending}
-          onChoisir={onChoisirAncre}
-          onEffacer={onEffacerAncre}
         />
       )}
     </div>

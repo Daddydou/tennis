@@ -3,7 +3,7 @@ import TournoiNav from '../TournoiNav';
 import SimulateurSections from './SimulateurSections';
 import { cleSlot } from './picksSim';
 import {
-  getBracketAnchors,
+  getBracketRoundPicks,
   getParticipants,
   getSimulatedPicks,
   getTousLesPicks,
@@ -12,7 +12,7 @@ import {
   tourCourantMatches,
 } from '@/supabase/queries';
 import { getProjections } from '@/supabase/projections';
-import { type MatchReel } from '@/lib/bracketSim';
+import { cleDuel, type MatchReel } from '@/lib/bracketSim';
 import { STATUTS_DECIDES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -29,9 +29,9 @@ export default async function SimulateurPage({
   const { tournament, matchRows, players } = engine;
   const rounds = tournament.rounds ?? [];
 
-  const [participants, anchorRows, simulatedPickRows, tousLesPicks] = await Promise.all([
+  const [participants, bracketRoundPickRows, simulatedPickRows, tousLesPicks] = await Promise.all([
     getParticipants(),
-    getBracketAnchors(id),
+    getBracketRoundPicks(id),
     getSimulatedPicks(id),
     getTousLesPicks(id),
   ]);
@@ -51,12 +51,19 @@ export default async function SimulateurPage({
     joueurs[pid] = { nom: p.name, rang: p.rank };
   }
 
-  // 'moi' + un stock par participant configuré — même convention que
-  // tn_picks (participant_id null = moi), traduite en clé de string ici
-  // pour rester simple à manipuler côté client.
-  const ancres: Record<string, string | null> = { moi: null };
-  for (const p of participants) ancres[p.id] = null;
-  for (const a of anchorRows) ancres[a.participant_id ?? 'moi'] = a.player_id;
+  // Pronostics de bracket déjà enregistrés (tn_bracket_round_picks), tous
+  // tours confondus, au format { stock -> { cleDuel -> playerId } } (objet
+  // brut, pas une Map — même convention que `picksSimulesInitiaux` plus bas,
+  // pour rester sérialisable server -> client) ; la partie du tour affiché
+  // est un simple sous-ensemble filtré côté client (lib/bracketSim.ts
+  // `filtrerDepuisTour`) ; les autres tours restent disponibles tels quels
+  // pour le Monte Carlo (probabilité d'avancement au-delà du tour affiché).
+  const picksBracketInitiaux: Record<string, Record<string, string>> = { moi: {} };
+  for (const p of participants) picksBracketInitiaux[p.id] = {};
+  for (const r of bracketRoundPickRows) {
+    const stock = r.participant_id ?? 'moi';
+    (picksBracketInitiaux[stock] ??= {})[cleDuel(r.round, r.position)] = r.player_id;
+  }
 
   const roundParDefaut = tourCourantMatches(matchRows, rounds);
 
@@ -106,7 +113,7 @@ export default async function SimulateurPage({
         players={players}
         surface={surfacePourElo(tournament.surface)}
         participants={participants.map((p) => ({ id: p.id, nom: p.name }))}
-        ancresInitiales={ancres}
+        picksBracketInitiaux={picksBracketInitiaux}
         esperances={esperances}
         dejaInscrits={dejaInscrits}
         picksSimulesInitiaux={picksSimulesInitiaux}
