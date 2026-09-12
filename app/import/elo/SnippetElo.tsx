@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { boutonSecondaire } from '@/app/ui';
 
 /**
  * Copie le snippet d'extraction dans le presse-papier.
@@ -25,20 +26,16 @@ export default function SnippetElo() {
 
   return (
     <span className="inline-flex items-center gap-2">
-      <button
-        type="button"
-        onClick={copier}
-        className="rounded border border-zinc-300 px-2 py-1 text-xs font-medium hover:border-zinc-500 dark:border-zinc-700"
-      >
+      <button type="button" onClick={copier} className={boutonSecondaire}>
         Copier le snippet
       </button>
       {etat === 'copie' && (
-        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+        <span className="text-xs text-emerald-600">
           Copié — à coller dans la console de la page Tennis Abstract.
         </span>
       )}
       {etat === 'echec' && (
-        <span className="text-xs text-red-600 dark:text-red-400">
+        <span className="text-xs text-red-600">
           Copie refusée —{' '}
           <a href="/extract-elo.js" target="_blank" rel="noreferrer" className="underline">
             ouvrir le fichier

@@ -92,10 +92,8 @@ export default function BoutonCotes({
 
       {resume && (
         <div
-          className={`rounded border p-2.5 text-xs ${
-            resume.ok
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-              : 'border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+          className={`rounded-xl p-2.5 text-xs ${
+            resume.ok ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'
           }`}
         >
           {resume.ok ? (
@@ -112,7 +110,7 @@ export default function BoutonCotes({
                 </p>
               )}
               {resume.nonApparies && resume.nonApparies.length > 0 && (
-                <p className="text-amber-700 dark:text-amber-300">
+                <p className="text-amber-700">
                   Non appariés ({resume.nonApparies.length}) :{' '}
                   {resume.nonApparies.map((n) => `${n.nom} (${n.raison})`).join(', ')}
                 </p>

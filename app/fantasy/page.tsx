@@ -45,9 +45,9 @@ function formatDate(iso: string | null): string {
 
 /** Vert au-dessus de l'espérance, rouge en dessous — au-delà de 5 % d'écart. */
 function classeEcart(ratio: number): string {
-  if (ratio >= 1.05) return 'text-emerald-600 dark:text-emerald-400';
-  if (ratio <= 0.95) return 'text-red-600 dark:text-red-400';
-  return 'text-zinc-700 dark:text-zinc-300';
+  if (ratio >= 1.05) return 'text-emerald-600';
+  if (ratio <= 0.95) return 'text-red-600';
+  return 'text-zinc-700';
 }
 
 export default async function HistoriqueFantasyPage() {
@@ -126,7 +126,7 @@ export default async function HistoriqueFantasyPage() {
       <BackfillButton />
 
       {lignes.length === 0 ? (
-        <p className="rounded border border-zinc-200 px-3 py-4 text-sm text-zinc-500 dark:border-zinc-800">
+        <p className="rounded-2xl bg-white px-3 py-4 text-sm text-zinc-500 shadow-card">
           Aucun tournoi enregistré pour l&apos;instant. L&apos;historique se
           remplit à chaque import ; pour reprendre les tournois déjà en base,
           utiliser le bouton ci-dessus.
@@ -136,7 +136,7 @@ export default async function HistoriqueFantasyPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                   <th className="py-2 pr-3 font-medium">Début</th>
                   <th className="py-2 pr-3 font-medium">Tournoi</th>
                   <th className="py-2 pr-3 font-medium">Circuit</th>
@@ -157,7 +157,7 @@ export default async function HistoriqueFantasyPage() {
                 {lignes.map((l) => (
                   <tr
                     key={l.id}
-                    className="border-b border-zinc-100 dark:border-zinc-900"
+                    className="border-b border-zinc-100"
                   >
                     <td className="py-2 pr-3 whitespace-nowrap tabular-nums text-zinc-500">
                       {formatDate(l.date)}
@@ -171,7 +171,7 @@ export default async function HistoriqueFantasyPage() {
                       </Link>
                       {!l.termine && (
                         <span
-                          className="ml-2 text-xs text-amber-600 dark:text-amber-400"
+                          className="ml-2 text-xs text-amber-600"
                           title="Tournoi non terminé : le score réel est partiel, la ligne n'entre pas dans la synthèse."
                         >
                           en cours
@@ -233,7 +233,7 @@ export default async function HistoriqueFantasyPage() {
             </table>
           </div>
 
-          <div className="rounded border border-zinc-200 px-3 py-3 text-sm dark:border-zinc-800">
+          <div className="rounded-2xl bg-white px-3 py-3 text-sm shadow-card">
             {termines.length === 0 ? (
               <p className="text-zinc-500">
                 Aucun tournoi terminé pour l&apos;instant : rien à comparer. Un
@@ -273,7 +273,7 @@ export default async function HistoriqueFantasyPage() {
                     connaissaient déjà l&apos;issue.
                   </p>
                 ) : (
-                  <p className="mt-1.5 text-xs text-violet-600 dark:text-violet-400">
+                  <p className="mt-1.5 text-xs text-violet-600">
                     Aucun tournoi terminé ne dispose encore d&apos;un Elo
                     antérieur à son tirage : le chiffre ci-dessus est calculé
                     sur les Elo d&apos;aujourd&apos;hui, qui ont déjà intégré

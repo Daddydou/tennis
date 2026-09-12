@@ -33,20 +33,20 @@ export default function ComparatifEchellePage() {
           rejoue entièrement chaque tournoi terminé : simulation, espérances,
           composition de l&apos;équipe Fantasy optimale, puis score réel de{' '}
           <em>cette</em> équipe. Changer l&apos;échelle change les espérances{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             et souvent la composition
           </span>{' '}
           — les deux comptent, donc rien n&apos;est réutilisé du cache.
         </p>
         <p className="text-xs">
           Seuls les tournois{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             terminés
           </span>{' '}
           entrent dans le calcul : un score réel tronqué donnerait un écart
           négatif par construction, identique pour toutes les échelles.
           L&apos;échelle de production reste{' '}
-          <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-mono font-medium text-zinc-700">
             {ECHELLE_ELO}
           </span>{' '}
           — cette page ne la modifie pas.
@@ -55,7 +55,7 @@ export default function ComparatifEchellePage() {
 
       <ComparaisonEchelle />
 
-      <div className="rounded border border-amber-300 bg-amber-50 px-3 py-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+      <div className="rounded-xl bg-amber-50 px-3 py-3 text-xs text-amber-900">
         <p className="font-medium">
           Pourquoi l&apos;échelle « optimale » d&apos;ici n&apos;est pas une
           conclusion

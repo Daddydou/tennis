@@ -54,9 +54,9 @@ function pourcent(p: number): string {
 function classeEcart(reel: number, attendu: number): string {
   if (attendu <= 0) return 'text-zinc-500';
   const r = reel / attendu;
-  if (r >= 1.05) return 'text-emerald-600 dark:text-emerald-400';
-  if (r <= 0.95) return 'text-red-600 dark:text-red-400';
-  return 'text-zinc-700 dark:text-zinc-300';
+  if (r >= 1.05) return 'text-emerald-600';
+  if (r <= 0.95) return 'text-red-600';
+  return 'text-zinc-700';
 }
 
 /** Ventilation tour par tour : espérance a priori face aux points marqués. */
@@ -89,13 +89,13 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
           {detail.map((l) => (
             <tr
               key={l.round}
-              className="border-t border-zinc-100 dark:border-zinc-900"
+              className="border-t border-zinc-100"
             >
               <td className="py-1 pr-3">
                 {l.round}
                 {l.bye && (
                   <span
-                    className="ml-1.5 rounded border border-sky-300 px-1 text-[10px] font-medium text-sky-700 dark:border-sky-800 dark:text-sky-300"
+                    className="ml-1.5 rounded-md border border-sky-300 px-1 text-[10px] font-medium text-sky-700"
                     title="Exempté : au Fantasy, un bye vaut une victoire 6/4 6/4, soit 15 points avant multiplicateur. Acquis dès le tirage, donc sans aléa."
                   >
                     bye
@@ -130,7 +130,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t border-zinc-300 dark:border-zinc-700">
+          <tr className="border-t border-zinc-300">
             <td colSpan={4} className="py-1 pr-3 text-right text-zinc-500">
               Total
             </td>
@@ -160,9 +160,9 @@ function LignePalier({ m }: { m: MembreVue }) {
     <>
       <tr
         onClick={cliquable ? () => setOuvert((o) => !o) : undefined}
-        className={`border-b border-zinc-100 dark:border-zinc-900 ${
+        className={`border-b border-zinc-100 ${
           cliquable
-            ? 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900'
+            ? 'cursor-pointer hover:bg-zinc-50'
             : ''
         }`}
       >
@@ -172,7 +172,7 @@ function LignePalier({ m }: { m: MembreVue }) {
         </td>
         <td className="py-2 pr-3">
           {m.playerId === null ? (
-            <span className="text-amber-600 dark:text-amber-400">
+            <span className="text-amber-600">
               Aucun joueur éligible
             </span>
           ) : (
@@ -222,7 +222,7 @@ function LignePalier({ m }: { m: MembreVue }) {
       </tr>
 
       {ouvert && m.playerId && (
-        <tr className="border-b border-zinc-100 bg-zinc-50/60 dark:border-zinc-900 dark:bg-zinc-900/40">
+        <tr className="border-b border-zinc-100 bg-zinc-50/60">
           <td colSpan={7} className="p-0">
             <DetailJoueur detail={m.detail} />
           </td>
@@ -248,7 +248,7 @@ export default function EquipeFantasy({
   return (
     <div className="space-y-3">
       {manquants.length > 0 && (
-        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {manquants.length} palier(s) n&apos;ont pas pu être pourvus :{' '}
           {manquants.map((m) => `« ${m.libellePalier} »`).join(', ')}. Le tableau
           ne contient pas assez de joueurs classés dans cette fourchette — sur un
@@ -260,7 +260,7 @@ export default function EquipeFantasy({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
               <th className="py-2 pr-3 font-medium">Palier</th>
               <th className="py-2 pr-3 font-medium">Joueur</th>
               <th className="py-2 pr-3 text-right font-medium">Rang</th>
@@ -286,7 +286,7 @@ export default function EquipeFantasy({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-zinc-300 dark:border-zinc-700">
+            <tr className="border-t-2 border-zinc-300">
               <td colSpan={5} className="py-2 pr-3 text-right text-zinc-500">
                 Total de l&apos;équipe
               </td>
@@ -307,11 +307,11 @@ export default function EquipeFantasy({
       </div>
 
       <p className="text-xs text-zinc-500">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        <span className="font-medium text-zinc-700">
           E[pts]
         </span>{' '}
         est l&apos;espérance a priori qui a composé l&apos;équipe ;{' '}
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        <span className="font-medium text-zinc-700">
           Réel
         </span>{' '}
         est ce que cette <em>même</em> équipe, figée, a marqué sur les résultats
@@ -324,7 +324,7 @@ export default function EquipeFantasy({
           {termine ? (
             <>
               Tournoi terminé : score définitif de{' '}
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium text-zinc-700">
                 {totalReel.toFixed(1)}
               </span>{' '}
               pour {total.toFixed(1)} attendus, soit{' '}

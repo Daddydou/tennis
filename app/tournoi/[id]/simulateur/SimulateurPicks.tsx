@@ -135,13 +135,13 @@ export default function SimulateurPicks({
               <span className="text-sm font-medium">{nomStock(s, participants)}</span>
               <span className="flex items-center gap-3 text-xs text-zinc-500">
                 <span>
-                  réel <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reel}</span>
+                  réel <span className="font-semibold text-zinc-900">{reel}</span>
                 </span>
                 <span>
-                  simulé <span className="font-semibold text-zinc-900 dark:text-zinc-100">{simule}</span>
+                  simulé <span className="font-semibold text-zinc-900">{simule}</span>
                 </span>
                 <span>
-                  total <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reel + simule}</span>
+                  total <span className="font-semibold text-zinc-900">{reel + simule}</span>
                 </span>
               </span>
             </div>
@@ -149,7 +149,7 @@ export default function SimulateurPicks({
         })}
       </div>
 
-      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2">
         <button onClick={() => setOnglet('picks')} className={pilleSelecteur(onglet === 'picks')}>
           Picks hypothétiques
         </button>
@@ -158,7 +158,7 @@ export default function SimulateurPicks({
         </button>
       </nav>
 
-      {erreur && <p className="text-xs text-red-600 dark:text-red-400">{erreur}</p>}
+      {erreur && <p className="text-xs text-red-600">{erreur}</p>}
 
       {onglet === 'tableau' && (
         <BracketReelPanel

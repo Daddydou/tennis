@@ -67,7 +67,7 @@ export default function BackfillButton() {
           {resume.ignores > 0 && `, ${resume.ignores} sans équipe possible`}
           {resume.sansEloAnterieur > 0 && (
             <span
-              className="ml-1 text-violet-600 dark:text-violet-400"
+              className="ml-1 text-violet-600"
               title="Aucun relevé Elo n'est antérieur à ces tournois : l'archive ne remonte pas le temps, seuls les tournois joués après sa mise en place peuvent être évalués sans look-ahead."
             >
               , {resume.sansEloAnterieur} sans Elo antérieur
@@ -75,7 +75,7 @@ export default function BackfillButton() {
           )}
           {resume.definitifs > 0 && `, ${resume.definitifs} déjà définitif(s)`}
           {resume.restants > 0 && (
-            <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+            <span className="ml-1 font-medium text-amber-600">
               — {resume.restants} restant(s), recliquer pour continuer
             </span>
           )}
@@ -83,7 +83,7 @@ export default function BackfillButton() {
       )}
 
       {erreur && (
-        <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>
+        <span className="text-xs text-red-600">{erreur}</span>
       )}
     </div>
   );

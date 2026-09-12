@@ -185,7 +185,7 @@ export default function SimulateurBracket({
         </p>
       </div>
 
-      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2">
         {ONGLETS.map((o) => (
           <button
             key={o.key}

@@ -107,12 +107,12 @@ export default async function FantasyPage({
       <div className="space-y-1 text-sm text-zinc-500">
         <p>
           Équipe de{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             {paliers.length} joueurs
           </span>{' '}
           ({LIBELLE_FAMILLE[fantasy.famille]}), un par palier de classement, sans
           doublon. Chaque joueur marque sur{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             tous ses matchs du tournoi
           </span>
           , au barème habituel, pondéré par le multiplicateur du tour.
@@ -128,7 +128,7 @@ export default async function FantasyPage({
         </p>
         <p className="text-xs">
           Espérance{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             a priori
           </span>{' '}
           : simulation Monte Carlo depuis le tirage ({fantasy.tirage || rounds[0]}

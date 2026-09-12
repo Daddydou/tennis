@@ -70,7 +70,7 @@ export default function ImportBracketPanel({
                 setJson('');
                 setResultat(null);
               }}
-              className={`${zoneTactile} px-2 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
+              className={`${zoneTactile} px-2 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900`}
             >
               Effacer
             </button>
@@ -80,10 +80,8 @@ export default function ImportBracketPanel({
 
       {resultat && (
         <div
-          className={`space-y-1.5 rounded border p-3 text-sm ${
-            resultat.ok
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-              : 'border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+          className={`space-y-1.5 rounded-xl p-3 text-sm ${
+            resultat.ok ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'
           }`}
         >
           {resultat.ok ? (
@@ -100,8 +98,8 @@ export default function ImportBracketPanel({
 
           {resultat.toursIgnores.length > 0 && (
             <div>
-              <p className="font-medium text-amber-700 dark:text-amber-300">Tours ignorés :</p>
-              <ul className="ml-4 list-disc text-amber-700 dark:text-amber-300">
+              <p className="font-medium text-amber-700">Tours ignorés :</p>
+              <ul className="ml-4 list-disc text-amber-700">
                 {resultat.toursIgnores.map((t, i) => (
                   <li key={i}>
                     {t.tour} — {t.raison}
@@ -113,8 +111,8 @@ export default function ImportBracketPanel({
 
           {resultat.nonApparies.length > 0 && (
             <div>
-              <p className="font-medium text-amber-700 dark:text-amber-300">Noms non rattachés à un joueur du tableau :</p>
-              <ul className="ml-4 list-disc text-amber-700 dark:text-amber-300">
+              <p className="font-medium text-amber-700">Noms non rattachés à un joueur du tableau :</p>
+              <ul className="ml-4 list-disc text-amber-700">
                 {resultat.nonApparies.map((n, i) => (
                   <li key={i}>
                     « {n.nom} » ({n.contexte}) — {n.raison === 'ambigu' ? `ambigu entre ${n.candidats?.join(', ')}` : 'introuvable'}
@@ -126,8 +124,8 @@ export default function ImportBracketPanel({
 
           {resultat.incoherences.length > 0 && (
             <div>
-              <p className="font-medium text-amber-700 dark:text-amber-300">Pronostic incohérent avec les 2 joueurs listés :</p>
-              <ul className="ml-4 list-disc text-amber-700 dark:text-amber-300">
+              <p className="font-medium text-amber-700">Pronostic incohérent avec les 2 joueurs listés :</p>
+              <ul className="ml-4 list-disc text-amber-700">
                 {resultat.incoherences.map((n, i) => (
                   <li key={i}>
                     {n.contexte} — « {n.pronostique} » n&apos;est ni {n.joueurs[0]} ni {n.joueurs[1]}

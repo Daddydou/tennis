@@ -19,9 +19,9 @@ function pourcent(p: number, decimales = 1): string {
 function classeEcart(ecart: number, significatif: boolean): string {
   if (!significatif) return 'text-zinc-400';
   const a = Math.abs(ecart);
-  if (a <= 0.02) return 'text-emerald-600 dark:text-emerald-400';
-  if (a <= 0.05) return 'text-zinc-700 dark:text-zinc-300';
-  return 'text-red-600 dark:text-red-400';
+  if (a <= 0.02) return 'text-emerald-600';
+  if (a <= 0.05) return 'text-zinc-700';
+  return 'text-red-600';
 }
 
 export default async function CalibrationPage() {
@@ -45,13 +45,13 @@ export default async function CalibrationPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/calibration/echelle"
-            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+            className="text-sm text-zinc-600 hover:underline"
           >
             Effet sur le Fantasy →
           </Link>
           <Link
             href="/calibration/cotes"
-            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+            className="text-sm text-zinc-600 hover:underline"
           >
             Blend Elo / cotes →
           </Link>
@@ -64,14 +64,14 @@ export default async function CalibrationPage() {
       <div className="space-y-1 text-sm text-zinc-500">
         <p>
           Le moteur convertit un écart d&apos;Elo en probabilité de victoire par{' '}
-          <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
+          <code className="rounded bg-zinc-100 px-1">
             P = 1 / (1 + 10^(−Δ/{c.constanteMoteur}))
           </code>
           . La constante {c.constanteMoteur} vient des échecs. Cette page la
           confronte aux matchs réellement joués.
         </p>
         <p className="text-xs">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             {c.matchsRetenus}
           </span>{' '}
           matchs analysés sur {c.matchsCharges} terminés en base
@@ -89,7 +89,7 @@ export default async function CalibrationPage() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
               <th className="py-2 pr-3 font-medium">Tranche Δ Elo</th>
               <th className="py-2 pr-3 text-right font-medium">Matchs</th>
               <th className="py-2 pr-3 text-right font-medium">Δ moyen</th>
@@ -106,7 +106,7 @@ export default async function CalibrationPage() {
             {c.tranches.map((t) => (
               <tr
                 key={t.libelle}
-                className={`border-b border-zinc-100 dark:border-zinc-900 ${
+                className={`border-b border-zinc-100 ${
                   t.significatif ? '' : 'opacity-60'
                 }`}
               >
@@ -114,7 +114,7 @@ export default async function CalibrationPage() {
                   {t.libelle}
                   {!t.significatif && (
                     <span
-                      className="ml-2 text-xs font-sans text-amber-600 dark:text-amber-400"
+                      className="ml-2 text-xs font-sans text-amber-600"
                       title={`Moins de ${c.seuilSignificatif} matchs : la fréquence observée n'est que du bruit. Tranche exclue de l'ajustement.`}
                     >
                       non significatif
@@ -160,7 +160,7 @@ export default async function CalibrationPage() {
 
       <p className="text-xs text-zinc-500">
         La probabilité prédite est évaluée sur l&apos;écart{' '}
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        <span className="font-medium text-zinc-700">
           moyen observé
         </span>{' '}
         dans chaque tranche, et non sur son centre nominal : la dernière tranche
@@ -168,7 +168,7 @@ export default async function CalibrationPage() {
         pas peuplée uniformément. Le ± est l&apos;erreur type de la fréquence :
         un écart plus petit qu&apos;elle ne veut rien dire. Le favori est celui
         au plus haut{' '}
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        <span className="font-medium text-zinc-700">
           Elo effectif
         </span>{' '}
         — pas la tête de série, pas le mieux classé.
@@ -178,7 +178,7 @@ export default async function CalibrationPage() {
         <h2 className="text-sm font-semibold">Constante optimale</h2>
 
         {significatives.length === 0 ? (
-          <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
             Aucune tranche n&apos;atteint {c.seuilSignificatif} matchs : rien à
             ajuster, le corpus est trop mince.
           </p>
@@ -187,7 +187,7 @@ export default async function CalibrationPage() {
             <div className="overflow-x-auto">
               <table className="w-full max-w-xl text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                  <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                     <th className="py-2 pr-3 font-medium">Constante</th>
                     <th className="py-2 pr-3 text-right font-medium">
                       Somme des carrés
@@ -201,7 +201,7 @@ export default async function CalibrationPage() {
                   {c.constantes.map((k) => (
                     <tr
                       key={k.constante}
-                      className="border-b border-zinc-100 dark:border-zinc-900"
+                      className="border-b border-zinc-100"
                     >
                       <td className="py-1.5 pr-3 font-mono tabular-nums">
                         {k.constante}
@@ -211,7 +211,7 @@ export default async function CalibrationPage() {
                           </span>
                         )}
                         {k.constante === c.meilleure && (
-                          <span className="ml-2 font-sans text-xs text-emerald-600 dark:text-emerald-400">
+                          <span className="ml-2 font-sans text-xs text-emerald-600">
                             meilleure
                           </span>
                         )}
@@ -253,13 +253,13 @@ export default async function CalibrationPage() {
         )}
       </div>
 
-      <div className="rounded border border-zinc-200 px-3 py-3 text-xs text-zinc-500 dark:border-zinc-800">
-        <p className="font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="rounded-2xl bg-white px-3 py-3 text-xs text-zinc-500 shadow-card">
+        <p className="font-medium text-zinc-700">
           Ce que ce constat vaut — et ce qu&apos;il ne vaut pas
         </p>
         <p className="mt-1.5">
           Les Elo utilisés sont ceux{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             d&apos;aujourd&apos;hui
           </span>
           , pas ceux du jour du match — et ce n&apos;est pas un biais neutre.
@@ -267,7 +267,7 @@ export default async function CalibrationPage() {
           prédire : le vainqueur en est ressorti avec un Elo relevé, le perdant
           abaissé. A posteriori, le « favori » d&apos;une affiche est donc en
           partie désigné{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             par son résultat
           </span>
           .
@@ -276,7 +276,7 @@ export default async function CalibrationPage() {
           Le sens de la distorsion est connu : la fréquence de victoire du
           favori est <em>surestimée</em>, la courbe paraît plus raide
           qu&apos;elle ne l&apos;est, et la constante ajustée ressort plus{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             basse
           </span>{' '}
           que la vraie. Une part de l&apos;écart mesuré sous {c.constanteMoteur}{' '}
@@ -293,7 +293,7 @@ export default async function CalibrationPage() {
               l&apos;écart tient à la circularité ci-dessus, et la trancher
               demanderait des Elo reconstitués à la date de chaque match. À
               confirmer avant de toucher à{' '}
-              <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
+              <code className="rounded bg-zinc-100 px-1">
                 pVictoire
               </code>
               .
@@ -304,10 +304,10 @@ export default async function CalibrationPage() {
               justifie de toucher au moteur aujourd&apos;hui.
             </>
           )}{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             Rien n&apos;est modifié automatiquement.
           </span>{' '}
-          <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
+          <code className="rounded bg-zinc-100 px-1">
             lib/elo.ts
           </code>{' '}
           reste en {c.constanteMoteur} tant que tu n&apos;en décides pas

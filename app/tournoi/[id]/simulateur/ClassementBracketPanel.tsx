@@ -212,10 +212,10 @@ export default function ClassementBracketPanel({
             <span className="flex items-center gap-1 text-xs text-zinc-500">
               déjà gagné{' '}
               {c.aDesDonnees ? (
-                <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">{c.deja}</span>
+                <span className="font-medium tabular-nums text-zinc-700">{c.deja}</span>
               ) : (
                 <span
-                  className="font-medium text-amber-600 dark:text-amber-400"
+                  className="font-medium text-amber-600"
                   title="Aucun pronostic de bracket importé ou saisi pour ce participant (onglet Importer)"
                 >
                   à importer
@@ -263,12 +263,12 @@ export default function ClassementBracketPanel({
                     : 'Aucun chemin de victoire identifié avec les pronostics actuels.'}
                 </p>
               ) : (
-                <ol className="space-y-0.5 text-xs text-zinc-600 dark:text-zinc-400">
+                <ol className="space-y-0.5 text-xs text-zinc-600">
                   {scenarios.map((sc) => (
                     <li key={sc.playerId}>
-                      si <span className="font-medium text-zinc-800 dark:text-zinc-200">{nomJoueur(sc.playerId)}</span>{' '}
+                      si <span className="font-medium text-zinc-800">{nomJoueur(sc.playerId)}</span>{' '}
                       remporte le tournoi →{' '}
-                      <span className="font-medium tabular-nums text-zinc-800 dark:text-zinc-200">
+                      <span className="font-medium tabular-nums text-zinc-800">
                         {Math.round(sc.probabilite * 100)}%
                       </span>{' '}
                       de victoire

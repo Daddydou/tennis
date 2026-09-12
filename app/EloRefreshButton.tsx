@@ -79,12 +79,12 @@ export default function EloRefreshButton() {
           </span>
         )}
         {erreur && (
-          <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>
+          <span className="text-xs text-red-600">{erreur}</span>
         )}
       </div>
 
       {homonymes.length > 0 && (
-        <p className="text-xs text-violet-600 dark:text-violet-400">
+        <p className="text-xs text-violet-600">
           {homonymes.length} clé(s) portée(s) par plusieurs joueurs, toutes
           conservées — un tableau qui en contient un affichera « ambigu » tant
           qu&apos;aucune exception ne tranche :{' '}

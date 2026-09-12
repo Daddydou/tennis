@@ -80,7 +80,7 @@ export default function ImportEloForm() {
               setJson('');
               setResult(null);
             }}
-            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
+            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900`}
           >
             Effacer
           </button>
@@ -92,10 +92,8 @@ export default function ImportEloForm() {
 
       {result && (
         <div
-          className={`space-y-2 rounded border p-3 text-sm ${
-            result.ok
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-              : 'border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+          className={`space-y-2 rounded-xl p-3 text-sm ${
+            result.ok ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'
           }`}
         >
           {result.ok ? (
@@ -142,7 +140,7 @@ export default function ImportEloForm() {
       )}
 
       {homonymes.length > 0 && (
-        <p className="text-xs text-violet-600 dark:text-violet-400">
+        <p className="text-xs text-violet-600">
           {homonymes.length} clé(s) portée(s) par plusieurs joueurs, toutes
           conservées — un tableau qui en contient un affichera « ambigu » tant
           qu&apos;aucune exception ne tranche :{' '}

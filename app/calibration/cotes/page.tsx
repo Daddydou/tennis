@@ -48,8 +48,8 @@ function CelluleEcart({ valeur }: { valeur: number | null }) {
         valeur === null || Math.abs(valeur) < 0.05
           ? 'text-zinc-400'
           : valeur < 0
-            ? 'text-emerald-600 dark:text-emerald-400'
-            : 'text-red-600 dark:text-red-400'
+            ? 'text-emerald-600'
+            : 'text-red-600'
       }`}
     >
       {valeur === null ? '—' : `${valeur > 0 ? '+' : ''}${valeur.toFixed(1)} %`}
@@ -80,7 +80,7 @@ function TableScores({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+          <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
             <th className="py-2 pr-3 font-medium">Méthode</th>
             <th className="py-2 pr-3 text-right font-medium">Matchs</th>
             <th className="py-2 pr-3 text-right font-medium">Brier</th>
@@ -96,14 +96,14 @@ function TableScores({
             return (
               <tr
                 key={s.methode}
-                className={`border-b border-zinc-100 dark:border-zinc-900 ${
-                  gagnant ? 'bg-emerald-50 dark:bg-emerald-950/40' : ''
+                className={`border-b border-zinc-100 ${
+                  gagnant ? 'bg-emerald-50' : ''
                 }`}
               >
                 <td className="py-1.5 pr-3 font-medium">
                   {s.methode}
                   {gagnant && (
-                    <span className="ml-1.5 text-[10px] uppercase text-emerald-700 dark:text-emerald-400">
+                    <span className="ml-1.5 text-[10px] uppercase text-emerald-700">
                       meilleur
                     </span>
                   )}
@@ -441,7 +441,7 @@ export default async function CotesPage({
       </div>
 
       {!cleOk && (
-        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
           <p className="font-medium">Clé The Odds API non configurée.</p>
           <p className="mt-1">
             Renseigner <code>ODDS_API_KEY</code> dans les variables
@@ -465,8 +465,8 @@ export default async function CotesPage({
                 actif
                   ? 'border-blue-600 bg-blue-600 text-white'
                   : n > 0
-                    ? 'border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400'
-                    : 'border-zinc-300 text-zinc-500 hover:border-zinc-500 dark:border-zinc-700'
+                    ? 'border-emerald-300 text-emerald-700'
+                    : 'border-zinc-300 text-zinc-500 hover:border-zinc-500'
               }`}
               title={n > 0 ? `${n} cote(s) en cache` : 'aucune cote en cache'}
             >
@@ -478,7 +478,7 @@ export default async function CotesPage({
       </nav>
 
       {tournoiCourant && (
-        <div className="space-y-2 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="space-y-2 rounded-2xl bg-white p-3 shadow-card">
           <p className="text-sm">
             <span className="font-medium">{tournoiCourant.name}</span>{' '}
             <span className="text-zinc-500">
@@ -499,7 +499,7 @@ export default async function CotesPage({
             />
           )}
           {erreurSports && (
-            <p className="text-xs text-red-600 dark:text-red-400">
+            <p className="text-xs text-red-600">
               Liste des sports indisponible : {erreurSports}
             </p>
           )}
@@ -527,7 +527,7 @@ export default async function CotesPage({
                   c&apos;est une collecte, pas encore une conclusion.
                 </p>
                 {(sansInstantane > 0 || sansEloJoueur > 0) && (
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                  <p className="text-xs text-amber-700">
                     {sansInstantane + sansEloJoueur} match(s) écarté(s) de cette
                     évaluation :{' '}
                     {sansInstantane > 0 &&
@@ -542,7 +542,7 @@ export default async function CotesPage({
                 )}
               </>
             ) : (
-              <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+              <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
                 <p className="font-medium">
                   Aucun match ne dispose d&apos;un Elo antérieur.
                 </p>
@@ -580,8 +580,8 @@ export default async function CotesPage({
           </div>
         </div>
       ) : (
-        <div className="rounded border border-zinc-200 p-3 text-sm text-zinc-500 dark:border-zinc-800">
-          <p className="font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-2xl bg-white p-3 text-sm text-zinc-500 shadow-card">
+          <p className="font-medium text-zinc-700">
             Aucun match évaluable pour ce tournoi.
           </p>
           <p className="mt-1">
@@ -603,7 +603,7 @@ export default async function CotesPage({
           <h2 className="mb-2 text-sm font-semibold">Détail par match</h2>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                 <th className="py-2 pr-3 font-medium">Match</th>
                 <th className="py-2 pr-3 text-right font-medium">
                   P(favori) Elo antérieur
@@ -625,15 +625,15 @@ export default async function CotesPage({
               {vues.map((v, i) => (
                 <tr
                   key={`${v.nomA}-${v.nomB}-${i}`}
-                  className="border-b border-zinc-100 dark:border-zinc-900"
+                  className="border-b border-zinc-100"
                 >
                   <td className="py-1.5 pr-3">
-                    <span className={v.apparie ? '' : 'text-amber-700 dark:text-amber-400'}>
+                    <span className={v.apparie ? '' : 'text-amber-700'}>
                       {v.nomA} <span className="text-zinc-400">vs</span> {v.nomB}
                     </span>
                     {!v.apparie && (
                       <span
-                        className="ml-1.5 rounded border border-amber-300 px-1 text-[10px] text-amber-700 dark:border-amber-800 dark:text-amber-400"
+                        className="ml-1.5 rounded-md border border-amber-300 px-1 text-[10px] text-amber-700"
                         title="Au moins un des deux joueurs n’a pas été apparié au tableau : ce match est exclu du score."
                       >
                         non apparié
@@ -641,7 +641,7 @@ export default async function CotesPage({
                     )}
                     {v.sansAnterieur !== null && (
                       <span
-                        className="ml-1.5 rounded border border-violet-300 px-1 text-[10px] text-violet-700 dark:border-violet-800 dark:text-violet-400"
+                        className="ml-1.5 rounded-md border border-violet-300 px-1 text-[10px] text-violet-700"
                         title={
                           v.sansAnterieur === 'instantane'
                             ? "Aucun relevé Elo n'est antérieur à ce match : il est exclu de l'évaluation propre."
@@ -689,8 +689,8 @@ export default async function CotesPage({
                       <span
                         className={
                           v.favoriGagne
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                            ? 'text-emerald-600'
+                            : 'text-red-600'
                         }
                       >
                         {v.vainqueur}
@@ -705,7 +705,7 @@ export default async function CotesPage({
             </tbody>
           </table>
           {nonApparies.length > 0 && (
-            <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+            <p className="mt-2 text-xs text-amber-700">
               {nonApparies.length} rencontre(s) non appariée(s) au tableau, conservées
               et affichées mais exclues du score : soit le joueur n&apos;est pas dans ce
               tournoi (clé de sport trop large), soit son nom ne se rapproche pas

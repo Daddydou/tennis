@@ -15,10 +15,10 @@ function pourcent(p: number): string {
 
 /** Fond d'autant plus marqué que la probabilité est forte. */
 function intensite(p: number): string {
-  if (p <= 0) return 'text-zinc-300 dark:text-zinc-700';
-  if (p >= 0.5) return 'bg-emerald-100 font-semibold dark:bg-emerald-950';
-  if (p >= 0.25) return 'bg-emerald-50 dark:bg-emerald-950/50';
-  if (p >= 0.1) return 'bg-zinc-50 dark:bg-zinc-900';
+  if (p <= 0) return 'text-zinc-300';
+  if (p >= 0.5) return 'bg-emerald-100 font-semibold';
+  if (p >= 0.25) return 'bg-emerald-50';
+  if (p >= 0.1) return 'bg-zinc-50';
   return 'text-zinc-500';
 }
 
@@ -89,7 +89,7 @@ export default async function PredictionsPage({
           {termine ? (
             <>
               Tournoi terminé : projections telles qu&apos;elles étaient{' '}
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium text-zinc-700">
                 avant le {tourCourant}
               </span>
               , conservées à titre rétrospectif.
@@ -98,7 +98,7 @@ export default async function PredictionsPage({
             <>
               Probabilité d&apos;atteindre chaque tour, simulation Monte Carlo
               depuis les{' '}
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium text-zinc-700">
                 {tourCourant}
               </span>
               .
@@ -118,7 +118,7 @@ export default async function PredictionsPage({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                 <th className="py-2 pr-3 font-medium">Joueur</th>
                 <th className="py-2 pr-3 text-right font-medium">Rang</th>
                 {coloness.map((r) => (
@@ -133,7 +133,7 @@ export default async function PredictionsPage({
               {lignes.map((l) => (
                 <tr
                   key={l.playerId}
-                  className="border-b border-zinc-100 dark:border-zinc-900"
+                  className="border-b border-zinc-100"
                 >
                   <td className="py-1.5 pr-3 font-medium">
                     {l.nom}
@@ -164,7 +164,7 @@ export default async function PredictionsPage({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-zinc-300 text-xs text-zinc-500 dark:border-zinc-700">
+              <tr className="border-t-2 border-zinc-300 text-xs text-zinc-500">
                 <td colSpan={2 + coloness.length} className="py-2 pr-3 text-right">
                   Somme des probabilités de titre
                 </td>

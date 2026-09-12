@@ -56,7 +56,7 @@ function LigneJoueur({
 }) {
   if (!j) {
     return (
-      <div className="flex items-center gap-2 py-1 text-sm text-zinc-300 dark:text-zinc-700">
+      <div className="flex items-center gap-2 py-1 text-sm text-zinc-300">
         <span className="w-4" />
         <span className="flex-1">—</span>
       </div>
@@ -67,7 +67,7 @@ function LigneJoueur({
     <div className="flex items-center gap-2 py-1">
       <span
         className={`w-4 shrink-0 text-center text-xs ${
-          gagnant ? 'text-emerald-600 dark:text-emerald-400' : 'text-transparent'
+          gagnant ? 'text-emerald-600' : 'text-transparent'
         }`}
         aria-hidden
       >
@@ -77,14 +77,14 @@ function LigneJoueur({
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
         <span
           className={`truncate ${
-            gagnant ? 'font-semibold' : 'text-zinc-600 dark:text-zinc-400'
+            gagnant ? 'font-semibold' : 'text-zinc-600'
           }`}
         >
           {j.nom}
         </span>
         {champion && (
           <span
-            className="shrink-0 rounded border border-amber-400 bg-amber-50 px-1 text-[10px] font-medium text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300"
+            className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-1 text-[10px] font-medium text-amber-700"
             title="Champion prédit"
           >
             titre
@@ -94,7 +94,7 @@ function LigneJoueur({
           <span className="shrink-0 text-[11px] text-zinc-400">n°{j.rang}</span>
         )}
         {bye && (
-          <span className="shrink-0 text-[11px] uppercase tracking-wide text-sky-600 dark:text-sky-400">
+          <span className="shrink-0 text-[11px] uppercase tracking-wide text-sky-600">
             bye
           </span>
         )}
@@ -134,7 +134,7 @@ function CarteDuel({
         champion={champion !== null && duel.a === champion}
         bye={duel.bye && duel.a !== null}
       />
-      <div className="border-t border-zinc-100 dark:border-zinc-900" />
+      <div className="border-t border-zinc-100" />
       <LigneJoueur
         j={b}
         gagnant={duel.gagnant !== null && duel.gagnant === duel.b}
@@ -245,7 +245,7 @@ export default async function BracketPage({
       <TournoiNav id={id} nom={tournament.name} active="bracket" />
 
       <p className="text-sm text-zinc-500">
-        Pronostic <span className="font-medium text-zinc-700 dark:text-zinc-300">
+        Pronostic <span className="font-medium text-zinc-700">
           depuis le tirage
         </span>{' '}
         : à chaque match, le plus haut Elo effectif sur{' '}
@@ -256,9 +256,9 @@ export default async function BracketPage({
 
       {/* ── Champion prédit et son parcours ── */}
       {vueChampion && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            <span className="text-[11px] uppercase tracking-wide text-amber-700">
               Champion prédit
             </span>
             <span className="text-base font-semibold">{vueChampion.nom}</span>
@@ -272,7 +272,7 @@ export default async function BracketPage({
             </span>
           </div>
 
-          <ul className="mt-2 space-y-0.5 text-xs text-zinc-600 dark:text-zinc-400">
+          <ul className="mt-2 space-y-0.5 text-xs text-zinc-600">
             {bracket.parcours.map((d) => {
               const adverse = d.a === champion ? d.b : d.a;
               const adv = vue(adverse);
@@ -286,7 +286,7 @@ export default async function BracketPage({
                   </Link>
                   <span className="min-w-0 flex-1 truncate">
                     {d.bye || !adv ? (
-                      <span className="text-sky-600 dark:text-sky-400">
+                      <span className="text-sky-600">
                         exempté
                       </span>
                     ) : (
@@ -337,8 +337,8 @@ export default async function BracketPage({
                 href={lien(roundActif, m)}
                 className={`flex min-h-11 items-center rounded-md px-2.5 transition active:scale-[0.97] ${
                   actif
-                    ? 'bg-zinc-200 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    ? 'bg-zinc-200 font-medium text-zinc-900'
+                    : 'text-zinc-500 hover:text-zinc-800'
                 }`}
               >
                 {label}

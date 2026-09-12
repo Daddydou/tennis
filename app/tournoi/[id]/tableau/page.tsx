@@ -21,10 +21,10 @@ export const dynamic = 'force-dynamic';
  */
 const STATUT_BADGE: Record<string, { label: string; classes: string }> = {
   scheduled: { label: 'À jouer', classes: 'text-zinc-400' },
-  live: { label: 'En cours', classes: 'text-emerald-600 dark:text-emerald-400' },
-  walkover: { label: 'W.O.', classes: 'text-amber-600 dark:text-amber-400' },
-  retired: { label: 'Abandon', classes: 'text-amber-600 dark:text-amber-400' },
-  bye: { label: 'Bye', classes: 'text-sky-600 dark:text-sky-400' },
+  live: { label: 'En cours', classes: 'text-emerald-600' },
+  walkover: { label: 'W.O.', classes: 'text-amber-600' },
+  retired: { label: 'Abandon', classes: 'text-amber-600' },
+  bye: { label: 'Bye', classes: 'text-sky-600' },
 };
 
 function nomJoueur(id: string | null, byId: Map<string, PlayerRow>): string {
@@ -63,15 +63,15 @@ function LigneJoueur({
       <span
         className={`flex-1 truncate ${
           gagnant
-            ? 'font-semibold text-zinc-900 dark:text-zinc-100'
+            ? 'font-semibold text-zinc-900'
             : bye || perdant
-              ? 'text-zinc-400 dark:text-zinc-500'
+              ? 'text-zinc-400'
               : ''
         }`}
       >
         {nom}
       </span>
-      <div className="flex gap-1 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+      <div className="flex gap-1 font-mono text-xs text-zinc-600">
         {sets.map((s, i) => (
           <span key={i} className="w-5 text-right tabular-nums">
             {s}

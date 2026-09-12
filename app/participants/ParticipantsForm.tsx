@@ -49,7 +49,7 @@ export default function ParticipantsForm({
 
   return (
     <div className="space-y-4">
-      <div className={`divide-y divide-zinc-100 dark:divide-zinc-900 ${carte}`}>
+      <div className={`divide-y divide-zinc-100 ${carte}`}>
         {participants.length === 0 && (
           <p className="px-3 py-2 text-sm text-zinc-500">
             Aucun participant pour l&apos;instant — que « Moi ».
@@ -81,7 +81,7 @@ export default function ParticipantsForm({
           {pending && <Spinner />}
           {pending ? '…' : 'Ajouter'}
         </button>
-        {erreur && <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>}
+        {erreur && <span className="text-xs text-red-600">{erreur}</span>}
       </div>
     </div>
   );

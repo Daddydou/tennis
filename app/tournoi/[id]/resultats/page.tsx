@@ -102,7 +102,7 @@ export default async function ResultatsPage({
               </span>
             )}
             {sansPickPossible > 0 && (
-              <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+              <span className="ml-2 text-xs text-amber-600">
                 ({sansPickPossible} slot{sansPickPossible > 1 ? 's' : ''} sans
                 pick possible)
               </span>
@@ -130,7 +130,7 @@ export default async function ResultatsPage({
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
               <th className="py-2 pr-3 font-medium">Tour</th>
               <th className="py-2 pr-3 font-medium">Moitié</th>
               <th className="py-2 pr-3 font-medium">Joueur</th>
@@ -148,7 +148,7 @@ export default async function ResultatsPage({
               return (
                 <tr
                   key={p.id}
-                  className="border-b border-zinc-100 dark:border-zinc-900"
+                  className="border-b border-zinc-100"
                 >
                   <td className="py-1.5 pr-3 font-medium">{p.round}</td>
                   <td className="py-1.5 pr-3 text-zinc-500">
@@ -182,7 +182,7 @@ export default async function ResultatsPage({
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-zinc-300 dark:border-zinc-700">
+            <tr className="border-t-2 border-zinc-300">
               <td colSpan={6} className="py-2 pr-3 text-right font-medium">
                 Total
               </td>

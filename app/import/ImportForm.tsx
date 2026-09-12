@@ -43,7 +43,7 @@ export default function ImportForm() {
               setJson('');
               setResult(null);
             }}
-            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
+            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900`}
           >
             Effacer
           </button>
@@ -52,10 +52,8 @@ export default function ImportForm() {
 
       {result && (
         <div
-          className={`rounded border p-3 text-sm ${
-            result.ok
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-              : 'border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+          className={`rounded-xl p-3 text-sm ${
+            result.ok ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'
           }`}
         >
           {result.ok ? (
@@ -69,10 +67,10 @@ export default function ImportForm() {
               </p>
               {result.avertissements.length > 0 && (
                 <div>
-                  <p className="font-medium text-amber-700 dark:text-amber-300">
+                  <p className="font-medium text-amber-700">
                     Avertissements :
                   </p>
-                  <ul className="ml-4 list-disc text-amber-700 dark:text-amber-300">
+                  <ul className="ml-4 list-disc text-amber-700">
                     {result.avertissements.map((a, i) => (
                       <li key={i}>{a}</li>
                     ))}

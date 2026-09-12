@@ -20,20 +20,20 @@ const STYLE_BADGE: Record<
 > = {
   maison: {
     classes:
-      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
+      'border-amber-300 bg-amber-50 text-amber-700',
     libelle: 'maison',
     titre:
       'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.',
   },
   defaut: {
     classes:
-      'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
+      'border-red-300 bg-red-50 text-red-700',
     libelle: 'défaut',
     titre: 'Ni Elo Tennis Abstract ni Elo maison : valeur par défaut. À vérifier.',
   },
   ambigu: {
     classes:
-      'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300',
+      'border-violet-300 bg-violet-50 text-violet-700',
     libelle: 'ambigu',
     titre:
       'Plusieurs joueurs Tennis Abstract portent ce nom : aucun n’a été choisi.',
@@ -43,12 +43,12 @@ const STYLE_BADGE: Record<
 /** Couleur de l'Elo lui-même, assortie à sa source. */
 export function classeElo(source: SourceElo): string {
   return source === 'defaut'
-    ? 'text-red-600 dark:text-red-400'
+    ? 'text-red-600'
     : source === 'ambigu'
-      ? 'text-violet-600 dark:text-violet-400'
+      ? 'text-violet-600'
       : source === 'maison'
-        ? 'text-amber-600 dark:text-amber-400'
-        : 'text-zinc-900 dark:text-zinc-100';
+        ? 'text-amber-600'
+        : 'text-zinc-900';
 }
 
 export default function BadgeSourceElo({
@@ -64,7 +64,7 @@ export default function BadgeSourceElo({
   if (source === 'ta') {
     return taName ? (
       <span
-        className="w-14 truncate text-right text-[10px] text-zinc-300 dark:text-zinc-700"
+        className="w-14 truncate text-right text-[10px] text-zinc-300"
         title={`Tennis Abstract : ${taName}`}
       >
         {taName}
@@ -78,7 +78,7 @@ export default function BadgeSourceElo({
   return (
     <span className="w-14 text-right">
       <span
-        className={`rounded border px-1 py-px text-[10px] font-medium ${s.classes}`}
+        className={`rounded-md border px-1 py-px text-[10px] font-medium ${s.classes}`}
         title={
           candidats.length
             ? `${s.titre} Candidats : ${candidats.join(', ')}. Déclarer le bon ta_slug dans ta_name_exceptions.`

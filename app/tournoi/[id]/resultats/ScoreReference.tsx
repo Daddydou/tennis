@@ -42,9 +42,9 @@ export async function TotalReference({
       <span
         className={`ml-2 text-xs font-medium tabular-nums ${
           ecart > 0
-            ? 'text-emerald-600 dark:text-emerald-400'
+            ? 'text-emerald-600'
             : ecart < 0
-              ? 'text-amber-600 dark:text-amber-400'
+              ? 'text-amber-600'
               : 'text-zinc-500'
         }`}
       >
@@ -52,7 +52,7 @@ export async function TotalReference({
       </span>
       {ref.roundsManquants.length > 0 && (
         <span
-          className="ml-2 text-xs text-amber-600 dark:text-amber-400"
+          className="ml-2 text-xs text-amber-600"
           title="Simulation Monte Carlo pas encore en cache pour ces tours — calcul lancé en arrière-plan, revenir dans un instant."
         >
           (partiel — {ref.roundsManquants.join(', ')} en cours de calcul)
@@ -78,16 +78,16 @@ export async function DetailReference({
   );
 
   return (
-    <details className="rounded border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-800">
-      <summary className="cursor-pointer text-zinc-600 dark:text-zinc-400">
+    <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
+      <summary className="cursor-pointer text-zinc-600">
         Score de référence :{' '}
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+        <span className="font-medium text-zinc-900">
           {ref.total} pts
         </span>{' '}
         — les recommandations de l&apos;app, tour par tour
         <span className="ml-1 text-zinc-400">— détail</span>
         {ref.roundsManquants.length > 0 && (
-          <span className="ml-1 text-amber-600 dark:text-amber-400">
+          <span className="ml-1 text-amber-600">
             ({ref.roundsManquants.join(', ')} en cours de calcul, absent du total)
           </span>
         )}
@@ -103,7 +103,7 @@ export async function DetailReference({
       <div className="mt-2 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-200 text-left uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+            <tr className="border-b border-zinc-200 text-left uppercase tracking-wide text-zinc-500">
               <th className="py-1.5 pr-3 font-medium">Tour</th>
               <th className="py-1.5 pr-3 font-medium">Moitié</th>
               <th className="py-1.5 pr-3 font-medium">Référence</th>
@@ -120,7 +120,7 @@ export async function DetailReference({
               return (
                 <tr
                   key={`${p.round}|${p.half ?? ''}`}
-                  className="border-b border-zinc-100 dark:border-zinc-900"
+                  className="border-b border-zinc-100"
                 >
                   <td className="py-1.5 pr-3 font-medium">{p.round}</td>
                   <td className="py-1.5 pr-3 text-zinc-500">
@@ -142,10 +142,10 @@ export async function DetailReference({
                   <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
                     {p.score ? p.score.total : '—'}
                   </td>
-                  <td className="py-1.5 pr-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="py-1.5 pr-3 text-zinc-600">
                     {moi ? moi.nom : <span className="text-zinc-400">—</span>}
                   </td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
+                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-600">
                     {moi?.points ?? '—'}
                   </td>
                 </tr>
@@ -153,7 +153,7 @@ export async function DetailReference({
             })}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-zinc-300 dark:border-zinc-700">
+            <tr className="border-t-2 border-zinc-300">
               <td colSpan={4} className="py-1.5 pr-3 text-right font-medium">
                 Total référence
               </td>

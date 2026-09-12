@@ -48,9 +48,9 @@ function pct(x: number): string {
 /** Vert quand l'écart est faible, rouge au-delà de 15 %. */
 function classeEcart(ecart: number): string {
   const a = Math.abs(ecart);
-  if (a <= 0.05) return 'text-emerald-600 dark:text-emerald-400';
-  if (a <= 0.15) return 'text-zinc-700 dark:text-zinc-300';
-  return 'text-red-600 dark:text-red-400';
+  if (a <= 0.05) return 'text-emerald-600';
+  if (a <= 0.15) return 'text-zinc-700';
+  return 'text-red-600';
 }
 
 export default function ComparaisonEchelle() {
@@ -95,7 +95,7 @@ export default function ComparaisonEchelle() {
           </span>
         )}
         {erreur && (
-          <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>
+          <span className="text-xs text-red-600">{erreur}</span>
         )}
       </div>
 
@@ -108,7 +108,7 @@ export default function ComparaisonEchelle() {
             , {data.simulations.toLocaleString('fr-FR')} simulations par tournoi
             et par échelle.
             {data.partiel && (
-              <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+              <span className="ml-1 font-medium text-amber-600">
                 Budget de temps atteint : le comparatif ne porte que sur les
                 tournois traités, identiques pour toutes les échelles.
               </span>
@@ -118,7 +118,7 @@ export default function ComparaisonEchelle() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                   <th className="py-2 pr-3 font-medium">Échelle</th>
                   <th className="py-2 pr-3 text-right font-medium">Prédit</th>
                   <th className="py-2 pr-3 text-right font-medium">Réalisé</th>
@@ -150,7 +150,7 @@ export default function ComparaisonEchelle() {
                 {data.resultats.map((r) => (
                   <tr
                     key={r.echelle}
-                    className="border-b border-zinc-100 dark:border-zinc-900"
+                    className="border-b border-zinc-100"
                   >
                     <td className="py-2 pr-3 font-mono tabular-nums">
                       {r.echelle}
@@ -204,7 +204,7 @@ export default function ComparaisonEchelle() {
             </table>
           </div>
 
-          <div className="rounded border border-zinc-200 px-3 py-3 text-sm dark:border-zinc-800">
+          <div className="rounded-2xl bg-white px-3 py-3 text-sm shadow-card">
             <p>
               Écart global le plus faible :{' '}
               <span className="font-mono font-semibold">
@@ -243,7 +243,7 @@ export default function ComparaisonEchelle() {
             <div className="mt-2 overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-zinc-200 text-left uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                  <tr className="border-b border-zinc-200 text-left uppercase tracking-wide text-zinc-500">
                     <th className="py-1 pr-3 font-medium">Tournoi</th>
                     <th className="py-1 pr-3 font-medium">Catégorie</th>
                     <th className="py-1 pr-3 text-right font-medium">Réalisé</th>
@@ -261,7 +261,7 @@ export default function ComparaisonEchelle() {
                   {data.tournois.map((t) => (
                     <tr
                       key={t.tournamentId}
-                      className="border-b border-zinc-100 dark:border-zinc-900"
+                      className="border-b border-zinc-100"
                     >
                       <td className="py-1 pr-3">{t.nom}</td>
                       <td className="py-1 pr-3 text-zinc-500">

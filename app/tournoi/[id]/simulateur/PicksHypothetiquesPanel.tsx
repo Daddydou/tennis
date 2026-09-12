@@ -93,7 +93,7 @@ export default function PicksHypothetiquesPanel({
               </h3>
 
               {etat.joueurs.length === 0 ? (
-                <p className="rounded border border-dashed border-zinc-200 px-2.5 py-2 text-xs text-zinc-400 dark:border-zinc-800">
+                <p className="rounded border border-dashed border-zinc-200 px-2.5 py-2 text-xs text-zinc-400">
                   Pas encore constitué dans le tableau testé — avance le tour
                   précédent dans l&apos;onglet « Tableau testé ».
                 </p>

@@ -19,9 +19,9 @@ export default function ImportEloPage() {
         </p>
       </div>
 
-      <ol className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+      <ol className="space-y-2 text-sm text-zinc-600">
         <li>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">1.</span>{' '}
+          <span className="font-medium text-zinc-900">1.</span>{' '}
           Ouvrir le rapport :{' '}
           <a
             href={URLS_RAPPORTS.atp}
@@ -43,7 +43,7 @@ export default function ImportEloPage() {
         </li>
         <li className="flex flex-wrap items-center gap-2">
           <span>
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            <span className="font-medium text-zinc-900">
               2.
             </span>{' '}
             Exécuter le snippet dans la console de cette page (F12 → Console) :
@@ -51,7 +51,7 @@ export default function ImportEloPage() {
           <SnippetElo />
         </li>
         <li>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">3.</span>{' '}
+          <span className="font-medium text-zinc-900">3.</span>{' '}
           Il copie le JSON dans le presse-papier : le coller ci-dessous et
           importer. Un circuit à la fois, ou les deux d&apos;un coup en collant{' '}
           <code>[extraitAtp, extraitWta]</code>.
@@ -60,9 +60,9 @@ export default function ImportEloPage() {
 
       <ImportEloForm />
 
-      <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="space-y-2 border-t border-zinc-200 pt-4">
         <p className="text-sm text-zinc-500">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="font-medium text-zinc-700">
             Repli :
           </span>{' '}
           l&apos;ancienne récupération par fetch serveur (
