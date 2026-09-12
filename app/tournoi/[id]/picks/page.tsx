@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
+import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import {
   etatsSlots,
   getParticipants,
   getPicks,
+  getTousLesPicks,
   joueursEnLice,
   loadEngineData,
   surfacePourElo,
@@ -55,6 +57,13 @@ export default async function PicksPage({
       : null;
 
   const picks = await getPicks(id, stockId);
+
+  // Résumé en tête d'écran : les points Picks déjà validés de chaque
+  // participant — même calcul que le Dashboard (./pointsStock), jamais
+  // réimplémenté ici.
+  const tousLesPicks = await getTousLesPicks(id);
+  const stocksResume = stocksDuGroupe(participants);
+  const picksParStock = pointsPicksParStock(tousLesPicks);
 
   // Slots du tournoi (2/tour jusqu'aux QF, puis 1 en SF et F → 12 au total)
   const slots = genererSlots(rounds);
@@ -253,6 +262,22 @@ export default async function PicksPage({
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="picks" />
+
+      {/* ── Résumé : points Picks déjà validés, tous participants confondus
+          (mêmes chiffres que le Dashboard) ── */}
+      <div className="flex flex-wrap gap-2">
+        {stocksResume.map((s) => (
+          <div
+            key={s.id ?? 'moi'}
+            className="flex items-center gap-1.5 rounded border border-zinc-200 px-2.5 py-1 text-xs dark:border-zinc-800"
+          >
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">{s.nom}</span>
+            <span className="tabular-nums text-zinc-500">
+              {picksParStock.get(s.id) ?? 0} pts
+            </span>
+          </div>
+        ))}
+      </div>
 
       {/* ── Sélecteur de stock : moi, ou un participant configuré ── */}
       {participants.length > 0 && (
