@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
+/*
+ * Thème forcé en clair : `dark:` ne matche plus jamais (aucune classe
+ * `.dark` n'est posée nulle part dans l'app). Remplace la stratégie par
+ * défaut de Tailwind (`prefers-color-scheme`), qui aurait sinon continué à
+ * activer les `dark:` déjà écrits dans les composants même après avoir
+ * changé `--background`/`--foreground` ci-dessous — les deux sont
+ * indépendants l'un de l'autre dans Tailwind v4.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #18181b;
+  /* Gris très clair façon Apple (apple.com, réglages iOS) : le fond de
+     PAGE, pas celui des cartes — c'est l'écart de luminance entre les deux
+     qui fait « flotter » une carte blanche, avant même son ombre. */
+  --background: #f5f5f7;
+  --foreground: #1d1d1f; /* quasi-noir Apple, jamais un noir pur qui durcit le contraste */
 }
 
 @theme inline {
@@ -13,15 +26,8 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #e4e4e7;
-  }
-}
-
 html {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 body {
@@ -38,40 +44,45 @@ table {
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- *  SYSTÈME DE DESIGN — FONDATIONS (aperçu Dashboard/Picks/Tableau, avant
- *  généralisation au reste de l'app — cf. app/tournoi/[id]/ui.tsx)
+ *  SYSTÈME DE DESIGN — THÈME CLAIR, ESPRIT APPLE (iOS/macOS)
+ *  Jetons partagés : app/ui.tsx. Aperçu validé sur Dashboard/Picks/Accueil
+ *  avant généralisation à toute l'app.
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * ACCENT : lime (jaune-vert « balle de tennis »). Choisi pour rester à
- * distance de toutes les couleurs déjà porteuses de sens ailleurs dans
- * l'app — bleu (circuit ATP), fuchsia (circuit WTA), ambre (terre battue /
- * repli Elo « maison » / avertissement), émeraude (gazon / indicateur de
- * victoire), ciel (dur / « bye »), ardoise (moquette), violet (Elo
- * ambigu), rouge (erreur / Elo par défaut, cf. app/page.tsx et
- * BadgeSourceElo.tsx). L'accent ne doit JAMAIS migrer vers un de ces sens,
- * sinon un bouton se lirait comme une surface ou un statut. Sur fond
- * lime-500 (clair) / lime-400 (sombre), un texte zinc-900/zinc-950 mesure
- * un contraste > 8:1 — largement au-dessus du seuil AA (4,5:1).
+ * ACCENT : bleu système (Tailwind blue-600, proche de l'iOS systemBlue) —
+ * l'action principale d'un écran. Vert (émeraude, déjà en usage), orange
+ * (ambre, déjà en usage) et rouge restent ce qu'ils étaient : jamais une
+ * nouvelle palette de statut, juste le même esprit « couleurs franches,
+ * propres, pas saturées à l'excès » appliqué aux boutons. Le bleu accent
+ * partage sa teinte avec la puce du circuit ATP (app/page.tsx) — assumé :
+ * un bouton et un badge sont deux affordances différentes, jamais confondues
+ * en contexte, et c'est ainsi qu'Apple lui-même réutilise le bleu partout.
+ * Contraste mesuré : blanc sur blue-600 (#2563eb) = 5,17:1 (> seuil AA
+ * 4,5:1) — l'iOS systemBlue « pur » (#007AFF) n'aurait mesuré que 4,02:1,
+ * insuffisant pour du texte de bouton.
  *
- * FOCUS CLAVIER : un anneau visible, jamais l'outline par défaut du
- * navigateur (souvent invisible sur fond sombre) ni supprimé sans
- * remplacement — l'accessibilité au clavier ne doit jamais dépendre d'un
- * survol à la souris. Un anneau lime-500 unique échouerait le seuil de
- * contraste non-textuel (3:1, WCAG 1.4.11) sur fond blanc (mesuré 1,98:1) :
- * deux teintes, comme --background/--foreground ci-dessus — lime-700 en
- * clair (4,99:1 sur blanc), lime-400 en sombre (10:1 sur le fond sombre).
+ * CARTES : ombre douce plutôt que bordure dure (`shadow-card` ci-dessous),
+ * fond blanc PUR sur le gris très clair de la page — c'est ce contraste de
+ * luminance, plus l'ombre, qui donne l'effet « légèrement surélevé ».
+ * Les séparateurs de listes/tableaux gardent un simple filet (hairline) :
+ * ce n'est pas une carte, la consigne ne les concerne pas.
+ *
+ * RADIUS généreux et cohérent : rounded-xl (boutons, champs, badges),
+ * rounded-2xl (cartes) — jamais un mélange arbitraire de rounded/rounded-lg
+ * comme avant.
+ *
+ * FOCUS CLAVIER : anneau bleu visible, jamais l'outline par défaut du
+ * navigateur — une seule teinte suffit désormais (plus de mode sombre à
+ * couvrir). blue-600 sur fond blanc mesure 5,17:1, largement au-dessus du
+ * seuil non-textuel (3:1, WCAG 1.4.11).
  */
-:root {
-  --color-focus-ring: #4d7c0f; /* lime-700 */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-focus-ring: #a3e635; /* lime-400 */
-  }
+@utility shadow-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-focus-ring);
+  outline: 2px solid #2563eb; /* blue-600 */
   outline-offset: 2px;
 }

@@ -126,7 +126,7 @@ export default function ParticipantsBracketPanel({
           return (
             <div
               key={cle}
-              className="flex items-center gap-2 rounded border border-zinc-200 px-2.5 py-2 text-sm dark:border-zinc-800"
+              className="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-2 text-sm shadow-card"
             >
               <span className="w-36 shrink-0 truncate text-xs text-zinc-400" title={caption}>
                 {caption}
@@ -153,7 +153,7 @@ export default function ParticipantsBracketPanel({
       </div>
 
       {erreurParStock[stockActif] && (
-        <p className="text-xs text-red-600 dark:text-red-400">{erreurParStock[stockActif]}</p>
+        <p className="text-xs text-red-600">{erreurParStock[stockActif]}</p>
       )}
 
       <div className="flex items-center gap-2">

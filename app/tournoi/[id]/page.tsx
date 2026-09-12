@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from './TournoiNav';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
-import { carte, lienBouton } from '@/app/ui';
+import { lienBouton } from '@/app/ui';
 import {
   getTournament,
   getMatchRows,
@@ -62,10 +62,7 @@ export default async function DashboardPage({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500">
-          Tour actuel :{' '}
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-            {tourActuel ?? '—'}
-          </span>
+          Tour actuel : <span className="font-semibold text-zinc-800">{tourActuel ?? '—'}</span>
         </p>
         <div className="flex gap-2">
           <Link href={`/tournoi/${id}/picks`} className={lienBouton}>
@@ -90,16 +87,9 @@ export default async function DashboardPage({
             return (
               <div
                 key={l.id ?? 'moi'}
-                className={`relative overflow-hidden pl-4 ${carte} ${
-                  enTete ? 'border-lime-300 bg-lime-50/70 dark:border-lime-800 dark:bg-lime-950/20' : ''
-                }`}
+                className={`relative overflow-hidden rounded-2xl pl-4 shadow-card ${enTete ? 'bg-blue-50' : 'bg-white'}`}
               >
-                {enTete && (
-                  <span
-                    className="absolute inset-y-0 left-0 w-1.5 bg-lime-500 dark:bg-lime-400"
-                    aria-hidden="true"
-                  />
-                )}
+                {enTete && <span className="absolute inset-y-0 left-0 w-1.5 bg-blue-600" aria-hidden="true" />}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 p-3">
                   <span className="w-5 shrink-0 text-sm text-zinc-400">{i + 1}.</span>
                   <span className="flex-1 truncate text-base font-semibold">
@@ -110,12 +100,10 @@ export default async function DashboardPage({
                   <span className="shrink-0 text-xs text-zinc-500">
                     Bracket{' '}
                     {l.aBracket ? (
-                      <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                        {l.bracket}
-                      </span>
+                      <span className="font-semibold tabular-nums text-zinc-900">{l.bracket}</span>
                     ) : (
                       <span
-                        className="font-medium text-amber-600 dark:text-amber-400"
+                        className="font-medium text-amber-600"
                         title="Aucun bracket de ce participant importé (onglet Simulateur → Bracket → Importer)"
                       >
                         à importer
@@ -124,10 +112,7 @@ export default async function DashboardPage({
                   </span>
 
                   <span className="shrink-0 text-xs text-zinc-500">
-                    Picks{' '}
-                    <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                      {l.picks}
-                    </span>
+                    Picks <span className="font-semibold tabular-nums text-zinc-900">{l.picks}</span>
                   </span>
 
                   <span className="ml-auto flex shrink-0 items-baseline gap-1.5">

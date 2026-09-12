@@ -92,18 +92,18 @@ function ColonnePick({
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">{colonne.label}</h2>
         {colonne.pickActuel ? (
-          <span className="text-xs text-emerald-600 dark:text-emerald-400">
+          <span className="text-xs text-emerald-600">
             pické
           </span>
         ) : colonne.impossible ? (
-          <span className="text-xs text-amber-600 dark:text-amber-400">
+          <span className="text-xs text-amber-600">
             sans pick possible
           </span>
         ) : null}
       </div>
 
       {colonne.impossible && (
-        <p className="rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <p className="rounded-xl bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
           Tous les survivants de cette moitié ont déjà été pickés à un tour
           précédent. Un joueur ne pouvant servir qu&apos;une fois par tournoi, ce
           slot ne peut pas être rempli : il est neutralisé et ne bloque pas la
@@ -111,7 +111,7 @@ function ColonnePick({
         </p>
       )}
 
-      <div className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-900 dark:border-zinc-800">
+      <div className={`divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-card`}>
         {colonne.candidats.map((c) => {
           const selectionnable = !c.utilise;
           const selected = choix === c.playerId;
@@ -120,10 +120,10 @@ function ColonnePick({
               key={c.playerId}
               className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
                 c.utilise
-                  ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
+                  ? 'cursor-not-allowed text-zinc-400'
                   : selected
-                    ? 'bg-lime-50 dark:bg-lime-950/30'
-                    : 'hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                    ? 'bg-blue-50'
+                    : 'hover:bg-zinc-50'
               }`}
             >
               <input
@@ -133,7 +133,7 @@ function ColonnePick({
                 checked={selected}
                 disabled={!selectionnable}
                 onChange={() => setChoix(c.playerId)}
-                className="size-4 accent-lime-500"
+                className="size-4 accent-blue-600"
               />
               <span className="flex-1 truncate">
                 {c.nom}
@@ -165,9 +165,9 @@ function ColonnePick({
                   c.ecartElo == null
                     ? 'text-zinc-400'
                     : c.ecartElo > 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-emerald-600'
                       : c.ecartElo < 0
-                        ? 'text-red-600 dark:text-red-400'
+                        ? 'text-red-600'
                         : 'text-zinc-400'
                 }`}
                 title="Écart d'Elo effectif (joueur − adversaire)"
@@ -201,7 +201,7 @@ function ColonnePick({
           </button>
         )}
         {erreur && (
-          <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>
+          <span className="text-xs text-red-600">{erreur}</span>
         )}
       </div>
     </div>
@@ -227,10 +227,10 @@ export default function PickBoard({
         réels de ce tour. Colonnes : adversaire · Elo effectif · source ·
         écart d&apos;Elo (joueur − adversaire) · E[pts]. Tri par E[pts]. Les
         joueurs déjà utilisés dans ce tournoi sont grisés. Un Elo en{' '}
-        <span className="text-amber-600 dark:text-amber-400">maison</span> ou en{' '}
-        <span className="text-red-600 dark:text-red-400">défaut</span> n&apos;a
+        <span className="text-amber-600">maison</span> ou en{' '}
+        <span className="text-red-600">défaut</span> n&apos;a
         pas trouvé sa correspondance Tennis Abstract ;{' '}
-        <span className="text-violet-600 dark:text-violet-400">ambigu</span>{' '}
+        <span className="text-violet-600">ambigu</span>{' '}
         signale plusieurs homonymes possibles, à trancher dans{' '}
         <code>ta_name_exceptions</code>.
       </p>

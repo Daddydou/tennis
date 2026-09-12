@@ -161,7 +161,7 @@ export default async function TableauPage({
             if (ms.length === 0) return null;
             return (
               <div key={r} className="w-64 shrink-0 space-y-2">
-                <h2 className="border-b-2 border-lime-400/70 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-lime-500/40">
+                <h2 className="border-b-2 border-blue-400 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                   {r} · {ms.length}
                 </h2>
                 {ms.map((m) => (

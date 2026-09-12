@@ -272,7 +272,7 @@ export default async function PicksPage({
             key={s.id ?? 'moi'}
             className={`flex items-baseline gap-1.5 px-3 py-1.5 ${carte}`}
           >
-            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{s.nom}</span>
+            <span className="text-xs font-medium text-zinc-600">{s.nom}</span>
             <span className="text-base font-bold tabular-nums">{picksParStock.get(s.id) ?? 0}</span>
             <span className="text-[11px] text-zinc-400">pts</span>
           </div>
@@ -295,37 +295,17 @@ export default async function PicksPage({
 
       {/* Provenance des Elo du tableau. Un joueur fort en « maison » ou en
           « défaut » signale une correspondance de nom à corriger. */}
-      <details className="rounded border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-800">
-        <summary className="cursor-pointer text-zinc-600 dark:text-zinc-400">
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
-            {sources.ta}
-          </span>{' '}
+      <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
+        <summary className="cursor-pointer text-zinc-600">
+          <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
           joueur(s) sur {sources.total} avec Elo Tennis Abstract,{' '}
-          <span
-            className={
-              sources.maison > 0 ? 'font-medium text-amber-600 dark:text-amber-400' : ''
-            }
-          >
+          <span className={sources.maison > 0 ? 'font-medium text-amber-600' : ''}>
             {sources.maison}
           </span>{' '}
           en repli maison,{' '}
-          <span
-            className={
-              sources.defaut > 0 ? 'font-medium text-red-600 dark:text-red-400' : ''
-            }
-          >
-            {sources.defaut}
-          </span>{' '}
+          <span className={sources.defaut > 0 ? 'font-medium text-red-600' : ''}>{sources.defaut}</span>{' '}
           en défaut,{' '}
-          <span
-            className={
-              sources.ambigu > 0
-                ? 'font-medium text-violet-600 dark:text-violet-400'
-                : ''
-            }
-          >
-            {sources.ambigu}
-          </span>{' '}
+          <span className={sources.ambigu > 0 ? 'font-medium text-violet-600' : ''}>{sources.ambigu}</span>{' '}
           ambigu(s)
           {aCompleter.length > 0 && (
             <span className="ml-1 text-zinc-400">— détail</span>
@@ -342,10 +322,7 @@ export default async function PicksPage({
               Sans Elo Tennis Abstract retenu. Beaucoup sont des spécialistes de
               double ou des joueurs inactifs, absents du rapport — pour les
               autres, déclarer la correspondance dans{' '}
-              <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
-                ta_name_exceptions
-              </code>
-              .
+              <code className="rounded bg-zinc-100 px-1">ta_name_exceptions</code>.
             </p>
 
             {/* Les ambigus d'abord : ce sont les seuls réellement actionnables,
@@ -353,16 +330,13 @@ export default async function PicksPage({
             {aCompleter
               .filter((j) => j.source === 'ambigu')
               .map((j) => (
-                <div
-                  key={j.cle}
-                  className="space-y-1 rounded border border-violet-300 bg-violet-50 p-2 dark:border-violet-900 dark:bg-violet-950"
-                >
-                  <p className="text-violet-800 dark:text-violet-200">
+                <div key={j.cle} className="space-y-1 rounded-xl bg-violet-50 p-2">
+                  <p className="text-violet-800">
                     <span className="font-medium">{j.nom}</span>
                     {j.pays ? ` (${j.pays})` : ''} — {j.candidats.length}{' '}
                     homonymes sous la clé <code>{j.cle}</code>, aucun choisi :
                   </p>
-                  <ul className="ml-4 list-disc text-violet-800 dark:text-violet-200">
+                  <ul className="ml-4 list-disc text-violet-800">
                     {j.candidats.map((c) => (
                       <li key={c.slug}>
                         {c.nom} — <code>{c.slug}</code>
@@ -371,11 +345,9 @@ export default async function PicksPage({
                     ))}
                   </ul>
                   {j.sql && (
-                    <p className="text-[11px] text-violet-700 dark:text-violet-300">
+                    <p className="text-[11px] text-violet-700">
                       Trancher (remplacer le slug si besoin) :{' '}
-                      <code className="rounded bg-white/60 px-1 dark:bg-black/30">
-                        {j.sql}
-                      </code>
+                      <code className="rounded bg-white/60 px-1">{j.sql}</code>
                     </p>
                   )}
                 </div>
@@ -386,16 +358,10 @@ export default async function PicksPage({
                 .filter((j) => j.source !== 'ambigu')
                 .map((j) => (
                   <li key={j.cle} className="flex items-baseline gap-2">
-                    <span
-                      className={
-                        j.source === 'defaut'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-amber-600 dark:text-amber-400'
-                      }
-                    >
+                    <span className={j.source === 'defaut' ? 'text-red-600' : 'text-amber-600'}>
                       {j.source === 'defaut' ? 'défaut' : 'maison'}
                     </span>
-                    <span className="text-zinc-700 dark:text-zinc-300">{j.nom}</span>
+                    <span className="text-zinc-700">{j.nom}</span>
                     <code className="text-zinc-400">{j.cle}</code>
                   </li>
                 ))}
@@ -456,7 +422,7 @@ export default async function PicksPage({
 
       {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
       {recap && (
-        <div className="space-y-3 rounded border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="space-y-3 rounded-2xl bg-white p-3 shadow-card">
           <div className="flex items-baseline justify-between">
             <h2 className="text-sm font-semibold">{recap.nomParticipant}</h2>
             <span className="text-sm font-semibold tabular-nums">
@@ -470,7 +436,7 @@ export default async function PicksPage({
             <ul className="space-y-0.5 text-xs">
               {recap.picksTries.map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-2">
-                  <span className="truncate text-zinc-600 dark:text-zinc-400">
+                  <span className="truncate text-zinc-600">
                     {p.round}
                     {p.half ? ` (${HALF_LABEL_COURT[p.half]})` : ''} — {nomJoueur(p.player_id)}
                   </span>
@@ -487,7 +453,7 @@ export default async function PicksPage({
             {recap.disponibles.length === 0 ? (
               <p className="mt-1 text-zinc-400">Aucun.</p>
             ) : (
-              <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 dark:text-zinc-400 sm:grid-cols-3">
+              <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 sm:grid-cols-3">
                 {recap.disponibles.map((d) => (
                   <li key={d.playerId} className="truncate">
                     {d.nom}

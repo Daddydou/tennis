@@ -25,11 +25,11 @@ const SURFACE_LABEL: Record<string, string> = {
  * Les deux ne peuvent pas partager le même canal, sinon un tournoi ATP sur dur
  * (bleu sur bleu) effacerait l'un des deux.
  *
- * Le fond reste PÂLE — teinte -100 en clair, aplat très transparent en sombre :
- * c'est un aplat qui court sous du texte, pas un aplat de badge. Mesuré sur les
- * pixels rendus, le nom d'un tournoi y est à 13:1 au pire, le texte secondaire
- * à 6,3:1, la puce de circuit à 4,7:1 — tous au-dessus du seuil AA (4,5:1). La
- * pastille de surface, saturée et cerclée, ressort dessus sans lutter avec eux.
+ * Le fond reste PÂLE — teinte -100, un aplat qui court sous du texte, pas un
+ * aplat de badge. Mesuré sur les pixels rendus (fond de page #f5f5f7), le nom
+ * d'un tournoi y est à 13:1 au pire, le texte secondaire à 6,3:1, la puce de
+ * circuit à 4,7:1 — tous au-dessus du seuil AA (4,5:1). La pastille de
+ * surface, saturée et cerclée, ressort dessus sans lutter avec eux.
  *
  * ACCESSIBILITÉ. La couleur ne porte JAMAIS seule l'information : le circuit
  * est aussi écrit en toutes lettres dans une puce (« ATP » / « WTA »), et la
@@ -52,29 +52,25 @@ interface JeuCircuit {
 // jamais dans le CSS produit.
 const CIRCUIT: Record<string, JeuCircuit> = {
   ATP: {
-    // En sombre, le bleu marine (-950) se confondait avec le fond de page,
-    // quand le magenta ressortait : à indice égal, un magenta est bien plus
-    // coloré qu'un bleu. On remonte donc le bleu d'un cran pour que les deux
-    // aplats pèsent pareil.
-    fond: 'bg-blue-100 dark:bg-blue-900/35',
-    barre: 'bg-blue-500 dark:bg-blue-400',
-    barreBordure: 'border-l-blue-500 dark:border-l-blue-400',
-    puce: 'bg-blue-600 text-white dark:bg-blue-400 dark:text-blue-950',
+    fond: 'bg-blue-100',
+    barre: 'bg-blue-500',
+    barreBordure: 'border-l-blue-500',
+    puce: 'bg-blue-600 text-white',
   },
   WTA: {
-    fond: 'bg-fuchsia-100 dark:bg-fuchsia-950/40',
-    barre: 'bg-fuchsia-500 dark:bg-fuchsia-400',
-    barreBordure: 'border-l-fuchsia-500 dark:border-l-fuchsia-400',
-    puce: 'bg-fuchsia-600 text-white dark:bg-fuchsia-400 dark:text-fuchsia-950',
+    fond: 'bg-fuchsia-100',
+    barre: 'bg-fuchsia-500',
+    barreBordure: 'border-l-fuchsia-500',
+    puce: 'bg-fuchsia-600 text-white',
   },
 };
 
 /** Circuit inconnu : un gris neutre, jamais la couleur d'un autre circuit. */
 const CIRCUIT_INCONNU: JeuCircuit = {
-  fond: 'bg-zinc-100 dark:bg-zinc-900/60',
-  barre: 'bg-zinc-400 dark:bg-zinc-600',
-  barreBordure: 'border-l-zinc-400 dark:border-l-zinc-600',
-  puce: 'bg-zinc-600 text-white dark:bg-zinc-400 dark:text-zinc-950',
+  fond: 'bg-zinc-100',
+  barre: 'bg-zinc-400',
+  barreBordure: 'border-l-zinc-400',
+  puce: 'bg-zinc-600 text-white',
 };
 
 const circuitDe = (tour: string | null) =>
@@ -97,7 +93,7 @@ const STATUT_LABEL: Record<string, string> = {
 };
 
 /** Texte secondaire, assez foncé pour rester lisible SUR un fond teinté. */
-const TEXTE_SECONDAIRE = 'text-zinc-600 dark:text-zinc-400';
+const TEXTE_SECONDAIRE = 'text-zinc-600';
 
 /**
  * Surface : un point coloré et son nom, dans une pastille neutre.
@@ -108,7 +104,7 @@ const TEXTE_SECONDAIRE = 'text-zinc-600 dark:text-zinc-400';
 function BadgeSurface({ surface }: { surface: string | null }) {
   if (!surface) return <span className="text-zinc-500">—</span>;
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-zinc-400/40 bg-white/60 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-500/40 dark:bg-zinc-950/40 dark:text-zinc-200">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-zinc-400/40 bg-white/60 px-2 py-0.5 text-xs font-medium text-zinc-700">
       <span
         className={`size-2 shrink-0 rounded-full ${
           SURFACE_POINT[surface] ?? 'bg-zinc-400'
@@ -124,7 +120,7 @@ function BadgeSurface({ surface }: { surface: string | null }) {
 function PuceCircuit({ tour }: { tour: string | null }) {
   return (
     <span
-      className={`inline-block shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold tracking-wide ${
+      className={`inline-block shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tracking-wide ${
         circuitDe(tour).puce
       }`}
     >
@@ -154,22 +150,13 @@ export default async function Home() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Tournois</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href="/fantasy"
-            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
-          >
+          <Link href="/fantasy" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
             Fantasy — prédit vs réalisé
           </Link>
-          <Link
-            href="/calibration"
-            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
-          >
+          <Link href="/calibration" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
             Calibration Elo
           </Link>
-          <Link
-            href="/import/elo"
-            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
-          >
+          <Link href="/import/elo" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
             Elo Tennis Abstract
           </Link>
           <Link href="/import" className={boutonPrimaire}>
@@ -195,10 +182,7 @@ export default async function Home() {
             {tournois.map((t) => {
               const c = circuitDe(t.tour);
               return (
-                <li
-                  key={t.id}
-                  className={`relative overflow-hidden rounded-lg border border-zinc-200 pl-4 dark:border-zinc-800 ${c.fond}`}
-                >
+                <li key={t.id} className={`relative overflow-hidden rounded-2xl shadow-card pl-4 ${c.fond}`}>
                   {/* Barre d'accent : un aplat, pas une bordure — une bordure
                       de côté se ferait écraser par la couleur des autres. */}
                   <span
@@ -260,7 +244,7 @@ export default async function Home() {
           {/* Écran large : le tableau dense, inchangé dans ses colonnes. */}
           <table className="hidden w-full text-sm sm:table">
             <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
                 <th className="py-2 pl-3 pr-3 font-medium">Début</th>
                 <th className="py-2 pr-3 font-medium">Tournoi</th>
                 <th className="py-2 pr-3 font-medium">Circuit</th>
@@ -277,7 +261,7 @@ export default async function Home() {
                 return (
                   <tr
                     key={t.id}
-                    className={`border-b border-zinc-200/70 dark:border-zinc-800/70 ${c.fond}`}
+                    className={`border-b border-zinc-200/70 ${c.fond}`}
                   >
                     <td
                       className={`border-l-4 py-2 pl-3 pr-3 whitespace-nowrap tabular-nums ${TEXTE_SECONDAIRE} ${c.barreBordure}`}

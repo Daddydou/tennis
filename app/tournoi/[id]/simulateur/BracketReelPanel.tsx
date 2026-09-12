@@ -92,18 +92,18 @@ function Duel({
     const actif = duel.vainqueur !== null && duel.vainqueur === id;
     if (!n) {
       return (
-        <div className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 px-2.5 text-center text-xs text-zinc-400 dark:border-zinc-800">
+        <div className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-300 px-2.5 text-center text-xs text-zinc-400">
           en attente
         </div>
       );
     }
     const style = duel.verrouille
       ? actif
-        ? 'border-emerald-400 bg-emerald-50 font-medium dark:border-emerald-700 dark:bg-emerald-950'
-        : 'border-zinc-200 text-zinc-400 dark:border-zinc-800'
+        ? 'border-emerald-400 bg-emerald-50 font-medium'
+        : 'border-zinc-200 text-zinc-400'
       : actif
-        ? 'border-lime-500 bg-lime-500 font-medium text-zinc-900 dark:border-lime-400 dark:bg-lime-400 dark:text-zinc-950'
-        : 'border-zinc-300 hover:border-zinc-500 dark:border-zinc-700';
+        ? 'border-blue-600 bg-blue-600 font-medium text-white'
+        : 'border-zinc-300 hover:border-zinc-500';
     const cliquable = onChoisir !== null && id !== null;
     return (
       <button
@@ -124,7 +124,7 @@ function Duel({
   };
 
   return (
-    <div className="space-y-1 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
+    <div className="space-y-1 rounded-2xl bg-white p-2 shadow-card">
       <div className="flex gap-1.5">
         {ligne(duel.a)}
         {ligne(duel.b)}
