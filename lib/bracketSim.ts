@@ -232,6 +232,27 @@ export function filtrerDepuisTour(
 }
 
 /**
+ * Complément de `filtrerDepuisTour` : ne garde que les emplacements STRICTEMENT
+ * AVANT un tour donné (exclu). Sert à isoler les pronostics des tours déjà
+ * dépassés par le tour de simulation choisi — leurs points (« déjà gagnés »)
+ * ne doivent jamais être recomptés avec ceux du tour choisi lui-même (les
+ * « simulés »), sans quoi un même emplacement compterait deux fois.
+ */
+export function filtrerAvantTour(
+  predictions: ReadonlyMap<string, string>,
+  rounds: string[],
+  roundDepart: string,
+): Map<string, string> {
+  const idxDepart = rounds.indexOf(roundDepart);
+  const out = new Map<string, string>();
+  for (const [cle, playerId] of predictions) {
+    const idx = rounds.indexOf(cle.split('|')[0]);
+    if (idx !== -1 && idx < idxDepart) out.set(cle, playerId);
+  }
+  return out;
+}
+
+/**
  * Score d'un stock de prédictions contre une référence (le scénario en
  * cours, ou la réalité pure) : la somme des points de tour partout où la
  * prédiction correspond exactement au vainqueur de la référence à ce même
@@ -396,7 +417,7 @@ export function augmenterAvecPlusieursVictoires(
 /** Un stock, pour la recherche de scénario garanti — mêmes champs que pour le Monte Carlo. */
 export interface StockGarantie {
   id: string;
-  /** Points déjà gagnés avant le tour de départ — saisie manuelle. */
+  /** Points déjà gagnés avant le tour de départ — calculés automatiquement en amont, jamais saisis à la main. */
   dejaGagne: number;
   /** Pronostic complet du stock (filtré ou non : cette fonction refiltre elle-même). */
   predictions: ReadonlyMap<string, string>;

@@ -153,16 +153,6 @@ export default function SimulateurPicks({
 
       <nav className="flex flex-wrap gap-1 border-b border-zinc-200 pb-2 dark:border-zinc-800">
         <button
-          onClick={() => setOnglet('tableau')}
-          className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
-            onglet === 'tableau'
-              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-          }`}
-        >
-          Tableau testé
-        </button>
-        <button
           onClick={() => setOnglet('picks')}
           className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
             onglet === 'picks'
@@ -171,6 +161,16 @@ export default function SimulateurPicks({
           }`}
         >
           Picks hypothétiques
+        </button>
+        <button
+          onClick={() => setOnglet('tableau')}
+          className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
+            onglet === 'tableau'
+              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
+          }`}
+        >
+          Tableau testé
         </button>
       </nav>
 

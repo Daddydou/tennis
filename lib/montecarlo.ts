@@ -363,7 +363,7 @@ export function tirerFinDeTournoi(
 /** Un stock (moi ou un participant) tel que le simulateur de bracket le note. */
 export interface StockBracket {
   id: string;
-  /** Points déjà gagnés avant le tour de départ — saisie manuelle, jamais calculée. */
+  /** Points déjà gagnés avant le tour de départ — calculés automatiquement en amont (comparaison pronostics/résultats réels), jamais saisis à la main. */
   dejaGagne: number;
   /** Pronostic (déjà filtré depuis le tour de départ), lib/bracketSim.ts `filtrerDepuisTour`. */
   predictions: ReadonlyMap<string, string>;

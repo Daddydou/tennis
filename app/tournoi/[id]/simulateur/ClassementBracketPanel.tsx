@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import {
   ensemblesAtteignables,
+  filtrerAvantTour,
   filtrerDepuisTour,
   maxAtteignable,
   scoreDuStock,
@@ -23,9 +24,12 @@ const TOP_SCENARIOS = 3;
 /**
  * Bloc 4 — Classement & probabilités, pour le tour choisi (bloc 1).
  *
- * a) Par stock : points déjà gagnés (saisie manuelle, tours avant le tour
- *    choisi) + points simulés (pronostics du bloc 3 comparés au bracket
- *    réel/scénario du bloc 2, UNIQUEMENT sur le tour choisi) = total ; % de
+ * a) Par stock : points déjà gagnés (calculés automatiquement, jamais saisis
+ *    à la main — comparaison des pronostics importés/saisis du bloc 3 sur les
+ *    tours AVANT le tour choisi, `lib/bracketSim.ts` `filtrerAvantTour`, aux
+ *    résultats réels déjà décidés) + points simulés (pronostics du bloc 3
+ *    comparés au bracket réel/scénario du bloc 2, UNIQUEMENT sur le tour
+ *    choisi) = total ; % de
  *    victoire par Monte Carlo (lib/montecarlo.ts `simulerProbabilitesVictoire`,
  *    déjà garanti sommer à 100 % — cf. son propre commentaire), à partir des
  *    pronostics du stock sur le tour choisi ET AU-DELÀ (tous les tours déjà
@@ -53,8 +57,6 @@ export default function ClassementBracketPanel({
   joueurs,
   participants,
   picksBracket,
-  dejaGagne,
-  onChangerDejaGagne,
 }: {
   rounds: string[];
   roundChoisi: string;
@@ -69,10 +71,24 @@ export default function ClassementBracketPanel({
   participants: Participant[];
   /** stock -> pronostics (bloc 3) déjà enregistrés, TOUS tours confondus. */
   picksBracket: Record<string, Map<string, string>>;
-  dejaGagne: Record<string, number>;
-  onChangerDejaGagne: (stockId: string, valeur: number) => void;
 }) {
   const stocks = useMemo(() => [MOI, ...participants.map((p) => p.id)], [participants]);
+
+  // Points déjà gagnés (avant le tour choisi), calculés automatiquement :
+  // les pronostics du stock sur les tours déjà dépassés, comparés au bracket
+  // réel/scénario (qui, pour ces tours-là, ne peut refléter QUE les vrais
+  // résultats — le `scenario` du bloc 2 ne porte que sur le tour choisi).
+  // `aDesDonnees` distingue un stock qui n'a rien importé/saisi d'un stock à
+  // 0 point pour de mauvais pronostics — jamais le même badge « 0 ».
+  const dejaGagneAuto = useMemo(() => {
+    const out: Record<string, { valeur: number; aDesDonnees: boolean }> = {};
+    for (const s of stocks) {
+      const preds = picksBracket[s] ?? new Map<string, string>();
+      const avant = filtrerAvantTour(preds, rounds, roundChoisi);
+      out[s] = { valeur: scoreDuStock(avant, arbreScenario, rounds), aDesDonnees: preds.size > 0 };
+    }
+    return out;
+  }, [stocks, picksBracket, rounds, roundChoisi, arbreScenario]);
 
   // Pronostics du tour choisi UNIQUEMENT (affichage « simulés ») vs. tous
   // les tours >= tour choisi (Monte Carlo, `probabilitesVictoire` ci-dessous).
@@ -101,24 +117,40 @@ export default function ClassementBracketPanel({
   const maxPossible = useMemo(() => {
     const out: Record<string, number> = {};
     for (const s of stocks) {
-      out[s] = (dejaGagne[s] ?? 0) + maxAtteignable(picksBracket[s] ?? new Map(), matches, rounds, atteignables);
+      out[s] =
+        (dejaGagneAuto[s]?.valeur ?? 0) +
+        maxAtteignable(picksBracket[s] ?? new Map(), matches, rounds, atteignables);
     }
     return out;
-  }, [stocks, dejaGagne, picksBracket, matches, rounds, atteignables]);
+  }, [stocks, dejaGagneAuto, picksBracket, matches, rounds, atteignables]);
 
   const classement = useMemo(() => {
     return stocks
       .map((s) => {
         const simules = scoreDuStock(predictionsRoundChoisi[s], arbreScenario, rounds);
-        const deja = dejaGagne[s] ?? 0;
-        return { id: s, nom: nomStock(s, participants), deja, simules, total: deja + simules, maxPossible: maxPossible[s] };
+        const deja = dejaGagneAuto[s]?.valeur ?? 0;
+        const aDesDonnees = dejaGagneAuto[s]?.aDesDonnees ?? false;
+        return {
+          id: s,
+          nom: nomStock(s, participants),
+          deja,
+          aDesDonnees,
+          simules,
+          total: deja + simules,
+          maxPossible: maxPossible[s],
+        };
       })
       .sort((a, b) => b.total - a.total);
-  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds, dejaGagne, participants, maxPossible]);
+  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds, dejaGagneAuto, participants, maxPossible]);
 
   const stocksMC: StockBracket[] = useMemo(
-    () => stocks.map((s) => ({ id: s, dejaGagne: dejaGagne[s] ?? 0, predictions: predictionsDepuisTourChoisi[s] })),
-    [stocks, dejaGagne, predictionsDepuisTourChoisi],
+    () =>
+      stocks.map((s) => ({
+        id: s,
+        dejaGagne: dejaGagneAuto[s]?.valeur ?? 0,
+        predictions: predictionsDepuisTourChoisi[s],
+      })),
+    [stocks, dejaGagneAuto, predictionsDepuisTourChoisi],
   );
 
   const probabilites = useMemo(
@@ -155,8 +187,8 @@ export default function ClassementBracketPanel({
   return (
     <div className="space-y-4">
       <p className="text-xs text-zinc-500">
-        Points déjà gagnés (avant {roundChoisi}, à saisir à la main) + points simulés (pronostics du bloc 3 comparés
-        au bracket réel du bloc 2, sur {roundChoisi} uniquement).
+        Points déjà gagnés (avant {roundChoisi}, calculés automatiquement depuis les pronostics importés/saisis) +
+        points simulés (pronostics du bloc 3 comparés au bracket réel du bloc 2, sur {roundChoisi} uniquement).
       </p>
 
       <div className="space-y-2">
@@ -176,16 +208,19 @@ export default function ClassementBracketPanel({
               {c.nom}
             </span>
 
-            <label className="flex items-center gap-1 text-xs text-zinc-500">
-              déjà gagné
-              <input
-                type="number"
-                min={0}
-                value={c.deja}
-                onChange={(e) => onChangerDejaGagne(c.id, Math.max(0, Number(e.target.value) || 0))}
-                className="w-16 rounded border border-zinc-300 px-1.5 py-1 text-right text-xs tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
-              />
-            </label>
+            <span className="flex items-center gap-1 text-xs text-zinc-500">
+              déjà gagné{' '}
+              {c.aDesDonnees ? (
+                <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">{c.deja}</span>
+              ) : (
+                <span
+                  className="font-medium text-amber-600 dark:text-amber-400"
+                  title="Aucun pronostic de bracket importé ou saisi pour ce participant (onglet Importer)"
+                >
+                  à importer
+                </span>
+              )}
+            </span>
 
             <span className="shrink-0 text-xs text-zinc-500">
               + <span className="tabular-nums">{c.simules}</span> simulés =

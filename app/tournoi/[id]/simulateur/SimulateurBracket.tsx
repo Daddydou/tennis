@@ -13,9 +13,9 @@ import type { Player } from '@/lib/types';
 type Onglet = 'reel' | 'participants' | 'classement' | 'import';
 
 const ONGLETS: { key: Onglet; label: string }[] = [
+  { key: 'classement', label: 'Classement & probabilités' },
   { key: 'reel', label: 'Bracket réel' },
   { key: 'participants', label: 'Bracket des participants' },
-  { key: 'classement', label: 'Classement & probabilités' },
   { key: 'import', label: 'Importer' },
 ];
 
@@ -62,7 +62,6 @@ export default function SimulateurBracket({
   // Bloc 2 : vainqueurs cliqués dans le bracket réel — remis à zéro à chaque
   // changement de tour (bloc 1), puisque seul le tour affiché est simulé.
   const [scenario, setScenario] = useState<Map<string, string>>(new Map());
-  const [dejaGagne, setDejaGagne] = useState<Record<string, number>>({});
   const [picksBracket, setPicksBracket] = useState<Record<string, Map<string, string>>>(() => {
     const out: Record<string, Map<string, string>> = {};
     for (const s of stocks) out[s] = new Map(Object.entries(picksBracketInitiaux[s] ?? {}));
@@ -94,10 +93,6 @@ export default function SimulateurBracket({
       copie.delete(cleDuel(roundChoisi, position));
       return copie;
     });
-  }
-
-  function onChangerDejaGagne(stockId: string, valeur: number) {
-    setDejaGagne((prev) => ({ ...prev, [stockId]: valeur }));
   }
 
   // Pronostics déjà enregistrés pour LE TOUR AFFICHÉ, position -> playerId —
@@ -236,8 +231,6 @@ export default function SimulateurBracket({
           joueurs={joueurs}
           participants={participants}
           picksBracket={picksBracket}
-          dejaGagne={dejaGagne}
-          onChangerDejaGagne={onChangerDejaGagne}
         />
       )}
 

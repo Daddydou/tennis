@@ -29,6 +29,7 @@ import {
   cheminDuJoueur,
   cleDuel,
   ensemblesAtteignables,
+  filtrerAvantTour,
   filtrerDepuisTour,
   resoudreArbre,
   scoreDuStock,
@@ -117,12 +118,37 @@ const predsThomas = predsSuivant(TIAFOE);
 
 /* ========================================================================
  * filtrerDepuisTour — les tours avant le tour choisi sortent du pronostic
- * (couverts par la saisie manuelle « déjà gagné », jamais recalculés).
+ * (couverts par le « déjà gagné » calculé automatiquement, jamais recalculés
+ * une deuxième fois avec les points simulés).
  * ======================================================================== */
 {
   assert(predsThomas.size === 3, `Thomas a pronostiqué Tiafoe sur ses 3 emplacements QF/SF/F (obtenu ${predsThomas.size})`);
   const depuisSF = filtrerDepuisTour(predsThomas, rounds, 'SF');
   assert(depuisSF.size === 2 && !depuisSF.has(cleDuel('QF', 2)), 'depuis SF, QF/2 sort du pronostic (avant le tour choisi)');
+}
+
+/* ========================================================================
+ * filtrerAvantTour — complément exact de filtrerDepuisTour : seuls les tours
+ * AVANT le tour choisi restent, c'est ce qui alimente le « déjà gagné »
+ * automatique de ClassementBracketPanel.
+ * ======================================================================== */
+{
+  const avantSF = filtrerAvantTour(predsThomas, rounds, 'SF');
+  assert(
+    avantSF.size === 1 && avantSF.has(cleDuel('QF', 2)),
+    `avant SF, seul QF/2 reste dans le pronostic (obtenu ${avantSF.size} emplacement(s))`,
+  );
+  const avantQF = filtrerAvantTour(predsThomas, rounds, 'QF');
+  assert(avantQF.size === 0, 'avant le premier tour du fixture, aucun emplacement ne peut rester');
+
+  // Score « déjà gagné » automatique : les pronostics d'avant le tour choisi,
+  // comparés au bracket réel pur (aucun résultat décidé dans ce fixture) —
+  // aucun point tant que QF n'est pas joué, sans qu'il faille rien saisir.
+  const arbreReel = resoudreArbre(matches, rounds, () => null);
+  assert(
+    scoreDuStock(avantSF, arbreReel, rounds) === 0,
+    'déjà gagné avant SF = 0 tant que QF/2 n’est pas décidé (pas une saisie manuelle oubliée)',
+  );
 }
 
 /* ========================================================================
