@@ -49,6 +49,7 @@ export async function sauvegarderPronosticsBracket(
     if (error) return { ok: false, error: error.message };
   }
 
+  revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/simulateur`);
   return { ok: true };
 }

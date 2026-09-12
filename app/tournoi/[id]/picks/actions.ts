@@ -90,6 +90,7 @@ export async function validerPick(
   // suite : on ne les fait pas dépendre de la complétude du tour.
   await recalculerPoints(tournamentId);
 
+  revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
   return { ok: true };
@@ -116,6 +117,7 @@ export async function supprimerPick(
 
   await recalculerPoints(tournamentId);
 
+  revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
   return { ok: true };

@@ -136,6 +136,7 @@ export async function importerBracketParticipant(
     if (error) return { ok: false, error: error.message, toursIgnores, nonApparies, incoherences };
   }
 
+  revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/simulateur`);
 
   return {

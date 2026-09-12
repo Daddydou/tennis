@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 type Onglet =
+  | 'dashboard'
   | 'tableau'
   | 'bracket'
   | 'picks'
@@ -10,7 +11,9 @@ type Onglet =
   | 'resultats';
 
 const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = [
-  { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}` },
+  // Page d'atterrissage du tournoi : synthèse Bracket + Picks, avant le détail.
+  { key: 'dashboard', label: 'Dashboard', href: (id) => `/tournoi/${id}` },
+  { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}/tableau` },
   // Juste après le tableau réel : c'est le même arbre, mais pronostiqué.
   { key: 'bracket', label: 'Bracket', href: (id) => `/tournoi/${id}/bracket` },
   // Picks intègre aussi la saisie/consultation des participants (sélecteur

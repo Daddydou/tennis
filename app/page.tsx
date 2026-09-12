@@ -234,7 +234,7 @@ export default async function Home() {
                     </div>
 
                     <div className="flex gap-4 pt-0.5 text-xs">
-                      <Link href={`/tournoi/${t.id}`} className="underline-offset-2 hover:underline">
+                      <Link href={`/tournoi/${t.id}/tableau`} className="underline-offset-2 hover:underline">
                         Tableau
                       </Link>
                       <Link href={`/tournoi/${t.id}/picks`} className="underline-offset-2 hover:underline">
@@ -304,7 +304,7 @@ export default async function Home() {
                     </td>
                     <td className="py-2 pr-3">
                       <div className="flex gap-3 text-xs">
-                        <Link href={`/tournoi/${t.id}`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>
+                        <Link href={`/tournoi/${t.id}/tableau`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>
                           Tableau
                         </Link>
                         <Link href={`/tournoi/${t.id}/picks`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>

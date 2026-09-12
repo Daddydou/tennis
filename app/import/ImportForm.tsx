@@ -83,7 +83,7 @@ export default function ImportForm() {
               )}
               <div className="flex gap-3 pt-1">
                 <Link
-                  href={`/tournoi/${result.tournamentId}`}
+                  href={`/tournoi/${result.tournamentId}/tableau`}
                   className="underline"
                 >
                   Voir le tableau

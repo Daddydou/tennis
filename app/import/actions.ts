@@ -345,6 +345,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   revalidatePath('/');
   revalidatePath('/fantasy');
   revalidatePath(`/tournoi/${tournamentId}`);
+  revalidatePath(`/tournoi/${tournamentId}/tableau`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/fantasy`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
