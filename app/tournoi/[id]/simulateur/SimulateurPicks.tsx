@@ -9,6 +9,7 @@ import PicksHypothetiquesPanel from './PicksHypothetiquesPanel';
 import { effacerPickSimule, validerPickSimule } from './picksActions';
 import { cleSlot, pointsPossiblesPick, versMatchRowsTestees } from './picksSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
+import { carte, pilleSelecteur } from '@/app/ui';
 
 type Onglet = 'tableau' | 'picks';
 
@@ -130,10 +131,7 @@ export default function SimulateurPicks({
           const reel = dejaInscrits[s] ?? 0;
           const simule = Math.round(pointsPossibles[s] ?? 0);
           return (
-            <div
-              key={s}
-              className="flex items-center justify-between rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
-            >
+            <div key={s} className={`flex items-center justify-between px-3 py-2 ${carte}`}>
               <span className="text-sm font-medium">{nomStock(s, participants)}</span>
               <span className="flex items-center gap-3 text-xs text-zinc-500">
                 <span>
@@ -151,25 +149,11 @@ export default function SimulateurPicks({
         })}
       </div>
 
-      <nav className="flex flex-wrap gap-1 border-b border-zinc-200 pb-2 dark:border-zinc-800">
-        <button
-          onClick={() => setOnglet('picks')}
-          className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
-            onglet === 'picks'
-              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-          }`}
-        >
+      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+        <button onClick={() => setOnglet('picks')} className={pilleSelecteur(onglet === 'picks')}>
           Picks hypothétiques
         </button>
-        <button
-          onClick={() => setOnglet('tableau')}
-          className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
-            onglet === 'tableau'
-              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-          }`}
-        >
+        <button onClick={() => setOnglet('tableau')} className={pilleSelecteur(onglet === 'tableau')}>
           Tableau testé
         </button>
       </nav>

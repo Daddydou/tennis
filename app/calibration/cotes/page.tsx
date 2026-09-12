@@ -461,9 +461,9 @@ export default async function CotesPage({
             <Link
               key={t.id}
               href={`/calibration/cotes?tournoi=${t.id}`}
-              className={`rounded border px-2 py-1 ${
+              className={`flex min-h-11 items-center rounded-lg border px-2.5 transition active:scale-[0.97] ${
                 actif
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                  ? 'border-lime-500 bg-lime-500 text-zinc-900 dark:border-lime-400 dark:bg-lime-400 dark:text-zinc-950'
                   : n > 0
                     ? 'border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400'
                     : 'border-zinc-300 text-zinc-500 hover:border-zinc-500 dark:border-zinc-700'

@@ -53,9 +53,9 @@ export default function TournoiNav({
           <Link
             key={o.key}
             href={o.href(id)}
-            className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-1.5 ${
+            className={`-mb-px flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 transition active:scale-[0.97] ${
               o.key === active
-                ? 'border-zinc-900 font-medium text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                ? 'border-lime-500 font-semibold text-lime-700 dark:border-lime-400 dark:text-lime-400'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >

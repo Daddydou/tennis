@@ -6,6 +6,7 @@ import { etatsSlots, type MatchRow } from '@/supabase/queries';
 import type { Half } from '@/lib/types';
 import { cleSlot, versPickRowsSimules } from './picksSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
+import { champTexte, pilleSelecteur } from '@/app/ui';
 
 const HALF_LABEL: Record<string, string> = { top: 'Moitié haute', bottom: 'Moitié basse' };
 
@@ -61,33 +62,17 @@ export default function PicksHypothetiquesPanel({
         l&apos;écran Picks réel). Persisté séparément des vrais picks.
       </p>
 
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {stocks.map((s) => (
-          <button
-            key={s}
-            onClick={() => setStockActif(s)}
-            className={`rounded border px-2.5 py-1 text-xs ${
-              s === stockActif
-                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-            }`}
-          >
+          <button key={s} onClick={() => setStockActif(s)} className={pilleSelecteur(s === stockActif)}>
             {nomStock(s, participants)}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {roundsRestants.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRoundAffiche(r)}
-            className={`rounded border px-2.5 py-1 text-xs ${
-              r === roundAffiche
-                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-            }`}
-          >
+          <button key={r} onClick={() => setRoundAffiche(r)} className={pilleSelecteur(r === roundAffiche)}>
             {r}
           </button>
         ))}
@@ -120,7 +105,7 @@ export default function PicksHypothetiquesPanel({
                     if (e.target.value) onChanger(stockActif, etat.round, etat.half, e.target.value);
                     else onEffacer(stockActif, etat.round, etat.half);
                   }}
-                  className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                  className={`w-full ${champTexte}`}
                 >
                   <option value="">—</option>
                   {options.map((id) => (

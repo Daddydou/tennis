@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
-import { carte } from '../ui';
+import { carte } from '@/app/ui';
 import {
   getTournament,
   getMatchRows,

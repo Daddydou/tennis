@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { boutonPrimaire, Spinner } from '@/app/ui';
 
 interface Agregat {
   tournois: number;
@@ -81,9 +82,10 @@ export default function ComparaisonEchelle() {
         <button
           onClick={lancer}
           disabled={pending}
-          className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className={boutonPrimaire}
           title="Rejoue chaque tournoi terminé sous chaque échelle. Plusieurs dizaines de secondes."
         >
+          {pending && <Spinner />}
           {pending ? 'Simulation en cours…' : 'Lancer le comparatif'}
         </button>
         {pending && (

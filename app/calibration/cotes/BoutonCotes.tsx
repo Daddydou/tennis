@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { boutonSecondaire, champTexte, Spinner } from '@/app/ui';
 
 interface Sport {
   key: string;
@@ -68,7 +69,7 @@ export default function BoutonCotes({
         <select
           value={sportKey}
           onChange={(e) => setSportKey(e.target.value)}
-          className="max-w-full rounded border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className={`max-w-full ${champTexte}`}
         >
           {sports.length === 0 && <option value="">Aucun sport de tennis listé</option>}
           {sports.map((s) => (
@@ -81,9 +82,10 @@ export default function BoutonCotes({
         <button
           onClick={recuperer}
           disabled={pending || !sportKey}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:border-zinc-500 disabled:opacity-50 dark:border-zinc-700"
+          className={boutonSecondaire}
           title="Consomme 1 crédit sur le quota mensuel"
         >
+          {pending && <Spinner />}
           {pending ? 'Récupération…' : 'Récupérer les cotes (1 crédit)'}
         </button>
       </div>

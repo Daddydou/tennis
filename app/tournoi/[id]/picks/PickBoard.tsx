@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { validerPick, supprimerPick } from './actions';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
-import { boutonPrimaire, Spinner } from '../ui';
+import { boutonPrimaire, boutonDanger, Spinner } from '@/app/ui';
 import type { Half } from '@/lib/types';
 
 export interface Candidat {
@@ -196,11 +196,7 @@ function ColonnePick({
           {pending ? 'Envoi…' : colonne.pickActuel ? 'Modifier' : 'Valider'}
         </button>
         {colonne.pickActuel && (
-          <button
-            onClick={retirer}
-            disabled={pending}
-            className="min-h-11 px-1 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-red-600 disabled:opacity-40 dark:hover:text-red-400"
-          >
+          <button onClick={retirer} disabled={pending} className={boutonDanger}>
             Retirer
           </button>
         )}

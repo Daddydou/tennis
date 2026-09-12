@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { boutonSecondaire, Spinner } from './ui';
 
 interface ResumeTour {
   tour: 'atp' | 'wta';
@@ -59,9 +60,10 @@ export default function EloRefreshButton() {
         <button
           onClick={rafraichir}
           disabled={pending}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:border-zinc-500 disabled:opacity-50 dark:border-zinc-700"
+          className={boutonSecondaire}
           title="Récupère les rapports Elo depuis le serveur — bloqué (403) depuis Vercel"
         >
+          {pending && <Spinner />}
           {pending ? 'Récupération…' : 'Tenter le fetch serveur'}
         </button>
         {resume && (

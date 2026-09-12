@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { importerExtrait, type ImportResult } from './actions';
+import { boutonPrimaire, champTexte, Spinner, zoneTactile } from '@/app/ui';
 
 export default function ImportForm() {
   const [json, setJson] = useState('');
@@ -28,14 +29,11 @@ export default function ImportForm() {
         onChange={(e) => setJson(e.target.value)}
         placeholder='{ "tournament": {...}, "matches": [...] }'
         spellCheck={false}
-        className="h-64 w-full rounded border border-zinc-300 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className={`h-64 w-full py-3 font-mono text-xs leading-relaxed ${champTexte}`}
       />
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending || !json.trim()}
-          className="rounded bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
+        <button type="submit" disabled={pending || !json.trim()} className={boutonPrimaire}>
+          {pending && <Spinner />}
           {pending ? 'Import…' : 'Importer'}
         </button>
         {json.trim() && (
@@ -45,7 +43,7 @@ export default function ImportForm() {
               setJson('');
               setResult(null);
             }}
-            className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
           >
             Effacer
           </button>
@@ -81,17 +79,14 @@ export default function ImportForm() {
                   </ul>
                 </div>
               )}
-              <div className="flex gap-3 pt-1">
+              <div className="-ml-2 flex flex-wrap pt-1">
                 <Link
                   href={`/tournoi/${result.tournamentId}/tableau`}
-                  className="underline"
+                  className={`${zoneTactile} px-2 underline`}
                 >
                   Voir le tableau
                 </Link>
-                <Link
-                  href={`/tournoi/${result.tournamentId}/picks`}
-                  className="underline"
-                >
+                <Link href={`/tournoi/${result.tournamentId}/picks`} className={`${zoneTactile} px-2 underline`}>
                   Faire mes picks
                 </Link>
               </div>

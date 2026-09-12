@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
-import { carte, pilleSelecteur } from '../ui';
+import { carte, pilleSelecteur } from '@/app/ui';
 import {
   etatsSlots,
   getParticipants,

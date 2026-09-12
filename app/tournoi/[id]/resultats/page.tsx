@@ -93,7 +93,7 @@ export default async function ResultatsPage({
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
           <div className="text-sm">
             <span className="text-zinc-500">Total du tournoi : </span>
-            <span className="text-lg font-semibold tabular-nums">{total}</span>
+            <span className="text-2xl font-bold tabular-nums">{total}</span>
             <span className="text-zinc-500"> pts</span>
             {enAttenteCount > 0 && (
               <span className="ml-2 text-xs text-zinc-500">

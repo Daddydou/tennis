@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { listTournaments } from '@/supabase/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
+import { boutonPrimaire, zoneTactile } from './ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,26 +156,23 @@ export default async function Home() {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/fantasy"
-            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
           >
             Fantasy — prédit vs réalisé
           </Link>
           <Link
             href="/calibration"
-            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
           >
             Calibration Elo
           </Link>
           <Link
             href="/import/elo"
-            className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
+            className={`${zoneTactile} text-sm text-zinc-600 hover:underline dark:text-zinc-400`}
           >
             Elo Tennis Abstract
           </Link>
-          <Link
-            href="/import"
-            className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-          >
+          <Link href="/import" className={boutonPrimaire}>
             Importer un tableau
           </Link>
         </div>
@@ -233,14 +231,23 @@ export default async function Home() {
                       {STATUT_LABEL[t.status] ?? t.status}
                     </div>
 
-                    <div className="flex gap-4 pt-0.5 text-xs">
-                      <Link href={`/tournoi/${t.id}/tableau`} className="underline-offset-2 hover:underline">
+                    <div className="-ml-2 flex flex-wrap text-xs">
+                      <Link
+                        href={`/tournoi/${t.id}/tableau`}
+                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
+                      >
                         Tableau
                       </Link>
-                      <Link href={`/tournoi/${t.id}/picks`} className="underline-offset-2 hover:underline">
+                      <Link
+                        href={`/tournoi/${t.id}/picks`}
+                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
+                      >
                         Picks
                       </Link>
-                      <Link href={`/tournoi/${t.id}/resultats`} className="underline-offset-2 hover:underline">
+                      <Link
+                        href={`/tournoi/${t.id}/resultats`}
+                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
+                      >
                         Résultats
                       </Link>
                     </div>

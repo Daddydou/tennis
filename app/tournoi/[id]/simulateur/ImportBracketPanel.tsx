@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { importerBracketParticipant, type ImportBracketResult } from './importActions';
 import { nomStock, type Participant } from './types';
+import { boutonPrimaire, champTexte, Spinner, zoneTactile } from '@/app/ui';
 
 /**
  * Import d'un bracket de participant depuis l'extracteur externe (bookmarklet
@@ -55,15 +56,11 @@ export default function ImportBracketPanel({
           onChange={(e) => setJson(e.target.value)}
           placeholder='{ "participant": "Laki", "tours": [...] }'
           spellCheck={false}
-          className="h-40 w-full rounded border border-zinc-300 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className={`h-40 w-full py-3 font-mono text-xs leading-relaxed ${champTexte}`}
         />
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            data-testid="import-submit"
-            disabled={pending || !json.trim()}
-            className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-          >
+          <button type="submit" data-testid="import-submit" disabled={pending || !json.trim()} className={boutonPrimaire}>
+            {pending && <Spinner />}
             {pending ? 'Import…' : 'Importer'}
           </button>
           {json.trim() && (
@@ -73,7 +70,7 @@ export default function ImportBracketPanel({
                 setJson('');
                 setResultat(null);
               }}
-              className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              className={`${zoneTactile} px-2 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
             >
               Effacer
             </button>

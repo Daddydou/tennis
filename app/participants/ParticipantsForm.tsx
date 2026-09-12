@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ajouterParticipant, supprimerParticipant } from './actions';
+import { boutonDanger, boutonPrimaire, carte, champTexte, Spinner } from '@/app/ui';
 
 export interface ParticipantAffiche {
   id: string;
@@ -48,7 +49,7 @@ export default function ParticipantsForm({
 
   return (
     <div className="space-y-4">
-      <div className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-900 dark:border-zinc-800">
+      <div className={`divide-y divide-zinc-100 dark:divide-zinc-900 ${carte}`}>
         {participants.length === 0 && (
           <p className="px-3 py-2 text-sm text-zinc-500">
             Aucun participant pour l&apos;instant — que « Moi ».
@@ -60,11 +61,7 @@ export default function ParticipantsForm({
             <span className="text-xs text-zinc-500">
               {p.picks} pick{p.picks > 1 ? 's' : ''}
             </span>
-            <button
-              onClick={() => retirer(p.id, p.name, p.picks)}
-              disabled={pending}
-              className="text-xs text-zinc-500 hover:text-red-600 disabled:opacity-40"
-            >
+            <button onClick={() => retirer(p.id, p.name, p.picks)} disabled={pending} className={boutonDanger}>
               Retirer
             </button>
           </div>
@@ -78,13 +75,10 @@ export default function ParticipantsForm({
           onChange={(e) => setNom(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ajouter()}
           placeholder="Nom du participant"
-          className="rounded border border-zinc-300 px-2.5 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className={champTexte}
         />
-        <button
-          onClick={ajouter}
-          disabled={pending || !nom.trim()}
-          className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
+        <button onClick={ajouter} disabled={pending || !nom.trim()} className={boutonPrimaire}>
+          {pending && <Spinner />}
           {pending ? '…' : 'Ajouter'}
         </button>
         {erreur && <span className="text-xs text-red-600 dark:text-red-400">{erreur}</span>}

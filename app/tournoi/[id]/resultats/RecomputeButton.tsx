@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { boutonSecondaire, Spinner } from '@/app/ui';
 
 export default function RecomputeButton({
   tournamentId,
@@ -36,11 +37,8 @@ export default function RecomputeButton({
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={recompute}
-        disabled={pending}
-        className="rounded border border-zinc-300 px-3 py-1 text-xs font-medium hover:border-zinc-500 disabled:opacity-50 dark:border-zinc-700"
-      >
+      <button onClick={recompute} disabled={pending} className={boutonSecondaire}>
+        {pending && <Spinner />}
         {pending ? 'Recalcul…' : 'Recalculer les points'}
       </button>
       {msg && <span className="text-xs text-zinc-500">{msg}</span>}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { cleDuel, ensemblesAtteignables, type MatchReel } from '@/lib/bracketSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
+import { boutonPrimaire, champTexte, pilleSelecteur } from '@/app/ui';
 
 /**
  * Bloc 3 — Bracket des participants : pour le tour choisi (bloc 1), un
@@ -93,17 +94,13 @@ export default function ParticipantsBracketPanel({
         encore en lice à ce match — ou « — » s&apos;il n&apos;en a plus aucun dans la course.
       </p>
 
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {stocks.map((s) => (
           <button
             key={s}
             data-testid={`participants-stock-tab-${s}`}
             onClick={() => setStockActif(s)}
-            className={`rounded border px-2.5 py-1 text-xs ${
-              s === stockActif
-                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-            }`}
+            className={pilleSelecteur(s === stockActif)}
           >
             {nomStock(s, participants)}
             {modifie(s) && <span className="ml-1 text-amber-500">●</span>}
@@ -140,7 +137,7 @@ export default function ParticipantsBracketPanel({
                 onChange={(e) => onChangerDraft(m.position, e.target.value)}
                 data-testid={`pick-${roundChoisi}-${m.position}`}
                 aria-label={caption}
-                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className={`min-w-0 flex-1 ${champTexte}`}
               >
                 <option value="">— aucun joueur en lice</option>
                 {candidats.map((id) => (
@@ -160,11 +157,7 @@ export default function ParticipantsBracketPanel({
       )}
 
       <div className="flex items-center gap-2">
-        <button
-          onClick={valider}
-          disabled={pending || matchsDuTour.length === 0}
-          className="rounded border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-        >
+        <button onClick={valider} disabled={pending || matchsDuTour.length === 0} className={boutonPrimaire}>
           Valider les pronostics de {nomStock(stockActif, participants)} pour {roundChoisi}
         </button>
         {!modifie(stockActif) && <span className="text-[11px] text-zinc-400">déjà à jour</span>}

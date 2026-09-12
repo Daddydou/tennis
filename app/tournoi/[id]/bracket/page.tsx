@@ -10,6 +10,7 @@ import {
   type CritereJoueur,
   type DuelBracket,
 } from '@/lib/bracket';
+import { carte, pilleSelecteur } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,7 +127,7 @@ function CarteDuel({
     a?.elo != null && b?.elo != null ? Math.abs(a.elo - b.elo) : null;
 
   return (
-    <div className="rounded border border-zinc-200 px-2.5 py-1.5 dark:border-zinc-800">
+    <div className={`px-2.5 py-1.5 ${carte}`}>
       <LigneJoueur
         j={a}
         gagnant={duel.gagnant !== null && duel.gagnant === duel.a}
@@ -255,7 +256,7 @@ export default async function BracketPage({
 
       {/* ── Champion prédit et son parcours ── */}
       {vueChampion && (
-        <div className="rounded border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
               Champion prédit
@@ -307,19 +308,11 @@ export default async function BracketPage({
       )}
 
       {/* ── Sélecteur de tour : la navigation principale sur mobile ── */}
-      <nav className="flex flex-wrap gap-1">
+      <nav className="flex flex-wrap gap-1.5">
         {bracket.rounds.map((r) => {
           const actif = r === roundActif;
           return (
-            <Link
-              key={r}
-              href={lien(r, null)}
-              className={`rounded border px-2.5 py-1 text-xs font-medium ${
-                actif
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-              }`}
-            >
+            <Link key={r} href={lien(r, null)} className={pilleSelecteur(actif)}>
               {r}
             </Link>
           );
@@ -342,7 +335,7 @@ export default async function BracketPage({
               <Link
                 key={label}
                 href={lien(roundActif, m)}
-                className={`rounded px-2 py-0.5 ${
+                className={`flex min-h-11 items-center rounded-md px-2.5 transition active:scale-[0.97] ${
                   actif
                     ? 'bg-zinc-200 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
                     : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'

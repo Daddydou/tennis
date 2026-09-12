@@ -9,6 +9,7 @@ import ImportBracketPanel from './ImportBracketPanel';
 import ParticipantsBracketPanel from './ParticipantsBracketPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
+import { champTexte, pilleSelecteur } from '@/app/ui';
 
 type Onglet = 'reel' | 'participants' | 'classement' | 'import';
 
@@ -165,7 +166,7 @@ export default function SimulateurBracket({
           id="round-choisi"
           value={roundChoisi}
           onChange={(e) => onChangerRound(e.target.value)}
-          className="rounded border border-zinc-300 bg-white px-2.5 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className={champTexte}
         >
           {rounds.map((r) => (
             <option key={r} value={r}>
@@ -178,17 +179,9 @@ export default function SimulateurBracket({
         </p>
       </div>
 
-      <nav className="flex flex-wrap gap-1 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2 dark:border-zinc-800">
         {ONGLETS.map((o) => (
-          <button
-            key={o.key}
-            onClick={() => setOnglet(o.key)}
-            className={`rounded border px-2.5 py-1.5 text-xs font-medium ${
-              onglet === o.key
-                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-            }`}
-          >
+          <button key={o.key} onClick={() => setOnglet(o.key)} className={pilleSelecteur(onglet === o.key)}>
             {o.label}
           </button>
         ))}

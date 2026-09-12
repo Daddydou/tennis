@@ -77,7 +77,7 @@ function Duel({
     const actif = duel.vainqueur !== null && duel.vainqueur === id;
     if (!n) {
       return (
-        <div className="flex-1 rounded border border-dashed border-zinc-200 px-2.5 py-2 text-center text-xs text-zinc-400 dark:border-zinc-800">
+        <div className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 px-2.5 text-center text-xs text-zinc-400 dark:border-zinc-800">
           en attente
         </div>
       );
@@ -87,7 +87,7 @@ function Duel({
         ? 'border-emerald-400 bg-emerald-50 font-medium dark:border-emerald-700 dark:bg-emerald-950'
         : 'border-zinc-200 text-zinc-400 dark:border-zinc-800'
       : actif
-        ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+        ? 'border-lime-500 bg-lime-500 font-medium text-zinc-900 dark:border-lime-400 dark:bg-lime-400 dark:text-zinc-950'
         : 'border-zinc-300 hover:border-zinc-500 dark:border-zinc-700';
     const cliquable = onChoisir !== null && id !== null;
     return (
@@ -95,9 +95,9 @@ function Duel({
         type="button"
         disabled={!cliquable}
         onClick={cliquable ? () => onChoisir!(id as string) : undefined}
-        className={`flex-1 rounded border px-2.5 py-2 text-left text-sm transition-colors ${style} ${
-          cliquable ? 'cursor-pointer' : 'cursor-default'
-        }`}
+        className={`min-h-11 flex-1 rounded-lg border px-2.5 py-2 text-left text-sm transition ${
+          cliquable ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default'
+        } ${style}`}
       >
         <span className="truncate">
           {n}
@@ -109,13 +109,16 @@ function Duel({
   };
 
   return (
-    <div className="space-y-1 rounded border border-zinc-200 p-2 dark:border-zinc-800">
+    <div className="space-y-1 rounded-lg border border-zinc-200 p-2 dark:border-zinc-800">
       <div className="flex gap-1.5">
         {ligne(duel.a)}
         {ligne(duel.b)}
       </div>
       {onEffacer && (
-        <button onClick={onEffacer} className="text-[11px] text-zinc-400 hover:text-red-600">
+        <button
+          onClick={onEffacer}
+          className="min-h-11 px-0.5 text-[11px] text-zinc-400 transition active:scale-[0.97] hover:text-red-600"
+        >
           Retirer ce résultat
         </button>
       )}

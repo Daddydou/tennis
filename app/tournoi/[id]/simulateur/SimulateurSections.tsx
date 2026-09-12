@@ -7,6 +7,7 @@ import type { Player } from '@/lib/types';
 import SimulateurBracket from './SimulateurBracket';
 import SimulateurPicks from './SimulateurPicks';
 import type { Joueur, Participant } from './types';
+import { pilleSelecteur } from '@/app/ui';
 
 type Section = 'bracket' | 'picks';
 
@@ -50,25 +51,11 @@ export default function SimulateurSections({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-1">
-        <button
-          onClick={() => setSection('bracket')}
-          className={`rounded border px-3 py-1.5 text-sm font-medium ${
-            section === 'bracket'
-              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-          }`}
-        >
+      <div className="flex flex-wrap gap-1.5">
+        <button onClick={() => setSection('bracket')} className={pilleSelecteur(section === 'bracket')}>
           Bracket
         </button>
-        <button
-          onClick={() => setSection('picks')}
-          className={`rounded border px-3 py-1.5 text-sm font-medium ${
-            section === 'picks'
-              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-              : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-          }`}
-        >
+        <button onClick={() => setSection('picks')} className={pilleSelecteur(section === 'picks')}>
           Picks
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { boutonPrimaire, champTexte, Spinner, zoneTactile } from '@/app/ui';
 
 /**
  * Forme du résumé renvoyé par la route. Redéclarée ici plutôt qu'importée de
@@ -65,14 +66,11 @@ export default function ImportEloForm() {
         onChange={(e) => setJson(e.target.value)}
         placeholder='{ "tour": "atp", "updated": "2026-07-27", "players": [...] }'
         spellCheck={false}
-        className="h-64 w-full rounded border border-zinc-300 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className={`h-64 w-full py-3 font-mono text-xs leading-relaxed ${champTexte}`}
       />
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending || !json.trim()}
-          className="rounded bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
+        <button type="submit" disabled={pending || !json.trim()} className={boutonPrimaire}>
+          {pending && <Spinner />}
           {pending ? 'Import…' : 'Importer les Elo'}
         </button>
         {json.trim() && (
@@ -82,7 +80,7 @@ export default function ImportEloForm() {
               setJson('');
               setResult(null);
             }}
-            className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className={`${zoneTactile} px-2 text-sm text-zinc-500 transition active:scale-[0.97] hover:text-zinc-900 dark:hover:text-zinc-100`}
           >
             Effacer
           </button>

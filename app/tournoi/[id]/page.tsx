@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from './TournoiNav';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
-import { carte, lienBouton } from './ui';
+import { carte, lienBouton } from '@/app/ui';
 import {
   getTournament,
   getMatchRows,

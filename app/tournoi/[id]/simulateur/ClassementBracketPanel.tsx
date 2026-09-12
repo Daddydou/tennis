@@ -13,6 +13,7 @@ import {
 import { classerScenariosVictoire, simulerProbabilitesVictoire, type StockBracket } from '@/lib/montecarlo';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
+import { carte } from '@/app/ui';
 
 /** N tirages Monte Carlo pour le % de victoire principal — stable, encore instantané. */
 const SIMULATIONS = 3000;
@@ -200,7 +201,7 @@ export default function ClassementBracketPanel({
             data-total={c.total}
             data-proba={probabilites[c.id] ?? 0}
             data-max-possible={c.maxPossible}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
+            className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${carte}`}
           >
             <span className="w-5 shrink-0 text-xs text-zinc-400">{i + 1}.</span>
             <span className="flex-1 truncate text-sm font-medium">
@@ -225,8 +226,8 @@ export default function ClassementBracketPanel({
             <span className="shrink-0 text-xs text-zinc-500">
               + <span className="tabular-nums">{c.simules}</span> simulés =
             </span>
-            <span className="w-14 shrink-0 text-right text-base font-semibold tabular-nums">{c.total}</span>
-            <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+            <span className="w-14 shrink-0 text-right text-xl font-bold tabular-nums">{c.total}</span>
+            <span className="shrink-0 rounded-md bg-lime-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-zinc-800 dark:bg-lime-950/50 dark:text-lime-300">
               {Math.round((probabilites[c.id] ?? 0) * 100)}% de victoire
             </span>
             <span
@@ -253,7 +254,7 @@ export default function ClassementBracketPanel({
           const scenarios = scenariosParStock[s] ?? [];
           const meilleure = scenarios[0]?.probabilite ?? 0;
           return (
-            <div key={s} className="rounded border border-zinc-200 p-2.5 text-sm dark:border-zinc-800">
+            <div key={s} className={`p-2.5 text-sm ${carte}`}>
               <p className="mb-1 font-medium">{nomStock(s, participants)}</p>
               {scenarios.length === 0 || meilleure <= 0 ? (
                 <p className="text-xs text-zinc-500">

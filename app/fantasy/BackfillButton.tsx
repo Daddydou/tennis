@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { boutonSecondaire, Spinner } from '@/app/ui';
 
 interface Resume {
   traites: number;
@@ -52,9 +53,10 @@ export default function BackfillButton() {
       <button
         onClick={lancer}
         disabled={pending}
-        className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:border-zinc-500 disabled:opacity-50 dark:border-zinc-700"
+        className={boutonSecondaire}
         title="Calcule le couple prédit/réalisé des tournois déjà importés. Les tournois terminés déjà enregistrés ne sont pas recalculés."
       >
+        {pending && <Spinner />}
         {pending ? 'Calcul…' : 'Reprendre les tournois déjà en base'}
       </button>
 
