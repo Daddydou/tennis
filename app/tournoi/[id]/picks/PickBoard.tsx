@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { validerPick, supprimerPick } from './actions';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
+import { boutonPrimaire, Spinner } from '../ui';
 import type { Half } from '@/lib/types';
 
 export interface Candidat {
@@ -117,11 +118,11 @@ function ColonnePick({
           return (
             <label
               key={c.playerId}
-              className={`flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm ${
+              className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
                 c.utilise
                   ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
                   : selected
-                    ? 'bg-zinc-100 dark:bg-zinc-800'
+                    ? 'bg-lime-50 dark:bg-lime-950/30'
                     : 'hover:bg-zinc-50 dark:hover:bg-zinc-900'
               }`}
             >
@@ -132,7 +133,7 @@ function ColonnePick({
                 checked={selected}
                 disabled={!selectionnable}
                 onChange={() => setChoix(c.playerId)}
-                className="accent-zinc-900 dark:accent-zinc-100"
+                className="size-4 accent-lime-500"
               />
               <span className="flex-1 truncate">
                 {c.nom}
@@ -189,19 +190,16 @@ function ColonnePick({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={valider}
-          disabled={pending || !choix || !modifie || colonne.impossible}
-          className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        >
-          {pending ? '…' : colonne.pickActuel ? 'Modifier' : 'Valider'}
+      <div className="flex items-center gap-3">
+        <button onClick={valider} disabled={pending || !choix || !modifie || colonne.impossible} className={boutonPrimaire}>
+          {pending && <Spinner />}
+          {pending ? 'Envoi…' : colonne.pickActuel ? 'Modifier' : 'Valider'}
         </button>
         {colonne.pickActuel && (
           <button
             onClick={retirer}
             disabled={pending}
-            className="text-xs text-zinc-500 hover:text-red-600 disabled:opacity-40"
+            className="min-h-11 px-1 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-red-600 disabled:opacity-40 dark:hover:text-red-400"
           >
             Retirer
           </button>

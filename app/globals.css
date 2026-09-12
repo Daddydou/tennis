@@ -35,3 +35,43 @@ body {
 table {
   border-collapse: collapse;
 }
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  SYSTÈME DE DESIGN — FONDATIONS (aperçu Dashboard/Picks/Tableau, avant
+ *  généralisation au reste de l'app — cf. app/tournoi/[id]/ui.tsx)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ACCENT : lime (jaune-vert « balle de tennis »). Choisi pour rester à
+ * distance de toutes les couleurs déjà porteuses de sens ailleurs dans
+ * l'app — bleu (circuit ATP), fuchsia (circuit WTA), ambre (terre battue /
+ * repli Elo « maison » / avertissement), émeraude (gazon / indicateur de
+ * victoire), ciel (dur / « bye »), ardoise (moquette), violet (Elo
+ * ambigu), rouge (erreur / Elo par défaut, cf. app/page.tsx et
+ * BadgeSourceElo.tsx). L'accent ne doit JAMAIS migrer vers un de ces sens,
+ * sinon un bouton se lirait comme une surface ou un statut. Sur fond
+ * lime-500 (clair) / lime-400 (sombre), un texte zinc-900/zinc-950 mesure
+ * un contraste > 8:1 — largement au-dessus du seuil AA (4,5:1).
+ *
+ * FOCUS CLAVIER : un anneau visible, jamais l'outline par défaut du
+ * navigateur (souvent invisible sur fond sombre) ni supprimé sans
+ * remplacement — l'accessibilité au clavier ne doit jamais dépendre d'un
+ * survol à la souris. Un anneau lime-500 unique échouerait le seuil de
+ * contraste non-textuel (3:1, WCAG 1.4.11) sur fond blanc (mesuré 1,98:1) :
+ * deux teintes, comme --background/--foreground ci-dessus — lime-700 en
+ * clair (4,99:1 sur blanc), lime-400 en sombre (10:1 sur le fond sombre).
+ */
+:root {
+  --color-focus-ring: #4d7c0f; /* lime-700 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-focus-ring: #a3e635; /* lime-400 */
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

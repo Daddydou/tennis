@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
+import { carte, pilleSelecteur } from '../ui';
 import {
   etatsSlots,
   getParticipants,
@@ -269,39 +270,23 @@ export default async function PicksPage({
         {stocksResume.map((s) => (
           <div
             key={s.id ?? 'moi'}
-            className="flex items-center gap-1.5 rounded border border-zinc-200 px-2.5 py-1 text-xs dark:border-zinc-800"
+            className={`flex items-baseline gap-1.5 px-3 py-1.5 ${carte}`}
           >
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">{s.nom}</span>
-            <span className="tabular-nums text-zinc-500">
-              {picksParStock.get(s.id) ?? 0} pts
-            </span>
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{s.nom}</span>
+            <span className="text-base font-bold tabular-nums">{picksParStock.get(s.id) ?? 0}</span>
+            <span className="text-[11px] text-zinc-400">pts</span>
           </div>
         ))}
       </div>
 
       {/* ── Sélecteur de stock : moi, ou un participant configuré ── */}
       {participants.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          <Link
-            href={lienParticipant(null)}
-            className={`rounded border px-2.5 py-1 text-xs font-medium ${
-              stockId === null
-                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-            }`}
-          >
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link href={lienParticipant(null)} className={pilleSelecteur(stockId === null)}>
             Moi
           </Link>
           {participants.map((p) => (
-            <Link
-              key={p.id}
-              href={lienParticipant(p.id)}
-              className={`rounded border px-2.5 py-1 text-xs font-medium ${
-                stockId === p.id
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-              }`}
-            >
+            <Link key={p.id} href={lienParticipant(p.id)} className={pilleSelecteur(stockId === p.id)}>
               {p.name}
             </Link>
           ))}
@@ -420,7 +405,7 @@ export default async function PicksPage({
       </details>
 
       {/* Sélecteur de tour */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {rounds.map((r) => {
           // requis(r) === 0 : tous les slots du tour sont neutralisés — le tour
           // est complet, il n'y avait rien à y poser.
@@ -436,11 +421,7 @@ export default async function PicksPage({
                   ? `${nt} slot(s) sans pick possible : tous les survivants étaient déjà utilisés`
                   : undefined
               }
-              className={`rounded border px-2.5 py-1 text-xs ${
-                actif
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-              }`}
+              className={pilleSelecteur(actif)}
             >
               {r} {complet ? '✓' : `${faits(r)}/${requis(r)}`}
               {nt > 0 && <span className="ml-0.5 opacity-60">·{nt}∅</span>}

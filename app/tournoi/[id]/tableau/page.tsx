@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
+import { carte } from '../ui';
 import {
   getTournament,
   getMatchRows,
@@ -10,12 +11,20 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const STATUT_BADGE: Record<string, string> = {
-  scheduled: 'À jouer',
-  live: 'En cours',
-  walkover: 'W.O.',
-  retired: 'Abandon',
-  bye: 'Bye',
+/**
+ * Statut : libellé + couleur, JAMAIS la couleur seule (cf. app/page.tsx pour
+ * la même règle sur circuit/surface). Reprend les teintes déjà en usage
+ * ailleurs dans l'app pour le même sens : ciel pour un bye (bracket.tsx),
+ * émeraude pour « en cours »/actif, ambre pour une fin irrégulière (w.o.,
+ * abandon — dans le même registre que le repli Elo « maison »), zinc neutre
+ * pour un match qui n'a pas encore commencé.
+ */
+const STATUT_BADGE: Record<string, { label: string; classes: string }> = {
+  scheduled: { label: 'À jouer', classes: 'text-zinc-400' },
+  live: { label: 'En cours', classes: 'text-emerald-600 dark:text-emerald-400' },
+  walkover: { label: 'W.O.', classes: 'text-amber-600 dark:text-amber-400' },
+  retired: { label: 'Abandon', classes: 'text-amber-600 dark:text-amber-400' },
+  bye: { label: 'Bye', classes: 'text-sky-600 dark:text-sky-400' },
 };
 
 function nomJoueur(id: string | null, byId: Map<string, PlayerRow>): string {
@@ -38,11 +47,14 @@ function celluleSet(
 function LigneJoueur({
   nom,
   gagnant,
+  perdant,
   bye,
   sets,
 }: {
   nom: string;
   gagnant: boolean;
+  /** Le match est décidé et ce n'est pas le vainqueur — s'efface au profit du nom en gras. */
+  perdant: boolean;
   bye: boolean;
   sets: string[];
 }) {
@@ -50,7 +62,11 @@ function LigneJoueur({
     <div className="flex items-center gap-2">
       <span
         className={`flex-1 truncate ${
-          gagnant ? 'font-semibold' : bye ? 'text-zinc-400' : ''
+          gagnant
+            ? 'font-semibold text-zinc-900 dark:text-zinc-100'
+            : bye || perdant
+              ? 'text-zinc-400 dark:text-zinc-500'
+              : ''
         }`}
       >
         {nom}
@@ -77,24 +93,27 @@ function CarteMatch({
   const p1sets = sets.map((s) => celluleSet(s.g1, s.g2, s.tb2));
   const p2sets = sets.map((s) => celluleSet(s.g2, s.g1, s.tb1));
   const badge = STATUT_BADGE[m.status];
+  const decide = m.winner_id != null;
 
   return (
-    <div className="rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800">
+    <div className={`px-3 py-2.5 ${carte}`}>
       <LigneJoueur
         nom={nomJoueur(m.player1_id, byId)}
-        gagnant={m.winner_id != null && m.winner_id === m.player1_id}
+        gagnant={decide && m.winner_id === m.player1_id}
+        perdant={decide && m.winner_id !== m.player1_id}
         bye={m.player1_id === null}
         sets={p1sets}
       />
       <LigneJoueur
         nom={nomJoueur(m.player2_id, byId)}
-        gagnant={m.winner_id != null && m.winner_id === m.player2_id}
+        gagnant={decide && m.winner_id === m.player2_id}
+        perdant={decide && m.winner_id !== m.player2_id}
         bye={m.player2_id === null}
         sets={p2sets}
       />
       {badge && (
-        <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">
-          {badge}
+        <div className={`mt-1.5 text-[10px] font-medium uppercase tracking-wide ${badge.classes}`}>
+          {badge.label}
         </div>
       )}
     </div>
@@ -142,7 +161,7 @@ export default async function TableauPage({
             if (ms.length === 0) return null;
             return (
               <div key={r} className="w-64 shrink-0 space-y-2">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <h2 className="border-b-2 border-lime-400/70 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-lime-500/40">
                   {r} · {ms.length}
                 </h2>
                 {ms.map((m) => (

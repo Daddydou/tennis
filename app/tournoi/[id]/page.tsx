@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from './TournoiNav';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
+import { carte, lienBouton } from './ui';
 import {
   getTournament,
   getMatchRows,
@@ -59,25 +60,19 @@ export default async function DashboardPage({
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournoi.name} active="dashboard" />
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <p className="text-zinc-500">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-500">
           Tour actuel :{' '}
-          <span className="font-medium text-zinc-800 dark:text-zinc-200">
+          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
             {tourActuel ?? '—'}
           </span>
         </p>
-        <div className="flex gap-4 text-xs">
-          <Link
-            href={`/tournoi/${id}/picks`}
-            className="text-zinc-600 underline-offset-2 hover:underline dark:text-zinc-400"
-          >
-            Aller aux Picks →
+        <div className="flex gap-2">
+          <Link href={`/tournoi/${id}/picks`} className={lienBouton}>
+            Picks →
           </Link>
-          <Link
-            href={`/tournoi/${id}/bracket`}
-            className="text-zinc-600 underline-offset-2 hover:underline dark:text-zinc-400"
-          >
-            Aller au Bracket →
+          <Link href={`/tournoi/${id}/bracket`} className={lienBouton}>
+            Bracket →
           </Link>
         </div>
       </div>
@@ -87,47 +82,62 @@ export default async function DashboardPage({
           Aucun match importé pour ce tournoi — rends-toi sur l&apos;onglet Tableau.
         </p>
       ) : (
-        <div className="space-y-2">
-          {lignes.map((l, i) => (
-            <div
-              key={l.id ?? 'moi'}
-              className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
-            >
-              <span className="w-5 shrink-0 text-xs text-zinc-400">{i + 1}.</span>
-              <span className="flex-1 truncate text-sm font-medium">
-                {i === 0 && l.total > 0 && '🏆 '}
-                {l.nom}
-              </span>
-
-              <span className="shrink-0 text-xs text-zinc-500">
-                Bracket{' '}
-                {l.aBracket ? (
-                  <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                    {l.bracket}
-                  </span>
-                ) : (
+        <div className="space-y-2.5">
+          {lignes.map((l, i) => {
+            // Le meneur ressort du lot (accent + fond teinté) : c'est
+            // l'information qu'on vient chercher en premier sur ce classement.
+            const enTete = i === 0 && l.total > 0;
+            return (
+              <div
+                key={l.id ?? 'moi'}
+                className={`relative overflow-hidden pl-4 ${carte} ${
+                  enTete ? 'border-lime-300 bg-lime-50/70 dark:border-lime-800 dark:bg-lime-950/20' : ''
+                }`}
+              >
+                {enTete && (
                   <span
-                    className="font-medium text-amber-600 dark:text-amber-400"
-                    title="Aucun bracket de ce participant importé (onglet Simulateur → Bracket → Importer)"
-                  >
-                    à importer
-                  </span>
+                    className="absolute inset-y-0 left-0 w-1.5 bg-lime-500 dark:bg-lime-400"
+                    aria-hidden="true"
+                  />
                 )}
-              </span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 p-3">
+                  <span className="w-5 shrink-0 text-sm text-zinc-400">{i + 1}.</span>
+                  <span className="flex-1 truncate text-base font-semibold">
+                    {enTete && '🏆 '}
+                    {l.nom}
+                  </span>
 
-              <span className="shrink-0 text-xs text-zinc-500">
-                Picks{' '}
-                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                  {l.picks}
-                </span>
-              </span>
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    Bracket{' '}
+                    {l.aBracket ? (
+                      <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                        {l.bracket}
+                      </span>
+                    ) : (
+                      <span
+                        className="font-medium text-amber-600 dark:text-amber-400"
+                        title="Aucun bracket de ce participant importé (onglet Simulateur → Bracket → Importer)"
+                      >
+                        à importer
+                      </span>
+                    )}
+                  </span>
 
-              <span className="w-16 shrink-0 text-right text-base font-semibold tabular-nums">
-                {l.total}
-              </span>
-              <span className="shrink-0 text-xs text-zinc-400">pts total</span>
-            </div>
-          ))}
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    Picks{' '}
+                    <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                      {l.picks}
+                    </span>
+                  </span>
+
+                  <span className="ml-auto flex shrink-0 items-baseline gap-1.5">
+                    <span className="text-2xl font-bold tabular-nums leading-none">{l.total}</span>
+                    <span className="text-xs text-zinc-400">pts</span>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
