@@ -147,6 +147,34 @@ function lireCache(
 }
 
 /**
+ * Lit UNIQUEMENT le cache `tn_projections` (tournoi, from_round) — ne lance
+ * JAMAIS de simulation. `null` si le cache est absent ou périmé (antérieur à
+ * l'ajout de P(titre), cf. `getProjections`).
+ *
+ * Séparé de `getProjections` pour les appelants qui doivent rester rapides
+ * même quand le cache est froid (cf. `supabase/reference.ts` : la page
+ * Résultats ne doit jamais attendre une simulation Monte Carlo de plusieurs
+ * secondes par tour manquant — mesuré à ~49 s sur un Grand Chelem avec
+ * plusieurs tours non mis en cache, cf. mémoire perf-resultats-chargerreference).
+ */
+export async function projectionsEnCache(
+  tournamentId: string,
+  fromRound: string,
+): Promise<Projections | null> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_projections')
+    .select('player_id, round, e_points, p_reach')
+    .eq('tournament_id', tournamentId)
+    .eq('from_round', fromRound);
+  if (error) throw new Error(error.message);
+
+  const complet = data?.some((r) => r.round === ROUND_TITRE);
+  if (data && data.length > 0 && complet) return lireCache(data);
+  return null;
+}
+
+/**
  * Projections Monte Carlo pour un tour de départ donné.
  * Lit le cache tn_projections (tournoi, from_round) ; s'il est vide (import
  * récent, ou premier affichage de ce tour), relance la simulation depuis ce
@@ -156,20 +184,7 @@ export async function getProjections(
   engine: EngineInput,
   fromRound: string,
 ): Promise<Projections> {
-  // Lecture du cache : clé anon. Le repeuplement en cas de miss
-  // (computeAndStoreProjections) écrit, lui, avec la service role.
-  const sb = supabaseAnon();
-  const { data, error } = await sb
-    .from('tn_projections')
-    .select('player_id, round, e_points, p_reach')
-    .eq('tournament_id', engine.tournament.id)
-    .eq('from_round', fromRound);
-  if (error) throw new Error(error.message);
-
-  // Un cache antérieur à l'ajout de P(titre) n'a aucune ligne ROUND_TITRE :
-  // on le considère périmé et on relance la simulation, plutôt que d'afficher
-  // des probabilités de titre nulles.
-  const complet = data?.some((r) => r.round === ROUND_TITRE);
-  if (data && data.length > 0 && complet) return lireCache(data);
+  const depuisCache = await projectionsEnCache(engine.tournament.id, fromRound);
+  if (depuisCache) return depuisCache;
   return computeAndStoreProjections(engine, fromRound);
 }

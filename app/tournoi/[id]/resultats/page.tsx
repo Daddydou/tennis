@@ -119,7 +119,7 @@ export default async function ResultatsPage({
         <RecomputeButton tournamentId={id} />
       </div>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<p className="text-xs text-zinc-400">Détail de la référence : calcul en cours…</p>}>
         <DetailReference id={id} picks={miens} />
       </Suspense>
 

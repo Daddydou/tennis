@@ -60,6 +60,12 @@ export default function SimulateurBracket({
 
   const [roundChoisi, setRoundChoisi] = useState(roundParDefaut);
   const [onglet, setOnglet] = useState<Onglet>('reel');
+  // Une fois l'onglet Classement ouvert, il reste monté (masqué en CSS) même
+  // en le quittant : sa simulation Monte Carlo (useMemo, ~150-300 ms mesurés)
+  // ne doit pas être relancée à chaque aller-retour d'onglet. Avant sa
+  // première ouverture, en revanche, il ne calcule rien pour rien — un
+  // visiteur qui ne l'ouvre jamais ne paie donc jamais ce coût.
+  const [classementOuvert, setClassementOuvert] = useState(false);
   // Bloc 2 : vainqueurs cliqués dans le bracket réel — remis à zéro à chaque
   // changement de tour (bloc 1), puisque seul le tour affiché est simulé.
   const [scenario, setScenario] = useState<Map<string, string>>(new Map());
@@ -181,7 +187,14 @@ export default function SimulateurBracket({
 
       <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2 dark:border-zinc-800">
         {ONGLETS.map((o) => (
-          <button key={o.key} onClick={() => setOnglet(o.key)} className={pilleSelecteur(onglet === o.key)}>
+          <button
+            key={o.key}
+            onClick={() => {
+              setOnglet(o.key);
+              if (o.key === 'classement') setClassementOuvert(true);
+            }}
+            className={pilleSelecteur(onglet === o.key)}
+          >
             {o.label}
           </button>
         ))}
@@ -212,19 +225,30 @@ export default function SimulateurBracket({
         />
       )}
 
-      {onglet === 'classement' && (
-        <ClassementBracketPanel
-          rounds={rounds}
-          roundChoisi={roundChoisi}
-          matches={matches}
-          scenario={scenario}
-          arbreScenario={arbreScenario}
-          players={players}
-          surface={surface}
-          joueurs={joueurs}
-          participants={participants}
-          picksBracket={picksBracket}
-        />
+      {/* Une fois ouvert, reste monté (masqué en CSS plutôt que démonté par
+          `&&`) : ce panneau tire une simulation Monte Carlo coûteuse
+          (`useMemo`, ~150-300 ms mesurés sur l'US Open ATP, cf. mémoire
+          perf-classement-remount) — un simple aller-retour d'onglet ne doit
+          pas la relancer pour rien. `classementOuvert` évite en plus de la
+          lancer pour un visiteur qui n'ouvre jamais cet onglet. Les autres
+          onglets, eux, réinitialisent volontairement leur brouillon à
+          chaque montage (`key={roundChoisi}`) et restent donc démontés hors
+          sélection — comportement voulu, inchangé. */}
+      {classementOuvert && (
+        <div className={onglet === 'classement' ? '' : 'hidden'}>
+          <ClassementBracketPanel
+            rounds={rounds}
+            roundChoisi={roundChoisi}
+            matches={matches}
+            scenario={scenario}
+            arbreScenario={arbreScenario}
+            players={players}
+            surface={surface}
+            joueurs={joueurs}
+            participants={participants}
+            picksBracket={picksBracket}
+          />
+        </div>
       )}
 
       {onglet === 'import' && (

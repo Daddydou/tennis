@@ -50,6 +50,14 @@ export async function TotalReference({
       >
         ({ecart === 0 ? 'à égalité' : `${signe(ecart)} pour toi`})
       </span>
+      {ref.roundsManquants.length > 0 && (
+        <span
+          className="ml-2 text-xs text-amber-600 dark:text-amber-400"
+          title="Simulation Monte Carlo pas encore en cache pour ces tours — calcul lancé en arrière-plan, revenir dans un instant."
+        >
+          (partiel — {ref.roundsManquants.join(', ')} en cours de calcul)
+        </span>
+      )}
     </div>
   );
 }
@@ -78,6 +86,11 @@ export async function DetailReference({
         </span>{' '}
         — les recommandations de l&apos;app, tour par tour
         <span className="ml-1 text-zinc-400">— détail</span>
+        {ref.roundsManquants.length > 0 && (
+          <span className="ml-1 text-amber-600 dark:text-amber-400">
+            ({ref.roundsManquants.join(', ')} en cours de calcul, absent du total)
+          </span>
+        )}
       </summary>
 
       <p className="mt-2 text-zinc-500">
