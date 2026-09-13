@@ -18,6 +18,7 @@ import {
 import {
   parseExtract,
   extraireJoueurs,
+  reconcilierIdsJoueurs,
   verifierExtraction,
   devinerBestOf,
 } from '@/lib/parser';
@@ -127,12 +128,45 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
 
   const { avertissements } = verifierExtraction(extract);
 
+  const sb = supabaseAdmin();
+
+  // 1 bis. Réconciliation d'identité — retrouver un joueur déjà en base
+  //    avant d'en créer un nouveau. Le site du circuit sert parfois, pour
+  //    une joueuse non classée/qualifiée, un second espace d'identifiants
+  //    (numérique) au lieu de l'ID habituel : sans ce rapprochement, chaque
+  //    réapparition recrée une ligne tn_players neuve pour quelqu'un déjà
+  //    en base (vu sur R. Jodar en juillet, migration 0011 ; puis sur neuf
+  //    joueuses WTA à l'US Open de septembre — la fusion ponctuelle de
+  //    l'époque n'empêchait rien, seul ce rapprochement en amont le peut).
+  //    cf. lib/parser.ts `reconcilierIdsJoueurs` pour le détail et les
+  //    garanties (jamais de fusion en cas d'homonymie ambiguë, ex. les deux
+  //    « X. Wang »).
+  const { data: joueursExistants, error: eExistants } = await sb
+    .from('tn_players')
+    .select('id, name')
+    .eq('tour', extract.tour);
+  if (eExistants) return { ok: false, error: `Joueurs existants : ${eExistants.message}`, avertissements };
+
+  const { extract: extraitReconcilie, reconciliations, ambigus } = reconcilierIdsJoueurs(
+    extract,
+    joueursExistants ?? [],
+  );
+  extract = extraitReconcilie;
+  for (const r of reconciliations) {
+    avertissements.push(
+      `« ${r.nom} » rapproché(e) du joueur déjà en base ${r.idExistant} (nouvel ID d'extraction ${r.idExtrait} ignoré, pas écrit).`,
+    );
+  }
+  for (const a of ambigus) {
+    avertissements.push(
+      `« ${a.nom} » : nom ambigu (${a.candidats.join(', ')} en base) — ID ${a.idExtrait} de l'extraction conservé tel quel, PAS fusionné automatiquement.`,
+    );
+  }
+
   // 2. Joueurs : identité seulement. Les Elo réels (calculés match par match,
   //    source externe) vivent déjà dans tn_players et ne doivent PAS être
   //    écrasés. On les rechargera depuis la base pour la simulation.
   const players = extraireJoueurs(extract);
-
-  const sb = supabaseAdmin();
 
   // 3. Tournoi (upsert sur external_id, tour, year). Le `tour` de l'extraction
   //    est stocké tel quel : c'est lui qui décide ensuite du rapport Elo

@@ -7,11 +7,13 @@
  */
 
 import { eloDepuisRang, ELO_DEFAUT } from './elo';
+import { apparierNom, indexerJoueursTableau } from './matching';
 import { STATUTS_DECIDES, STATUTS_INDECIS } from './types';
 import type {
   DrawExtract,
   Half,
   Match,
+  MatchPlayer,
   MatchStatus,
   Player,
   Surface,
@@ -250,6 +252,102 @@ export function extraireJoueurs(
   }
 
   return joueurs;
+}
+
+/**
+ * RÉCONCILIATION D'IDENTITÉ — retrouver un joueur déjà connu avant d'en
+ * créer un nouveau.
+ *
+ * Le bookmarklet reprend tel quel l'ID que le site du circuit expose sur
+ * CETTE page. Pour un joueur classé, cet ID est stable d'un tournoi à
+ * l'autre (l'ID officiel ATP/WTA). Pour une joueuse non classée ou
+ * qualifiée, en revanche, le site sert parfois un second espace
+ * d'identifiants (numérique, type Sportradar) au lieu de l'ID habituel —
+ * observé sur R. Jodar en juillet (migration 0011, ID ATP vs Sportradar),
+ * puis à nouveau sur neuf joueuses WTA à l'US Open de septembre : SANS ce
+ * rapprochement, chaque réapparition de ce second espace recrée une ligne
+ * `tn_players` neuve pour une personne déjà en base, qui repart alors avec
+ * un historique vide et un Elo par défaut — silencieusement.
+ *
+ * La correction se fait ICI, avant toute écriture (`app/import/actions.ts`
+ * ne doit jamais voir l'ID neuf) : un ID de l'extraction absent de
+ * `tn_players` est rapproché par NOM (même circuit) via l'index de
+ * `lib/matching.ts`, déjà éprouvé pour ce même problème côté cotes
+ * (`apparierNom`). Trouvé sans ambiguïté → l'ID de l'extraction est réécrit
+ * partout dans l'extrait avec l'ID existant, qui seul sera écrit en base.
+ * Ambigu (plusieurs joueurs du circuit partagent ce nom, cf. les deux
+ * « X. Wang », homonymes réelles et distinctes) → on ne fusionne RIEN, on
+ * le signale seulement : un mauvais rapprochement serait silencieux et
+ * fausserait deux historiques à la fois, pire que le défaut qu'on corrige.
+ * Absent → joueur réellement nouveau, rien à faire.
+ */
+
+/** Un rapprochement effectué : l'ID de l'extraction est remplacé par l'ID déjà en base. */
+export interface JoueurReconcilie {
+  nom: string;
+  idExtrait: string;
+  idExistant: string;
+}
+
+/** Un nom qui désigne plusieurs joueurs déjà en base — volontairement PAS fusionné. */
+export interface AmbiguiteReconciliation {
+  nom: string;
+  idExtrait: string;
+  /** Noms des joueurs déjà en base qui partagent la même clé de rapprochement. */
+  candidats: string[];
+}
+
+export interface ResultatReconciliation {
+  /** Extrait avec les IDs réconciliés substitués — celui à écrire en base. */
+  extract: DrawExtract;
+  reconciliations: JoueurReconcilie[];
+  ambigus: AmbiguiteReconciliation[];
+}
+
+/**
+ * Réconcilie les IDs de l'extraction avec les joueurs déjà en base (même
+ * circuit). `joueursExistants` doit être filtré sur `extract.tour` par
+ * l'appelant : un rapprochement inter-circuits n'aurait aucun sens.
+ */
+export function reconcilierIdsJoueurs(
+  extract: DrawExtract,
+  joueursExistants: { id: string; name: string }[],
+): ResultatReconciliation {
+  const idsConnus = new Set(joueursExistants.map((j) => j.id));
+  const index = indexerJoueursTableau(joueursExistants);
+
+  const remap = new Map<string, string>(); // ID de l'extraction -> ID existant
+  const reconciliations: JoueurReconcilie[] = [];
+  const ambigus: AmbiguiteReconciliation[] = [];
+  const traites = new Set<string>(); // un ID inconnu n'est testé qu'une fois
+
+  for (const m of extract.matches) {
+    for (const p of m.players) {
+      if (!p.id || p.isBye || idsConnus.has(p.id) || traites.has(p.id)) continue;
+      traites.add(p.id);
+
+      const { id, echec } = apparierNom(index, p.name);
+      if (id) {
+        remap.set(p.id, id);
+        reconciliations.push({ nom: p.name, idExtrait: p.id, idExistant: id });
+      } else if (echec?.raison === 'ambigu') {
+        ambigus.push({ nom: p.name, idExtrait: p.id, candidats: echec.candidats ?? [] });
+      }
+      // 'absent' : personne de ce nom en base pour ce circuit — vraiment nouveau.
+    }
+  }
+
+  if (remap.size === 0) return { extract, reconciliations, ambigus };
+
+  const substituer = (p: MatchPlayer): MatchPlayer =>
+    p.id && remap.has(p.id) ? { ...p, id: remap.get(p.id)! } : p;
+
+  const matches: Match[] = extract.matches.map((m) => ({
+    ...m,
+    players: [substituer(m.players[0]), substituer(m.players[1])],
+  }));
+
+  return { extract: { ...extract, matches }, reconciliations, ambigus };
 }
 
 /** Joueurs effectivement en lice à chaque tour, byes exclus. */
