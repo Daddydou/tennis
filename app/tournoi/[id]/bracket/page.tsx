@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
+import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
 import { loadEngineData, surfacePourElo } from '@/supabase/queries';
 import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
+import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import {
   construireBracket,
   duelsDuTour,
@@ -141,9 +143,17 @@ function CarteDuel({
         champion={champion !== null && duel.b === champion}
         bye={duel.bye && duel.b !== null}
       />
-      {ecart !== null && (
-        <div className="pt-0.5 text-right text-[10px] text-zinc-400">
-          écart {Math.round(ecart)} pts
+      {(ecart !== null || duel.coteUtilisee) && (
+        <div className="flex items-center justify-end gap-1.5 pt-0.5 text-right text-[10px] text-zinc-400">
+          {duel.coteUtilisee && (
+            <span
+              className="rounded border border-sky-300 bg-sky-50 px-1 text-sky-700"
+              title="Le vainqueur prédit tient compte d'une cote du marché (30 % Elo / 70 % cotes), capturée avant le coup d'envoi."
+            >
+              cote
+            </span>
+          )}
+          {ecart !== null && <span>écart {Math.round(ecart)} pts</span>}
         </div>
       )}
     </div>
@@ -177,6 +187,11 @@ export default async function BracketPage({
     };
   };
 
+  // Blend Elo/cotes (cf. supabase/cotesBlend.ts) : Elo seul par défaut,
+  // mélangé au marché sur chaque duel pour lequel une cote utilisable existe.
+  const { probabiliteMatch, coteUtilisables, coteDisponiblePour } =
+    await chargerBlendProduction(id);
+
   // `matches` porte le vainqueur réel et les scores ; on ne transmet que le
   // tirage — identité des joueurs et place dans le tableau. Le pronostic ne
   // peut donc pas, même par accident, se laisser corriger par les résultats.
@@ -188,6 +203,8 @@ export default async function BracketPage({
     })),
     rounds,
     critere,
+    probabiliteMatch,
+    coteDisponiblePour,
   );
 
   const vue = (pid: string | null): VueJoueur | null => {
@@ -243,15 +260,20 @@ export default async function BracketPage({
   return (
     <div className="space-y-4">
       <TournoiNav id={id} nom={tournament.name} active="bracket" />
+      <NoteCotesUtilisees n={coteUtilisables} />
 
       <p className="text-sm text-zinc-500">
         Pronostic <span className="font-medium text-zinc-700">
           depuis le tirage
         </span>{' '}
         : à chaque match, le plus haut Elo effectif sur{' '}
-        {SURFACE_LABEL[surfElo] ?? surfElo} l&apos;emporte. Aucun résultat réel
-        n&apos;est lu — l&apos;arbre est le même avant, pendant et après le
-        tournoi.
+        {SURFACE_LABEL[surfElo] ?? surfElo} l&apos;emporte — ou le favori du
+        marché quand une cote utilisable existe pour ce duel précis (badge{' '}
+        <span className="rounded border border-sky-300 bg-sky-50 px-1 text-[10px] text-sky-700">
+          cote
+        </span>
+        ). Aucun résultat réel n&apos;est lu — l&apos;arbre est le même avant,
+        pendant et après le tournoi.
       </p>
 
       {/* ── Champion prédit et son parcours ── */}

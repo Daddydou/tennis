@@ -24,6 +24,13 @@ export interface BlendProduction {
   probabiliteMatch: ProbabiliteMatch;
   /** Nombre de duels du tournoi pour lesquels une cote utilisable a été trouvée — traçabilité. */
   coteUtilisables: number;
+  /**
+   * Une cote utilisable existe-t-elle pour CE duel précis ? Dérivée du même
+   * index que `probabiliteMatch` — sert uniquement à la traçabilité par duel
+   * (cf. `lib/bracket.ts` `DuelBracket.coteUtilisee`), jamais à décider du
+   * vainqueur, qui ne dépend que de `probabiliteMatch`.
+   */
+  coteDisponiblePour: (idA: string, idB: string) => boolean;
 }
 
 export async function chargerBlendProduction(
@@ -41,11 +48,16 @@ export async function chargerBlendProduction(
       }),
     ),
   );
-  return { probabiliteMatch: creerBlendProduction(index), coteUtilisables: index.taille };
+  return {
+    probabiliteMatch: creerBlendProduction(index),
+    coteUtilisables: index.taille,
+    coteDisponiblePour: (idA, idB) => index.probabiliteA(idA, idB) !== null,
+  };
 }
 
 /** Repli explicite (aucune cote chargée) — pour les appelants qui veulent l'Elo seul sans requête. */
 export const BLEND_PRODUCTION_VIDE: BlendProduction = {
   probabiliteMatch: PROBABILITE_ELO_SEULE,
   coteUtilisables: 0,
+  coteDisponiblePour: () => false,
 };
