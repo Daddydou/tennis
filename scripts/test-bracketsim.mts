@@ -29,8 +29,10 @@ import {
   cheminDuJoueur,
   cleDuel,
   ensemblesAtteignables,
+  filtrerApresTour,
   filtrerAvantTour,
   filtrerDepuisTour,
+  maxPossibleStock,
   resoudreArbre,
   scoreDuStock,
   vainqueursReels,
@@ -274,6 +276,103 @@ const stocksMC: StockBracket[] = [
   for (let i = 1; i < scenariosMulti.length; i++) {
     assert(scenariosMulti[i - 1].probabilite >= scenariosMulti[i].probabilite, 'classerScenariosVictoire trie par probabilité décroissante');
   }
+}
+
+/* ========================================================================
+ * BUG (corrigé) — maxPossibleStock : à la finale (dernier tour restant), le
+ * max possible ne doit PAS réadditionner les tours déjà comptés dans « déjà
+ * gagné ». Cas concret du signalement : Thomas suit Tiafoe à chaque tour,
+ * Tiafoe a réellement gagné son QF et sa SF, la finale (non jouée) est
+ * affichée avec Tiafoe pronostiqué vainqueur par le scénario — Thomas est à
+ * 100 % de victoire, son max possible doit être EXACTEMENT son total, jamais
+ * une marge illusoire (l'ancien calcul, qui repassait `maxAtteignable` sur la
+ * totalité des pronostics au lieu des seuls tours après le tour choisi,
+ * réadditionnait le « déjà gagné » une deuxième fois).
+ * ======================================================================== */
+{
+  // Les deux demi-finales sont réellement jouées et décidées (on est bien à
+  // la finale, dernier tour restant) : Tiafoe (QF/2, SF/1, F/0 d'après son
+  // chemin) a gagné tout son quart ; Zverev gagne l'autre moitié du tableau
+  // pour lui fournir un adversaire réel en finale.
+  const matchesFinale: MatchReel[] = matches.map((m) => {
+    if (m.round === 'QF' && m.position === 0) return { ...m, winnerId: ZVEREV };
+    if (m.round === 'QF' && m.position === 1) return { ...m, winnerId: KHACHANOV };
+    if (m.round === 'QF' && m.position === 2) return { ...m, winnerId: TIAFOE };
+    if (m.round === 'QF' && m.position === 3) return { ...m, winnerId: SHELTON };
+    return m;
+  });
+  // Résoudre une fois pour propager les deux finalistes réels sans rien
+  // décider en F.
+  const arbrePropage = resoudreArbre(matchesFinale, rounds, () => null);
+  const sf0 = arbrePropage.duels.find((d) => d.round === 'SF' && d.position === 0)!;
+  const sf1 = arbrePropage.duels.find((d) => d.round === 'SF' && d.position === 1)!;
+  assert(sf0.a === ZVEREV && sf0.b === KHACHANOV, 'SF/0 réunit bien Zverev et Khachanov une fois leurs QF décidés');
+  assert(sf1.a === TIAFOE && sf1.b === SHELTON, 'SF/1 réunit bien Tiafoe et Shelton une fois leurs QF décidés');
+  const matchesFinaleAvecSF: MatchReel[] = matchesFinale.map((m) => {
+    if (m.round === 'SF' && m.position === 0) return { ...m, winnerId: ZVEREV };
+    if (m.round === 'SF' && m.position === 1) return { ...m, winnerId: TIAFOE };
+    return m;
+  });
+
+  const roundChoisi = 'F';
+  const avantF = filtrerAvantTour(predsThomas, rounds, roundChoisi);
+  // Scénario affiché (bloc 2) : Tiafoe pronostiqué vainqueur de la finale —
+  // encore hypothétique, le match n'est pas réellement joué.
+  const scenarioFinale = new Map([[cleDuel('F', 0), TIAFOE]]);
+  const arbreScenarioFinale = resoudreArbre(matchesFinaleAvecSF, rounds, (r, p) => scenarioFinale.get(cleDuel(r, p)) ?? null);
+  const dejaGagneThomas = scoreDuStock(avantF, arbreScenarioFinale, rounds);
+  assert(dejaGagneThomas === 3, `déjà gagné de Thomas avant la finale = QF (1) + SF (2) = 3 (obtenu ${dejaGagneThomas})`);
+
+  const predsFRoundThomas = new Map([...predsThomas].filter(([cle]) => cle.split('|')[0] === roundChoisi));
+  const simulesThomas = scoreDuStock(predsFRoundThomas, arbreScenarioFinale, rounds);
+  assert(simulesThomas === 4, `simulés de Thomas sur la finale = 4 points (Tiafoe pronostiqué et retenu par le scénario, obtenu ${simulesThomas})`);
+
+  const totalThomas = dejaGagneThomas + simulesThomas;
+  const atteignablesFinale = ensemblesAtteignables(matchesFinaleAvecSF, rounds);
+
+  const apresF = filtrerApresTour(predsThomas, rounds, roundChoisi);
+  assert(apresF.size === 0, "aucun tour après la finale : filtrerApresTour('F') est vide");
+
+  const maxThomas = maxPossibleStock(
+    dejaGagneThomas,
+    simulesThomas,
+    predsThomas,
+    matchesFinaleAvecSF,
+    rounds,
+    roundChoisi,
+    atteignablesFinale,
+  );
+  assert(
+    maxThomas === totalThomas,
+    `à la finale, max possible = total exactement (${totalThomas}), sans marge (obtenu ${maxThomas}) — ancien bug : ${dejaGagneThomas + totalThomas} (déjà gagné réadditionné)`,
+  );
+
+  // Un tour AVANT la finale (SF) : le max possible doit encore ajouter la
+  // valeur de la finale (seul tour après SF), ni plus ni moins — et retomber
+  // sur le même total final une fois Tiafoe vainqueur garanti.
+  const roundSF = 'SF';
+  const avantSF = filtrerAvantTour(predsThomas, rounds, roundSF);
+  const scenarioSF = new Map([[cleDuel('SF', 1), TIAFOE]]); // déjà réel, mais couvre le clic bloc 2
+  const arbreScenarioSF = resoudreArbre(matchesFinaleAvecSF, rounds, (r, p) => scenarioSF.get(cleDuel(r, p)) ?? null);
+  const dejaGagneAvantSF = scoreDuStock(avantSF, arbreScenarioSF, rounds);
+  assert(dejaGagneAvantSF === 1, `déjà gagné de Thomas avant SF = QF seul (1 point, obtenu ${dejaGagneAvantSF})`);
+  const predsSFRoundThomas = new Map([...predsThomas].filter(([cle]) => cle.split('|')[0] === roundSF));
+  const simulesSF = scoreDuStock(predsSFRoundThomas, arbreScenarioSF, rounds);
+  assert(simulesSF === 2, `simulés de Thomas sur SF = 2 points (obtenu ${simulesSF})`);
+
+  const maxThomasAvantSF = maxPossibleStock(
+    dejaGagneAvantSF,
+    simulesSF,
+    predsThomas,
+    matchesFinaleAvecSF,
+    rounds,
+    roundSF,
+    atteignablesFinale,
+  );
+  assert(
+    maxThomasAvantSF === totalThomas,
+    `dès SF, max possible de Thomas (Tiafoe déjà garanti d'atteindre la finale) = même total qu'à la finale (${totalThomas}, obtenu ${maxThomasAvantSF})`,
+  );
 }
 
 if (echecs > 0) {

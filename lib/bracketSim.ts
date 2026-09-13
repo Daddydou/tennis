@@ -253,6 +253,28 @@ export function filtrerAvantTour(
 }
 
 /**
+ * Complément de `filtrerDepuisTour`/`filtrerAvantTour` : ne garde que les
+ * emplacements STRICTEMENT APRÈS un tour donné (exclu). Sert au « max
+ * possible » (cf. `maxPossibleStock`) : les tours avant sont déjà comptés
+ * dans le « déjà gagné » automatique, et le tour lui-même est déjà tranché
+ * par les points « simulés » du scénario affiché — seuls les tours encore à
+ * venir après doivent alimenter la marge de progression restante.
+ */
+export function filtrerApresTour(
+  predictions: ReadonlyMap<string, string>,
+  rounds: string[],
+  roundActuel: string,
+): Map<string, string> {
+  const idxActuel = rounds.indexOf(roundActuel);
+  const out = new Map<string, string>();
+  for (const [cle, playerId] of predictions) {
+    const idx = rounds.indexOf(cle.split('|')[0]);
+    if (idx !== -1 && idx > idxActuel) out.set(cle, playerId);
+  }
+  return out;
+}
+
+/**
  * Score d'un stock de prédictions contre une référence (le scénario en
  * cours, ou la réalité pure) : la somme des points de tour partout où la
  * prédiction correspond exactement au vainqueur de la référence à ce même
@@ -302,6 +324,39 @@ export function maxAtteignable(
     }
   }
   return total;
+}
+
+/**
+ * Max possible affiché pour un stock, au tour actuellement choisi : déjà
+ * gagné (tours avant, verrouillé) + simulés (tour choisi, selon le scénario
+ * affiché) + ce qui reste ENCORE atteignable sur les tours STRICTEMENT APRÈS
+ * le tour choisi (`filtrerApresTour` + `maxAtteignable`).
+ *
+ * Jamais les tours avant (déjà comptés dans « déjà gagné » — les réadditionner
+ * via `maxAtteignable`, qui ne sait pas qu'un match est déjà décidé pour de
+ * bon plutôt que « encore atteignable », doublerait leurs points) ni le tour
+ * choisi lui-même (déjà tranché par « simulés » selon le scénario affiché —
+ * un pronostic concurrent sur ce même emplacement n'est plus qu'une
+ * hypothèse écartée, pas une marge de progression restante).
+ *
+ * S'il ne reste aucun tour après le tour choisi (on est à la finale, le
+ * dernier tour du tableau), le max possible est EXACTEMENT déjà gagné +
+ * simulés, sans rien ajouter : un stock à 100 % de victoire doit alors
+ * afficher un max égal à son total, jamais une marge illusoire.
+ */
+export function maxPossibleStock(
+  dejaGagne: number,
+  simules: number,
+  predictions: ReadonlyMap<string, string>,
+  matches: MatchReel[],
+  rounds: string[],
+  roundActuel: string,
+  atteignables: Map<string, Set<string>>,
+): number {
+  const idxActuel = rounds.indexOf(roundActuel);
+  if (idxActuel === -1 || idxActuel >= rounds.length - 1) return dejaGagne + simules;
+  const apres = filtrerApresTour(predictions, rounds, roundActuel);
+  return dejaGagne + simules + maxAtteignable(apres, matches, rounds, atteignables);
 }
 
 /* -------------------------------------------------------------------------- */

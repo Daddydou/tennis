@@ -5,7 +5,7 @@ import {
   ensemblesAtteignables,
   filtrerAvantTour,
   filtrerDepuisTour,
-  maxAtteignable,
+  maxPossibleStock,
   scoreDuStock,
   type ArbreResolu,
   type MatchReel,
@@ -37,9 +37,12 @@ const TOP_SCENARIOS = 3;
  *    enregistrés, pas seulement celui affiché : `filtrerDepuisTour`) —
  *    c'est ce qui fait avancer les probabilités des joueurs encore en lice
  *    pour les tours suivants, sans modèle séparé. Max possible : déjà gagné
- *    + `maxAtteignable` sur TOUS les pronostics du stock (tous tours, y
- *    compris importés au-delà du tour choisi) — utile surtout après un
- *    import Game Tracker, qui peut couvrir plusieurs tours d'un coup.
+ *    + simulés (tour choisi) + `maxAtteignable` sur les seuls pronostics des
+ *    tours STRICTEMENT APRÈS le tour choisi (`lib/bracketSim.ts`
+ *    `maxPossibleStock`) — jamais les tours avant (déjà comptés dans « déjà
+ *    gagné », les reprendre les compterait deux fois) ni le tour choisi
+ *    lui-même (déjà tranché par les « simulés »). À la finale (dernier tour),
+ *    le max possible est donc exactement déjà gagné + simulés, sans marge.
  *
  * b) Par stock : les 3 scénarios (« si le joueur X remporte le tournoi »)
  *    qui maximisent sa probabilité de victoire, parmi les joueurs qu'il a
@@ -110,25 +113,41 @@ export default function ClassementBracketPanel({
     return out;
   }, [stocks, picksBracket, rounds, roundChoisi]);
 
-  // Max possible : point de vue GLOBAL (tous les tours pronostiqués par le
-  // stock, pas seulement celui affiché) — déjà gagné + tout ce qui reste
-  // atteignable, cf. lib/bracketSim.ts `maxAtteignable`. Distinct de
-  // « simulés », qui ne porte que sur le tour choisi.
+  // Points simulés : pronostics du tour choisi UNIQUEMENT, comparés au
+  // scénario affiché (bloc 2) — sert à la fois au classement et au max
+  // possible ci-dessous.
+  const simulesParStock = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const s of stocks) out[s] = scoreDuStock(predictionsRoundChoisi[s], arbreScenario, rounds);
+    return out;
+  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds]);
+
+  // Max possible : déjà gagné + simulés (tour choisi) + ce qui reste encore
+  // atteignable sur les SEULS tours strictement après le tour choisi — cf.
+  // lib/bracketSim.ts `maxPossibleStock` pour le détail (jamais les tours
+  // avant, déjà comptés dans « déjà gagné », ni le tour choisi lui-même, déjà
+  // tranché par « simulés »).
   const atteignables = useMemo(() => ensemblesAtteignables(matches, rounds), [matches, rounds]);
   const maxPossible = useMemo(() => {
     const out: Record<string, number> = {};
     for (const s of stocks) {
-      out[s] =
-        (dejaGagneAuto[s]?.valeur ?? 0) +
-        maxAtteignable(picksBracket[s] ?? new Map(), matches, rounds, atteignables);
+      out[s] = maxPossibleStock(
+        dejaGagneAuto[s]?.valeur ?? 0,
+        simulesParStock[s] ?? 0,
+        picksBracket[s] ?? new Map(),
+        matches,
+        rounds,
+        roundChoisi,
+        atteignables,
+      );
     }
     return out;
-  }, [stocks, dejaGagneAuto, picksBracket, matches, rounds, atteignables]);
+  }, [stocks, dejaGagneAuto, simulesParStock, picksBracket, matches, rounds, roundChoisi, atteignables]);
 
   const classement = useMemo(() => {
     return stocks
       .map((s) => {
-        const simules = scoreDuStock(predictionsRoundChoisi[s], arbreScenario, rounds);
+        const simules = simulesParStock[s] ?? 0;
         const deja = dejaGagneAuto[s]?.valeur ?? 0;
         const aDesDonnees = dejaGagneAuto[s]?.aDesDonnees ?? false;
         return {
@@ -142,7 +161,7 @@ export default function ClassementBracketPanel({
         };
       })
       .sort((a, b) => b.total - a.total);
-  }, [stocks, predictionsRoundChoisi, arbreScenario, rounds, dejaGagneAuto, participants, maxPossible]);
+  }, [stocks, simulesParStock, dejaGagneAuto, participants, maxPossible]);
 
   const stocksMC: StockBracket[] = useMemo(
     () =>
@@ -232,7 +251,7 @@ export default function ClassementBracketPanel({
             </span>
             <span
               className="shrink-0 text-xs text-zinc-400"
-              title="Déjà gagné + tout ce qui reste atteignable sur l'ensemble de ses pronostics (tous tours)"
+              title="Déjà gagné + simulés + tout ce qui reste atteignable sur les tours suivants (aucun ajout à la finale)"
             >
               max possible {c.maxPossible}
             </span>
