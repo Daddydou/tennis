@@ -3,6 +3,7 @@ import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
 import { POIDS_SURFACE } from './elo';
 import { surfacePourElo, type TournamentRow } from './queries';
+import { chargerBlendProduction } from './cotesBlend';
 import { simulerDepuis } from '@/lib/montecarlo';
 import type { Match, Player } from '@/lib/types';
 
@@ -42,6 +43,14 @@ export interface EngineInput {
  *
  * Coûteux (plusieurs secondes) : à n'appeler qu'à l'import ou en fallback,
  * jamais à chaque affichage.
+ *
+ * BLEND ELO/COTES : la simulation est désormais nourrie par
+ * `chargerBlendProduction` (supabase/cotesBlend.ts) — Elo seul par défaut,
+ * mélangé 30 % Elo / 70 % cotes sur chaque duel pour lequel une cote
+ * utilisable existe (appariée, capturée avant le coup d'envoi). Un tournoi
+ * sans aucune cote en cache se comporte EXACTEMENT comme avant ce
+ * branchement : c'est `creerBlendProduction` qui porte cette garantie, pas
+ * un test ici.
  */
 export async function computeAndStoreProjections(
   { tournament, matches, players }: EngineInput,
@@ -50,6 +59,7 @@ export async function computeAndStoreProjections(
   const rounds = tournament.rounds ?? [];
   const bestOf = (tournament.best_of ?? 3) as 3 | 5;
   const surface = surfacePourElo(tournament.surface);
+  const { probabiliteMatch } = await chargerBlendProduction(tournament.id);
 
   // `POIDS_SURFACE` plutôt qu'un 0.6 en dur : c'est ici que se calculent les
   // projections de production, donc l'endroit où la constante doit faire foi.
@@ -65,6 +75,8 @@ export async function computeAndStoreProjections(
     surface,
     POIDS_SURFACE,
     SEED,
+    undefined,
+    probabiliteMatch,
   );
 
   const sb = supabaseAdmin();

@@ -214,6 +214,37 @@ export function blendAvecCotes(pElo: number, pCotes: number, poidsElo = 0.7): nu
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  BLEND DE PRODUCTION — Picks, Fantasy, Prédictions, Bracket
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Poids de l'Elo dans le blend, en PRODUCTION (pas dans /calibration/cotes,
+ * qui teste aussi un 50/50 côte à côte) — 30 % Elo / 70 % cotes. Choisi sur
+ * ce que mesure cet écran : sur données propres (Elo antérieur au match), le
+ * marché bat l'Elo seul au Brier comme à la log-loss, ATP et WTA. Revoir
+ * cette valeur se fait depuis cette mesure, pas en la changeant ici à vue.
+ */
+export const POIDS_ELO_MARCHE = 0.3;
+
+/**
+ * Probabilité de match « production » : reçoit les deux identifiants et la
+ * probabilité Elo seule déjà calculée pour ce duel, renvoie la probabilité à
+ * utiliser réellement — Elo seule, ou mélangée aux cotes du marché selon leur
+ * disponibilité pour CE duel précis (cf. `lib/cotes.ts` `creerBlendProduction`,
+ * qui construit cette fonction à partir des cotes chargées d'un tournoi).
+ *
+ * UN SEUL POINT D'ENTRÉE, partagé par le moteur Monte Carlo
+ * (`lib/montecarlo.ts`, dont héritent Picks/Fantasy/Prédictions via
+ * `supabase/projections.ts`) et le pronostic déterministe du Bracket
+ * (`lib/bracket.ts`) : brancher le blend une fois ici suffit aux deux, sans
+ * dupliquer la logique de mélange dans chacun.
+ */
+export type ProbabiliteMatch = (idA: string, idB: string, pEloSeul: number) => number;
+
+/** Repli par défaut : Elo seul — comportement historique du moteur, inchangé sans cotes. */
+export const PROBABILITE_ELO_SEULE: ProbabiliteMatch = (_idA, _idB, pEloSeul) => pEloSeul;
+
+/**
  * Convertit une cote décimale en probabilité, en retirant la marge du book.
  * @param cotes  Les deux cotes du match, ex. [1.45, 2.75].
  */

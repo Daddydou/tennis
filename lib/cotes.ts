@@ -19,7 +19,7 @@
  * gagne sur les deux gagne vraiment.
  */
 
-import { probasDepuisCotes } from './elo';
+import { blendAvecCotes, POIDS_ELO_MARCHE, probasDepuisCotes, type ProbabiliteMatch } from './elo';
 
 /** Cote décimale proposée par un bookmaker sur les deux joueurs d'un match. */
 export interface CoteBookmaker {
@@ -152,4 +152,94 @@ export function scorerMethode(
 export function ecartRelatif(valeur: number, reference: number): number | null {
   if (!Number.isFinite(reference) || reference === 0) return null;
   return (valeur / reference - 1) * 100;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  BLEND DE PRODUCTION — Picks, Fantasy, Prédictions, Bracket                 */
+/*                                                                              */
+/*  Jusqu'ici les cotes ne nourrissaient que /calibration/cotes, un écran de   */
+/*  MESURE isolé (rien n'était branché). Ce qui suit est le branchement en     */
+/*  production, sur le même principe partout : une cote n'influence un calcul */
+/*  QUE si elle est UTILISABLE pour ce match précis — appariée aux DEUX        */
+/*  joueurs, ET capturée avant le coup d'envoi annoncé (jamais une cote live,  */
+/*  qui a déjà vu une partie du match se jouer — c'est le même biais de        */
+/*  look-ahead que l'Elo courant, cf. supabase/elo-historique.ts). Sans cote   */
+/*  utilisable pour un duel donné : repli SILENCIEUX sur l'Elo seul, jamais    */
+/*  un calcul bloqué ou dégradé faute de cotes.                                */
+/* -------------------------------------------------------------------------- */
+
+/** Ce qu'il faut d'une ligne de cote pour l'indexer — cf. `supabase/cotes.ts` `LigneCote`. */
+export interface CoteMatch {
+  playerAId: string | null;
+  playerBId: string | null;
+  /** P(playerAId gagne), déjà dévigorisée. null : aucun consensus (0 bookmaker apparié). */
+  probaA: number | null;
+  /** Coup d'envoi annoncé par le bookmaker. null : ne peut pas être jugée antérieure, écartée par prudence. */
+  commenceTime: string | null;
+  /** Quand CETTE cote a été mise en cache — ISO, comparable lexicographiquement à `commenceTime`. */
+  recupereLe: string;
+}
+
+/**
+ * Une cote est-elle utilisable en production : appariée aux deux joueurs, un
+ * consensus existe, et capturée STRICTEMENT AVANT le coup d'envoi — jamais
+ * une cote live.
+ */
+export function coteUtilisable(c: CoteMatch): boolean {
+  return (
+    c.playerAId !== null &&
+    c.playerBId !== null &&
+    c.probaA !== null &&
+    c.commenceTime !== null &&
+    c.recupereLe < c.commenceTime
+  );
+}
+
+/** Clé de paire non orientée — un même duel se retrouve quel que soit l'ordre demandé. */
+function clePaire(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+export interface IndexCotes {
+  /** P(idA gagne), orientée dans le sens demandé. null : pas de cote utilisable pour ce duel précis. */
+  probabiliteA(idA: string, idB: string): number | null;
+  /** Nombre de duels effectivement indexés (appariés + datés) — pour la traçabilité. */
+  readonly taille: number;
+}
+
+/** Indexe les cotes UTILISABLES (cf. `coteUtilisable`) d'un tournoi, par paire de joueurs. */
+export function indexerCotes(cotes: readonly CoteMatch[]): IndexCotes {
+  const parPaire = new Map<string, { idA: string; probaA: number }>();
+  for (const c of cotes) {
+    if (!coteUtilisable(c)) continue;
+    parPaire.set(clePaire(c.playerAId!, c.playerBId!), { idA: c.playerAId!, probaA: c.probaA! });
+  }
+  return {
+    probabiliteA(idA, idB) {
+      const l = parPaire.get(clePaire(idA, idB));
+      if (!l) return null;
+      return l.idA === idA ? l.probaA : 1 - l.probaA;
+    },
+    taille: parPaire.size,
+  };
+}
+
+/**
+ * Construit la fonction de probabilité de production à partir d'un index de
+ * cotes déjà chargé : Elo seul par défaut, mélangé au poids `POIDS_ELO_MARCHE`
+ * (30 % Elo / 70 % cotes) quand une cote utilisable existe pour CE duel.
+ *
+ * C'est l'UNIQUE point de branchement du blend — `lib/montecarlo.ts`
+ * (Picks/Fantasy/Prédictions, via `supabase/projections.ts`) et
+ * `lib/bracket.ts` (Bracket) prennent tous deux une `ProbabiliteMatch` en
+ * paramètre et n'ont besoin de rien savoir de plus sur les cotes.
+ */
+export function creerBlendProduction(
+  index: IndexCotes,
+  poidsElo: number = POIDS_ELO_MARCHE,
+): ProbabiliteMatch {
+  return (idA, idB, pEloSeul) => {
+    const pCotes = index.probabiliteA(idA, idB);
+    return pCotes === null ? pEloSeul : blendAvecCotes(pEloSeul, pCotes, poidsElo);
+  };
 }

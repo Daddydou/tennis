@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
+import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import { carte, pilleSelecteur } from '@/app/ui';
@@ -14,6 +15,7 @@ import {
   surfacePourElo,
 } from '@/supabase/queries';
 import { getProjections } from '@/supabase/projections';
+import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import {
   cleDeNom,
   compterSources,
@@ -117,6 +119,11 @@ export default async function PicksPage({
     const proj = await getProjections(engine, roundSelectionne);
     esperances = proj.esperances;
   }
+
+  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
+  // jamais une resimulation.
+  const { coteUtilisables } = await chargerBlendProduction(id);
 
   // Elo effectif (pondéré surface, 0.6), exactement celui que la simulation
   // utilise. Sert à afficher la valeur elle-même, sa source, et l'écart
@@ -263,6 +270,7 @@ export default async function PicksPage({
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="picks" />
+      <NoteCotesUtilisees n={coteUtilisables} />
 
       {/* ── Résumé : points Picks déjà validés, tous participants confondus
           (mêmes chiffres que le Dashboard) ── */}

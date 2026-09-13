@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
+import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
 import { loadEngineData, surfacePourElo } from '@/supabase/queries';
 import { equipeEvaluee, getFantasy } from '@/supabase/fantasy';
+import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
 import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
 
@@ -100,9 +102,15 @@ export default async function FantasyPage({
     (pid) => (players[pid]?.rank ?? null) === null,
   ).length;
 
+  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // du cache tn_fantasy, toujours à jour — une lecture légère de tn_odds,
+  // jamais une resimulation.
+  const { coteUtilisables } = await chargerBlendProduction(id);
+
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="fantasy" />
+      <NoteCotesUtilisees n={coteUtilisables} />
 
       <div className="space-y-1 text-sm text-zinc-500">
         <p>

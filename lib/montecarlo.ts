@@ -12,7 +12,7 @@
  * quand les probabilites individuelles sont faibles.
  */
 
-import { ECHELLE_ELO, pVictoire } from './elo';
+import { ECHELLE_ELO, pVictoire, PROBABILITE_ELO_SEULE, type ProbabiliteMatch } from './elo';
 import { POINTS_VICTOIRE, POINTS_PAR_NET_SET } from './scoring';
 import {
   distributionSets,
@@ -44,15 +44,21 @@ export function creerRandom(seed = 42): () => number {
  *
  * `echelle` : voir ECHELLE_ELO (lib/elo.ts). Omise, c'est celle du moteur —
  * elle n'est surchargee que par les ecrans de calibration.
+ *
+ * `pMatchOverride` : probabilite de match DEJA DECIDEE par l'appelant (Elo
+ * seul ou blend Elo/cotes, cf. `simulerTournoi` ci-dessous), qui remplace
+ * alors `pVictoire(eloA, eloB, echelle)` — tout le reste (set, score) en
+ * decoule exactement comme avant, seule l'entree change.
  */
 export function simulerMatch(
   eloA: number,
   eloB: number,
   bestOf: 3 | 5,
   rnd: () => number,
-  echelle: number = ECHELLE_ELO
+  echelle: number = ECHELLE_ELO,
+  pMatchOverride?: number
 ): { gagnantEstA: boolean; ptsA: number; ptsB: number } {
-  const pm = pVictoire(eloA, eloB, echelle);
+  const pm = pMatchOverride ?? pVictoire(eloA, eloB, echelle);
   const ps = pSetDepuisMatch(pm, bestOf);
   const seuil = Math.floor(bestOf / 2) + 1;
 
@@ -132,6 +138,11 @@ export interface ResultatMonteCarlo {
  * @param echelle  Echelle de la courbe Elo -> proba (cf. ECHELLE_ELO). Omise,
  *                 c'est celle du moteur : seuls les ecrans de calibration la
  *                 surchargent, pour rejouer un tournoi sous une autre valeur.
+ * @param probabiliteMatch  Point de branchement du blend Elo/cotes (cf.
+ *                 lib/elo.ts `ProbabiliteMatch`, lib/cotes.ts
+ *                 `creerBlendProduction`). Omise, c'est `PROBABILITE_ELO_SEULE`
+ *                 — le comportement historique, Elo seul : les mesures de
+ *                 calibration ne la surchargent jamais.
  */
 export function simulerTournoi(
   matches: Match[],
@@ -142,7 +153,8 @@ export function simulerTournoi(
   surface: 'hard' | 'clay' | 'grass' = 'clay',
   poidsSurface = 0.6,
   seed = 42,
-  echelle: number = ECHELLE_ELO
+  echelle: number = ECHELLE_ELO,
+  probabiliteMatch: ProbabiliteMatch = PROBABILITE_ELO_SEULE
 ): ResultatMonteCarlo {
   const rnd = creerRandom(seed);
 
@@ -214,7 +226,14 @@ export function simulerTournoi(
         ajouter(cumulPresence, a!, round, 1);
         ajouter(cumulPresence, b!, round, 1);
 
-        const res = simulerMatch(eloDe(a!), eloDe(b!), bestOf, rnd, echelle);
+        // pEloSeul calcule ici (jamais dans simulerMatch) : c'est l'entree
+        // attendue par `probabiliteMatch`, qui peut la laisser telle quelle
+        // (repli par defaut) ou la melanger a une cote pour CE duel precis.
+        const eloA = eloDe(a!);
+        const eloB = eloDe(b!);
+        const pEloSeul = pVictoire(eloA, eloB, echelle);
+        const pm = probabiliteMatch(a!, b!, pEloSeul);
+        const res = simulerMatch(eloA, eloB, bestOf, rnd, echelle, pm);
         ajouter(cumulPoints, a!, round, res.ptsA);
         ajouter(cumulPoints, b!, round, res.ptsB);
 
@@ -268,7 +287,8 @@ export function simulerDepuis(
   surface: 'hard' | 'clay' | 'grass' = 'clay',
   poidsSurface = 0.6,
   seed = 42,
-  echelle: number = ECHELLE_ELO
+  echelle: number = ECHELLE_ELO,
+  probabiliteMatch: ProbabiliteMatch = PROBABILITE_ELO_SEULE
 ): ResultatMonteCarlo {
   const idx = rounds.indexOf(roundDepart);
   if (idx <= 0) {
@@ -281,7 +301,8 @@ export function simulerDepuis(
       surface,
       poidsSurface,
       seed,
-      echelle
+      echelle,
+      probabiliteMatch
     );
   }
 
@@ -302,7 +323,8 @@ export function simulerDepuis(
     surface,
     poidsSurface,
     seed,
-    echelle
+    echelle,
+    probabiliteMatch
   );
 }
 

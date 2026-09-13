@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
+import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
 import { getProjections, ROUND_TITRE } from '@/supabase/projections';
+import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import { estIndecis } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -80,9 +82,15 @@ export default async function PredictionsPage({
 
   const sommeTitres = lignes.reduce((s, l) => s + l.titre, 0);
 
+  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
+  // jamais une resimulation.
+  const { coteUtilisables } = await chargerBlendProduction(id);
+
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="predictions" />
+      <NoteCotesUtilisees n={coteUtilisables} />
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm text-zinc-500">
