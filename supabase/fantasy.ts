@@ -193,11 +193,19 @@ function calculAJour(ligne: LigneCache, bareme: number[]): boolean {
 }
 
 /**
- * Espérances Fantasy d'un tournoi, telles qu'elles étaient au tirage.
- * Lit le cache `tn_fantasy` ; s'il est vide (import récent, rafraîchissement
- * des Elo, premier affichage), recalcule et le repeuple.
+ * Lit UNIQUEMENT le cache `tn_fantasy` — ne calcule JAMAIS. `null` si le
+ * cache est absent ou périmé (cf. `calculAJour`).
+ *
+ * Séparée de `getFantasy` pour les appelants qui doivent rester rapides même
+ * cache froid (cf. `app/tournoi/[id]/fantasy/page.tsx`) : `computeAndStoreFantasy`
+ * délègue à `getProjections`, qui relance une simulation Monte Carlo (20 000
+ * tirages) si `tn_projections` n'a pas non plus le tour de départ en cache —
+ * mesuré à plusieurs dizaines de secondes sur un tableau de 128, largement
+ * au-dessus du timeout d'une fonction Vercel (même défaut que
+ * `getProjections`/`computeAndStoreProjections`, cf. mémoire
+ * perf-resultats-chargerreference et supabase/reference.ts).
  */
-export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
+export async function fantasyEnCache(engine: EngineInput): Promise<Fantasy | null> {
   const { famille, bareme } = contexteFantasy(engine.tournament);
   const tirage = tirageDe(engine.tournament) ?? '';
 
@@ -224,6 +232,22 @@ export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
     return { tirage, famille, bareme, joueurs };
   }
 
+  return null;
+}
+
+/**
+ * Espérances Fantasy d'un tournoi, telles qu'elles étaient au tirage.
+ * Lit le cache `tn_fantasy` ; s'il est vide (import récent, rafraîchissement
+ * des Elo, premier affichage), recalcule et le repeuple — PEUT DONC BLOQUER
+ * plusieurs dizaines de secondes sur cache froid (cf. `fantasyEnCache`).
+ * Réservé aux appelants qui veulent (et peuvent se permettre d')attendre un
+ * résultat complet : l'import (app/import/actions.ts) et le backfill
+ * (app/api/fantasy/backfill/route.ts), tous deux hors du rendu d'une page.
+ * L'écran Fantasy, lui, utilise `fantasyEnCache` pour ne jamais bloquer.
+ */
+export async function getFantasy(engine: EngineInput): Promise<Fantasy> {
+  const depuisCache = await fantasyEnCache(engine);
+  if (depuisCache) return depuisCache;
   return computeAndStoreFantasy(engine);
 }
 

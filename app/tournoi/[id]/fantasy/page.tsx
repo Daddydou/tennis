@@ -1,9 +1,16 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
 import { loadEngineData, surfacePourElo } from '@/supabase/queries';
-import { equipeEvaluee, getFantasy } from '@/supabase/fantasy';
+import {
+  computeAndStoreFantasy,
+  contexteFantasy,
+  equipeEvaluee,
+  fantasyEnCache,
+  type Fantasy,
+} from '@/supabase/fantasy';
 import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
 import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
@@ -43,7 +50,29 @@ export default async function FantasyPage({
   // différence des écrans Picks et Prédictions qui suivent le tour courant
   // (cf. supabase/fantasy.ts). L'écran affiche donc toujours la même équipe,
   // que le tournoi soit à venir, en cours ou terminé.
-  const fantasy = await getFantasy(engine);
+  //
+  // NE BLOQUE JAMAIS sur un cache froid (même correctif que Picks/Simulateur/
+  // Résultats, cf. supabase/reference.ts et mémoire
+  // perf-resultats-chargerreference) : `getFantasy` délègue à `getProjections`,
+  // qui relance une simulation Monte Carlo (20 000 tirages) si le cache
+  // manque — mesuré à 30-52 s sur un tableau de 128. `fantasyEnCache` lit
+  // SEULEMENT le cache ; un cache manquant est ignoré POUR CETTE REQUÊTE
+  // (équipe vide, signalée) et son calcul programmé en arrière-plan via
+  // `after()` — la page répond tout de suite et se complète d'elle-même à
+  // la visite suivante.
+  const depuisCache = await fantasyEnCache(engine);
+  const fantasyCalculEnCours = !depuisCache;
+  const fantasy: Fantasy =
+    depuisCache ?? { ...contexteFantasy(tournament), tirage: rounds[0] ?? '', joueurs: {} };
+  if (fantasyCalculEnCours) {
+    after(async () => {
+      try {
+        await computeAndStoreFantasy(engine);
+      } catch (e) {
+        console.error(`Fantasy en arrière-plan (${id}) :`, (e as Error).message);
+      }
+    });
+  }
 
   const paliers = COMPOSITIONS[fantasy.famille];
 
@@ -152,6 +181,14 @@ export default async function FantasyPage({
           )}
         </p>
       </div>
+
+      {fantasyCalculEnCours && (
+        <p className="text-xs text-amber-600">
+          Simulation Monte Carlo pas encore en cache pour ce tournoi — calcul
+          lancé en arrière-plan, l&apos;équipe (espérances a priori) reviendra
+          à quelques secondes près, à la prochaine visite.
+        </p>
+      )}
 
       <EquipeFantasy equipe={vue} termine={evaluation.termine} />
     </div>

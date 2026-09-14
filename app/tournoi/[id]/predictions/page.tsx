@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
-import { getProjections, ROUND_TITRE } from '@/supabase/projections';
+import { computeAndStoreProjections, projectionsEnCache, ROUND_TITRE } from '@/supabase/projections';
 import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import { estIndecis } from '@/lib/types';
 
@@ -57,7 +58,26 @@ export default async function PredictionsPage({
     );
   }
 
-  const { presence } = await getProjections(engine, tourCourant);
+  // NE BLOQUE JAMAIS sur un cache tn_projections froid (même correctif que
+  // Picks/Simulateur/Fantasy/Résultats, cf. supabase/reference.ts et mémoire
+  // perf-resultats-chargerreference) : `getProjections` relançait ICI une
+  // simulation Monte Carlo (20 000 tirages) dès que ce tour n'avait jamais
+  // été visité — mesuré à 30-52 s sur un tableau de 128, largement au-dessus
+  // du timeout d'une fonction Vercel. Un cache manquant est ignoré POUR CETTE
+  // REQUÊTE (aucun joueur affiché, signalé) et son calcul programmé en
+  // arrière-plan via `after()`.
+  const depuisCache = await projectionsEnCache(id, tourCourant);
+  const presence = depuisCache?.presence ?? {};
+  const projectionsEnCalcul = !depuisCache;
+  if (projectionsEnCalcul) {
+    after(async () => {
+      try {
+        await computeAndStoreProjections(engine, tourCourant);
+      } catch (e) {
+        console.error(`Projections en arrière-plan (${tourCourant}) :`, (e as Error).message);
+      }
+    });
+  }
 
   // Colonnes : tous les tours restants, puis le titre.
   const depuis = rounds.indexOf(tourCourant);
@@ -118,7 +138,12 @@ export default async function PredictionsPage({
         </p>
       </div>
 
-      {lignes.length === 0 ? (
+      {projectionsEnCalcul ? (
+        <p className="text-sm text-zinc-500">
+          Simulation Monte Carlo pas encore en cache pour le tour {tourCourant}
+          — calcul lancé en arrière-plan, recharge la page dans un instant.
+        </p>
+      ) : lignes.length === 0 ? (
         <p className="text-sm text-zinc-500">
           Aucune projection disponible pour ce tournoi.
         </p>
