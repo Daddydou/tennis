@@ -238,6 +238,11 @@ export default async function PicksPage({
   //    pour moi : la vue « Moi » reste exactement celle d'avant) ──
   const nomJoueur = (pid: string) => players[pid]?.name ?? pid;
   const rangJoueur = (pid: string) => players[pid]?.rank ?? null;
+  // Même source que les colonnes de pick (esperances[joueur][tour affiché]) :
+  // le tri des « disponibles » suit toujours l'espérance actuellement
+  // affichée, blend Elo/cotes inclus, quel que soit le participant.
+  const ePointsJoueur = (pid: string) =>
+    roundSelectionne ? esperances[pid]?.[roundSelectionne] ?? 0 : 0;
   const ordreRound = (r: string) => {
     const i = rounds.indexOf(r);
     return i === -1 ? 99 : i;
@@ -257,7 +262,11 @@ export default async function PicksPage({
           const disponibles = [...joueursEnLice(matchRows)]
             .filter((pid) => !dejaUtilises.has(pid))
             .map((pid) => ({ playerId: pid, nom: nomJoueur(pid), rang: rangJoueur(pid) }))
-            .sort((a, b) => (a.rang ?? 9999) - (b.rang ?? 9999));
+            .sort(
+              (a, b) =>
+                ePointsJoueur(b.playerId) - ePointsJoueur(a.playerId) ||
+                (a.rang ?? 9999) - (b.rang ?? 9999),
+            );
           return { nomParticipant, total, picksTries, disponibles };
         })()
       : null;
