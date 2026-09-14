@@ -13,6 +13,7 @@ import {
   tourCourantMatches,
 } from '@/supabase/queries';
 import { computeAndStoreProjections, projectionsEnCache } from '@/supabase/projections';
+import { synchroniserPickSimuleDepuisReel } from '@/supabase/picksSimulesSync';
 import { cleDuel, type MatchReel } from '@/lib/bracketSim';
 import { STATUTS_DECIDES } from '@/lib/types';
 
@@ -75,6 +76,27 @@ export default async function SimulateurPage({
   for (const s of simulatedPickRows) {
     const stock = s.participant_id ?? 'moi';
     (picksSimulesInitiaux[stock] ??= {})[cleSlot(s.round, s.half)] = s.player_id;
+  }
+
+  // RATTRAPAGE : tout vrai pick (tousLesPicks) déjà validé mais pas encore
+  // correctement reflété ici — sync manquée au moment de la validation
+  // (déployée après coup, échec silencieux, etc.), ou un ancien pick
+  // hypothétique jamais écrasé — est synchronisé maintenant, comme le
+  // ferait `validerPick` (cf. supabase/picksSimulesSync.ts). Rend le
+  // rapprochement auto-cicatrisant : il ne dépend plus de la validation
+  // en direct, un simple chargement de cet écran suffit à rattraper
+  // n'importe quel pick réel déjà posé. Sens toujours unique (réel ->
+  // hypothétique) : on ne lit ici que `tousLesPicks`, jamais l'inverse.
+  for (const pk of tousLesPicks) {
+    const stock = pk.participant_id ?? 'moi';
+    const cle = cleSlot(pk.round, pk.half);
+    if (picksSimulesInitiaux[stock]?.[cle] === pk.player_id) continue;
+    const r = await synchroniserPickSimuleDepuisReel(id, pk.round, pk.half, pk.player_id, pk.participant_id);
+    if (r.ok) {
+      (picksSimulesInitiaux[stock] ??= {})[cle] = pk.player_id;
+    } else {
+      console.error(`Rattrapage sync picks simulés (${pk.round}|${pk.half ?? ''}, ${stock}) :`, r.error);
+    }
   }
 
   // Points déjà inscrits pour de vrai (tn_picks) : la même somme que

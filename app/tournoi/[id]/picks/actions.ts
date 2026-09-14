@@ -94,7 +94,15 @@ export async function validerPick(
   // Ce tour/cette moitié vient d'être joué pour de vrai : on le reporte tout
   // de suite dans le bac à sable du simulateur (écrase un éventuel choix
   // hypothétique existant, sans confirmation — cf. supabase/picksSimulesSync.ts).
-  await synchroniserPickSimuleDepuisReel(tournamentId, round, half, playerId, participantId);
+  // Best-effort : un échec ne doit pas faire échouer la validation du vrai
+  // pick (même convention que recalculerPoints) — mais on le journalise,
+  // sans quoi il disparaît sans trace. Filet de sécurité si ça arrive quand
+  // même : app/tournoi/[id]/simulateur/page.tsx rattrape au chargement tout
+  // vrai pick pas encore reflété côté simulé.
+  const sync = await synchroniserPickSimuleDepuisReel(tournamentId, round, half, playerId, participantId);
+  if (!sync.ok) {
+    console.error(`Sync pick simulé (${round}|${half ?? ''}, ${participantId ?? 'moi'}) :`, sync.error);
+  }
 
   revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);

@@ -115,15 +115,23 @@ function ColonnePick({
         {colonne.candidats.map((c) => {
           const selectionnable = !c.utilise;
           const selected = choix === c.playerId;
+          // Le pick VALIDÉ pour ce slot (vérité serveur, colonne.pickActuel) —
+          // distinct de `selected` (choix radio local, purement client) : un
+          // clic d'exploration sur un autre candidat SANS confirmer change
+          // `choix` mais jamais le vrai pick, et ne doit donc jamais faire
+          // disparaître la surbrillance de celui réellement posé.
+          const estPickActuel = c.playerId === colonne.pickActuel;
           return (
             <label
               key={c.playerId}
               className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
                 c.utilise
                   ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
-                  : selected
-                    ? 'bg-blue-50'
-                    : 'hover:bg-zinc-50'
+                  : estPickActuel
+                    ? 'bg-emerald-50'
+                    : selected
+                      ? 'bg-blue-50'
+                      : 'hover:bg-zinc-50'
               }`}
             >
               <input
@@ -140,6 +148,9 @@ function ColonnePick({
                 {c.rang ? (
                   <span className="ml-1 text-xs text-zinc-400">#{c.rang}</span>
                 ) : null}
+                {estPickActuel && (
+                  <span className="ml-1 text-xs font-medium text-emerald-600">✓ validé</span>
+                )}
                 {c.utilise && (
                   <span className="ml-1 text-xs italic">déjà pické</span>
                 )}
