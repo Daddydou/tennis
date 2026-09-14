@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
 import { supabaseAdmin } from '@/supabase/server';
 import { recalculerPoints } from '@/supabase/points';
+import { synchroniserPickSimuleDepuisReel } from '@/supabase/picksSimulesSync';
 
 export interface PickActionResult {
   ok: boolean;
@@ -90,9 +91,15 @@ export async function validerPick(
   // suite : on ne les fait pas dépendre de la complétude du tour.
   await recalculerPoints(tournamentId);
 
+  // Ce tour/cette moitié vient d'être joué pour de vrai : on le reporte tout
+  // de suite dans le bac à sable du simulateur (écrase un éventuel choix
+  // hypothétique existant, sans confirmation — cf. supabase/picksSimulesSync.ts).
+  await synchroniserPickSimuleDepuisReel(tournamentId, round, half, playerId, participantId);
+
   revalidatePath(`/tournoi/${tournamentId}`);
   revalidatePath(`/tournoi/${tournamentId}/picks`);
   revalidatePath(`/tournoi/${tournamentId}/resultats`);
+  revalidatePath(`/tournoi/${tournamentId}/simulateur`);
   return { ok: true };
 }
 

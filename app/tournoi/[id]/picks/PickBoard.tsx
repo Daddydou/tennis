@@ -120,7 +120,7 @@ function ColonnePick({
               key={c.playerId}
               className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
                 c.utilise
-                  ? 'cursor-not-allowed text-zinc-400'
+                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
                   : selected
                     ? 'bg-blue-50'
                     : 'hover:bg-zinc-50'
