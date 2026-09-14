@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import SimulateurSections from './SimulateurSections';
 import { cleSlot } from './picksSim';
@@ -11,7 +12,7 @@ import {
   surfacePourElo,
   tourCourantMatches,
 } from '@/supabase/queries';
-import { getProjections } from '@/supabase/projections';
+import { computeAndStoreProjections, projectionsEnCache } from '@/supabase/projections';
 import { cleDuel, type MatchReel } from '@/lib/bracketSim';
 import { STATUTS_DECIDES } from '@/lib/types';
 
@@ -98,11 +99,40 @@ export default async function SimulateurPage({
   }
 
   const roundDepart = roundParDefaut ?? rounds[0];
-  const { esperances } = await getProjections(engine, roundDepart);
+
+  // NE BLOQUE JAMAIS sur un cache tn_projections froid (même correctif que
+  // chargerReference, cf. supabase/reference.ts et mémoire
+  // perf-resultats-chargerreference) : `getProjections` relançait ICI une
+  // simulation Monte Carlo (20 000 tirages) dès que ce tour n'avait jamais
+  // été visité — mesuré à 30-47 s sur un tableau de 128 en cache froid,
+  // largement au-dessus du timeout d'une fonction Vercel (Gateway Timeout).
+  // Un cache manquant est ignoré POUR CETTE REQUÊTE (espérances vides,
+  // signalées) et son calcul programmé en arrière-plan via `after()`.
+  const depuisCache = await projectionsEnCache(id, roundDepart);
+  const esperances = depuisCache?.esperances ?? {};
+  const projectionsEnCalcul = !depuisCache;
+  if (projectionsEnCalcul) {
+    after(async () => {
+      try {
+        await computeAndStoreProjections(engine, roundDepart);
+      } catch (e) {
+        console.error(`Projections en arrière-plan (${roundDepart}) :`, (e as Error).message);
+      }
+    });
+  }
 
   return (
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="simulateur" />
+
+      {projectionsEnCalcul && (
+        <p className="text-xs text-amber-600">
+          Simulation Monte Carlo pas encore en cache pour le tour {roundDepart} —
+          calcul lancé en arrière-plan, les espérances (E[pts], Picks
+          hypothétiques) reviendront à quelques secondes près, à la prochaine
+          visite.
+        </p>
+      )}
 
       <SimulateurSections
         tournamentId={id}

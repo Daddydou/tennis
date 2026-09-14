@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
@@ -14,7 +15,7 @@ import {
   loadEngineData,
   surfacePourElo,
 } from '@/supabase/queries';
-import { getProjections } from '@/supabase/projections';
+import { computeAndStoreProjections, projectionsEnCache } from '@/supabase/projections';
 import { chargerBlendProduction } from '@/supabase/cotesBlend';
 import {
   cleDeNom,
@@ -112,12 +113,36 @@ export default async function PicksPage({
 
   // Projections Monte Carlo À PARTIR DU TOUR AFFICHÉ (simulerDepuis) : seuls les
   // survivants réels de ce tour sont simulés. Lues depuis le cache tn_projections
-  // (indexé par from_round), ou calculées puis mises en cache au premier accès.
+  // (indexé par from_round) UNIQUEMENT — jamais recalculées dans cette requête.
   // Indépendantes du stock affiché : c'est une propriété du tableau, pas de qui picke.
+  //
+  // NE BLOQUE JAMAIS sur un cache froid (même correctif que chargerReference,
+  // cf. supabase/reference.ts et mémoire perf-resultats-chargerreference) :
+  // avant ce commit, `getProjections` relançait ICI une simulation Monte Carlo
+  // (20 000 tirages) dès que ce tour n'avait encore jamais été visité — mesuré
+  // à 30-47 s sur un tableau de 128 en cache froid, largement au-dessus du
+  // timeout d'une fonction Vercel (Gateway Timeout côté proxy, DB en logs
+  // faussement incriminée alors que la requête ta_elo, elle, répond en <250 ms).
+  // Un tour manquant est maintenant simplement ignoré POUR CETTE REQUÊTE
+  // (liste de candidats vide, signalée) et son calcul programmé en
+  // arrière-plan via `after()` : la page répond tout de suite et se complète
+  // d'elle-même à la visite suivante.
   let esperances: Record<string, Record<string, number>> = {};
+  let projectionsEnCalcul = false;
   if (roundSelectionne) {
-    const proj = await getProjections(engine, roundSelectionne);
-    esperances = proj.esperances;
+    const depuisCache = await projectionsEnCache(id, roundSelectionne);
+    if (depuisCache) {
+      esperances = depuisCache.esperances;
+    } else {
+      projectionsEnCalcul = true;
+      after(async () => {
+        try {
+          await computeAndStoreProjections(engine, roundSelectionne);
+        } catch (e) {
+          console.error(`Projections en arrière-plan (${roundSelectionne}) :`, (e as Error).message);
+        }
+      });
+    }
   }
 
   // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
@@ -423,6 +448,12 @@ export default async function PicksPage({
 
       {!roundSelectionne ? (
         <p className="text-sm text-zinc-500">Aucun tour à picker.</p>
+      ) : projectionsEnCalcul ? (
+        <p className="text-sm text-zinc-500">
+          Simulation Monte Carlo pas encore en cache pour ce tour — calcul lancé
+          en arrière-plan (quelques secondes sur un grand tableau), recharge la
+          page dans un instant.
+        </p>
       ) : colonnes.every((c) => c.candidats.length === 0 && !c.impossible) ? (
         <p className="text-sm text-zinc-500">
           Aucun joueur disponible pour ce tour (données de tableau manquantes ou
