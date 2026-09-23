@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { supabaseAdmin } from '@/supabase/server';
-import { recalculerPoints } from '@/supabase/points';
-import { synchroniserPickSimuleDepuisReel } from '@/supabase/picksSimulesSync';
+import { supabaseAdmin } from '@/db/server';
+import { recalculerPoints } from '@/db/points';
+import { synchroniserPickSimuleDepuisReel } from '@/db/picksSimulesSync';
 
 export interface PickActionResult {
   ok: boolean;
@@ -93,7 +93,7 @@ export async function validerPick(
 
   // Ce tour/cette moitié vient d'être joué pour de vrai : on le reporte tout
   // de suite dans le bac à sable du simulateur (écrase un éventuel choix
-  // hypothétique existant, sans confirmation — cf. supabase/picksSimulesSync.ts).
+  // hypothétique existant, sans confirmation — cf. db/picksSimulesSync.ts).
   // Best-effort : un échec ne doit pas faire échouer la validation du vrai
   // pick (même convention que recalculerPoints) — mais on le journalise,
   // sans quoi il disparaît sans trace. Filet de sécurité si ça arrive quand

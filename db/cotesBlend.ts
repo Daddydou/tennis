@@ -10,7 +10,7 @@ import { PROBABILITE_ELO_SEULE, type ProbabiliteMatch } from '@/lib/elo';
  * MESURE isolé : rien n'était branché. Cette fonction est l'unique endroit
  * qui charge le cache `tn_odds` d'un tournoi et le transforme en fonction de
  * probabilité utilisable par le moteur (`ProbabiliteMatch`, cf. lib/elo.ts) —
- * les deux consommateurs de production (`supabase/projections.ts`, pour
+ * les deux consommateurs de production (`db/projections.ts`, pour
  * Picks/Fantasy/Prédictions, et `app/tournoi/[id]/bracket/page.tsx`, pour le
  * pronostic déterministe) l'appellent tels quels, sans jamais recharger ni
  * réindexer les cotes chacun de son côté.

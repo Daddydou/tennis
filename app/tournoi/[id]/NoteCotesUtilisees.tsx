@@ -5,7 +5,7 @@
  * dit si le calcul affiché (Picks/Fantasy/Prédictions/Bracket) a mélangé les
  * cotes du marché à l'Elo, et sur combien de duels — pour que l'utilisateur
  * comprenne pourquoi une recommandation a pu changer depuis le branchement
- * du blend (cf. supabase/cotesBlend.ts).
+ * du blend (cf. db/cotesBlend.ts).
  *
  * Silencieuse par construction : `n` vaut 0 dès qu'aucune cote utilisable
  * n'existe pour ce tournoi (jamais capturée, ou pas encore appariée/datée) —

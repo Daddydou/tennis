@@ -1,5 +1,5 @@
 import ParticipantsForm from './ParticipantsForm';
-import { getParticipants, compterPicksParParticipant } from '@/supabase/queries';
+import { getParticipants, compterPicksParParticipant } from '@/db/queries';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { listTournaments } from '@/supabase/queries';
+import { listTournaments } from '@/db/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 import { boutonPrimaire, zoneTactile } from './ui';
 

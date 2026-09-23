@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { supabaseAdmin } from '@/supabase/server';
-import { getParticipants, loadEngineData } from '@/supabase/queries';
+import { supabaseAdmin } from '@/db/server';
+import { getParticipants, loadEngineData } from '@/db/queries';
 import {
   parseExtraitBracket,
   resoudreExtraitBracket,

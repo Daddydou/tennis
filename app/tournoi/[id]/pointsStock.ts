@@ -5,11 +5,11 @@
  * points déjà validés, jamais deux implémentations qui pourraient diverger.
  *
  * `participant_id === null` désigne toujours « moi » (même convention que
- * tn_picks et tn_bracket_round_picks, cf. supabase/queries.ts).
+ * tn_picks et tn_bracket_round_picks, cf. db/queries.ts).
  */
 import { resoudreArbre, scoreDuStock, cleDuel, type MatchReel } from '@/lib/bracketSim';
 import { STATUTS_DECIDES } from '@/lib/types';
-import type { BracketRoundPickRow, MatchRow, ParticipantRow, PickRow } from '@/supabase/queries';
+import type { BracketRoundPickRow, MatchRow, ParticipantRow, PickRow } from '@/db/queries';
 
 export interface Stock {
   id: string | null;
@@ -25,7 +25,7 @@ export function stocksDuGroupe(participants: ParticipantRow[]): Stock[] {
  * Points Picks de chaque stock : la même somme que l'onglet Résultats/Picks
  * (`picks.reduce((s, p) => s + (p.points ?? 0), 0)`), par stock plutôt que
  * pour un seul — les points sont déjà calculés et stockés sur chaque ligne
- * de tn_picks (cf. supabase/points.ts), on ne fait ici que les regrouper.
+ * de tn_picks (cf. db/points.ts), on ne fait ici que les regrouper.
  */
 export function pointsPicksParStock(tousLesPicks: PickRow[]): Map<string | null, number> {
   const out = new Map<string | null, number>();

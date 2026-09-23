@@ -11,9 +11,9 @@ import {
   loadEngineData,
   surfacePourElo,
   tourCourantMatches,
-} from '@/supabase/queries';
-import { computeAndStoreProjections, projectionsEnCache } from '@/supabase/projections';
-import { synchroniserPickSimuleDepuisReel } from '@/supabase/picksSimulesSync';
+} from '@/db/queries';
+import { computeAndStoreProjections, projectionsEnCache } from '@/db/projections';
+import { synchroniserPickSimuleDepuisReel } from '@/db/picksSimulesSync';
 import { cleDuel, type MatchReel } from '@/lib/bracketSim';
 import { STATUTS_DECIDES } from '@/lib/types';
 
@@ -82,7 +82,7 @@ export default async function SimulateurPage({
   // correctement reflété ici — sync manquée au moment de la validation
   // (déployée après coup, échec silencieux, etc.), ou un ancien pick
   // hypothétique jamais écrasé — est synchronisé maintenant, comme le
-  // ferait `validerPick` (cf. supabase/picksSimulesSync.ts). Rend le
+  // ferait `validerPick` (cf. db/picksSimulesSync.ts). Rend le
   // rapprochement auto-cicatrisant : il ne dépend plus de la validation
   // en direct, un simple chargement de cet écran suffit à rattraper
   // n'importe quel pick réel déjà posé. Sens toujours unique (réel ->
@@ -123,7 +123,7 @@ export default async function SimulateurPage({
   const roundDepart = roundParDefaut ?? rounds[0];
 
   // NE BLOQUE JAMAIS sur un cache tn_projections froid (même correctif que
-  // chargerReference, cf. supabase/reference.ts et mémoire
+  // chargerReference, cf. db/reference.ts et mémoire
   // perf-resultats-chargerreference) : `getProjections` relançait ICI une
   // simulation Monte Carlo (20 000 tirages) dès que ce tour n'avait jamais
   // été visité — mesuré à 30-47 s sur un tableau de 128 en cache froid,

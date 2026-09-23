@@ -2,19 +2,19 @@
 
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { supabaseAdmin } from '@/supabase/server';
-import { recalculerPoints } from '@/supabase/points';
-import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
+import { supabaseAdmin } from '@/db/server';
+import { recalculerPoints } from '@/db/points';
+import { loadEngineData, tourCourantMatches } from '@/db/queries';
 import {
   computeAndStoreProjections,
   invaliderProjections,
-} from '@/supabase/projections';
+} from '@/db/projections';
 import {
   computeAndStoreFantasy,
   enregistrerHistorique,
   equipeEvaluee,
   invaliderFantasy,
-} from '@/supabase/fantasy';
+} from '@/db/fantasy';
 import {
   parseExtract,
   extraireJoueurs,
@@ -352,7 +352,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
   //
   //    Le cache Fantasy (tn_fantasy) se périme aux mêmes moments — le tableau
   //    lui-même a pu changer, et les Elo avec. Il part en revanche TOUJOURS du
-  //    tirage (espérance a priori, cf. supabase/fantasy.ts) : son préchauffage
+  //    tirage (espérance a priori, cf. db/fantasy.ts) : son préchauffage
   //    simule donc le premier tour, pas le tour courant. C'est une seconde
   //    simulation, mais c'est aussi celle dont l'écran Picks a besoin sur le
   //    premier tour — elle n'est pas perdue.
@@ -367,7 +367,7 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
 
       // 7 bis. Couple prédit / réalisé. L'import est le moment où les résultats
       //        arrivent : c'est donc là que le score de l'équipe figée bouge.
-      //        On enregistre, sans rien ajuster (cf. supabase/fantasy.ts).
+      //        On enregistre, sans rien ajuster (cf. db/fantasy.ts).
       const hist = await enregistrerHistorique(engine, equipeEvaluee(engine, fantasy));
       if (!hist.ok) avertissements.push(`Historique Fantasy : ${hist.error}`);
     }

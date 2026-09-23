@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import ComparaisonEchelle from './ComparaisonEchelle';
-import { ECHELLES_COMPAREES } from '@/supabase/comparaison-echelle';
+import { ECHELLES_COMPAREES } from '@/db/comparaison-echelle';
 import { ECHELLE_ELO } from '@/lib/elo';
 
 export const dynamic = 'force-dynamic';

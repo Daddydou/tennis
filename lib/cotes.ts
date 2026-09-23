@@ -163,12 +163,12 @@ export function ecartRelatif(valeur: number, reference: number): number | null {
 /*  QUE si elle est UTILISABLE pour ce match précis — appariée aux DEUX        */
 /*  joueurs, ET capturée avant le coup d'envoi annoncé (jamais une cote live,  */
 /*  qui a déjà vu une partie du match se jouer — c'est le même biais de        */
-/*  look-ahead que l'Elo courant, cf. supabase/elo-historique.ts). Sans cote   */
+/*  look-ahead que l'Elo courant, cf. db/elo-historique.ts). Sans cote   */
 /*  utilisable pour un duel donné : repli SILENCIEUX sur l'Elo seul, jamais    */
 /*  un calcul bloqué ou dégradé faute de cotes.                                */
 /* -------------------------------------------------------------------------- */
 
-/** Ce qu'il faut d'une ligne de cote pour l'indexer — cf. `supabase/cotes.ts` `LigneCote`. */
+/** Ce qu'il faut d'une ligne de cote pour l'indexer — cf. `db/cotes.ts` `LigneCote`. */
 export interface CoteMatch {
   playerAId: string | null;
   playerBId: string | null;
@@ -230,7 +230,7 @@ export function indexerCotes(cotes: readonly CoteMatch[]): IndexCotes {
  * (30 % Elo / 70 % cotes) quand une cote utilisable existe pour CE duel.
  *
  * C'est l'UNIQUE point de branchement du blend — `lib/montecarlo.ts`
- * (Picks/Fantasy/Prédictions, via `supabase/projections.ts`) et
+ * (Picks/Fantasy/Prédictions, via `db/projections.ts`) et
  * `lib/bracket.ts` (Bracket) prennent tous deux une `ProbabiliteMatch` en
  * paramètre et n'ont besoin de rien savoir de plus sur les cotes.
  */

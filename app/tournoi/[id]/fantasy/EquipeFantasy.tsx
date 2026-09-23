@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
-import type { SourceElo } from '@/supabase/elo';
+import type { SourceElo } from '@/db/elo';
 
 /** Contribution d'un tour à l'espérance d'un joueur. */
 export interface LigneTourVue {

@@ -1,5 +1,5 @@
 import { sessionValide } from '@/auth/garde';
-import { comparerEchelles } from '@/supabase/comparaison-echelle';
+import { comparerEchelles } from '@/db/comparaison-echelle';
 
 /**
  * POST /api/calibration/echelle

@@ -14,15 +14,15 @@ import {
   joueursEnLice,
   loadEngineData,
   surfacePourElo,
-} from '@/supabase/queries';
-import { computeAndStoreProjections, projectionsEnCache } from '@/supabase/projections';
-import { chargerBlendProduction } from '@/supabase/cotesBlend';
+} from '@/db/queries';
+import { computeAndStoreProjections, projectionsEnCache } from '@/db/projections';
+import { chargerBlendProduction } from '@/db/cotesBlend';
 import {
   cleDeNom,
   compterSources,
   eloEffectifResolu,
   type ElosResolus,
-} from '@/supabase/elo';
+} from '@/db/elo';
 import { genererSlots, recommanderPourTour } from '@/lib/optimizer';
 import { adversaireDe } from '@/lib/parser';
 import type { DrawExtract, Half, Slot } from '@/lib/types';
@@ -117,7 +117,7 @@ export default async function PicksPage({
   // Indépendantes du stock affiché : c'est une propriété du tableau, pas de qui picke.
   //
   // NE BLOQUE JAMAIS sur un cache froid (même correctif que chargerReference,
-  // cf. supabase/reference.ts et mémoire perf-resultats-chargerreference) :
+  // cf. db/reference.ts et mémoire perf-resultats-chargerreference) :
   // avant ce commit, `getProjections` relançait ICI une simulation Monte Carlo
   // (20 000 tirages) dès que ce tour n'avait encore jamais été visité — mesuré
   // à 30-47 s sur un tableau de 128 en cache froid, largement au-dessus du
@@ -145,7 +145,7 @@ export default async function PicksPage({
     }
   }
 
-  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : indépendante
   // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
   // jamais une resimulation.
   const { coteUtilisables } = await chargerBlendProduction(id);

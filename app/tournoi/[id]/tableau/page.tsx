@@ -7,7 +7,7 @@ import {
   getPlayerRows,
   type MatchRow,
   type PlayerRow,
-} from '@/supabase/queries';
+} from '@/db/queries';
 
 export const dynamic = 'force-dynamic';
 

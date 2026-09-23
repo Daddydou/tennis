@@ -11,7 +11,7 @@
  *             selon le même barème (lib/scoring.ts), pondéré par un
  *             multiplicateur croissant selon le tour. Chaque joueur porte donc
  *             UNE espérance globale, celle du tirage — aucun résultat réel n'y
- *             entre jamais (cf. supabase/fantasy.ts).
+ *             entre jamais (cf. db/fantasy.ts).
  *
  * L'équipe se compose d'un joueur par palier de classement. Hors Grand Chelem,
  * les derniers paliers se recoupent (« 31 et au-delà » deux fois) : prendre le
@@ -23,7 +23,7 @@
  *
  * Module PUR : aucune I/O, aucune dépendance à Supabase. Les espérances par
  * tour lui sont fournies (elles viennent de la simulation Monte Carlo, cf.
- * supabase/fantasy.ts).
+ * db/fantasy.ts).
  */
 
 import { affectationHongroise } from './optimizer';
@@ -301,7 +301,7 @@ export interface LigneTour {
  *
  * Tout est espérance, du premier tour à la finale : l'équipe Fantasy se
  * compose une fois pour toutes avant le coup d'envoi, aucun résultat réel
- * n'entre dans ce calcul (cf. supabase/fantasy.ts).
+ * n'entre dans ce calcul (cf. db/fantasy.ts).
  *
  * `byes` — les tours où le joueur est exempté (`toursAvecBye`). Un bye n'est
  * pas un match à simuler : il est acquis au tirage, donc certain. Sa ligne ne

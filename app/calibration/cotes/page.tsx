@@ -1,19 +1,19 @@
 import Link from 'next/link';
 import BoutonCotes from './BoutonCotes';
-import { listTournaments } from '@/supabase/queries';
-import { loadEngineData, surfacePourElo } from '@/supabase/queries';
-import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
+import { listTournaments } from '@/db/queries';
+import { loadEngineData, surfacePourElo } from '@/db/queries';
+import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
 import {
   chargerCotes,
   cleCotesConfiguree,
   compterCotesParTournoi,
   listerSportsTennis,
-} from '@/supabase/cotes';
+} from '@/db/cotes';
 import {
   creerLecteurEloAnterieur,
   eloAnterieur,
   type EloALaDate,
-} from '@/supabase/elo-historique';
+} from '@/db/elo-historique';
 import { blendAvecCotes, pVictoire } from '@/lib/elo';
 import {
   ecartRelatif,

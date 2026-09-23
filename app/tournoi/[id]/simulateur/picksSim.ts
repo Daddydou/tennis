@@ -1,6 +1,6 @@
 /**
  * Petits adaptateurs entre le moteur de bracket (lib/bracketSim.ts, position
- * par tour) et le moteur de picks existant (supabase/queries.ts, half par
+ * par tour) et le moteur de picks existant (db/queries.ts, half par
  * tour) — pour réutiliser `etatsSlots`/`genererSlots` TELS QUELS sur le
  * tableau testé du simulateur, sans dupliquer leur logique d'éligibilité.
  *
@@ -10,7 +10,7 @@
  */
 import { cleDuel, type ArbreResolu } from '@/lib/bracketSim';
 import type { Half, MatchStatus } from '@/lib/types';
-import type { MatchRow, PickRow } from '@/supabase/queries';
+import type { MatchRow, PickRow } from '@/db/queries';
 
 /** Clé stable d'un slot de pick (round + half) — distincte de `cleDuel` (round + position). */
 export function cleSlot(round: string, half: Half | null): string {

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { cleDuel, resoudreArbre, type MatchReel } from '@/lib/bracketSim';
-import type { MatchRow } from '@/supabase/queries';
+import type { MatchRow } from '@/db/queries';
 import type { Half } from '@/lib/types';
 import BracketReelPanel from './BracketReelPanel';
 import PicksHypothetiquesPanel from './PicksHypothetiquesPanel';
@@ -42,7 +42,7 @@ export default function SimulateurPicks({
   matchRows: MatchRow[];
   matches: MatchReel[];
   joueurs: Record<string, Joueur>;
-  /** E[points | joueur X au tour R] — moteur Monte Carlo existant (supabase/projections.ts). */
+  /** E[points | joueur X au tour R] — moteur Monte Carlo existant (db/projections.ts). */
   esperances: Record<string, Record<string, number>>;
   participants: Participant[];
   /** stock -> somme des points de ses VRAIS picks (tn_picks), déjà calculée côté serveur. */

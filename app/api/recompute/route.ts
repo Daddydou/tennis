@@ -1,4 +1,4 @@
-import { recalculerPoints } from '@/supabase/points';
+import { recalculerPoints } from '@/db/points';
 import { sessionValide } from '@/auth/garde';
 
 /**

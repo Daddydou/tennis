@@ -10,7 +10,7 @@ import {
   getBracketRoundPicks,
   getTousLesPicks,
   tourCourantMatches,
-} from '@/supabase/queries';
+} from '@/db/queries';
 
 export const dynamic = 'force-dynamic';
 

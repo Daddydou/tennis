@@ -1,7 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { loadEngineData } from '@/supabase/queries';
-import { rafraichirCotes } from '@/supabase/cotes';
+import { loadEngineData } from '@/db/queries';
+import { rafraichirCotes } from '@/db/cotes';
 
 /**
  * POST /api/cotes/refresh

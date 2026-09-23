@@ -45,7 +45,7 @@ export interface EngineInput {
  * jamais à chaque affichage.
  *
  * BLEND ELO/COTES : la simulation est désormais nourrie par
- * `chargerBlendProduction` (supabase/cotesBlend.ts) — Elo seul par défaut,
+ * `chargerBlendProduction` (db/cotesBlend.ts) — Elo seul par défaut,
  * mélangé 30 % Elo / 70 % cotes sur chaque duel pour lequel une cote
  * utilisable existe (appariée, capturée avant le coup d'envoi). Un tournoi
  * sans aucune cote en cache se comporte EXACTEMENT comme avant ce
@@ -164,7 +164,7 @@ function lireCache(
  * l'ajout de P(titre), cf. `getProjections`).
  *
  * Séparé de `getProjections` pour les appelants qui doivent rester rapides
- * même quand le cache est froid (cf. `supabase/reference.ts` : la page
+ * même quand le cache est froid (cf. `db/reference.ts` : la page
  * Résultats ne doit jamais attendre une simulation Monte Carlo de plusieurs
  * secondes par tour manquant — mesuré à ~49 s sur un Grand Chelem avec
  * plusieurs tours non mis en cache, cf. mémoire perf-resultats-chargerreference).

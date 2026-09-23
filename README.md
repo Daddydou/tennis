@@ -167,7 +167,7 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   tournoi (les joueurs allés loin en sont ressortis relevés, donc l'équipe
   reconstituée est en partie choisie POUR avoir bien fini) ; la colonne « sans
   look-ahead » repart du dernier relevé Elo **antérieur au tirage**
-  (`supabase/fantasy-anterieur.ts`). Un tournoi antérieur à l'archive Elo
+  (`db/fantasy-anterieur.ts`). Un tournoi antérieur à l'archive Elo
   affiche « — » et reste hors de la synthèse propre, plutôt que d'y entrer avec
   un chiffre flatté.
 - `/calibration` — la courbe Elo → probabilité du moteur
@@ -199,7 +199,7 @@ lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
   prédiction confiante et fausse. **Rien n'est branché** : ni les picks, ni le
   fantasy, ni la simulation ne lisent ces cotes.
   **L'Elo comparé aux cotes est celui d'AVANT le match** (dernier relevé
-  Tennis Abstract strictement antérieur, cf. `supabase/elo-historique.ts`) :
+  Tennis Abstract strictement antérieur, cf. `db/elo-historique.ts`) :
   une cote est capturée avant la rencontre, l'Elo doit l'être aussi, sinon on
   compare une prédiction à une rétrodiction. Les matchs sans Elo antérieur —
   aucun relevé plus ancien, ou un joueur absent du relevé — sont **affichés,
@@ -279,7 +279,7 @@ et par Next.js 16 :
   republie pas tout le monde — même règle que `ta_elo`, qui ne supprime jamais
   un joueur absent du rapport de la semaine.
   Deux frontières, tenues explicitement : la production n'appelle jamais
-  `supabase/elo-historique.ts`, et les écrans de mesure ne remplacent jamais un
+  `db/elo-historique.ts`, et les écrans de mesure ne remplacent jamais un
   Elo antérieur manquant par l'Elo courant — ni par l'Elo maison, recalculé sur
   les matchs importés, qui rentrerait le look-ahead par la porte de derrière.
   Un trou se **signale** (compté et affiché), il ne se remplit pas. Enfin
@@ -287,11 +287,11 @@ et par Next.js 16 :
   de la semaine, donc l'évaluation propre ne portera que sur les tournois joués
   après sa mise en place.
 - **Séparation lecture / écriture des clés Supabase.** Les lectures passent par la
-  clé publique (`supabase/anon.ts`), adossée à des policies RLS
+  clé publique (`db/anon.ts`), adossée à des policies RLS
   `for select to anon using (true)` sur les 5 tables `tn_*` : ce client ne peut
   rien modifier, et reste donc utilisable jusque dans le navigateur. Les écritures
   (import, picks, cache de projections, `tn_recompute_picks`) passent par la
-  `SUPABASE_SERVICE_ROLE_KEY` (`supabase/server.ts`), qui contourne RLS et ne vit
+  `SUPABASE_SERVICE_ROLE_KEY` (`db/server.ts`), qui contourne RLS et ne vit
   que côté serveur — le module porte `import 'server-only'`, ce qui casse le build
   s'il est atteint depuis un Client Component. Aucune policy insert/update/delete
   n'existe : même volée, la clé publique ne permet aucune écriture.
@@ -303,7 +303,7 @@ et par Next.js 16 :
   `tn_projections`, indexé par `from_round`** (E[pts] + P d'avancer). L'import
   invalide tout le cache du tournoi puis préchauffe le tour courant ; les autres
   tours sont simulés à la demande au premier affichage. Voir
-  `supabase/projections.ts`.
+  `db/projections.ts`.
 - **Slots sans pick possible.** À un tour donné, si tous les survivants d'une
   moitié ont déjà été pickés, le slot ne peut littéralement pas être rempli —
   état valide du jeu (un joueur ne sert qu'une fois), pas une erreur. Ces slots
@@ -364,7 +364,7 @@ et par Next.js 16 :
   l'URL source.
 - **Elo : source externe Tennis Abstract, avec repli — deux niveaux, pas trois.**
   `ta_elo` reçoit les rapports hebdomadaires de Tennis Abstract (~540 joueurs par
-  circuit, Elo global + dur/terre/gazon). `resoudreElos` (`supabase/elo.ts`) écrit
+  circuit, Elo global + dur/terre/gazon). `resoudreElos` (`db/elo.ts`) écrit
   une cascade à trois étages — TA, puis Elo maison, puis défaut — mais **l'étage
   du milieu n'est jamais atteint** : en pratique la cascade est
   **TA → défaut (1650)**.
@@ -445,7 +445,7 @@ et par Next.js 16 :
   masculin vaut 20 pts, pas 15) comme à la simulation.
 - **Le schéma ne stocke pas la tête de série** (ni la moitié de tableau) sur
   `tn_players`. Après import, les structures du moteur (`Match[]`, `Player`) sont
-  reconstruites depuis la DB (`supabase/queries.ts`) : la moitié se déduit du
+  reconstruites depuis la DB (`db/queries.ts`) : la moitié se déduit du
   match de 1er tour ; la reconstruction est vérifiée identique à l'extraction en
   mémoire. La tête de série n'étant pas persistée, l'UI affiche le rang ATP quand
   il est connu.

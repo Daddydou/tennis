@@ -37,7 +37,7 @@ import {
  * est AUGMENTÉE d'un instantané daté du rapport. Sans cette archive, juger un
  * match passé se ferait sur l'Elo d'aujourd'hui, qui a déjà intégré son
  * résultat : le favori y est en partie désigné par ce qu'il a fait (cf.
- * supabase/elo-historique.ts). La table courante ne perd rien à ce doublon, et
+ * db/elo-historique.ts). La table courante ne perd rien à ce doublon, et
  * les écrans de mesure y gagnent la seule chose qui les rende valides.
  */
 

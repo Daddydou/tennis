@@ -10,7 +10,7 @@
  * Ce que ce module NE regarde PAS, et c'est le point important :
  *   - `winner_id` et les scores — le pronostic ne doit pas se laisser corriger
  *     par ce qui s'est déjà joué. Un tournoi à venir, en cours ou terminé donne
- *     exactement le même arbre, comme l'espérance Fantasy (cf. supabase/fantasy.ts) ;
+ *     exactement le même arbre, comme l'espérance Fantasy (cf. db/fantasy.ts) ;
  *   - les tours postérieurs au premier — seul `rounds[0]` est lu, le reste est
  *     déduit. Un tableau dont un tour intermédiaire manque en base reste donc
  *     entièrement prédictible.
@@ -26,7 +26,7 @@
 import { pVictoire, PROBABILITE_ELO_SEULE, type ProbabiliteMatch } from './elo';
 
 export interface CritereJoueur {
-  /** Elo effectif sur la surface du tournoi (mélange 60/40, cf. supabase/elo.ts). */
+  /** Elo effectif sur la surface du tournoi (mélange 60/40, cf. db/elo.ts). */
   elo: number;
   /** Rang officiel, pour départager deux Elo strictement égaux (ou un blend tombé pile à 0,5). */
   rang: number | null;

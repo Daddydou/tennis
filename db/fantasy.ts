@@ -203,7 +203,7 @@ function calculAJour(ligne: LigneCache, bareme: number[]): boolean {
  * mesuré à plusieurs dizaines de secondes sur un tableau de 128, largement
  * au-dessus du timeout d'une fonction Vercel (même défaut que
  * `getProjections`/`computeAndStoreProjections`, cf. mémoire
- * perf-resultats-chargerreference et supabase/reference.ts).
+ * perf-resultats-chargerreference et db/reference.ts).
  */
 export async function fantasyEnCache(engine: EngineInput): Promise<Fantasy | null> {
   const { famille, bareme } = contexteFantasy(engine.tournament);
@@ -361,7 +361,7 @@ export interface LigneHistorique {
 
 /**
  * Volet « sans look-ahead » du même tournoi : la même équipe recomposée sur
- * l'Elo qui précédait le tirage (cf. supabase/fantasy-anterieur.ts).
+ * l'Elo qui précédait le tirage (cf. db/fantasy-anterieur.ts).
  *
  * Facultatif, et son absence veut dire quelque chose : aucun relevé Elo n'est
  * antérieur à ce tournoi, il n'entre donc pas dans l'évaluation propre.

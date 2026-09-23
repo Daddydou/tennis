@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { importerElosColles } from '@/supabase/elo-refresh';
+import { importerElosColles } from '@/db/elo-refresh';
 
 /**
  * POST /api/elo/import
@@ -11,7 +11,7 @@ import { importerElosColles } from '@/supabase/elo-refresh';
  * aux requêtes venant des IP de datacenter (Vercel) : `/api/elo/refresh`,
  * conservé en repli, n'aboutit plus en production. Ici, c'est le navigateur
  * qui lit la page et l'app qui reçoit le résultat par collage. L'écriture en
- * base est rigoureusement la même (cf. supabase/elo-refresh.ts).
+ * base est rigoureusement la même (cf. db/elo-refresh.ts).
  *
  * Écriture : session obligatoire, même garde que /api/elo/refresh. Le proxy
  * filtre déjà /api/*, mais c'est cette vérification qui fait foi.

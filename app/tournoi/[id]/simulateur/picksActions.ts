@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { supabaseAdmin } from '@/supabase/server';
+import { supabaseAdmin } from '@/db/server';
 
 export interface PickSimuleActionResult {
   ok: boolean;

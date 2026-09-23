@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { MatchReel } from '@/lib/bracketSim';
-import type { MatchRow } from '@/supabase/queries';
+import type { MatchRow } from '@/db/queries';
 import type { Player } from '@/lib/types';
 import SimulateurBracket from './SimulateurBracket';
 import SimulateurPicks from './SimulateurPicks';

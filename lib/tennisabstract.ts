@@ -163,7 +163,7 @@ export function parserRapportElo(html: string, tour: TourTa): RapportElo {
  * restant accessible depuis un navigateur, c'est lui qui parse le tableau
  * et l'app qui reçoit le résultat par collage — même chemin que les
  * tableaux de tournoi. Seule la SOURCE change : l'écriture en base est
- * strictement la même (cf. supabase/elo-refresh.ts).
+ * strictement la même (cf. db/elo-refresh.ts).
  * ------------------------------------------------------------------ */
 
 function champ(o: Record<string, unknown>, ...noms: string[]): unknown {

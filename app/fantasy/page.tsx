@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import BackfillButton from './BackfillButton';
-import { listerHistorique } from '@/supabase/fantasy';
-import { listTournaments } from '@/supabase/queries';
+import { listerHistorique } from '@/db/fantasy';
+import { listTournaments } from '@/db/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic';
  * donc l'équipe reconstituée est en partie choisie POUR avoir bien fini, et
  * l'écart s'en trouve flatté. La seconde repart du dernier relevé Elo
  * antérieur au tirage — l'information dont on disposait le jour où l'équipe
- * se composait (cf. supabase/fantasy-anterieur.ts).
+ * se composait (cf. db/fantasy-anterieur.ts).
  *
  * L'archive Elo ne remonte pas le temps : les tournois joués avant sa mise en
  * place n'ont pas de colonne propre, et n'en auront jamais. Ils sont marqués

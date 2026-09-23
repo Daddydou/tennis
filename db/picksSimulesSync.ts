@@ -17,7 +17,7 @@ import type { Half } from '@/lib/types';
  *
  * Ne lève jamais : un échec de synchronisation ne doit pas faire échouer la
  * validation du vrai pick qui l'a déclenchée (même convention que
- * `recalculerPoints`, supabase/points.ts).
+ * `recalculerPoints`, db/points.ts).
  */
 export async function synchroniserPickSimuleDepuisReel(
   tournamentId: string,

@@ -1,5 +1,5 @@
 import { sessionValide } from '@/auth/garde';
-import { calibrerElo } from '@/supabase/calibration';
+import { calibrerElo } from '@/db/calibration';
 
 /**
  * POST /api/calibration/elo

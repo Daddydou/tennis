@@ -235,7 +235,7 @@ export const POIDS_ELO_MARCHE = 0.3;
  *
  * UN SEUL POINT D'ENTRÉE, partagé par le moteur Monte Carlo
  * (`lib/montecarlo.ts`, dont héritent Picks/Fantasy/Prédictions via
- * `supabase/projections.ts`) et le pronostic déterministe du Bracket
+ * `db/projections.ts`) et le pronostic déterministe du Bracket
  * (`lib/bracket.ts`) : brancher le blend une fois ici suffit aux deux, sans
  * dupliquer la logique de mélange dans chacun.
  */

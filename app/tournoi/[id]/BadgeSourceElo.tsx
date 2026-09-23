@@ -3,12 +3,12 @@
  *
  * Extrait de l'écran Picks pour être partagé avec l'écran Fantasy, à
  * comportement identique. Les deux écrans classent des joueurs sur des Elo
- * résolus par rapprochement de noms (cf. supabase/elo.ts) : un joueur fort
+ * résolus par rapprochement de noms (cf. db/elo.ts) : un joueur fort
  * affiché en « défaut » ou en « ambigu » signale une correspondance ratée, et
  * doit sauter aux yeux des deux côtés.
  */
 
-import type { SourceElo } from '@/supabase/elo';
+import type { SourceElo } from '@/db/elo';
 
 /**
  * Un Elo Tennis Abstract est la normale : il ne porte aucune marque, juste le

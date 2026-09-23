@@ -16,7 +16,7 @@ import {
 /**
  * FANTASY SANS LOOK-AHEAD — L'ÉQUIPE QU'ON POUVAIT COMPOSER AU TIRAGE
  *
- * L'historique prédit/réalisé (`supabase/fantasy.ts`) rejoue l'équipe optimale
+ * L'historique prédit/réalisé (`db/fantasy.ts`) rejoue l'équipe optimale
  * avec les Elo COURANTS. Sur un tournoi déjà joué, ces Elo ont intégré ses
  * résultats : les joueurs qui sont allés loin en sont ressortis relevés, donc
  * l'équipe « optimale » qu'on reconstitue est en partie choisie POUR avoir

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { calibrerElo } from '@/supabase/calibration';
+import { calibrerElo } from '@/db/calibration';
 
 export const dynamic = 'force-dynamic';
 

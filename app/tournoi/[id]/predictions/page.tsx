@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
-import { loadEngineData, tourCourantMatches } from '@/supabase/queries';
-import { computeAndStoreProjections, projectionsEnCache, ROUND_TITRE } from '@/supabase/projections';
-import { chargerBlendProduction } from '@/supabase/cotesBlend';
+import { loadEngineData, tourCourantMatches } from '@/db/queries';
+import { computeAndStoreProjections, projectionsEnCache, ROUND_TITRE } from '@/db/projections';
+import { chargerBlendProduction } from '@/db/cotesBlend';
 import { estIndecis } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -59,7 +59,7 @@ export default async function PredictionsPage({
   }
 
   // NE BLOQUE JAMAIS sur un cache tn_projections froid (même correctif que
-  // Picks/Simulateur/Fantasy/Résultats, cf. supabase/reference.ts et mémoire
+  // Picks/Simulateur/Fantasy/Résultats, cf. db/reference.ts et mémoire
   // perf-resultats-chargerreference) : `getProjections` relançait ICI une
   // simulation Monte Carlo (20 000 tirages) dès que ce tour n'avait jamais
   // été visité — mesuré à 30-52 s sur un tableau de 128, largement au-dessus
@@ -102,7 +102,7 @@ export default async function PredictionsPage({
 
   const sommeTitres = lignes.reduce((s, l) => s + l.titre, 0);
 
-  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : indépendante
   // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
   // jamais une resimulation.
   const { coteUtilisables } = await chargerBlendProduction(id);

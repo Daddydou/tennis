@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
-import { rafraichirElos } from '@/supabase/elo-refresh';
+import { rafraichirElos } from '@/db/elo-refresh';
 import type { TourTa } from '@/lib/tennisabstract';
 
 /**
@@ -9,7 +9,7 @@ import type { TourTa } from '@/lib/tennisabstract';
  *
  * Récupère les rapports Elo hebdomadaires de Tennis Abstract et remplit
  * `ta_elo`. Ces Elo priment sur les Elo maison à la simulation (cf.
- * supabase/elo.ts).
+ * db/elo.ts).
  *
  * Écriture : session obligatoire, même garde que /api/recompute. Le proxy
  * filtre déjà /api/*, mais c'est cette vérification qui fait foi.

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { genererSlots } from '@/lib/optimizer';
-import { etatsSlots, type MatchRow } from '@/supabase/queries';
+import { etatsSlots, type MatchRow } from '@/db/queries';
 import type { Half } from '@/lib/types';
 import { cleSlot, versPickRowsSimules } from './picksSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';

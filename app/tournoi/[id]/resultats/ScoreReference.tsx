@@ -1,4 +1,4 @@
-import { chargerReference } from '@/supabase/reference';
+import { chargerReference } from '@/db/reference';
 import { estEnCours, estIndecis } from '@/lib/types';
 import type { Half } from '@/lib/types';
 

@@ -400,7 +400,7 @@ export function etatsSlots(
  * Reconstruit les `Player` du moteur.
  *
  * Les Elo ne viennent plus des colonnes `elo_*` : ils sont résolus par la
- * cascade Tennis Abstract → maison → défaut (cf. supabase/elo.ts). Passer
+ * cascade Tennis Abstract → maison → défaut (cf. db/elo.ts). Passer
  * `elos` déjà résolus évite de refaire le rapprochement de noms ici ; sans
  * lui, la résolution se fait sur un index vide et retombe donc sur l'Elo
  * maison, ce qui préserve le comportement d'avant.

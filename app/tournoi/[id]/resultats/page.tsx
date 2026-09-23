@@ -14,7 +14,7 @@ import {
   getPlayerRows,
   getMatchRows,
   etatsSlots,
-} from '@/supabase/queries';
+} from '@/db/queries';
 import { genererSlots } from '@/lib/optimizer';
 import { estEnCours, estIndecis } from '@/lib/types';
 

@@ -1,14 +1,14 @@
 import { sessionValide } from '@/auth/garde';
-import { supabaseAnon } from '@/supabase/anon';
-import { loadEngineData } from '@/supabase/queries';
-import { creerLecteurEloAnterieur } from '@/supabase/elo-historique';
-import { evaluerFantasyAnterieur } from '@/supabase/fantasy-anterieur';
+import { supabaseAnon } from '@/db/anon';
+import { loadEngineData } from '@/db/queries';
+import { creerLecteurEloAnterieur } from '@/db/elo-historique';
+import { evaluerFantasyAnterieur } from '@/db/fantasy-anterieur';
 import {
   enregistrerAnterieur,
   enregistrerHistorique,
   equipeEvaluee,
   getFantasy,
-} from '@/supabase/fantasy';
+} from '@/db/fantasy';
 
 /**
  * POST /api/fantasy/backfill
@@ -26,7 +26,7 @@ import {
  *     déjà intégré les résultats du tournoi. C'est le calcul historique, celui
  *     que l'import écrit aussi ;
  *   - PROPRE — la même équipe recomposée sur le dernier relevé Elo antérieur
- *     au tirage (cf. supabase/fantasy-anterieur.ts). C'est celui dont la
+ *     au tirage (cf. db/fantasy-anterieur.ts). C'est celui dont la
  *     comparaison prédit/réalisé a un sens, et il n'existe que si l'archive
  *     contient un relevé plus ancien que le tournoi.
  *

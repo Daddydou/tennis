@@ -6,7 +6,7 @@ import { boutonPrimaire, champTexte, Spinner, zoneTactile } from '@/app/ui';
 
 /**
  * Forme du résumé renvoyé par la route. Redéclarée ici plutôt qu'importée de
- * `supabase/elo-refresh` : ce module porte `server-only`, et un composant
+ * `db/elo-refresh` : ce module porte `server-only`, et un composant
  * client n'a pas à en dépendre, même pour un type.
  */
 interface ResumeRefresh {

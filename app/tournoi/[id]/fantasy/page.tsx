@@ -3,16 +3,16 @@ import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
-import { loadEngineData, surfacePourElo } from '@/supabase/queries';
+import { loadEngineData, surfacePourElo } from '@/db/queries';
 import {
   computeAndStoreFantasy,
   contexteFantasy,
   equipeEvaluee,
   fantasyEnCache,
   type Fantasy,
-} from '@/supabase/fantasy';
-import { chargerBlendProduction } from '@/supabase/cotesBlend';
-import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
+} from '@/db/fantasy';
+import { chargerBlendProduction } from '@/db/cotesBlend';
+import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
 import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
 
 export const dynamic = 'force-dynamic';
@@ -48,11 +48,11 @@ export default async function FantasyPage({
   // L'équipe se compose une fois pour toutes avant le coup d'envoi : les
   // espérances partent du tirage et ignorent les résultats réels, à la
   // différence des écrans Picks et Prédictions qui suivent le tour courant
-  // (cf. supabase/fantasy.ts). L'écran affiche donc toujours la même équipe,
+  // (cf. db/fantasy.ts). L'écran affiche donc toujours la même équipe,
   // que le tournoi soit à venir, en cours ou terminé.
   //
   // NE BLOQUE JAMAIS sur un cache froid (même correctif que Picks/Simulateur/
-  // Résultats, cf. supabase/reference.ts et mémoire
+  // Résultats, cf. db/reference.ts et mémoire
   // perf-resultats-chargerreference) : `getFantasy` délègue à `getProjections`,
   // qui relance une simulation Monte Carlo (20 000 tirages) si le cache
   // manque — mesuré à 30-52 s sur un tableau de 128. `fantasyEnCache` lit
@@ -131,7 +131,7 @@ export default async function FantasyPage({
     (pid) => (players[pid]?.rank ?? null) === null,
   ).length;
 
-  // Traçabilité du blend Elo/cotes (cf. supabase/cotesBlend.ts) : indépendante
+  // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : indépendante
   // du cache tn_fantasy, toujours à jour — une lecture légère de tn_odds,
   // jamais une resimulation.
   const { coteUtilisables } = await chargerBlendProduction(id);

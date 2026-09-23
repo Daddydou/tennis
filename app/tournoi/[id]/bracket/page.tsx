@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
-import { loadEngineData, surfacePourElo } from '@/supabase/queries';
-import { eloEffectifResolu, type ElosResolus } from '@/supabase/elo';
-import { chargerBlendProduction } from '@/supabase/cotesBlend';
+import { loadEngineData, surfacePourElo } from '@/db/queries';
+import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
+import { chargerBlendProduction } from '@/db/cotesBlend';
 import {
   construireBracket,
   duelsDuTour,
@@ -178,7 +178,7 @@ export default async function BracketPage({
   const surfElo = surfacePourElo(tournament.surface);
 
   // Elo effectif : exactement celui qu'affiche l'écran Picks et qu'utilise la
-  // simulation — mélange 60/40 surface/général (cf. supabase/elo.ts).
+  // simulation — mélange 60/40 surface/général (cf. db/elo.ts).
   const critere = (pid: string): CritereJoueur => {
     const e = elos[pid] as ElosResolus | undefined;
     return {
@@ -187,7 +187,7 @@ export default async function BracketPage({
     };
   };
 
-  // Blend Elo/cotes (cf. supabase/cotesBlend.ts) : Elo seul par défaut,
+  // Blend Elo/cotes (cf. db/cotesBlend.ts) : Elo seul par défaut,
   // mélangé au marché sur chaque duel pour lequel une cote utilisable existe.
   const { probabiliteMatch, coteUtilisables, coteDisponiblePour } =
     await chargerBlendProduction(id);

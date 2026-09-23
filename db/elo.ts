@@ -12,7 +12,7 @@
  *
  * Lectures en clé anon (policy `for select to anon`, cf. migration 0002) :
  * ce module ne contient aucune écriture. Le rafraîchissement des Elo vit
- * dans `supabase/elo-refresh.ts`, en service role.
+ * dans `db/elo-refresh.ts`, en service role.
  */
 
 import { supabaseAnon } from './anon';

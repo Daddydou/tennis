@@ -67,7 +67,7 @@ if (!tournoi) stop(`Tournoi ${tournamentId} introuvable.`);
 
 // Les joueurs du TABLEAU, pas tous ceux de la base : une rencontre renvoyée
 // par l'API qui n'y figure pas doit être signalée, pas devinée. Même
-// périmètre que `loadEngineData` (supabase/queries.ts).
+// périmètre que `loadEngineData` (db/queries.ts).
 const { data: matchs, error: eMatchs } = await sb
   .from('tn_matches')
   .select('player1_id, player2_id')
