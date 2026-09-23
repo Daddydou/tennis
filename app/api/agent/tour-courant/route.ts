@@ -1,13 +1,29 @@
 import type { NextRequest } from 'next/server';
 import { sessionValide } from '@/auth/garde';
 import { verifierJetonAgent } from '@/auth/session';
-import { loadEngineData, tourCourantMatches } from '@/db/queries';
+import { loadEngineData, tourCourantMatches, type MatchRow } from '@/db/queries';
 import { projectionsEnCache } from '@/db/projections';
 import { genererSlots, recommanderPourTour } from '@/lib/optimizer';
+import { estIndecis } from '@/lib/types';
 
 /** Recommandations renvoyées par slot, par défaut et au maximum. */
 const LIMITE_DEFAUT = 10;
 const LIMITE_MAX = 30;
+
+/**
+ * Joueurs dont le match du tour `round` reste à jouer (scheduled, live,
+ * in_progress). Un match completed, retired, walkover ou bye est décidé :
+ * ses deux joueurs ne sont plus pickables pour ce tour, vainqueur compris.
+ */
+function joueursAJouer(matchRows: MatchRow[], round: string): Set<string> {
+  const ids = new Set<string>();
+  for (const m of matchRows) {
+    if (m.round !== round || !estIndecis(m.status)) continue;
+    if (m.player1_id) ids.add(m.player1_id);
+    if (m.player2_id) ids.add(m.player2_id);
+  }
+  return ids;
+}
 
 /**
  * GET /api/agent/tour-courant?tournoi=<uuid>[&limite=10]
@@ -21,8 +37,9 @@ const LIMITE_MAX = 30;
  *   la page Picks, elle, avance au rythme des picks de chacun. `null` pour
  *   un tournoi terminé (statut `completed`).
  * - Recommandations = `recommanderPourTour` sur le cache `tn_projections`,
- *   par slot (moitié haute / basse, ou tableau entier en SF/F), sans exclure
- *   de joueur déjà pické : aucun participant n'est visé.
+ *   par slot (moitié haute / basse, ou tableau entier en SF/F), limitées aux
+ *   joueurs dont le match du tour est encore à jouer (`joueursAJouer`). Sans
+ *   exclure de joueur déjà pické : aucun participant n'est visé.
  *
  * LECTURE SEULE : ne lance jamais de simulation Monte Carlo et n'écrit rien.
  * L'import de résultats préchauffe déjà les projections de ce tour précis
@@ -65,14 +82,27 @@ export async function GET(req: NextRequest) {
     tournament.status === 'completed' ? null : tourCourantMatches(matchRows, rounds);
   const cache = tour ? await projectionsEnCache(tournament.id, tour) : null;
 
+  // Filtre AVANT la limite : on ne garde que les joueurs dont le match du
+  // tour est encore à jouer, sinon un slot déjà joué renverrait des perdants
+  // ou des qualifiés qu'on ne peut plus picker à ce tour.
+  const esperances =
+    cache && tour
+      ? (() => {
+          const aJouer = joueursAJouer(matchRows, tour);
+          return Object.fromEntries(
+            Object.entries(cache.esperances).filter(([id]) => aJouer.has(id)),
+          );
+        })()
+      : null;
+
   const recommandations = tour
     ? genererSlots(rounds)
         .filter((s) => s.round === tour)
         .map((slot) => ({
           moitie: slot.half,
-          joueurs: cache
+          joueurs: esperances
             ? recommanderPourTour(
-                cache.esperances,
+                esperances,
                 players,
                 tour,
                 slot.half,
