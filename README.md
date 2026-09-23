@@ -11,9 +11,15 @@ joueur ne peut être pické **qu'une seule fois** sur tout le tournoi — c'est 
 contrainte structurante du jeu. 12 picks par tournoi (2 par tour jusqu'aux quarts,
 puis 1 en demi et 1 en finale).
 
-Le moteur (`lib/`) est fourni tel quel et n'est pas modifié : scoring, Elo par
-surface, simulation Monte Carlo, affectation optimale (algorithme hongrois),
-parser du JSON du bookmarklet.
+Le moteur (`lib/`) vient du projet `tennis-picks` : scoring, Elo par surface,
+simulation Monte Carlo, affectation optimale (algorithme hongrois), parser du
+JSON du bookmarklet. Il a été **modifié et enrichi ici**. Les six modules
+d'origine (`types`, `scoring`, `elo`, `optimizer`, `montecarlo`, `parser`) ont
+évolué, par exemple pour le barème forfait/abandon, le statut `in_progress`, le
+support WTA, l'échelle Elo configurable, le mélange Elo/cotes et la
+réconciliation des IDs joueurs. D'autres modules ont été ajoutés (voir
+[Structure](#structure)). C'est désormais **la copie de référence** : un bug du
+moteur se corrige ici, jamais dans `tennis-picks/lib`, qui est dépassé.
 
 ## Démarrer
 
@@ -57,30 +63,51 @@ npm run verify:auth            # 401 sans cookie, cookie signé, contournements
 
 ## Sécurité de la base
 
-Les tables `tn_*` sont en **lecture publique / écriture service-role** :
+Toutes les tables `tn_*` et `ta_*` sont en **lecture publique / écriture
+service-role**. Chaque migration qui crée une table y active la RLS, pose une
+seule policy `for select to anon, authenticated`, et retire aux rôles publics
+tout droit d'écriture. La clé publique (anon) sert à **lire**, rien d'autre.
+Seule la service role, utilisée côté serveur uniquement, écrit.
+
+Côté fonctions SQL :
+- `tn_recompute_picks` et `tn_score_match` ne sont **pas** appelables en RPC avec
+  la clé publique (0001, 0009, 0013) ;
+- `ta_elo_a_la_date` (0010) l'est **volontairement**. Elle est en lecture seule
+  (`stable`, `security invoker`) et ne renvoie que ce que la table publique
+  `ta_elo_historique` montre déjà.
+
+### Migrations
+
+Les **19 migrations** de `supabase/migrations/` (0001 → 0019) se jouent dans
+l'ordre, une fois chacune : éditeur SQL Supabase, ou
+`SUPABASE_ACCESS_TOKEN=sbp_… node scripts/appliquer-migration.mjs <fichier.sql>`.
+La liste commentée, la date d'application de chacune et une **requête de
+vérification** par migration sont dans **[MIGRATIONS.md](MIGRATIONS.md)**.
+
+Gestes à ne pas oublier :
+- **après 0003** : repeupler `ta_elo` depuis `/import/elo`. La migration la vide,
+  et seul un import la remplit, slug compris ;
+- **après 0012 et après 0013** : rejouer le backfill Fantasy (écran Calibration).
+  Ces migrations suppriment des lignes de `tn_fantasy_historique` que seul le
+  backfill réécrit ;
+- **0015 et 0016** sont remplacées : 0016 supprime la table de 0015, et 0018
+  celle de 0016. Ne pas les rejouer sur une base qui a déjà 0018.
+
+### Vérifier
 
 ```bash
-# 1. Appliquer une fois les migrations (SQL editor Supabase, ou psql)
-#    supabase/migrations/0001_rls_lecture_publique.sql
-#    supabase/migrations/0002_elo_tennis_abstract.sql   (tables ta_elo, ta_name_exceptions)
-#    supabase/migrations/0003_elo_identite_par_slug.sql (identité TA par slug — vide ta_elo)
-#    supabase/migrations/0004_exceptions_par_circuit.sql (clé d'exception = nom + circuit)
-#    supabase/migrations/0005_fantasy.sql               (table de cache tn_fantasy)
-#    supabase/migrations/0006_fantasy_a_priori.sql      (cache fantasy sans from_round)
-#    supabase/migrations/0007_fantasy_historique.sql    (table tn_fantasy_historique)
-#    supabase/migrations/0008_cotes.sql                 (cache tn_odds, cotes bookmakers)
-#    supabase/migrations/0009_statut_in_progress.sql    (statut in_progress, tableaux en direct)
-#    supabase/migrations/0010_elo_historique.sql        (archive ta_elo_historique, Elo sans look-ahead)
-#    supabase/migrations/0011_corrections_joueurs.sql   (fusion R. Jodar, exception Kyrgios, doublons sans match)
-# 1 bis. Après 0003, repeupler ta_elo depuis /import/elo (la migration la vide,
-#        et seul un import la remplit — slug compris).
-
-# 2. Vérifier depuis la clé publique : lecture OK, écritures et RPC refusées
+# Depuis la clé publique : lecture OK, écritures et RPC refusées
 npm run verify:rls
 ```
 
-Tant que la migration n'est pas appliquée, les pages s'affichent **vides** : les
-lectures se font désormais avec la clé publique, que la RLS filtre à 0 ligne.
+⚠ `verify:rls` contrôle 11 tables, celles des migrations 0001 à 0010. Les tables
+`tn_participants` (0014), `tn_simulated_picks` (0017) et `tn_bracket_round_picks`
+(0018) n'y sont **pas encore** : leur RLS est posée par les migrations, mais
+aucun test ne le confirme. Il faut les ajouter à `TABLES` dans
+`scripts/verifier-rls.mjs`.
+
+Tant que 0001 n'est pas appliquée, les pages s'affichent **vides** : les
+lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
 
 ## Écrans
 
@@ -500,11 +527,12 @@ supabase/
   fantasy.ts                     espérances a priori, score réel, historique
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
   comparaison-echelle.ts         rejoue le Fantasy sous d'autres échelles Elo
-  migrations/                    RLS, ta_elo / ta_name_exceptions, tn_fantasy
+  migrations/                    0001 → 0019, cf. MIGRATIONS.md
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
 scripts/appliquer-migration.mjs  joue un .sql via l'API Management Supabase
-lib/                             moteur fourni (non modifié)
+lib/                             moteur issu de tennis-picks, modifié depuis
+                                 (copie de référence, cf. Principe)
 lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale,
                                  score réel (réutilise optimizer/scoring/montecarlo
                                  tels quels)
