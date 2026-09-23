@@ -23,7 +23,7 @@
  */
 
 import { STATUTS_INDECIS } from './types';
-import type { Match, MatchStatus, ScoreBreakdown, SetScore } from './types';
+import type { Match, MatchStatus, ScoreBreakdown } from './types';
 
 export const POINTS_VICTOIRE = 5;
 export const POINTS_PAR_NET_SET = 3;
@@ -67,6 +67,8 @@ export function scoreMatch(
   sets: SetPair[],
   won: boolean,
   status: MatchStatus = 'completed',
+  // Gardé pour la stabilité de l'API : le barème ne dépend pas (encore) du format.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bestOf: 3 | 5 = 3
 ): ScoreBreakdown {
   if (STATUTS_SANS_POINTS.includes(status)) {

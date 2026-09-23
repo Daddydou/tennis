@@ -11,7 +11,7 @@
  */
 
 import { estIndecis } from './types';
-import type { Match, Surface, Tour } from './types';
+import type { Match, Surface } from './types';
 
 /** Elo de départ pour un joueur inconnu. */
 export const ELO_DEFAUT = 1500;

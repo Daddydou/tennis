@@ -15,7 +15,6 @@
 import { ECHELLE_ELO, pVictoire, PROBABILITE_ELO_SEULE, type ProbabiliteMatch } from './elo';
 import { POINTS_VICTOIRE, POINTS_PAR_NET_SET } from './scoring';
 import {
-  distributionSets,
   pSetDepuisMatch,
   eNetGamesParSetGagne,
   type Esperances,
