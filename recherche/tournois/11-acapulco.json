@@ -1,0 +1,1640 @@
+{
+  "extracted_at": "2026-07-25T18:23:04.754Z",
+  "source_url": "https://www.atptour.com/en/scores/archive/delray-beach/499/2026/draws",
+  "tournament": {
+    "slug": "delray-beach",
+    "atp_id": "499",
+    "year": 2026
+  },
+  "tour": "ATP",
+  "rounds_found": [
+    "R32",
+    "R16",
+    "QF",
+    "SF",
+    "F"
+  ],
+  "match_count": 30,
+  "matches": [
+    {
+      "match_id": null,
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 0,
+      "half": "top",
+      "status": "bye",
+      "players": [
+        {
+          "id": "FB98",
+          "name": "T. Fritz",
+          "seed": "1",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": null,
+          "name": "BYE",
+          "seed": null,
+          "country": null,
+          "isBye": true,
+          "winner": false,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms017",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 1,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "Q02L",
+          "name": "E. Quinn",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 2,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "J0DZ",
+          "name": "R. Jodar",
+          "seed": "NG",
+          "country": "ESP",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms018",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 2,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "W09E",
+          "name": "A. Walton",
+          "seed": "LL",
+          "country": "AUS",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "D0F6",
+          "name": "G. Diallo",
+          "seed": null,
+          "country": "CAN",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms019",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 3,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "MW02",
+          "name": "C. Moutet",
+          "seed": null,
+          "country": "FRA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "PL56",
+          "name": "T. Paul",
+          "seed": "5",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": null,
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 4,
+      "half": "top",
+      "status": "bye",
+      "players": [
+        {
+          "id": "T0HA",
+          "name": "L. Tien",
+          "seed": "4",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": null,
+          "name": "BYE",
+          "seed": null,
+          "country": null,
+          "isBye": true,
+          "winner": false,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms021",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 5,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "KI95",
+          "name": "M. Kecmanovic",
+          "seed": null,
+          "country": "SRB",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "B0GG",
+          "name": "M. Bellucci",
+          "seed": null,
+          "country": "ITA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 1,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms022",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 6,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "K0AZ",
+          "name": "A. Kovacevic",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "S0K7",
+          "name": "Z. Svajda",
+          "seed": "Q",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms023",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 7,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "H0BH",
+          "name": "R. Hijikata",
+          "seed": "Q",
+          "country": "AUS",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "TD51",
+          "name": "F. Tiafoe",
+          "seed": "8",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms024",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 8,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "N0AE",
+          "name": "B. Nakashima",
+          "seed": "7",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "C977",
+          "name": "M. Cilic",
+          "seed": null,
+          "country": "CRO",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": 6,
+              "tiebreak": 5
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms025",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 9,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "BT72",
+          "name": "N. Borges",
+          "seed": null,
+          "country": "POR",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 5
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "W0BH",
+          "name": "C. Wong",
+          "seed": "Q",
+          "country": "HKG",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms026",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 10,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "K0A3",
+          "name": "P. Kypson",
+          "seed": "WC",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "A0GC",
+          "name": "T. Atmane",
+          "seed": null,
+          "country": "FRA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 2,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": null,
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 11,
+      "half": "bottom",
+      "status": "bye",
+      "players": [
+        {
+          "id": null,
+          "name": "BYE",
+          "seed": null,
+          "country": null,
+          "isBye": true,
+          "winner": false,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "C0E9",
+          "name": "F. Cobolli",
+          "seed": "3",
+          "country": "ITA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms028",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 12,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "VA25",
+          "name": "V. Vacherot",
+          "seed": "6",
+          "country": "MON",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "M0QI",
+          "name": "A. Michelsen",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms029",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 13,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "K0AH",
+          "name": "S. Korda",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "MK66",
+          "name": "M. McDonald",
+          "seed": "WC",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 5,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms030",
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 14,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "SY67",
+          "name": "S. Shimabukuro",
+          "seed": "Q",
+          "country": "JPN",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 5,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "GC88",
+          "name": "M. Giron",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": null,
+      "round": "R32",
+      "round_label": "Round of 32",
+      "position": 15,
+      "half": "bottom",
+      "status": "bye",
+      "players": [
+        {
+          "id": null,
+          "name": "BYE",
+          "seed": null,
+          "country": null,
+          "isBye": true,
+          "winner": false,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "RH16",
+          "name": "C. Ruud",
+          "seed": "2",
+          "country": "NOR",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms008",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 0,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "FB98",
+          "name": "T. Fritz",
+          "seed": "1",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "J0DZ",
+          "name": "R. Jodar",
+          "seed": "NG",
+          "country": "ESP",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms009",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 1,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "W09E",
+          "name": "A. Walton",
+          "seed": "LL",
+          "country": "AUS",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 11
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "PL56",
+          "name": "T. Paul",
+          "seed": "5",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms011",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 2,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "T0HA",
+          "name": "L. Tien",
+          "seed": "4",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "KI95",
+          "name": "M. Kecmanovic",
+          "seed": null,
+          "country": "SRB",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 5,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms012",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 3,
+      "half": "top",
+      "status": "retired",
+      "players": [
+        {
+          "id": "S0K7",
+          "name": "Z. Svajda",
+          "seed": "Q",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "TD51",
+          "name": "F. Tiafoe",
+          "seed": "8",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": 4
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms013",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 4,
+      "half": "bottom",
+      "status": "retired",
+      "players": [
+        {
+          "id": "N0AE",
+          "name": "B. Nakashima",
+          "seed": "7",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "W0BH",
+          "name": "C. Wong",
+          "seed": "Q",
+          "country": "HKG",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 5,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms014",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 5,
+      "half": "bottom",
+      "status": "retired",
+      "players": [
+        {
+          "id": "A0GC",
+          "name": "T. Atmane",
+          "seed": null,
+          "country": "FRA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "C0E9",
+          "name": "F. Cobolli",
+          "seed": "3",
+          "country": "ITA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": 6
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms015",
+      "round": "R16",
+      "round_label": "Round of 16",
+      "position": 6,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "M0QI",
+          "name": "A. Michelsen",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "K0AH",
+          "name": "S. Korda",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": 6
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms004",
+      "round": "QF",
+      "round_label": "Quarterfinals",
+      "position": 0,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "FB98",
+          "name": "T. Fritz",
+          "seed": "1",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "PL56",
+          "name": "T. Paul",
+          "seed": "5",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms005",
+      "round": "QF",
+      "round_label": "Quarterfinals",
+      "position": 1,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "KI95",
+          "name": "M. Kecmanovic",
+          "seed": null,
+          "country": "SRB",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "TD51",
+          "name": "F. Tiafoe",
+          "seed": "8",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 5
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 5,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms006",
+      "round": "QF",
+      "round_label": "Quarterfinals",
+      "position": 2,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "W0BH",
+          "name": "C. Wong",
+          "seed": "Q",
+          "country": "HKG",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 5,
+              "tiebreak": null
+            },
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 2,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "C0E9",
+          "name": "F. Cobolli",
+          "seed": "3",
+          "country": "ITA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": 7
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms007",
+      "round": "QF",
+      "round_label": "Quarterfinals",
+      "position": 3,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "K0AH",
+          "name": "S. Korda",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "RH16",
+          "name": "C. Ruud",
+          "seed": "2",
+          "country": "NOR",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 2,
+              "tiebreak": null
+            },
+            {
+              "games": 2,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms002",
+      "round": "SF",
+      "round_label": "Semifinals",
+      "position": 0,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "PL56",
+          "name": "T. Paul",
+          "seed": "5",
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "TD51",
+          "name": "F. Tiafoe",
+          "seed": "8",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms003",
+      "round": "SF",
+      "round_label": "Semifinals",
+      "position": 1,
+      "half": "bottom",
+      "status": "completed",
+      "players": [
+        {
+          "id": "C0E9",
+          "name": "F. Cobolli",
+          "seed": "3",
+          "country": "ITA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": 1
+            },
+            {
+              "games": 1,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "K0AH",
+          "name": "S. Korda",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 7,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match_id": "ms001",
+      "round": "F",
+      "round_label": "Final",
+      "position": 0,
+      "half": "top",
+      "status": "completed",
+      "players": [
+        {
+          "id": "PL56",
+          "name": "T. Paul",
+          "seed": "5",
+          "country": "USA",
+          "isBye": false,
+          "winner": false,
+          "sets": [
+            {
+              "games": 4,
+              "tiebreak": null
+            },
+            {
+              "games": 3,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        },
+        {
+          "id": "K0AH",
+          "name": "S. Korda",
+          "seed": null,
+          "country": "USA",
+          "isBye": false,
+          "winner": true,
+          "sets": [
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": 6,
+              "tiebreak": null
+            },
+            {
+              "games": null,
+              "tiebreak": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

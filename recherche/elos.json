@@ -1,0 +1,1325 @@
+{
+  "S0AG": {
+    "overall": 2224,
+    "clay": 2196,
+    "hard": 2118,
+    "grass": 2224,
+    "matchs": 22
+  },
+  "Z355": {
+    "overall": 2148,
+    "clay": 2159,
+    "hard": 2001,
+    "grass": 2148,
+    "matchs": 28
+  },
+  "A0E2": {
+    "overall": 2100,
+    "clay": 2070,
+    "hard": 2060,
+    "grass": 2100,
+    "matchs": 16
+  },
+  "F0F1": {
+    "overall": 2060,
+    "clay": 2066,
+    "hard": 1940,
+    "grass": 2060,
+    "matchs": 27
+  },
+  "C0E9": {
+    "overall": 1986,
+    "clay": 1999,
+    "hard": 1844,
+    "grass": 1986,
+    "matchs": 30
+  },
+  "J0DZ": {
+    "overall": 1961,
+    "clay": 1982,
+    "hard": 1458,
+    "grass": 1961,
+    "matchs": 25
+  },
+  "M0NI": {
+    "overall": 1966,
+    "clay": 1957,
+    "hard": 1816,
+    "grass": 1966,
+    "matchs": 15
+  },
+  "RH16": {
+    "overall": 1904,
+    "clay": 1957,
+    "hard": 1797,
+    "grass": 1904,
+    "matchs": 16
+  },
+  "B0PG": {
+    "overall": 1951,
+    "clay": 1939,
+    "hard": 1500,
+    "grass": 1951,
+    "matchs": 12
+  },
+  "PL56": {
+    "overall": 1877,
+    "clay": 1934,
+    "hard": 1825,
+    "grass": 1877,
+    "matchs": 21
+  },
+  "AG37": {
+    "overall": 2005,
+    "clay": 1922,
+    "hard": 2061,
+    "grass": 2005,
+    "matchs": 31
+  },
+  "VA25": {
+    "overall": 1812,
+    "clay": 1892,
+    "hard": 1708,
+    "grass": 1812,
+    "matchs": 16
+  },
+  "M0EJ": {
+    "overall": 1830,
+    "clay": 1880,
+    "hard": 1897,
+    "grass": 1830,
+    "matchs": 12
+  },
+  "TD51": {
+    "overall": 1857,
+    "clay": 1876,
+    "hard": 1892,
+    "grass": 1857,
+    "matchs": 23
+  },
+  "RE44": {
+    "overall": 1843,
+    "clay": 1872,
+    "hard": 1816,
+    "grass": 1843,
+    "matchs": 20
+  },
+  "S0S1": {
+    "overall": 1918,
+    "clay": 1872,
+    "hard": 2028,
+    "grass": 1918,
+    "matchs": 17
+  },
+  "F0FV": {
+    "overall": 1883,
+    "clay": 1871,
+    "hard": 1720,
+    "grass": 1883,
+    "matchs": 17
+  },
+  "FB98": {
+    "overall": 1823,
+    "clay": 1850,
+    "hard": 1900,
+    "grass": 1823,
+    "matchs": 10
+  },
+  "DH50": {
+    "overall": 1748,
+    "clay": 1842,
+    "hard": 1804,
+    "grass": 1748,
+    "matchs": 16
+  },
+  "L0BV": {
+    "overall": 1774,
+    "clay": 1830,
+    "hard": 1729,
+    "grass": 1774,
+    "matchs": 14
+  },
+  "D643": {
+    "overall": 1821,
+    "clay": 1817,
+    "hard": 1864,
+    "grass": 1821,
+    "matchs": 6
+  },
+  "A0FC": {
+    "overall": 1768,
+    "clay": 1811,
+    "hard": 1429,
+    "grass": 1768,
+    "matchs": 7
+  },
+  "C0AU": {
+    "overall": 1771,
+    "clay": 1801,
+    "hard": 1719,
+    "grass": 1771,
+    "matchs": 14
+  },
+  "KI82": {
+    "overall": 1768,
+    "clay": 1800,
+    "hard": 1762,
+    "grass": 1768,
+    "matchs": 13
+  },
+  "DH58": {
+    "overall": 1880,
+    "clay": 1790,
+    "hard": 2066,
+    "grass": 1880,
+    "matchs": 21
+  },
+  "N771": {
+    "overall": 1773,
+    "clay": 1780,
+    "hard": 1739,
+    "grass": 1773,
+    "matchs": 20
+  },
+  "T0A1": {
+    "overall": 1741,
+    "clay": 1768,
+    "hard": 1500,
+    "grass": 1741,
+    "matchs": 10
+  },
+  "M0FH": {
+    "overall": 1740,
+    "clay": 1764,
+    "hard": 1785,
+    "grass": 1740,
+    "matchs": 19
+  },
+  "HB71": {
+    "overall": 1657,
+    "clay": 1764,
+    "hard": 1525,
+    "grass": 1657,
+    "matchs": 12
+  },
+  "B0FV": {
+    "overall": 1769,
+    "clay": 1761,
+    "hard": 1500,
+    "grass": 1769,
+    "matchs": 7
+  },
+  "MM58": {
+    "overall": 1854,
+    "clay": 1760,
+    "hard": 2013,
+    "grass": 1854,
+    "matchs": 20
+  },
+  "M0JF": {
+    "overall": 1697,
+    "clay": 1746,
+    "hard": 1506,
+    "grass": 1697,
+    "matchs": 13
+  },
+  "CD85": {
+    "overall": 1683,
+    "clay": 1742,
+    "hard": 1462,
+    "grass": 1683,
+    "matchs": 12
+  },
+  "EA24": {
+    "overall": 1732,
+    "clay": 1742,
+    "hard": 1719,
+    "grass": 1732,
+    "matchs": 15
+  },
+  "T0HA": {
+    "overall": 1721,
+    "clay": 1736,
+    "hard": 1795,
+    "grass": 1721,
+    "matchs": 14
+  },
+  "MV14": {
+    "overall": 1721,
+    "clay": 1721,
+    "hard": 1500,
+    "grass": 1721,
+    "matchs": 4
+  },
+  "U182": {
+    "overall": 1691,
+    "clay": 1715,
+    "hard": 1565,
+    "grass": 1691,
+    "matchs": 13
+  },
+  "TE51": {
+    "overall": 1661,
+    "clay": 1706,
+    "hard": 1691,
+    "grass": 1661,
+    "matchs": 17
+  },
+  "BT72": {
+    "overall": 1672,
+    "clay": 1701,
+    "hard": 1630,
+    "grass": 1672,
+    "matchs": 15
+  },
+  "M0QI": {
+    "overall": 1758,
+    "clay": 1699,
+    "hard": 1867,
+    "grass": 1758,
+    "matchs": 20
+  },
+  "N0AE": {
+    "overall": 1772,
+    "clay": 1696,
+    "hard": 1840,
+    "grass": 1772,
+    "matchs": 23
+  },
+  "D0FJ": {
+    "overall": 1636,
+    "clay": 1695,
+    "hard": 1849,
+    "grass": 1636,
+    "matchs": 10
+  },
+  "MW02": {
+    "overall": 1615,
+    "clay": 1690,
+    "hard": 1676,
+    "grass": 1615,
+    "matchs": 11
+  },
+  "BK40": {
+    "overall": 1701,
+    "clay": 1682,
+    "hard": 1587,
+    "grass": 1701,
+    "matchs": 12
+  },
+  "BK92": {
+    "overall": 1774,
+    "clay": 1677,
+    "hard": 1960,
+    "grass": 1774,
+    "matchs": 20
+  },
+  "D0CO": {
+    "overall": 1789,
+    "clay": 1672,
+    "hard": 1854,
+    "grass": 1789,
+    "matchs": 5
+  },
+  "SU87": {
+    "overall": 1610,
+    "clay": 1670,
+    "hard": 1718,
+    "grass": 1610,
+    "matchs": 7
+  },
+  "KE29": {
+    "overall": 1608,
+    "clay": 1667,
+    "hard": 1628,
+    "grass": 1608,
+    "matchs": 16
+  },
+  "RC91": {
+    "overall": 1631,
+    "clay": 1665,
+    "hard": 1579,
+    "grass": 1631,
+    "matchs": 12
+  },
+  "V0DP": {
+    "overall": 1657,
+    "clay": 1662,
+    "hard": 1500,
+    "grass": 1657,
+    "matchs": 7
+  },
+  "S0K7": {
+    "overall": 1674,
+    "clay": 1658,
+    "hard": 1598,
+    "grass": 1674,
+    "matchs": 10
+  },
+  "TE30": {
+    "overall": 1630,
+    "clay": 1657,
+    "hard": 1499,
+    "grass": 1630,
+    "matchs": 11
+  },
+  "H997": {
+    "overall": 1651,
+    "clay": 1652,
+    "hard": 1725,
+    "grass": 1651,
+    "matchs": 6
+  },
+  "P0HW": {
+    "overall": 1656,
+    "clay": 1644,
+    "hard": 1533,
+    "grass": 1656,
+    "matchs": 7
+  },
+  "M0K4": {
+    "overall": 1631,
+    "clay": 1637,
+    "hard": 1500,
+    "grass": 1631,
+    "matchs": 3
+  },
+  "MQ75": {
+    "overall": 1624,
+    "clay": 1635,
+    "hard": 1727,
+    "grass": 1624,
+    "matchs": 9
+  },
+  "HH26": {
+    "overall": 1712,
+    "clay": 1629,
+    "hard": 1801,
+    "grass": 1712,
+    "matchs": 25
+  },
+  "D0C1": {
+    "overall": 1572,
+    "clay": 1628,
+    "hard": 1420,
+    "grass": 1572,
+    "matchs": 10
+  },
+  "C0C8": {
+    "overall": 1646,
+    "clay": 1628,
+    "hard": 1599,
+    "grass": 1646,
+    "matchs": 10
+  },
+  "B0ID": {
+    "overall": 1639,
+    "clay": 1627,
+    "hard": 1747,
+    "grass": 1639,
+    "matchs": 6
+  },
+  "M0N7": {
+    "overall": 1586,
+    "clay": 1623,
+    "hard": 1479,
+    "grass": 1586,
+    "matchs": 5
+  },
+  "F0F2": {
+    "overall": 1600,
+    "clay": 1620,
+    "hard": 1500,
+    "grass": 1600,
+    "matchs": 4
+  },
+  "B0U4": {
+    "overall": 1582,
+    "clay": 1616,
+    "hard": 1436,
+    "grass": 1582,
+    "matchs": 5
+  },
+  "TA29": {
+    "overall": 1575,
+    "clay": 1614,
+    "hard": 1500,
+    "grass": 1575,
+    "matchs": 9
+  },
+  "V0DZ": {
+    "overall": 1622,
+    "clay": 1609,
+    "hard": 1500,
+    "grass": 1622,
+    "matchs": 5
+  },
+  "K0AZ": {
+    "overall": 1640,
+    "clay": 1607,
+    "hard": 1693,
+    "grass": 1640,
+    "matchs": 18
+  },
+  "N0AM": {
+    "overall": 1557,
+    "clay": 1603,
+    "hard": 1460,
+    "grass": 1557,
+    "matchs": 7
+  },
+  "B0NN": {
+    "overall": 1604,
+    "clay": 1601,
+    "hard": 1500,
+    "grass": 1604,
+    "matchs": 4
+  },
+  "C0JP": {
+    "overall": 1635,
+    "clay": 1600,
+    "hard": 1563,
+    "grass": 1635,
+    "matchs": 7
+  },
+  "N0BS": {
+    "overall": 1522,
+    "clay": 1591,
+    "hard": 1412,
+    "grass": 1522,
+    "matchs": 7
+  },
+  "MP20": {
+    "overall": 1542,
+    "clay": 1591,
+    "hard": 1679,
+    "grass": 1542,
+    "matchs": 8
+  },
+  "HB64": {
+    "overall": 1591,
+    "clay": 1585,
+    "hard": 1541,
+    "grass": 1591,
+    "matchs": 15
+  },
+  "K0O4": {
+    "overall": 1554,
+    "clay": 1582,
+    "hard": 1461,
+    "grass": 1554,
+    "matchs": 6
+  },
+  "D994": {
+    "overall": 1412,
+    "clay": 1573,
+    "hard": 1336,
+    "grass": 1412,
+    "matchs": 7
+  },
+  "H0BH": {
+    "overall": 1657,
+    "clay": 1573,
+    "hard": 1648,
+    "grass": 1657,
+    "matchs": 13
+  },
+  "GJ37": {
+    "overall": 1577,
+    "clay": 1571,
+    "hard": 1791,
+    "grass": 1577,
+    "matchs": 17
+  },
+  "SU55": {
+    "overall": 1632,
+    "clay": 1568,
+    "hard": 1853,
+    "grass": 1632,
+    "matchs": 14
+  },
+  "SL28": {
+    "overall": 1549,
+    "clay": 1568,
+    "hard": 1473,
+    "grass": 1549,
+    "matchs": 10
+  },
+  "A0GC": {
+    "overall": 1572,
+    "clay": 1566,
+    "hard": 1493,
+    "grass": 1572,
+    "matchs": 15
+  },
+  "C0DF": {
+    "overall": 1504,
+    "clay": 1561,
+    "hard": 1427,
+    "grass": 1504,
+    "matchs": 7
+  },
+  "BM95": {
+    "overall": 1608,
+    "clay": 1556,
+    "hard": 1521,
+    "grass": 1608,
+    "matchs": 5
+  },
+  "BU13": {
+    "overall": 1559,
+    "clay": 1553,
+    "hard": 1487,
+    "grass": 1559,
+    "matchs": 13
+  },
+  "B0D6": {
+    "overall": 1541,
+    "clay": 1547,
+    "hard": 1500,
+    "grass": 1541,
+    "matchs": 2
+  },
+  "L0IL": {
+    "overall": 1541,
+    "clay": 1541,
+    "hard": 1500,
+    "grass": 1541,
+    "matchs": 5
+  },
+  "BI81": {
+    "overall": 1554,
+    "clay": 1540,
+    "hard": 1500,
+    "grass": 1554,
+    "matchs": 2
+  },
+  "KD46": {
+    "overall": 1591,
+    "clay": 1538,
+    "hard": 1597,
+    "grass": 1591,
+    "matchs": 3
+  },
+  "D0F6": {
+    "overall": 1524,
+    "clay": 1537,
+    "hard": 1656,
+    "grass": 1524,
+    "matchs": 13
+  },
+  "D0DT": {
+    "overall": 1649,
+    "clay": 1537,
+    "hard": 1668,
+    "grass": 1649,
+    "matchs": 12
+  },
+  "MK66": {
+    "overall": 1511,
+    "clay": 1535,
+    "hard": 1486,
+    "grass": 1511,
+    "matchs": 5
+  },
+  "B0QQ": {
+    "overall": 1540,
+    "clay": 1535,
+    "hard": 1500,
+    "grass": 1540,
+    "matchs": 2
+  },
+  "M0CI": {
+    "overall": 1508,
+    "clay": 1534,
+    "hard": 1472,
+    "grass": 1508,
+    "matchs": 11
+  },
+  "D0CG": {
+    "overall": 1535,
+    "clay": 1533,
+    "hard": 1500,
+    "grass": 1535,
+    "matchs": 2
+  },
+  "V812": {
+    "overall": 1604,
+    "clay": 1528,
+    "hard": 1630,
+    "grass": 1604,
+    "matchs": 14
+  },
+  "G0FW": {
+    "overall": 1530,
+    "clay": 1511,
+    "hard": 1500,
+    "grass": 1530,
+    "matchs": 3
+  },
+  "W09E": {
+    "overall": 1502,
+    "clay": 1510,
+    "hard": 1493,
+    "grass": 1502,
+    "matchs": 12
+  },
+  "L987": {
+    "overall": 1489,
+    "clay": 1506,
+    "hard": 1500,
+    "grass": 1489,
+    "matchs": 3
+  },
+  "MU94": {
+    "overall": 1659,
+    "clay": 1504,
+    "hard": 1760,
+    "grass": 1659,
+    "matchs": 13
+  },
+  "O513": {
+    "overall": 1483,
+    "clay": 1504,
+    "hard": 1500,
+    "grass": 1483,
+    "matchs": 4
+  },
+  "G09O": {
+    "overall": 1503,
+    "clay": 1502,
+    "hard": 1500,
+    "grass": 1503,
+    "matchs": 3
+  },
+  "S0IA": {
+    "overall": 1434,
+    "clay": 1500,
+    "hard": 1434,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "K0AH": {
+    "overall": 1905,
+    "clay": 1500,
+    "hard": 1905,
+    "grass": 1905,
+    "matchs": 14
+  },
+  "KE17": {
+    "overall": 1472,
+    "clay": 1500,
+    "hard": 1472,
+    "grass": 1472,
+    "matchs": 1
+  },
+  "DB63": {
+    "overall": 1434,
+    "clay": 1500,
+    "hard": 1434,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "MP01": {
+    "overall": 1607,
+    "clay": 1500,
+    "hard": 1607,
+    "grass": 1607,
+    "matchs": 3
+  },
+  "S0UV": {
+    "overall": 1480,
+    "clay": 1500,
+    "hard": 1480,
+    "grass": 1480,
+    "matchs": 1
+  },
+  "S0RE": {
+    "overall": 1629,
+    "clay": 1500,
+    "hard": 1629,
+    "grass": 1629,
+    "matchs": 4
+  },
+  "S0N0": {
+    "overall": 1360,
+    "clay": 1500,
+    "hard": 1360,
+    "grass": 1360,
+    "matchs": 3
+  },
+  "VA08": {
+    "overall": 1430,
+    "clay": 1500,
+    "hard": 1430,
+    "grass": 1430,
+    "matchs": 4
+  },
+  "BV16": {
+    "overall": 1565,
+    "clay": 1500,
+    "hard": 1565,
+    "grass": 1565,
+    "matchs": 4
+  },
+  "CH12": {
+    "overall": 1402,
+    "clay": 1500,
+    "hard": 1402,
+    "grass": 1402,
+    "matchs": 3
+  },
+  "O483": {
+    "overall": 1550,
+    "clay": 1500,
+    "hard": 1550,
+    "grass": 1550,
+    "matchs": 9
+  },
+  "N0BG": {
+    "overall": 1662,
+    "clay": 1500,
+    "hard": 1662,
+    "grass": 1662,
+    "matchs": 6
+  },
+  "B0T6": {
+    "overall": 1415,
+    "clay": 1500,
+    "hard": 1415,
+    "grass": 1415,
+    "matchs": 2
+  },
+  "D0H9": {
+    "overall": 1570,
+    "clay": 1500,
+    "hard": 1570,
+    "grass": 1570,
+    "matchs": 4
+  },
+  "GF95": {
+    "overall": 1375,
+    "clay": 1500,
+    "hard": 1375,
+    "grass": 1375,
+    "matchs": 2
+  },
+  "R0KD": {
+    "overall": 1410,
+    "clay": 1500,
+    "hard": 1410,
+    "grass": 1410,
+    "matchs": 2
+  },
+  "S0VM": {
+    "overall": 1422,
+    "clay": 1500,
+    "hard": 1422,
+    "grass": 1422,
+    "matchs": 1
+  },
+  "SY67": {
+    "overall": 1427,
+    "clay": 1500,
+    "hard": 1427,
+    "grass": 1427,
+    "matchs": 5
+  },
+  "HF80": {
+    "overall": 1417,
+    "clay": 1500,
+    "hard": 1417,
+    "grass": 1417,
+    "matchs": 1
+  },
+  "M0HU": {
+    "overall": 1461,
+    "clay": 1500,
+    "hard": 1461,
+    "grass": 1461,
+    "matchs": 1
+  },
+  "EA13": {
+    "overall": 1459,
+    "clay": 1500,
+    "hard": 1459,
+    "grass": 1459,
+    "matchs": 1
+  },
+  "CF59": {
+    "overall": 1434,
+    "clay": 1500,
+    "hard": 1434,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "AC39": {
+    "overall": 1414,
+    "clay": 1500,
+    "hard": 1414,
+    "grass": 1414,
+    "matchs": 1
+  },
+  "S0GD": {
+    "overall": 1536,
+    "clay": 1500,
+    "hard": 1536,
+    "grass": 1536,
+    "matchs": 4
+  },
+  "P0J1": {
+    "overall": 1465,
+    "clay": 1500,
+    "hard": 1465,
+    "grass": 1465,
+    "matchs": 1
+  },
+  "Y218": {
+    "overall": 1485,
+    "clay": 1500,
+    "hard": 1485,
+    "grass": 1485,
+    "matchs": 1
+  },
+  "M0IF": {
+    "overall": 1428,
+    "clay": 1500,
+    "hard": 1428,
+    "grass": 1428,
+    "matchs": 1
+  },
+  "T0AP": {
+    "overall": 1434,
+    "clay": 1500,
+    "hard": 1434,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "GK06": {
+    "overall": 1437,
+    "clay": 1500,
+    "hard": 1437,
+    "grass": 1437,
+    "matchs": 1
+  },
+  "T09X": {
+    "overall": 1499,
+    "clay": 1498,
+    "hard": 1500,
+    "grass": 1499,
+    "matchs": 1
+  },
+  "R0EB": {
+    "overall": 1408,
+    "clay": 1497,
+    "hard": 1380,
+    "grass": 1408,
+    "matchs": 11
+  },
+  "C977": {
+    "overall": 1569,
+    "clay": 1496,
+    "hard": 1618,
+    "grass": 1569,
+    "matchs": 13
+  },
+  "GD64": {
+    "overall": 1487,
+    "clay": 1495,
+    "hard": 1500,
+    "grass": 1487,
+    "matchs": 4
+  },
+  "V0AM": {
+    "overall": 1496,
+    "clay": 1495,
+    "hard": 1500,
+    "grass": 1496,
+    "matchs": 1
+  },
+  "WB32": {
+    "overall": 1608,
+    "clay": 1494,
+    "hard": 1630,
+    "grass": 1608,
+    "matchs": 8
+  },
+  "PH64": {
+    "overall": 1490,
+    "clay": 1491,
+    "hard": 1500,
+    "grass": 1490,
+    "matchs": 1
+  },
+  "SX50": {
+    "overall": 1487,
+    "clay": 1491,
+    "hard": 1500,
+    "grass": 1487,
+    "matchs": 1
+  },
+  "S0JA": {
+    "overall": 1491,
+    "clay": 1488,
+    "hard": 1503,
+    "grass": 1491,
+    "matchs": 3
+  },
+  "F0HO": {
+    "overall": 1480,
+    "clay": 1487,
+    "hard": 1500,
+    "grass": 1480,
+    "matchs": 1
+  },
+  "M0GZ": {
+    "overall": 1402,
+    "clay": 1486,
+    "hard": 1407,
+    "grass": 1402,
+    "matchs": 10
+  },
+  "B0CD": {
+    "overall": 1449,
+    "clay": 1484,
+    "hard": 1640,
+    "grass": 1449,
+    "matchs": 7
+  },
+  "P09Z": {
+    "overall": 1472,
+    "clay": 1483,
+    "hard": 1427,
+    "grass": 1472,
+    "matchs": 13
+  },
+  "N897": {
+    "overall": 1470,
+    "clay": 1482,
+    "hard": 1500,
+    "grass": 1470,
+    "matchs": 1
+  },
+  "S0TM": {
+    "overall": 1489,
+    "clay": 1482,
+    "hard": 1500,
+    "grass": 1489,
+    "matchs": 1
+  },
+  "MO44": {
+    "overall": 1387,
+    "clay": 1480,
+    "hard": 1403,
+    "grass": 1387,
+    "matchs": 3
+  },
+  "MC65": {
+    "overall": 1520,
+    "clay": 1480,
+    "hard": 1566,
+    "grass": 1520,
+    "matchs": 8
+  },
+  "D0LJ": {
+    "overall": 1479,
+    "clay": 1478,
+    "hard": 1500,
+    "grass": 1479,
+    "matchs": 1
+  },
+  "KI95": {
+    "overall": 1591,
+    "clay": 1477,
+    "hard": 1679,
+    "grass": 1591,
+    "matchs": 21
+  },
+  "GJ16": {
+    "overall": 1471,
+    "clay": 1477,
+    "hard": 1500,
+    "grass": 1471,
+    "matchs": 1
+  },
+  "P0AY": {
+    "overall": 1395,
+    "clay": 1474,
+    "hard": 1406,
+    "grass": 1395,
+    "matchs": 3
+  },
+  "L0CX": {
+    "overall": 1473,
+    "clay": 1474,
+    "hard": 1500,
+    "grass": 1473,
+    "matchs": 1
+  },
+  "E0DD": {
+    "overall": 1471,
+    "clay": 1472,
+    "hard": 1500,
+    "grass": 1471,
+    "matchs": 1
+  },
+  "R09X": {
+    "overall": 1462,
+    "clay": 1470,
+    "hard": 1500,
+    "grass": 1462,
+    "matchs": 1
+  },
+  "D923": {
+    "overall": 1353,
+    "clay": 1469,
+    "hard": 1329,
+    "grass": 1353,
+    "matchs": 8
+  },
+  "W0BH": {
+    "overall": 1631,
+    "clay": 1466,
+    "hard": 1667,
+    "grass": 1631,
+    "matchs": 9
+  },
+  "G0IX": {
+    "overall": 1642,
+    "clay": 1463,
+    "hard": 1708,
+    "grass": 1642,
+    "matchs": 7
+  },
+  "Z0BZ": {
+    "overall": 1412,
+    "clay": 1462,
+    "hard": 1436,
+    "grass": 1412,
+    "matchs": 3
+  },
+  "H996": {
+    "overall": 1377,
+    "clay": 1462,
+    "hard": 1407,
+    "grass": 1377,
+    "matchs": 2
+  },
+  "SS25": {
+    "overall": 1456,
+    "clay": 1462,
+    "hard": 1500,
+    "grass": 1456,
+    "matchs": 1
+  },
+  "T0FI": {
+    "overall": 1458,
+    "clay": 1462,
+    "hard": 1500,
+    "grass": 1458,
+    "matchs": 1
+  },
+  "B0BI": {
+    "overall": 1554,
+    "clay": 1460,
+    "hard": 1641,
+    "grass": 1554,
+    "matchs": 8
+  },
+  "Z371": {
+    "overall": 1482,
+    "clay": 1457,
+    "hard": 1539,
+    "grass": 1482,
+    "matchs": 7
+  },
+  "J0AZ": {
+    "overall": 1450,
+    "clay": 1457,
+    "hard": 1500,
+    "grass": 1450,
+    "matchs": 1
+  },
+  "P0HT": {
+    "overall": 1532,
+    "clay": 1434,
+    "hard": 1595,
+    "grass": 1532,
+    "matchs": 4
+  },
+  "S0ZE": {
+    "overall": 1434,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "D0DP": {
+    "overall": 1434,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "B0PU": {
+    "overall": 1439,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1439,
+    "matchs": 1
+  },
+  "R0GO": {
+    "overall": 1434,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1434,
+    "matchs": 1
+  },
+  "S0GR": {
+    "overall": 1447,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1447,
+    "matchs": 1
+  },
+  "HH06": {
+    "overall": 1458,
+    "clay": 1434,
+    "hard": 1500,
+    "grass": 1458,
+    "matchs": 1
+  },
+  "BG23": {
+    "overall": 1359,
+    "clay": 1433,
+    "hard": 1402,
+    "grass": 1359,
+    "matchs": 3
+  },
+  "AE14": {
+    "overall": 1396,
+    "clay": 1432,
+    "hard": 1395,
+    "grass": 1396,
+    "matchs": 9
+  },
+  "F0BY": {
+    "overall": 1435,
+    "clay": 1432,
+    "hard": 1485,
+    "grass": 1435,
+    "matchs": 4
+  },
+  "D875": {
+    "overall": 1449,
+    "clay": 1430,
+    "hard": 1506,
+    "grass": 1449,
+    "matchs": 8
+  },
+  "DA31": {
+    "overall": 1408,
+    "clay": 1423,
+    "hard": 1500,
+    "grass": 1408,
+    "matchs": 1
+  },
+  "D0DW": {
+    "overall": 1710,
+    "clay": 1422,
+    "hard": 1818,
+    "grass": 1710,
+    "matchs": 10
+  },
+  "C0NB": {
+    "overall": 1419,
+    "clay": 1420,
+    "hard": 1500,
+    "grass": 1419,
+    "matchs": 4
+  },
+  "P0IY": {
+    "overall": 1419,
+    "clay": 1419,
+    "hard": 1500,
+    "grass": 1419,
+    "matchs": 1
+  },
+  "B0GG": {
+    "overall": 1439,
+    "clay": 1417,
+    "hard": 1525,
+    "grass": 1439,
+    "matchs": 10
+  },
+  "GC88": {
+    "overall": 1588,
+    "clay": 1403,
+    "hard": 1682,
+    "grass": 1588,
+    "matchs": 10
+  },
+  "K0A3": {
+    "overall": 1414,
+    "clay": 1403,
+    "hard": 1509,
+    "grass": 1414,
+    "matchs": 6
+  },
+  "Q02L": {
+    "overall": 1339,
+    "clay": 1399,
+    "hard": 1378,
+    "grass": 1339,
+    "matchs": 10
+  },
+  "V832": {
+    "overall": 1501,
+    "clay": 1385,
+    "hard": 1618,
+    "grass": 1501,
+    "matchs": 6
+  },
+  "BD06": {
+    "overall": 1439,
+    "clay": 1384,
+    "hard": 1511,
+    "grass": 1439,
+    "matchs": 11
+  },
+  "ME82": {
+    "overall": 1544,
+    "clay": 1371,
+    "hard": 1692,
+    "grass": 1544,
+    "matchs": 19
+  },
+  "W367": {
+    "overall": 1504,
+    "clay": 1368,
+    "hard": 1633,
+    "grass": 1504,
+    "matchs": 11
+  },
+  "S0H2": {
+    "overall": 1498,
+    "clay": 1362,
+    "hard": 1590,
+    "grass": 1498,
+    "matchs": 8
+  },
+  "F724": {
+    "overall": 1456,
+    "clay": 1350,
+    "hard": 1586,
+    "grass": 1456,
+    "matchs": 13
+  },
+  "O522": {
+    "overall": 1401,
+    "clay": 1324,
+    "hard": 1583,
+    "grass": 1401,
+    "matchs": 9
+  }
+}
