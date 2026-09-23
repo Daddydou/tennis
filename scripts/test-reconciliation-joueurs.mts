@@ -12,6 +12,7 @@
  * JAMAIS se faire fusionner.
  */
 import { reconcilierIdsJoueurs } from '../lib/parser.ts';
+import { detecterDoublons } from '../lib/matching.ts';
 import type { DrawExtract, Match } from '../lib/types.ts';
 
 let echecs = 0;
@@ -155,6 +156,78 @@ function extrait(matches: Match[]): DrawExtract {
   assert(
     extract.matches[0].players[0].id === '327834' && extract.matches[1].players[0].id === '327834',
     'l’ID historique est substitué sur LES DEUX tours',
+  );
+}
+
+/* ========================================================================
+ * CAS RÉEL SUPPLÉMENTAIRE — O. Oliynykova, une des neuf joueuses WTA
+ * fusionnées par la migration 0019 (ID historique 327182, ID neuf 325729
+ * servi par le tableau de l'US Open 2026 pour cette joueuse non classée).
+ * Rejoue exactement ce cas pour prouver que le rapprochement suffit à lui
+ * seul — sans même atteindre le garde-fou ajouté ci-dessous.
+ * ======================================================================== */
+{
+  const ex = extrait([match('R128', 0, ['325729', 'AUTRE1'], ['O. Oliynykova', 'J. Adverse'])]);
+  const joueursExistants = [
+    { id: '327182', name: 'O. Oliynykova' },
+    { id: 'AUTRE1', name: 'J. Adverse' },
+  ];
+  const { extract, reconciliations } = reconcilierIdsJoueurs(ex, joueursExistants);
+
+  assert(
+    reconciliations.length === 1 && reconciliations[0]?.idExistant === '327182',
+    `Oliynykova (cas réel migration 0019) : ID neuf 325729 rapproché de l’ID historique 327182 (obtenu ${JSON.stringify(reconciliations)})`,
+  );
+  assert(
+    extract.matches[0].players[0].id === '327182',
+    'Oliynykova : aucun doublon écrit, l’extrait réécrit porte l’ID historique',
+  );
+
+  // Le résultat de CE rapprochement, une fois écrit, ne doit plus déclencher
+  // le garde-fou post-écriture d'app/import/actions.ts (détection partagée,
+  // cf. bloc suivant) : c'est le comportement attendu d'un import normal.
+  const apresEcriture = [
+    { id: '327182', tour: 'WTA', name: 'O. Oliynykova' },
+    { id: 'AUTRE1', tour: 'WTA', name: 'J. Adverse' },
+  ];
+  assert(
+    detecterDoublons(apresEcriture).length === 0,
+    'Oliynykova : après écriture, aucun doublon détecté (le rapprochement a fait son travail)',
+  );
+}
+
+/* ========================================================================
+ * FILET DE SÉCURITÉ — le rapprochement par nom peut manquer un doublon (ex.
+ * variante de nom que `normaliserNom` ne réduit pas à la même clé, ou un
+ * futur appel qui n'invoquerait pas `reconcilierIdsJoueurs`). Ce cas simule
+ * exactement ça : deux lignes `tn_players` du même nom exact, comme si la
+ * réconciliation n'avait pas tourné — le garde-fou d'`app/import/actions.ts`
+ * (même détection, `detecterDoublons`) doit le voir et REFUSER l'import,
+ * plutôt que de laisser passer silencieusement une deuxième identité pour
+ * une même joueuse, comme c'est arrivé deux fois avant que ce garde-fou
+ * n'existe (migrations 0011, 0019).
+ * ======================================================================== */
+{
+  const apresEcritureAvecDoublon = [
+    { id: '327182', tour: 'WTA', name: 'O. Oliynykova' },
+    { id: '999888', tour: 'WTA', name: 'O. Oliynykova' }, // reconciliation manquée
+    { id: 'AUTRE1', tour: 'WTA', name: 'J. Adverse' },
+  ];
+  const doublons = detecterDoublons(apresEcritureAvecDoublon);
+  assert(
+    doublons.length === 1 && doublons[0].lignes.length === 2,
+    `garde-fou : un doublon manqué par le rapprochement est bien détecté (obtenu ${JSON.stringify(doublons)})`,
+  );
+
+  // Homonymie RÉELLE (X. Wang) : le garde-fou ne doit jamais la signaler,
+  // même comportement que le script scripts/verifier-doublons-joueurs.mts.
+  const apresEcritureHomonymie = [
+    { id: '326160', tour: 'WTA', name: 'X. Wang' },
+    { id: '326376', tour: 'WTA', name: 'X. Wang' },
+  ];
+  assert(
+    detecterDoublons(apresEcritureHomonymie).length === 0,
+    'garde-fou : l’homonymie réelle X. Wang n’est jamais signalée comme un doublon',
   );
 }
 

@@ -22,6 +22,7 @@ import {
   verifierExtraction,
   devinerBestOf,
 } from '@/lib/parser';
+import { detecterDoublons } from '@/lib/matching';
 import { metaTournoi } from '@/lib/calendrier';
 import { estIndecis } from '@/lib/types';
 import type { DrawExtract, Match } from '@/lib/types';
@@ -296,6 +297,44 @@ export async function importerExtrait(jsonText: string): Promise<ImportResult> {
       .from('tn_players')
       .upsert(playerPayload, { onConflict: 'id' });
     if (error) return { ok: false, error: `Joueurs : ${error.message}`, avertissements };
+  }
+
+  // 4 bis. GARDE-FOU — un doublon d'identité a-t-il malgré tout été écrit ?
+  //
+  // `reconcilierIdsJoueurs` (étape 1 bis) prévient déjà la récidive du bug
+  // R. Jodar/WTA US Open (migrations 0011, 0019) en amont, mais reste un
+  // rapprochement par NOM, seul signal disponible pour une joueuse non
+  // classée — donc faillible (variante de nom que `normaliserNom` ne réduit
+  // pas à la même clé, second appel d'écriture qui ne passerait pas par ce
+  // même chemin, etc.). Les deux bugs précédents ne se sont vus qu'en
+  // parcourant `tn_players` À LA MAIN, des semaines plus tard (migration
+  // 0011 : « trois anomalies relevées en parcourant tn_players »). Ici, on
+  // relit `tn_players` juste après l'écriture et on refuse l'import — plutôt
+  // qu'un avertissement silencieux — si un doublon est passé au travers :
+  // c'est le même principe que les contrôles de fin de migration 0011 §5 et
+  // 0019 (« la migration échoue plutôt que de laisser passer un état
+  // incohérent »), appliqué à l'écriture elle-même plutôt qu'à un script
+  // relancé de temps en temps.
+  const { data: joueursApresEcriture, error: eApres } = await sb
+    .from('tn_players')
+    .select('id, tour, name')
+    .eq('tour', extract.tour);
+  if (eApres) return { ok: false, error: `Vérification doublons : ${eApres.message}`, avertissements };
+
+  const doublons = detecterDoublons(joueursApresEcriture ?? []);
+  if (doublons.length > 0) {
+    const detail = doublons
+      .map((d) => `${d.lignes.map((l) => `${l.id} (${l.name})`).join(' / ')}`)
+      .join(' | ');
+    return {
+      ok: false,
+      error:
+        `Import refusé : identité dupliquée détectée dans tn_players après écriture — ${detail}. ` +
+        'Second espace d\'ID probable (cf. migrations 0011/0019) : vérifier si les deux ID sont bien ' +
+        'la même personne puis fusionner par migration, ou déclarer une homonymie réelle dans ' +
+        '`HOMONYMES_CONNUS` (lib/matching.ts) si ce sont deux joueuses distinctes.',
+      avertissements,
+    };
   }
 
   // 5. Matchs (upsert sur tournament_id, round, position)

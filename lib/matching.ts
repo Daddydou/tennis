@@ -222,6 +222,65 @@ export function chercherCorrespondance<T extends LigneTa>(
 }
 
 /* -------------------------------------------------------------------------- */
+/*  IDENTITÉS DUPLIQUÉES — MÊME NOM, PLUSIEURS ID `tn_players`                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Homonymies RÉELLES, déjà vérifiées : deux personnes distinctes qui
+ * partagent la même clé de rapprochement (`normaliserNom`). Une paire listée
+ * ici n'est JAMAIS un doublon d'identité — ne jamais y ajouter une entrée sans
+ * avoir vérifié que les deux ID ont chacun leurs propres matchs (cf. migration
+ * 0011 §1, X. Wang).
+ *
+ * Source unique : `reconcilierIdsJoueurs` (lib/parser.ts, à l'import) et
+ * `detecterDoublons` ci-dessous (scripts/verifier-doublons-joueurs.mts, et le
+ * garde-fou d'import) partagaient auparavant DEUX copies de cette liste — au
+ * risque qu'elles divergent. Il n'y en a plus qu'une.
+ */
+export const HOMONYMES_CONNUS: readonly (readonly [string, string])[] = [
+  ['326160', '326376'], // X. Wang (WTA) — deux joueuses distinctes
+];
+
+export function estHomonymieConnue(a: string, b: string): boolean {
+  return HOMONYMES_CONNUS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
+export interface GroupeDoublon<T extends { id: string; tour: string; name: string }> {
+  cle: string;
+  tour: string;
+  lignes: T[];
+}
+
+/**
+ * Regroupe des lignes `tn_players` par (tour, clé canonique du nom) et
+ * renvoie les groupes de taille > 1, les homonymies documentées exclues.
+ *
+ * Un groupe restant signale soit une identité scindée par l'import (cf.
+ * migrations 0011/0019 — à fusionner de la même façon), soit une vraie
+ * homonymie encore non documentée (à vérifier puis ajouter à
+ * `HOMONYMES_CONNUS` une fois la preuve faite — jamais avant).
+ */
+export function detecterDoublons<T extends { id: string; tour: string; name: string }>(
+  lignes: T[],
+): GroupeDoublon<T>[] {
+  const parCle = new Map<string, T[]>();
+  for (const l of lignes) {
+    const cle = `${l.tour}|${normaliserNom(l.name)}`;
+    const groupe = parCle.get(cle);
+    if (groupe) groupe.push(l);
+    else parCle.set(cle, [l]);
+  }
+
+  const suspects: GroupeDoublon<T>[] = [];
+  for (const [cle, groupe] of parCle) {
+    if (groupe.length < 2) continue;
+    if (groupe.length === 2 && estHomonymieConnue(groupe[0].id, groupe[1].id)) continue;
+    suspects.push({ cle, tour: groupe[0].tour, lignes: groupe });
+  }
+  return suspects;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  CAS PARTICULIER : LES JOUEURS D'UN TABLEAU                                 */
 /* -------------------------------------------------------------------------- */
 
