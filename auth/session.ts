@@ -50,6 +50,21 @@ export function verifierMotDePasse(saisi: string): boolean {
   return egaliteConstante(saisi, motDePasseAttendu());
 }
 
+/** Longueur minimale du jeton agent : en dessous, il serait devinable. */
+const LONGUEUR_MIN_JETON_AGENT = 32;
+
+/**
+ * Jeton des agents externes (mes-agents) : en-tête `Authorization: Bearer <jeton>`
+ * comparé à `AGENT_API_TOKEN`. Réservé aux routes de LECTURE sous /api/agent/ ;
+ * jamais accepté ailleurs. Variable absente ou trop courte : aucun accès.
+ */
+export function verifierJetonAgent(authorization: string | null | undefined): boolean {
+  const attendu = process.env.AGENT_API_TOKEN;
+  if (!attendu || attendu.length < LONGUEUR_MIN_JETON_AGENT) return false;
+  if (!authorization?.startsWith('Bearer ')) return false;
+  return egaliteConstante(authorization.slice('Bearer '.length), attendu);
+}
+
 function signer(charge: string): string {
   return createHmac('sha256', cleSignature()).update(charge).digest('base64url');
 }

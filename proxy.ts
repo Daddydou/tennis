@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { COOKIE_NAME, verifierJeton } from '@/auth/session';
+import { COOKIE_NAME, verifierJeton, verifierJetonAgent } from '@/auth/session';
 
 /**
  * Porte d'entrée : tout est privé sauf /login.
@@ -17,6 +17,16 @@ export function proxy(request: NextRequest) {
   if (pathname === '/login') return NextResponse.next();
 
   if (verifierJeton(request.cookies.get(COOKIE_NAME)?.value)) {
+    return NextResponse.next();
+  }
+
+  // Agents externes (mes-agents) : jeton Bearer, uniquement sur /api/agent/
+  // (routes GET en lecture seule). La route re-vérifie de son côté.
+  if (
+    pathname.startsWith('/api/agent/') &&
+    request.method === 'GET' &&
+    verifierJetonAgent(request.headers.get('authorization'))
+  ) {
     return NextResponse.next();
   }
 
