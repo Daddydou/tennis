@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
+import ProvenanceElo from './ProvenanceElo';
+import RecapParticipant from './RecapParticipant';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import { carte, pilleSelecteur } from '@/app/ui';
@@ -17,12 +19,7 @@ import {
 } from '@/db/queries';
 import { computeAndStoreProjections, projectionsEnCache } from '@/db/projections';
 import { chargerBlendProduction } from '@/db/cotesBlend';
-import {
-  cleDeNom,
-  compterSources,
-  eloEffectifResolu,
-  type ElosResolus,
-} from '@/db/elo';
+import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
 import { genererSlots, recommanderPourTour } from '@/lib/optimizer';
 import { adversaireDe } from '@/lib/parser';
 import type { DrawExtract, Half, Slot } from '@/lib/types';
@@ -33,7 +30,6 @@ const HALF_LABEL: Record<string, string> = {
   top: 'Moitié haute',
   bottom: 'Moitié basse',
 };
-const HALF_LABEL_COURT: Record<string, string> = { top: 'haut', bottom: 'bas' };
 
 export default async function PicksPage({
   params,
@@ -159,36 +155,6 @@ export default async function PicksPage({
     return e ? eloEffectifResolu(e, surfElo) : null;
   };
 
-  // Répartition des sources sur TOUS les joueurs du tournoi (pas seulement les
-  // survivants du tour affiché) : c'est le tableau entier qu'on veut contrôler.
-  // Propriété du tournoi, pas du stock affiché.
-  const sources = compterSources(elos);
-  const tourTa = tournament.tour.toLowerCase();
-  const aCompleter = playerRows
-    .filter((p) => elos[p.id] && elos[p.id].source !== 'ta')
-    .map((p) => {
-      const e = elos[p.id];
-      return {
-        nom: p.name,
-        pays: p.country,
-        cle: cleDeNom(p.name),
-        source: e.source,
-        candidats: e.candidats,
-        // Un homonyme se tranche en désignant un slug : on donne l'insert prêt
-        // à coller, c'est la seule action utile depuis cet écran.
-        sql:
-          e.candidats.length > 0
-            ? `insert into ta_name_exceptions (atp_name_normalized, ta_slug, tour) values ('${cleDeNom(
-                p.name,
-              )}', '${e.candidats[0].slug}', '${tourTa}');`
-            : null,
-      };
-    })
-    .sort(
-      (a, b) =>
-        Number(b.source === 'ambigu') - Number(a.source === 'ambigu') ||
-        a.nom.localeCompare(b.nom),
-    );
 
   const dejaUtilises = new Set(picks.map((p) => p.player_id));
 
@@ -337,80 +303,7 @@ export default async function PicksPage({
 
       {/* Provenance des Elo du tableau. Un joueur fort en « maison » ou en
           « défaut » signale une correspondance de nom à corriger. */}
-      <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
-        <summary className="cursor-pointer text-zinc-600">
-          <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
-          joueur(s) sur {sources.total} avec Elo Tennis Abstract,{' '}
-          <span className={sources.maison > 0 ? 'font-medium text-amber-600' : ''}>
-            {sources.maison}
-          </span>{' '}
-          en repli maison,{' '}
-          <span className={sources.defaut > 0 ? 'font-medium text-red-600' : ''}>{sources.defaut}</span>{' '}
-          en défaut,{' '}
-          <span className={sources.ambigu > 0 ? 'font-medium text-violet-600' : ''}>{sources.ambigu}</span>{' '}
-          ambigu(s)
-          {aCompleter.length > 0 && (
-            <span className="ml-1 text-zinc-400">— détail</span>
-          )}
-        </summary>
-
-        {aCompleter.length === 0 ? (
-          <p className="mt-2 text-zinc-500">
-            Tous les joueurs du tableau ont un Elo Tennis Abstract.
-          </p>
-        ) : (
-          <div className="mt-2 space-y-3">
-            <p className="text-zinc-500">
-              Sans Elo Tennis Abstract retenu. Beaucoup sont des spécialistes de
-              double ou des joueurs inactifs, absents du rapport — pour les
-              autres, déclarer la correspondance dans{' '}
-              <code className="rounded bg-zinc-100 px-1">ta_name_exceptions</code>.
-            </p>
-
-            {/* Les ambigus d'abord : ce sont les seuls réellement actionnables,
-                et le seul cas où un Elo faux pourrait passer inaperçu. */}
-            {aCompleter
-              .filter((j) => j.source === 'ambigu')
-              .map((j) => (
-                <div key={j.cle} className="space-y-1 rounded-xl bg-violet-50 p-2">
-                  <p className="text-violet-800">
-                    <span className="font-medium">{j.nom}</span>
-                    {j.pays ? ` (${j.pays})` : ''} — {j.candidats.length}{' '}
-                    homonymes sous la clé <code>{j.cle}</code>, aucun choisi :
-                  </p>
-                  <ul className="ml-4 list-disc text-violet-800">
-                    {j.candidats.map((c) => (
-                      <li key={c.slug}>
-                        {c.nom} — <code>{c.slug}</code>
-                        {c.elo != null && ` — Elo ${Math.round(c.elo)}`}
-                      </li>
-                    ))}
-                  </ul>
-                  {j.sql && (
-                    <p className="text-[11px] text-violet-700">
-                      Trancher (remplacer le slug si besoin) :{' '}
-                      <code className="rounded bg-white/60 px-1">{j.sql}</code>
-                    </p>
-                  )}
-                </div>
-              ))}
-
-            <ul className="grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
-              {aCompleter
-                .filter((j) => j.source !== 'ambigu')
-                .map((j) => (
-                  <li key={j.cle} className="flex items-baseline gap-2">
-                    <span className={j.source === 'defaut' ? 'text-red-600' : 'text-amber-600'}>
-                      {j.source === 'defaut' ? 'défaut' : 'maison'}
-                    </span>
-                    <span className="text-zinc-700">{j.nom}</span>
-                    <code className="text-zinc-400">{j.cle}</code>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
-      </details>
+      <ProvenanceElo elos={elos} playerRows={playerRows} tour={tournament.tour} />
 
       {/* Sélecteur de tour */}
       <div className="flex flex-wrap items-center gap-1.5">
@@ -469,50 +362,7 @@ export default async function PicksPage({
       )}
 
       {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
-      {recap && (
-        <div className="space-y-3 rounded-2xl bg-white p-3 shadow-card">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold">{recap.nomParticipant}</h2>
-            <span className="text-sm font-semibold tabular-nums">
-              {recap.total} <span className="font-normal text-zinc-500">pts</span>
-            </span>
-          </div>
-
-          {recap.picksTries.length === 0 ? (
-            <p className="text-xs text-zinc-500">Aucun pick pour l&apos;instant.</p>
-          ) : (
-            <ul className="space-y-0.5 text-xs">
-              {recap.picksTries.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-2">
-                  <span className="truncate text-zinc-600">
-                    {p.round}
-                    {p.half ? ` (${HALF_LABEL_COURT[p.half]})` : ''} — {nomJoueur(p.player_id)}
-                  </span>
-                  <span className="tabular-nums text-zinc-500">{p.points ?? '—'}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <details className="text-xs">
-            <summary className="cursor-pointer text-zinc-500">
-              {recap.disponibles.length} encore en lice et disponible(s)
-            </summary>
-            {recap.disponibles.length === 0 ? (
-              <p className="mt-1 text-zinc-400">Aucun.</p>
-            ) : (
-              <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 sm:grid-cols-3">
-                {recap.disponibles.map((d) => (
-                  <li key={d.playerId} className="truncate">
-                    {d.nom}
-                    {d.rang ? <span className="text-zinc-400"> #{d.rang}</span> : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </details>
-        </div>
-      )}
+      {recap && <RecapParticipant recap={recap} nomJoueur={nomJoueur} />}
     </div>
   );
 }

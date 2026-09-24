@@ -100,11 +100,9 @@ Gestes à ne pas oublier :
 npm run verify:rls
 ```
 
-⚠ `verify:rls` contrôle 11 tables, celles des migrations 0001 à 0010. Les tables
-`tn_participants` (0014), `tn_simulated_picks` (0017) et `tn_bracket_round_picks`
-(0018) n'y sont **pas encore** : leur RLS est posée par les migrations, mais
-aucun test ne le confirme. Il faut les ajouter à `TABLES` dans
-`scripts/verifier-rls.mjs`.
+`verify:rls` contrôle les 14 tables du schéma (migrations 0001 à 0018). Toute
+migration qui crée une table doit aussi l'ajouter à `TABLES` dans
+`scripts/verifier-rls.mjs`, sans quoi le « Tout est conforme » ne dit rien d'elle.
 
 Tant que 0001 n'est pas appliquée, les pages s'affichent **vides** : les
 lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
@@ -509,10 +507,14 @@ app/
   api/calibration/elo/route.ts   POST → calibration Elo→proba, en JSON
   api/cotes/refresh/route.ts     POST → cotes The Odds API → cache tn_odds
   EloRefreshButton.tsx           bouton du repli par fetch (écran /import/elo)
-supabase/
+db/
   anon.ts                        client clé publique — LECTURES uniquement
   server.ts                      client service-role (server-only) — ÉCRITURES
-  queries.ts                     lectures + reconstruction Match[]/Player
+  queries.ts                     point d'entrée, réexporte les quatre suivants :
+  types.ts                         types des lignes tn_*
+  lectures.ts                      lectures (clé anon)
+  tableau.ts                       joueurs en lice, tour courant, état des slots
+  moteur.ts                        reconstruction Match[]/Player, loadEngineData
   elo.ts                         cascade TA → défaut + sources (étage « maison »
                                  écrit mais jamais atteint, cf. plus haut)
   elo-refresh.ts                 collage OU fetch TA → ta_elo (écrasée) ET
@@ -524,18 +526,31 @@ supabase/
   projections.ts                 simulation Monte Carlo + cache tn_projections
   reference.ts                   score de référence : projections par tour puis
                                  lib/reference.ts (mémoïsé par requête)
-  fantasy.ts                     espérances a priori, score réel, historique
+  fantasy.ts                     point d'entrée : fantasy-cache.ts (espérances a
+                                 priori, cache tn_fantasy) + fantasy-historique.ts
+                                 (équipe, score réel, historique)
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
   comparaison-echelle.ts         rejoue le Fantasy sous d'autres échelles Elo
-  migrations/                    0001 → 0019, cf. MIGRATIONS.md
+supabase/migrations/             0001 → 0019, cf. MIGRATIONS.md (seul contenu de
+                                 supabase/, dossier attendu par la CLI)
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
 scripts/appliquer-migration.mjs  joue un .sql via l'API Management Supabase
 lib/                             moteur issu de tennis-picks, modifié depuis
                                  (copie de référence, cf. Principe)
+                                 Les plus gros modules sont découpés derrière un
+                                 point d'entrée qui réexporte tout (les imports
+                                 `@/lib/x` ne changent pas) : bracketSim →
+                                 bracketArbre + bracketScenarios ; montecarlo →
+                                 montecarloTournoi + montecarloBracket ; optimizer
+                                 → optimizerProbabilites + optimizerAffectation ;
+                                 parser → parserExtraction + parserJoueurs +
+                                 parserControles ; calendrier (logique) +
+                                 calendrierDonnees (fiches des tournois)
 lib/fantasy.ts                   AJOUT : paliers, multiplicateurs, équipe optimale,
                                  score réel (réutilise optimizer/scoring/montecarlo
-                                 tels quels)
+                                 tels quels) — point d'entrée de fantasyRegles.ts
+                                 (bye, barèmes, paliers) + fantasyCalcul.ts
 lib/bracket.ts                   AJOUT : arbre pronostiqué depuis le tirage
                                  (déterministe, sans Monte Carlo ni résultats)
 lib/cotes.ts                     AJOUT : dévigorisation, consensus des books,
@@ -549,7 +564,8 @@ lib/reference.ts                 AJOUT : picks recommandés tour par tour sous
 Les valeurs Grand Chelem sont officielles ; celles des Masters 1000 ne le sont
 pas encore et sont **dérivées** du barème Grand Chelem, ramené au nombre de tours
 du tournoi (premier tour ×1, finale ×2, progression régulière). Pour les corriger,
-une seule ligne à ajouter dans `BAREMES_EXPLICITES` (`lib/fantasy.ts`) :
+une seule ligne à ajouter dans `BAREMES_EXPLICITES` (`lib/fantasyRegles.ts`,
+réexporté par `lib/fantasy.ts`) :
 
 ```ts
 export const BAREMES_EXPLICITES: Record<string, readonly number[]> = {

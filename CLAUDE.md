@@ -62,6 +62,22 @@ pour les autres.
 
 
 
+\## Sécurité (ne pas affaiblir)
+
+
+
+\- Auth : mot de passe unique (APP\_PASSWORD), aucun compte. Le cookie tn\_session ne contient qu'une date d'expiration signée HMAC-SHA256 (auth/session.ts) : rien en base, comparaison en temps constant.
+
+\- proxy.ts ne fait que rediriger vers /login : ce n'est PAS la protection. Chaque Server Action et chaque route app/api/\*\* revérifie la session elle-même (sessionValide() / exigerSession() de auth/garde.ts). Seule exception : /api/agent/\* accepte aussi un Bearer AGENT\_API\_TOKEN.
+
+\- RLS : toutes les tables sont en lecture publique (policy select pour anon) et sans aucune policy d'écriture ; les écritures passent uniquement par la service role, côté serveur (db/server.ts, protégé par import 'server-only').
+
+\- Nouvelle table = RLS activée + policy de lecture + revoke/grant select dans la migration, ET ajout dans la liste TABLES de scripts/verifier-rls.mjs (npm run verify:rls doit afficher « Tout est conforme »).
+
+\- Garde-fou NEXT\_PUBLIC\_ : supabaseAdmin() refuse de démarrer si NEXT\_PUBLIC\_SUPABASE\_SERVICE\_ROLE\_KEY existe (clé qui serait inlinée dans le bundle navigateur). Ne pas retirer ce test.
+
+
+
 \## Je suis débutant
 
 

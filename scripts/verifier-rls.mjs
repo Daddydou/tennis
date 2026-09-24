@@ -1,6 +1,6 @@
 /**
  * Vérifie, avec la CLÉ PUBLIQUE uniquement, que :
- *   - la lecture des 9 tables fonctionne  (policy `for select to anon`)
+ *   - la lecture des 14 tables fonctionne (policy `for select to anon`)
  *   - toute écriture est refusée          (aucune policy insert/update/delete)
  *   - les deux fonctions SQL ne sont pas appelables en RPC
  *
@@ -8,6 +8,8 @@
  * 5 tables d'origine, alors que 0002 (ta_elo, ta_name_exceptions), 0005
  * (tn_fantasy) et 0007 (tn_fantasy_historique) en avaient ajouté quatre autres
  * — le « tout est conforme » ne disait donc rien de la moitié du schéma.
+ * Même oubli ensuite pour 0014, 0017 et 0018 (participants et Simulateur) :
+ * chaque migration qui crée une table doit l'ajouter ici.
  *
  * À lancer après avoir appliqué les migrations de supabase/migrations/.
  *
@@ -49,6 +51,12 @@ const TABLES = [
   'tn_odds',
   // 0010 — archive datée des Elo (évaluation sans look-ahead)
   'ta_elo_historique',
+  // 0014 — participants humains du jeu
+  'tn_participants',
+  // 0017 — picks simulés du Simulateur
+  'tn_simulated_picks',
+  // 0018 — pronostics Bracket tour par tour (remplace 0015/0016, supprimées)
+  'tn_bracket_round_picks',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */
