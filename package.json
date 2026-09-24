@@ -17,6 +17,10 @@
     "test:reconciliation": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-reconciliation-joueurs.mts",
     "test:blend-cotes": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-blend-cotes.mts",
     "test:bracket-deterministe": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-bracket-deterministe.mts",
+    "test:face-a-face": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-face-a-face.mts",
+    "test:bilan-saison": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-bilan-saison.mts",
+    "test:cotes-evolution": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-cotes-evolution.mts",
+    "test:fantasy-scenario": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-fantasy-scenario.mts",
     "test:components": "vitest run"
   },
   "dependencies": {

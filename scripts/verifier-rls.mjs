@@ -1,6 +1,6 @@
 /**
  * Vérifie, avec la CLÉ PUBLIQUE uniquement, que :
- *   - la lecture des 14 tables fonctionne (policy `for select to anon`)
+ *   - la lecture des 15 tables fonctionne (policy `for select to anon`)
  *   - toute écriture est refusée          (aucune policy insert/update/delete)
  *   - les deux fonctions SQL ne sont pas appelables en RPC
  *
@@ -57,6 +57,8 @@ const TABLES = [
   'tn_simulated_picks',
   // 0018 — pronostics Bracket tour par tour (remplace 0015/0016, supprimées)
   'tn_bracket_round_picks',
+  // 0020 — historique des captures de cotes
+  'tn_odds_historique',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

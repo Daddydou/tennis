@@ -42,7 +42,12 @@ export function simulerMatch(
   pMatchOverride?: number
 ): { gagnantEstA: boolean; ptsA: number; ptsB: number } {
   const pm = pMatchOverride ?? pVictoire(eloA, eloB, echelle);
-  const ps = pSetDepuisMatch(pm, bestOf);
+  // Issue IMPOSÉE (probabilité exactement 0 ou 1, seul le simulateur « et
+  // si » du Fantasy en produit) : `pSetDepuisMatch` borne P(set) à
+  // [0.01, 0.99], si bien qu'un joueur « forcé perdant » gagnerait encore
+  // un match sur quelques milliers. Le modèle (Elo, cotes) ne rend jamais
+  // exactement 0 ou 1 : ce chemin ne change rien aux simulations de production.
+  const ps = pm >= 1 ? 1 : pm <= 0 ? 0 : pSetDepuisMatch(pm, bestOf);
   const seuil = Math.floor(bestOf / 2) + 1;
 
   let setsA = 0;

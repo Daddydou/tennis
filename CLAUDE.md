@@ -38,7 +38,7 @@ pour les autres.
 
 \- db/\*.ts : requêtes vers la base (supabase/ ne contient plus que migrations/, attendu par la CLI Supabase)
 
-\- supabase/migrations/ : SQL, 19 migrations à ce jour (voir MIGRATIONS.md)
+\- supabase/migrations/ : SQL, 20 migrations à ce jour (voir MIGRATIONS.md)
 
 \- auth/ : mot de passe unique + cookie signé (session.ts, garde.ts)
 

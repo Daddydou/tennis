@@ -78,7 +78,7 @@ Côté fonctions SQL :
 
 ### Migrations
 
-Les **19 migrations** de `supabase/migrations/` (0001 → 0019) se jouent dans
+Les **20 migrations** de `supabase/migrations/` (0001 → 0020) se jouent dans
 l'ordre, une fois chacune : éditeur SQL Supabase, ou
 `SUPABASE_ACCESS_TOKEN=sbp_… node scripts/appliquer-migration.mjs <fichier.sql>`.
 La liste commentée, la date d'application de chacune et une **requête de
@@ -100,7 +100,7 @@ Gestes à ne pas oublier :
 npm run verify:rls
 ```
 
-`verify:rls` contrôle les 14 tables du schéma (migrations 0001 à 0018). Toute
+`verify:rls` contrôle les 15 tables du schéma (migrations 0001 à 0020). Toute
 migration qui crée une table doit aussi l'ajouter à `TABLES` dans
 `scripts/verifier-rls.mjs`, sans quoi le « Tout est conforme » ne dit rien d'elle.
 
@@ -178,6 +178,13 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   espérance comme un **gain certain** (présence 100 %, aucune simulation), et
   au même montant dans le score réel — sans quoi l'écart prédit/réalisé
   s'ouvrirait sur une différence de convention.
+- `/tournoi/[id]/fantasy/scenario` — **« et si » du Fantasy**, en lecture seule.
+  Un curseur par match d'un tour constitué (probabilité du modèle de
+  production par défaut) ; « Simuler » rejoue le tournoi depuis ce tour
+  (`simulerDepuis`, 3 000 tirages, deux passes de même graine) et donne le
+  score final projeté de l'équipe DÉJÀ FIGÉE : points réels avant le tour +
+  espérance simulée ensuite (`lib/fantasyScenario.ts`). Rien n'est
+  enregistré, l'équipe ne change pas. À 0 % ou 100 %, l'issue est certaine.
 - `/fantasy` — **historique prédit / réalisé**, un tournoi par ligne. Écrit à
   chaque import ; le bouton « Reprendre les tournois déjà en base » rattrape
   l'existant (`POST /api/fantasy/backfill`, borné dans le temps, à recliquer
@@ -245,6 +252,20 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   est payant. Une cote doit donc être capturée AVANT que le match ne se joue ;
   sur un tournoi déjà terminé sans capture préalable, il n'y a rien à
   récupérer, et l'écran le dit.
+  **Évolution avant chaque match.** Chaque clic ajoute aussi une ligne par
+  rencontre dans `tn_odds_historique` (migration 0020), jamais écrasée : une
+  courbe par match trace la probabilité à chaque capture prise avant le coup
+  d'envoi (`lib/cotesEvolution.ts`). Aucune capture automatique : autant de
+  points que de clics.
+- `/face-a-face` — **historique entre deux joueurs** d'un même circuit : bilan
+  des rencontres dans les tournois IMPORTÉS (pas la carrière entière), par
+  surface, avec l'Elo effectif et P(victoire) par surface, et l'évolution de
+  l'Elo général relevé par relevé (`ta_elo_historique`).
+- `/bilan` — **bilan de saison** généré à l'affichage : classement du groupe
+  (mêmes points que le Dashboard, via `pointsStock.ts`), mes picks les plus
+  rentables, Fantasy des tournois terminés, meilleures progressions et baisses
+  d'Elo des joueurs de nos tournois (sur la seule période couverte par
+  l'archive, affichée), joueurs les plus victorieux.
 - `/tournoi/[id]/predictions` — « bracket prédit » : pour chaque joueur encore en
   lice, P(atteindre chaque tour restant) et P(titre), triées par probabilité de
   titre décroissante. Lit le même cache `tn_projections` que l'écran picks — rien
@@ -498,8 +519,11 @@ app/
   calibration/cotes/             blend Elo/cotes — mesure isolée, rien de branché
   import/                        import du JSON + action serveur
   import/elo/                    collage des Elo TA (snippet public/extract-elo.js)
+  face-a-face/                   bilan entre deux joueurs + comparaison Elo
+  bilan/                         bilan de saison (donnees.ts assemble, page affiche)
   tournoi/[id]/                  tableau, bracket, picks, fantasy, predictions, resultats
   tournoi/[id]/BadgeSourceElo.tsx  provenance d'un Elo — partagé picks/fantasy
+  tournoi/[id]/fantasy/scenario/ « et si » du Fantasy (action serveur en lecture seule)
   api/recompute/route.ts         POST → tn_recompute_picks()
   api/elo/import/route.ts        POST → Elo TA collés (méthode principale)
   api/elo/refresh/route.ts       POST → Elo TA par fetch (repli, 403 sur Vercel)
@@ -529,9 +553,11 @@ db/
   fantasy.ts                     point d'entrée : fantasy-cache.ts (espérances a
                                  priori, cache tn_fantasy) + fantasy-historique.ts
                                  (équipe, score réel, historique)
+  face-a-face.ts                 rencontres entre deux joueurs + Elo comparés
+  bilan-saison.ts                lectures paginées du bilan de saison
   calibration.ts                 mesure de la courbe Elo→proba (lecture seule)
   comparaison-echelle.ts         rejoue le Fantasy sous d'autres échelles Elo
-supabase/migrations/             0001 → 0019, cf. MIGRATIONS.md (seul contenu de
+supabase/migrations/             0001 → 0020, cf. MIGRATIONS.md (seul contenu de
                                  supabase/, dossier attendu par la CLI)
 scripts/verifier-rls.mjs         contrôle des accès avec la clé publique
 scripts/verifier-auth.mjs        contrôle de la protection par mot de passe
@@ -557,6 +583,10 @@ lib/cotes.ts                     AJOUT : dévigorisation, consensus des books,
                                  scores de Brier et log-loss (mesure seule)
 lib/reference.ts                 AJOUT : picks recommandés tour par tour sous
                                  contrainte d'unicité, et leurs points réels
+lib/faceAFace.ts                 AJOUT : bilan des rencontres entre deux joueurs
+lib/bilanSaison.ts               AJOUT : agrégats du bilan de saison
+lib/cotesEvolution.ts            AJOUT : séries de cotes avant chaque match
+lib/fantasyScenario.ts           AJOUT : probabilités surchargées, score projeté
 ```
 
 ### Où corriger le barème de multiplicateurs

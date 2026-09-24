@@ -2,16 +2,19 @@ import Link from 'next/link';
 import BoutonCotes from './BoutonCotes';
 import TableScores from './TableScores';
 import TableDetail from './TableDetail';
+import EvolutionCotes from './EvolutionCotes';
 import { POIDS_ELO, POIDS_ELO_MARCHE } from './constantes';
 import { evaluerCotes, sportSuggere } from './evaluation';
 import { listTournaments } from '@/db/queries';
 import { loadEngineData } from '@/db/queries';
 import {
   chargerCotes,
+  chargerHistoriqueCotes,
   cleCotesConfiguree,
   compterCotesParTournoi,
   listerSportsTennis,
 } from '@/db/cotes';
+import { seriesCotes } from '@/lib/cotesEvolution';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +51,9 @@ export default async function CotesPage({
   }
 
   const engine = tournoiId ? await loadEngineData(tournoiId) : null;
-  const cotes = tournoiId ? await chargerCotes(tournoiId) : [];
+  const [cotes, captures] = tournoiId
+    ? await Promise.all([chargerCotes(tournoiId), chargerHistoriqueCotes(tournoiId)])
+    : [[], []];
 
   // Confrontation des méthodes sur les matchs joués (cf. evaluation.ts).
   const {
@@ -150,6 +155,8 @@ export default async function CotesPage({
           )}
         </div>
       )}
+
+      {tournoiCourant && <EvolutionCotes series={seriesCotes(captures)} />}
 
       {/* ── Évaluation propre : Elo antérieur au match ── */}
       {courant.scores[0].n > 0 ? (

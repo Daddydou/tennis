@@ -30,7 +30,7 @@ export default async function RootLayout({
             {/* Chaque lien a sa propre zone tactile de 44px, pas seulement le
                 texte qu'il contient — important au téléphone, où le header
                 reste la seule navigation globale. */}
-            <nav className="flex text-sm text-zinc-500">
+            <nav className="flex min-w-0 overflow-x-auto text-sm text-zinc-500 *:shrink-0 *:whitespace-nowrap">
               <Link
                 href="/"
                 className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
@@ -42,6 +42,18 @@ export default async function RootLayout({
                 className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
               >
                 Importer
+              </Link>
+              <Link
+                href="/face-a-face"
+                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Face-à-face
+              </Link>
+              <Link
+                href="/bilan"
+                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Bilan
               </Link>
               <Link
                 href="/participants"

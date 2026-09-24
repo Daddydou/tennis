@@ -3,6 +3,7 @@ import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
 import { consensusMarche, type CoteBookmaker } from '@/lib/cotes';
 import { apparierNom, indexerJoueursTableau } from '@/lib/matching';
+import type { CaptureCote } from '@/lib/cotesEvolution';
 
 /**
  * COTES BOOKMAKERS — RÉCUPÉRATION ET CACHE (The Odds API v4)
@@ -161,6 +162,40 @@ export async function compterCotesParTournoi(): Promise<Record<string, number>> 
   return out;
 }
 
+/**
+ * Toutes les captures de cotes d'un tournoi (migration 0020), paginées :
+ * chaque rafraîchissement ajoute une ligne par rencontre, et PostgREST
+ * tronque une lecture à 1000 lignes. Vide si la table n'existe pas encore.
+ */
+export async function chargerHistoriqueCotes(tournamentId: string): Promise<CaptureCote[]> {
+  const sb = supabaseAnon();
+  const PAGE = 1000;
+  const out: CaptureCote[] = [];
+  for (let debut = 0; ; debut += PAGE) {
+    const { data, error } = await sb
+      .from('tn_odds_historique')
+      .select('event_id, nom_a, nom_b, commence_time, proba_a, capture_le')
+      .eq('tournament_id', tournamentId)
+      .order('id', { ascending: true })
+      .range(debut, debut + PAGE - 1);
+    if (error) {
+      if (error.code === '42P01') return [];
+      throw new Error(`tn_odds_historique : ${error.message}`);
+    }
+    for (const l of data ?? []) {
+      out.push({
+        eventId: l.event_id,
+        nomA: l.nom_a,
+        nomB: l.nom_b,
+        commenceTime: l.commence_time,
+        probaA: l.proba_a === null ? null : Number(l.proba_a),
+        captureLe: l.capture_le,
+      });
+    }
+    if (!data || data.length < PAGE) return out;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Récupération et mise en cache                                              */
 /* -------------------------------------------------------------------------- */
@@ -248,6 +283,29 @@ export async function rafraichirCotes(
         .from('tn_odds')
         .upsert(lignes, { onConflict: 'tournament_id,event_id' });
       if (error) throw new Error(`tn_odds : ${error.message}`);
+
+      // Historique (migration 0020) : la même photo, AJOUTÉE plutôt que
+      // remplacée — c'est ce qui permet de suivre la cote avant le match.
+      // 42P01 : table absente, migration pas encore appliquée ; la photo de
+      // tn_odds reste écrite, seul l'historique manque.
+      const { error: eHisto } = await sb.from('tn_odds_historique').insert(
+        lignes.map((l) => ({
+          tournament_id: l.tournament_id,
+          event_id: l.event_id,
+          commence_time: l.commence_time,
+          nom_a: l.nom_a,
+          nom_b: l.nom_b,
+          player_a_id: l.player_a_id,
+          player_b_id: l.player_b_id,
+          proba_a: l.proba_a,
+          proba_b: l.proba_b,
+          bookmakers: l.bookmakers,
+          capture_le: l.recupere_le,
+        })),
+      );
+      if (eHisto && eHisto.code !== '42P01') {
+        throw new Error(`tn_odds_historique : ${eHisto.message}`);
+      }
     }
 
     return {

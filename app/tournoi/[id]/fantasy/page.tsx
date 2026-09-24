@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
@@ -14,6 +15,7 @@ import {
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
 import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
+import { lienBouton } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,6 +193,12 @@ export default async function FantasyPage({
       )}
 
       <EquipeFantasy equipe={vue} termine={evaluation.termine} />
+
+      {!fantasyCalculEnCours && (
+        <Link href={`/tournoi/${id}/fantasy/scenario`} className={lienBouton}>
+          Et si… ajuster les probabilités d&apos;un tour
+        </Link>
+      )}
     </div>
   );
 }

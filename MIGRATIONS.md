@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 19 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 20 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-19-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-20-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -32,6 +32,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0017 | `0017_simulateur_picks.sql`              | Table `tn_simulated_picks` (bac à sable de picks)                | 2026-09-08 |              |
 | 0018 | `0018_simulateur_bracket_par_tour.sql`   | Table `tn_bracket_round_picks` (bracket un tour à la fois)       | 2026-09-09 |              |
 | 0019 | `0019_fusion_identites_wta.sql`          | Fusion de 9 identités WTA dupliquées (US Open 2026)              | 2026-09-13 |              |
+| 0020 | `0020_cotes_historique.sql`              | Table `tn_odds_historique` (une ligne par capture de cotes)       | 2026-09-24 | 2026-09-24   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -47,7 +48,7 @@ coup recréerait une table morte, à ne pas faire).
 
 ---
 
-## Contrôle global : les 19 en une requête
+## Contrôle global : les 20 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -120,7 +121,8 @@ with c(num, ok, note) as (values
    not exists (select 1 from tn_players
                where id in ('460837','501894','845268','906723','721779',
                             '325729','380396','18251','679319')),
-   null)
+   null),
+  ('0020', to_regclass('public.tn_odds_historique') is not null, null)
 )
 select num,
        case when ok then 'appliquée'
@@ -294,3 +296,8 @@ select not exists (select 1 from tn_players
 ```
 Limite : `true` aussi si l'US Open WTA 2026 n'a jamais été importé (les
 doublons n'ont alors jamais existé, et la migration n'a rien à faire).
+
+### 0020 — Historique des cotes
+```sql
+select to_regclass('public.tn_odds_historique') is not null as appliquee;
+```
