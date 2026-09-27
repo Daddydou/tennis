@@ -154,7 +154,7 @@ export function baremeTournoi(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  2. PALIERS DE CLASSEMENT                                                   */
+/*  2. PALIERS DE CLASSEMENT (datés, cf. compositionPour)                      */
 /* -------------------------------------------------------------------------- */
 
 export interface Palier {
@@ -180,34 +180,51 @@ function palier(
 }
 
 /**
- * Composition de l'équipe par famille de tournoi.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  COMPOSITIONS DATÉES — la composition dépend de la DATE du tournoi
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * GRAND CHELEM — cinq paliers CONTIGUS ET DISJOINTS : 1-10, 11-20, 21-40,
- * 41-70, 71 et au-delà. Chaque rang tombe dans exactement un palier, et les
- * bornes se touchent sans se recouvrir — le rang 70 est le dernier du palier 4,
- * le palier 5 commence à 71. C'est un changement de découpage : les anciens
- * paliers de fin se recoupaient (« 61 et + » inclus dans « 41 et + »), si bien
- * qu'un même joueur pouvait être candidat à deux paliers.
+ * Les paliers hors Grand Chelem ont changé le 2026-09-28. L'équipe fantasy
+ * n'est jamais stockée : elle est recomposée à chaque affichage, import et
+ * backfill. Modifier les bornes en place aurait donc réécrit l'équipe et le
+ * score de tous les tournois déjà joués. On garde les deux découpages, et
+ * c'est la `start_date` du tournoi qui choisit (cf. `compositionPour`).
  *
- * Le circuit féminin suit exactement les mêmes paliers que le masculin.
+ * Seules les BORNES DE RANG changent. Il n'y a aucun multiplicateur par
+ * palier : les multiplicateurs sont par tour (cf. `baremeTournoi`) et ne
+ * bougent pas.
  *
- * M1000 / AUTRE — inchangés, et leurs deux derniers paliers restent
- * identiques (« 31 et au-delà » deux fois). C'est ce recoupement-là qui
- * interdit encore un simple maximum palier par palier (cf. `composerEquipe`).
- *
- * `AUTRE` (ATP/WTA 500, 250, Finals) reprend la composition des Masters 1000 :
- * le jeu ne définit pas de barème propre à ces catégories, et 4 joueurs sur un
- * tableau de 32 ou 48 reste jouable. Seuls les multiplicateurs s'y adaptent,
- * via le nombre de tours.
+ * Pour un futur changement : ajouter une table et une date, jamais modifier
+ * une table existante (elle porte l'historique).
  */
-export const COMPOSITIONS: Record<FamilleFantasy, Palier[]> = {
-  GC: [
-    palier(1, 1, 10),
-    palier(2, 11, 20),
-    palier(3, 21, 40),
-    palier(4, 41, 70),
-    palier(5, 71, null),
-  ],
+
+/** Premier jour (inclus) du découpage 1-20 / 21-40 / 41-70 / 71+ hors GC. */
+export const DATE_EFFET_PALIERS_2026_09_28 = '2026-09-28';
+
+/**
+ * GRAND CHELEM, identique dans les deux découpages : cinq paliers CONTIGUS
+ * ET DISJOINTS, 1-10, 11-20, 21-40, 41-70, 71 et au-delà. Chaque rang tombe
+ * dans exactement un palier. Le circuit féminin suit les mêmes paliers.
+ */
+const PALIERS_GC: Palier[] = [
+  palier(1, 1, 10),
+  palier(2, 11, 20),
+  palier(3, 21, 40),
+  palier(4, 41, 70),
+  palier(5, 71, null),
+];
+
+/**
+ * DÉCOUPAGE HISTORIQUE, pour tout tournoi commencé AVANT le 2026-09-28 (ou
+ * sans date connue). NE PLUS MODIFIER : il porte les équipes et les scores
+ * déjà joués.
+ *
+ * M1000 / AUTRE : 1-10, 11-30, puis « 31 et au-delà » DEUX FOIS. Ce
+ * recoupement interdit un simple maximum palier par palier (cf.
+ * `composerEquipe`, qui résout l'affectation globalement).
+ */
+export const COMPOSITIONS_HISTORIQUES: Record<FamilleFantasy, Palier[]> = {
+  GC: PALIERS_GC,
   M1000: [
     palier(1, 1, 10),
     palier(2, 11, 30),
@@ -221,6 +238,48 @@ export const COMPOSITIONS: Record<FamilleFantasy, Palier[]> = {
     palier(4, 31, null),
   ],
 };
+
+/**
+ * DÉCOUPAGE EN VIGUEUR depuis le 2026-09-28 (inclus).
+ *
+ * M1000 / AUTRE : Top 20, 21-40, 41-70, 71 et au-delà. Quatre paliers
+ * contigus et disjoints : il n'y a plus de recoupement hors GC non plus.
+ *
+ * `AUTRE` (ATP/WTA 500, 250, Finals) reprend la composition des Masters 1000,
+ * comme avant : seuls les multiplicateurs s'adaptent, via le nombre de tours.
+ */
+export const COMPOSITIONS_2026_09_28: Record<FamilleFantasy, Palier[]> = {
+  GC: PALIERS_GC,
+  M1000: [
+    palier(1, 1, 20),
+    palier(2, 21, 40),
+    palier(3, 41, 70),
+    palier(4, 71, null),
+  ],
+  AUTRE: [
+    palier(1, 1, 20),
+    palier(2, 21, 40),
+    palier(3, 41, 70),
+    palier(4, 71, null),
+  ],
+};
+
+/**
+ * Paliers d'un tournoi : SEUL point d'accès aux compositions.
+ *
+ * `startDate` est `tn_tournaments.start_date` (AAAA-MM-JJ). Une date absente
+ * ou illisible retombe sur le découpage historique : tous les tournois sans
+ * date sont d'anciennes lignes, et l'historique ne doit jamais bouger.
+ */
+export function compositionPour(
+  famille: FamilleFantasy,
+  startDate: string | null | undefined,
+): Palier[] {
+  const jour = startDate?.slice(0, 10) ?? '';
+  const nouveau =
+    /^\d{4}-\d{2}-\d{2}$/.test(jour) && jour >= DATE_EFFET_PALIERS_2026_09_28;
+  return (nouveau ? COMPOSITIONS_2026_09_28 : COMPOSITIONS_HISTORIQUES)[famille];
+}
 
 export const LIBELLE_FAMILLE: Record<FamilleFantasy, string> = {
   GC: 'Grand Chelem',

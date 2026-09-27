@@ -181,11 +181,13 @@ export interface MembreEquipe {
  * des espérances.
  *
  * Résolu par affectation globale (algorithme hongrois de lib/optimizer.ts) et
- * non palier par palier : hors Grand Chelem, les paliers 3 et 4 sont le même
- * intervalle (« 31 et au-delà »), et un choix glouton donnerait deux fois le
- * même joueur — ou laisserait un palier vide. Sur des paliers disjoints, comme
- * ceux du Grand Chelem, l'affectation rend simplement le meilleur de chaque
- * palier : le chemin de calcul reste unique, sans cas particulier.
+ * non palier par palier : dans le découpage historique hors Grand Chelem
+ * (tournois avant le 2026-09-28, cf. `compositionPour`), les paliers 3 et 4
+ * sont le même intervalle (« 31 et au-delà »), et un choix glouton donnerait
+ * deux fois le même joueur — ou laisserait un palier vide. Sur des paliers
+ * disjoints (Grand Chelem, et tout le découpage depuis le 2026-09-28),
+ * l'affectation rend simplement le meilleur de chaque palier : le chemin de
+ * calcul reste unique, sans cas particulier.
  */
 export function composerEquipe(
   paliers: Palier[],

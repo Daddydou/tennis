@@ -14,7 +14,7 @@ import {
 } from '@/db/fantasy';
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
-import { COMPOSITIONS, LIBELLE_FAMILLE } from '@/lib/fantasy';
+import { compositionPour, LIBELLE_FAMILLE } from '@/lib/fantasy';
 import { lienBouton } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
@@ -76,7 +76,7 @@ export default async function FantasyPage({
     });
   }
 
-  const paliers = COMPOSITIONS[fantasy.famille];
+  const paliers = compositionPour(fantasy.famille, tournament.start_date);
 
   // L'équipe optimale (sur les seules espérances, cf. ci-dessus) et ce que
   // cette MÊME équipe a marqué sur les résultats importés. Le second n'entre

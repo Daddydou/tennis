@@ -7,7 +7,7 @@ import { simulerTournoi } from '@/lib/montecarlo';
 import { ECHELLE_ELO } from '@/lib/elo';
 import { estIndecis } from '@/lib/types';
 import {
-  COMPOSITIONS,
+  compositionPour,
   composerEquipe,
   detailReelJoueur,
   detaillerJoueur,
@@ -183,7 +183,7 @@ function rejouer(
 
   let predit = 0;
   let reel = 0;
-  for (const m of composerEquipe(COMPOSITIONS[famille], candidats)) {
+  for (const m of composerEquipe(compositionPour(famille, tournament.start_date), candidats)) {
     if (!m.playerId) continue;
     predit += m.eTotal;
     reel += detailReelJoueur(matches, m.playerId, rounds, bareme, bestOf).total;
