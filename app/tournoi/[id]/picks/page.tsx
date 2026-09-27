@@ -20,6 +20,7 @@ import {
 import { computeAndStoreProjections, projectionsEnCache } from '@/db/projections';
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
+import { getInsights } from '@/db/insights';
 import { genererSlots, recommanderPourTour } from '@/lib/optimizer';
 import { adversaireDe } from '@/lib/parser';
 import type { DrawExtract, Half, Slot } from '@/lib/types';
@@ -146,6 +147,11 @@ export default async function PicksPage({
   // jamais une resimulation.
   const { coteUtilisables } = await chargerBlendProduction(id);
 
+  // Insights joueurs (forfait, blessure, charge…) : AFFICHAGE SEUL, ne
+  // touchent ni aux espérances, ni au tri, ni à `utilise`. Map vide si le
+  // tournoi n'en a pas → écran identique à avant.
+  const insights = await getInsights(id);
+
   // Elo effectif (pondéré surface, 0.6), exactement celui que la simulation
   // utilise. Sert à afficher la valeur elle-même, sa source, et l'écart
   // joueur − adversaire (meilleur indicateur de mismatch).
@@ -208,6 +214,7 @@ export default async function PicksPage({
             elo !== null && eloAdv !== null ? Math.round(elo - eloAdv) : null,
           ePoints: r.ePoints,
           utilise,
+          insight: insights.get(r.playerId) ?? null,
         };
       });
 

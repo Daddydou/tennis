@@ -59,6 +59,8 @@ const TABLES = [
   'tn_bracket_round_picks',
   // 0020 — historique des captures de cotes
   'tn_odds_historique',
+  // 0021 — insights joueurs (affichage seul, écran Picks)
+  'tn_player_insights',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

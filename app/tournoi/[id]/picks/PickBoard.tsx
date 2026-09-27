@@ -4,7 +4,10 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { validerPick, supprimerPick } from './actions';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
+import InsightBadge from './InsightBadge';
+import InsightDetail from './InsightDetail';
 import { boutonPrimaire, boutonDanger, Spinner } from '@/app/ui';
+import type { PlayerInsight } from '@/lib/insights';
 import type { Half } from '@/lib/types';
 
 export interface Candidat {
@@ -24,6 +27,11 @@ export interface Candidat {
   /** Écart d'Elo effectif joueur − adversaire (indicateur de mismatch). */
   ecartElo: number | null;
   utilise: boolean;
+  /**
+   * Insight le plus récent (tn_player_insights), ou null. AFFICHAGE SEUL :
+   * n'intervient jamais dans `utilise`, la sélection ni le tri.
+   */
+  insight: PlayerInsight | null;
 }
 
 export interface Colonne {
@@ -53,6 +61,8 @@ function ColonnePick({
 }) {
   const [choix, setChoix] = useState<string | null>(colonne.pickActuel);
   const [erreur, setErreur] = useState<string | null>(null);
+  /** Joueur dont le détail d'insight est déplié (un seul à la fois). */
+  const [detailOuvert, setDetailOuvert] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -121,9 +131,13 @@ function ColonnePick({
           // `choix` mais jamais le vrai pick, et ne doit donc jamais faire
           // disparaître la surbrillance de celui réellement posé.
           const estPickActuel = c.playerId === colonne.pickActuel;
+          // Détail dépliable seulement s'il y a quelque chose à lire.
+          const aDetail =
+            !!c.insight && (!!c.insight.summary || c.insight.facts.length > 0);
+          const ouvert = aDetail && detailOuvert === c.playerId;
           return (
+            <div key={c.playerId}>
             <label
-              key={c.playerId}
               className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
                 c.utilise
                   ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
@@ -143,16 +157,39 @@ function ColonnePick({
                 onChange={() => setChoix(c.playerId)}
                 className="size-4 accent-blue-600"
               />
-              <span className="flex-1 truncate">
-                {c.nom}
-                {c.rang ? (
-                  <span className="ml-1 text-xs text-zinc-400">#{c.rang}</span>
-                ) : null}
-                {estPickActuel && (
-                  <span className="ml-1 text-xs font-medium text-emerald-600">✓ validé</span>
-                )}
-                {c.utilise && (
-                  <span className="ml-1 text-xs italic">déjà pické</span>
+              <span className="flex min-w-0 flex-1 items-center">
+                <span className="truncate">
+                  {c.nom}
+                  {c.rang ? (
+                    <span className="ml-1 text-xs text-zinc-400">#{c.rang}</span>
+                  ) : null}
+                  {estPickActuel && (
+                    <span className="ml-1 text-xs font-medium text-emerald-600">✓ validé</span>
+                  )}
+                  {c.utilise && (
+                    <span className="ml-1 text-xs italic">déjà pické</span>
+                  )}
+                </span>
+                {/* Hors de la zone tronquée : le badge reste visible sur mobile. */}
+                <InsightBadge insight={c.insight} />
+                {aDetail && (
+                  // Un bouton dans un <label> n'active pas le radio : ouvrir le
+                  // détail ne change jamais le choix en cours.
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setDetailOuvert(ouvert ? null : c.playerId);
+                    }}
+                    aria-expanded={ouvert}
+                    aria-label={`Infos sur ${c.nom}`}
+                    title="Infos joueur"
+                    className="-my-2 ml-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+                  >
+                    <span className="flex size-4 items-center justify-center rounded-full border border-current text-[10px] font-semibold leading-none">
+                      i
+                    </span>
+                  </button>
                 )}
               </span>
               <span className="w-24 truncate text-right text-xs text-zinc-500">
@@ -194,6 +231,8 @@ function ColonnePick({
                 {c.ePoints.toFixed(1)}
               </span>
             </label>
+            {ouvert && c.insight && <InsightDetail insight={c.insight} />}
+            </div>
           );
         })}
         {colonne.candidats.length === 0 && (
