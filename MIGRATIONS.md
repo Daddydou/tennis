@@ -33,6 +33,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0018 | `0018_simulateur_bracket_par_tour.sql`   | Table `tn_bracket_round_picks` (bracket un tour à la fois)       | 2026-09-09 |              |
 | 0019 | `0019_fusion_identites_wta.sql`          | Fusion de 9 identités WTA dupliquées (US Open 2026)              | 2026-09-13 |              |
 | 0020 | `0020_cotes_historique.sql`              | Table `tn_odds_historique` (une ligne par capture de cotes)       | 2026-09-24 | 2026-09-24   |
+| 0021 | `0021_insights_joueurs.sql`             | `tn_player_insights` rattachée + RLS/grants mis au régime commun | 2026-09-27 | 2026-09-27   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -122,7 +123,11 @@ with c(num, ok, note) as (values
                where id in ('460837','501894','845268','906723','721779',
                             '325729','380396','18251','679319')),
    null),
-  ('0020', to_regclass('public.tn_odds_historique') is not null, null)
+  ('0020', to_regclass('public.tn_odds_historique') is not null, null),
+  ('0021',
+   to_regclass('public.tn_player_insights') is not null
+   and not has_table_privilege('anon', 'public.tn_player_insights', 'insert'),
+   null)
 )
 select num,
        case when ok then 'appliquée'
@@ -300,4 +305,12 @@ doublons n'ont alors jamais existé, et la migration n'a rien à faire).
 ### 0020 — Historique des cotes
 ```sql
 select to_regclass('public.tn_odds_historique') is not null as appliquee;
+```
+
+### 0021 — Insights joueurs
+Table créée hors migration ; appliquée = anon ne peut plus que lire.
+```sql
+select to_regclass('public.tn_player_insights') is not null
+   and not has_table_privilege('anon', 'public.tn_player_insights', 'insert')
+   as appliquee;
 ```
