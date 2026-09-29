@@ -5,7 +5,7 @@ import { ELO_DEFAUT_RESOLU, POIDS_SURFACE, type ElosResolus } from './elo';
 import { rowsToPlayers, surfacePourElo, type loadEngineData } from './queries';
 import { simulerTournoi } from '@/lib/montecarlo';
 import {
-  COMPOSITIONS,
+  compositionPour,
   composerEquipe,
   detailReelJoueur,
   detaillerJoueur,
@@ -190,7 +190,7 @@ export async function evaluerFantasyAnterieur(
   });
 
   const equipe: MembreAnterieur[] = composerEquipe(
-    COMPOSITIONS[famille],
+    compositionPour(famille, tournament),
     candidats,
   ).map((m) => ({
     palier: m.palier.numero,

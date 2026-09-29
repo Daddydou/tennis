@@ -16,7 +16,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseExtract, devinerSurface, extraireJoueurs } from '../lib/parser';
+import { parseExtract, devinerSurface, devinerBestOf, extraireJoueurs } from '../lib/parser';
 import { calculerElos, eloDepuisRang, ELO_DEFAUT } from '../lib/elo';
 import type { Match, Surface } from '../lib/types';
 
@@ -43,7 +43,7 @@ console.log('CALCUL DES ELO');
 console.log('='.repeat(74));
 console.log(`\n${fichiers.length} tournois, traites dans cet ordre :\n`);
 
-const tournois: { matches: Match[]; surface: Surface }[] = [];
+const tournois: { matches: Match[]; surface: Surface; bestOf: 3 | 5 }[] = [];
 const nomsJoueurs: Record<string, string> = {};
 const seedsMax: Record<string, number> = {};
 
@@ -67,7 +67,11 @@ for (const f of fichiers) {
     continue;
   }
 
-  tournois.push({ matches: extract.matches, surface });
+  tournois.push({
+    matches: extract.matches,
+    surface,
+    bestOf: devinerBestOf(extract.tour, extract.tournament.slug),
+  });
 
   // Memoriser noms et meilleure tete de serie vue
   const players = extraireJoueurs(extract);

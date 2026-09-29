@@ -439,8 +439,9 @@ et par Next.js 16 :
   « défaut » y signale exactement un joueur tombé au bout de cette cascade.
 - **Le calcul d'Elo maison existe mais n'est pas branché.** `calculerElos`,
   `majElo`, `nouvelEloRecord` et `facteurK` (`lib/elo.ts`) forment une chaîne
-  complète pour recalculer des Elo match par match depuis les tournois importés.
-  **Aucune n'est appelée**, ni par l'app ni par un script : elles subsistent en
+  complète pour recalculer des Elo match par match depuis les tournois importés,
+  avec un écart propre au bo5 (`ecartFormat`). **L'app n'en appelle aucune** —
+  seuls les scripts de `recherche/` s'en servent : elles subsistent en
   réserve, pour le jour où l'on voudrait un repli entre Tennis Abstract et le
   défaut. Tant qu'elles ne le sont pas, l'étage « maison » de `resoudreElos`
   reste du code atteignable mais jamais emprunté — il ne se déclencherait que

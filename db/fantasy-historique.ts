@@ -4,7 +4,7 @@ import { supabaseAnon } from './anon';
 import type { EngineInput } from './projections';
 import type { Fantasy } from './fantasy-cache';
 import {
-  COMPOSITIONS,
+  compositionPour,
   composerEquipe,
   detailReelJoueur,
   type CandidatFantasy,
@@ -61,7 +61,7 @@ export function equipeEvaluee(
     eTotal: fantasy.joueurs[playerId]?.eTotal ?? 0,
   }));
 
-  const membres = composerEquipe(COMPOSITIONS[fantasy.famille], candidats).map(
+  const membres = composerEquipe(compositionPour(fantasy.famille, tournament), candidats).map(
     (m): MembreAvecReel => {
       if (!m.playerId) return { ...m, reel: 0, detailReel: [] };
       const r = detailReelJoueur(
