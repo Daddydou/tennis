@@ -190,7 +190,7 @@ export async function evaluerFantasyAnterieur(
   });
 
   const equipe: MembreAnterieur[] = composerEquipe(
-    compositionPour(famille, tournament.start_date),
+    compositionPour(famille, tournament),
     candidats,
   ).map((m) => ({
     palier: m.palier.numero,

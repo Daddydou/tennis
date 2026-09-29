@@ -7,7 +7,9 @@
  *   - un tournoi passé (start_date < 2026-09-28, ou sans date) garde
  *     EXACTEMENT les paliers, l'équipe et le score d'avant le changement ;
  *   - un tournoi à partir du 2026-09-28 utilise Top 20 / 21-40 / 41-70 / 71+ ;
- *   - le Grand Chelem ne change pas.
+ *   - le Grand Chelem ne change pas ;
+ *   - un tournoi listé dans COMPOSITIONS_PAR_TOURNOI (Pékin 2026 WTA) garde
+ *     le découpage historique quelle que soit sa date, sans toucher aux autres.
  *
  * Node pur (aucun React, aucun Supabase) : `npm run test:fantasy-paliers`.
  */
@@ -15,6 +17,7 @@ import {
   baremeTournoi,
   composerEquipe,
   compositionPour,
+  COMPOSITIONS_PAR_TOURNOI,
   detailReelJoueur,
   totalEquipe,
   type CandidatFantasy,
@@ -53,6 +56,9 @@ const NOUVEAU_HORS_GC: [number, number, number | null][] = [
 const versPaliers = (b: [number, number, number | null][]): Palier[] =>
   b.map(([numero, rangMin, rangMax]) => ({ numero, rangMin, rangMax, libelle: '' }));
 
+/** Tournoi hors exception : seule la date choisit. */
+const sansId = (start_date: string | null | undefined) => ({ id: null, start_date });
+
 const FAMILLES: FamilleFantasy[] = ['GC', 'M1000', 'AUTRE'];
 const DATES_PASSEES = ['2025-12-29', '2026-09-21', '2026-09-27', null, undefined, '', 'n/a'];
 const DATES_FUTURES = ['2026-09-28', '2026-09-28T00:00:00+00:00', '2026-10-05', '2027-01-12'];
@@ -61,14 +67,14 @@ const DATES_FUTURES = ['2026-09-28', '2026-09-28T00:00:00+00:00', '2026-10-05', 
 {
   for (const f of FAMILLES) {
     for (const d of DATES_PASSEES) {
-      assert(memes(bornes(compositionPour(f, d)), AVANT[f]), `${f} / ${String(d)} : bornes d'avant, à l'identique`);
+      assert(memes(bornes(compositionPour(f, sansId(d))), AVANT[f]), `${f} / ${String(d)} : bornes d'avant, à l'identique`);
     }
     for (const d of DATES_FUTURES) {
       const attendu = f === 'GC' ? AVANT.GC : NOUVEAU_HORS_GC;
-      assert(memes(bornes(compositionPour(f, d)), attendu), `${f} / ${d} : ${f === 'GC' ? 'GC inchangé' : 'Top 20 / 21-40 / 41-70 / 71+'}`);
+      assert(memes(bornes(compositionPour(f, sansId(d))), attendu), `${f} / ${d} : ${f === 'GC' ? 'GC inchangé' : 'Top 20 / 21-40 / 41-70 / 71+'}`);
     }
   }
-  const libelles = compositionPour('AUTRE', '2026-09-28').map((p) => p.libelle);
+  const libelles = compositionPour('AUTRE', sansId('2026-09-28')).map((p) => p.libelle);
   assert(memes(libelles, ['1 à 20', '21 à 40', '41 à 70', '71 et au-delà']), `libellés affichés : ${libelles.join(' | ')}`);
 }
 
@@ -115,8 +121,8 @@ const scoreReel = (famille: FamilleFantasy, ps: Palier[]) =>
 
 for (const f of ['M1000', 'AUTRE'] as const) {
   const avant = versPaliers(AVANT[f]);
-  const passe = compositionPour(f, '2026-09-21');
-  const futur = compositionPour(f, '2026-09-28');
+  const passe = compositionPour(f, sansId('2026-09-21'));
+  const futur = compositionPour(f, sansId('2026-09-28'));
 
   assert(memes(ids(passe), ids(avant)), `${f} passé : même équipe qu'avant (${ids(passe).join(',')})`);
   assert(memes(ids(passe), ['a', 'b', 'd', 'e']), `${f} passé : équipe attendue a,b,d,e (1-10, 11-30, 31+, 31+)`);
@@ -128,9 +134,49 @@ for (const f of ['M1000', 'AUTRE'] as const) {
 }
 
 {
-  const passe = compositionPour('GC', '2026-09-21');
-  const futur = compositionPour('GC', '2026-09-28');
+  const passe = compositionPour('GC', sansId('2026-09-21'));
+  const futur = compositionPour('GC', sansId('2026-09-28'));
   assert(memes(ids(passe), ids(futur)), 'GC : même équipe avant et après la date d’effet');
+}
+
+// ── Exception par tournoi : Pékin 2026 WTA garde l'ancien découpage ──
+{
+  const PEKIN_WTA = '15b7795d-51d9-40ba-bb5b-7932a0723ce9';
+  const BEIJING_ATP = 'a58d0c80-ab54-45db-aea5-d275fb274611'; // même semaine, sans exception
+  assert(PEKIN_WTA in COMPOSITIONS_PAR_TOURNOI, 'Pékin 2026 WTA figure dans les exceptions');
+
+  // Peu importe la date : avant, pile à la date d'effet, après, absente.
+  for (const f of FAMILLES) {
+    for (const d of [...DATES_PASSEES, ...DATES_FUTURES]) {
+      assert(
+        memes(bornes(compositionPour(f, { id: PEKIN_WTA, start_date: d })), AVANT[f]),
+        `Pékin WTA / ${f} / ${String(d)} : découpage historique forcé`,
+      );
+    }
+  }
+  const libelles = compositionPour('M1000', { id: PEKIN_WTA, start_date: '2026-09-28' }).map((p) => p.libelle);
+  assert(memes(libelles, ['1 à 10', '11 à 30', '31 et au-delà', '31 et au-delà']), `Pékin WTA : libellés ${libelles.join(' | ')}`);
+
+  // Équipe recomposée : celle de l'ancien découpage, pas celle du nouveau.
+  const pekin = compositionPour('M1000', { id: PEKIN_WTA, start_date: '2026-09-28' });
+  assert(memes(ids(pekin), ['a', 'b', 'd', 'e']), `Pékin WTA : équipe a,b,d,e (1-10, 11-30, 31+, 31+) — obtenu ${ids(pekin).join(',')}`);
+
+  // Aucun autre tournoi n'est touché : un id inconnu (dont l'ATP Beijing,
+  // même date) suit la date, exactement comme sans id.
+  for (const id of [BEIJING_ATP, 'autre-id', null, undefined, '']) {
+    for (const f of FAMILLES) {
+      for (const d of [...DATES_PASSEES, ...DATES_FUTURES]) {
+        assert(
+          memes(bornes(compositionPour(f, { id, start_date: d })), bornes(compositionPour(f, sansId(d)))),
+          `id ${String(id)} / ${f} / ${String(d)} : suit la date, comme sans exception`,
+        );
+      }
+    }
+  }
+  assert(
+    memes(bornes(compositionPour('M1000', { id: BEIJING_ATP, start_date: '2026-09-28' })), NOUVEAU_HORS_GC),
+    'ATP Beijing 2026 (sans exception) : Top 20 / 21-40 / 41-70 / 71+',
+  );
 }
 
 if (echecs > 0) {

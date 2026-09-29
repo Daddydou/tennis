@@ -76,7 +76,7 @@ export default async function FantasyPage({
     });
   }
 
-  const paliers = compositionPour(fantasy.famille, tournament.start_date);
+  const paliers = compositionPour(fantasy.famille, tournament);
 
   // L'équipe optimale (sur les seules espérances, cf. ci-dessus) et ce que
   // cette MÊME équipe a marqué sur les résultats importés. Le second n'entre

@@ -183,7 +183,7 @@ function rejouer(
 
   let predit = 0;
   let reel = 0;
-  for (const m of composerEquipe(compositionPour(famille, tournament.start_date), candidats)) {
+  for (const m of composerEquipe(compositionPour(famille, tournament), candidats)) {
     if (!m.playerId) continue;
     predit += m.eTotal;
     reel += detailReelJoueur(matches, m.playerId, rounds, bareme, bestOf).total;

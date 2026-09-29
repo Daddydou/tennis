@@ -61,7 +61,7 @@ export function equipeEvaluee(
     eTotal: fantasy.joueurs[playerId]?.eTotal ?? 0,
   }));
 
-  const membres = composerEquipe(compositionPour(fantasy.famille, tournament.start_date), candidats).map(
+  const membres = composerEquipe(compositionPour(fantasy.famille, tournament), candidats).map(
     (m): MembreAvecReel => {
       if (!m.playerId) return { ...m, reel: 0, detailReel: [] };
       const r = detailReelJoueur(

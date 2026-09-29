@@ -265,17 +265,51 @@ export const COMPOSITIONS_2026_09_28: Record<FamilleFantasy, Palier[]> = {
 };
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  EXCEPTIONS PAR TOURNOI — prioritaires sur la date
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Un tournoi listé ici reçoit la composition indiquée QUELLE QUE SOIT sa
+ * `start_date`. Clé : `tn_tournaments.id` (UUID), et non le slug : le slug
+ * revient chaque année (« china-open » 2027 aura le même) et n'est pas unique
+ * entre circuits, alors que l'id ne désigne qu'un seul tableau.
+ *
+ * Pour ajouter une exception : une ligne ici, avec le nom du tournoi en
+ * commentaire. Ne jamais en retirer une d'un tournoi déjà joué (même raison
+ * que les compositions datées : l'équipe est recomposée à chaque affichage).
+ */
+export const COMPOSITIONS_PAR_TOURNOI: Readonly<
+  Record<string, Record<FamilleFantasy, Palier[]>>
+> = {
+  // Pékin 2026 WTA (china-open, WTA1000, début 2026-09-28) : garde
+  // 1-10 / 11-30 / 31+ / 31+ malgré la date d'effet du nouveau découpage.
+  '15b7795d-51d9-40ba-bb5b-7932a0723ce9': COMPOSITIONS_HISTORIQUES,
+};
+
+/** Ce qu'il faut connaître d'un tournoi pour choisir ses paliers. */
+export interface TournoiPourPaliers {
+  /** `tn_tournaments.id`. */
+  id: string | null | undefined;
+  /** `tn_tournaments.start_date` (AAAA-MM-JJ). */
+  start_date: string | null | undefined;
+}
+
+/**
  * Paliers d'un tournoi : SEUL point d'accès aux compositions.
  *
- * `startDate` est `tn_tournaments.start_date` (AAAA-MM-JJ). Une date absente
- * ou illisible retombe sur le découpage historique : tous les tournois sans
- * date sont d'anciennes lignes, et l'historique ne doit jamais bouger.
+ * 1. Une exception listée dans `COMPOSITIONS_PAR_TOURNOI` l'emporte.
+ * 2. Sinon, la `start_date` choisit. Une date absente ou illisible retombe
+ *    sur le découpage historique : tous les tournois sans date sont
+ *    d'anciennes lignes, et l'historique ne doit jamais bouger.
  */
 export function compositionPour(
   famille: FamilleFantasy,
-  startDate: string | null | undefined,
+  tournoi: TournoiPourPaliers,
 ): Palier[] {
-  const jour = startDate?.slice(0, 10) ?? '';
+  const exception = tournoi.id ? COMPOSITIONS_PAR_TOURNOI[tournoi.id] : undefined;
+  if (exception) return exception[famille];
+
+  const jour = tournoi.start_date?.slice(0, 10) ?? '';
   const nouveau =
     /^\d{4}-\d{2}-\d{2}$/.test(jour) && jour >= DATE_EFFET_PALIERS_2026_09_28;
   return (nouveau ? COMPOSITIONS_2026_09_28 : COMPOSITIONS_HISTORIQUES)[famille];
