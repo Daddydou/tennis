@@ -93,6 +93,12 @@ export interface EloRecord {
   bySurface: Record<Surface, number>;
   matchesPlayed: number;
   matchesBySurface: Record<Surface, number>;
+  /**
+   * Écart propre au best of 5 : ce que le joueur vaut EN PLUS (ou en moins)
+   * de son Elo quand le match se joue en 3 sets gagnants. Cf. `ecartFormat`.
+   */
+  ecartBo5: number;
+  matchesBo5: number;
 }
 
 export function nouvelEloRecord(playerId: string, initial = ELO_DEFAUT): EloRecord {
@@ -102,18 +108,64 @@ export function nouvelEloRecord(playerId: string, initial = ELO_DEFAUT): EloReco
     bySurface: { hard: initial, clay: initial, grass: initial, carpet: initial },
     matchesPlayed: 0,
     matchesBySurface: { hard: 0, clay: 0, grass: 0, carpet: 0 },
+    ecartBo5: 0,
+    matchesBo5: 0,
   };
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  ELO BO3 / BO5 SÉPARÉS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * L'endurance sur 5 sets est une compétence distincte : certains joueurs
+ * valent plus en Grand Chelem que ne le dit leur Elo, d'autres moins.
+ *
+ * Pourquoi un ÉCART plutôt qu'un second Elo complet : il n'y a que 4 tournois
+ * bo5 par an, contre une soixantaine en bo3. Un Elo bo5 appris sur eux seuls
+ * ignorerait tout ce que les matchs bo3 disent du niveau. Ici :
+ *   - l'Elo général (et par surface) apprend de TOUS les matchs, comme avant ;
+ *   - `ecartBo5` n'apprend QUE des matchs bo5, sur ce que l'Elo général n'a
+ *     pas su prévoir ;
+ *   - en bo3, l'Elo est l'Elo général ; en bo5, Elo général + écart.
+ *
+ * `K_ECART_BO5` ralentit l'apprentissage de l'écart : sans lui, un seul
+ * match surprise en Grand Chelem le déplacerait de ~100 points.
+ * Valeur non calibrée — cf. recherche/backtest-multi.ts.
+ */
+export const K_ECART_BO5 = 0.3;
+
+/** Écart à ajouter à l'Elo (général ou effectif) pour un match au format `bestOf`. */
+export function ecartFormat(record: EloRecord, bestOf: 3 | 5): number {
+  return bestOf === 5 ? record.ecartBo5 : 0;
 }
 
 /**
  * Met à jour l'Elo de deux joueurs après un match.
  * Modifie les records en place et les retourne.
+ *
+ * `bestOf` omis vaut 3 : l'écart bo5 n'est alors pas touché, et le calcul
+ * est exactement celui d'avant la séparation bo3/bo5.
  */
 export function majElo(
   gagnant: EloRecord,
   perdant: EloRecord,
-  surface: Surface
+  surface: Surface,
+  bestOf: 3 | 5 = 3
 ): [EloRecord, EloRecord] {
+  // --- Écart bo5 --- calculé AVANT la mise à jour de l'Elo général, pour
+  // juger la prévision qu'on aurait faite avant le match.
+  if (bestOf === 5) {
+    const pBo5 = pVictoire(
+      gagnant.overall + gagnant.ecartBo5,
+      perdant.overall + perdant.ecartBo5
+    );
+    gagnant.ecartBo5 += K_ECART_BO5 * facteurK(gagnant.matchesBo5) * (1 - pBo5);
+    perdant.ecartBo5 -= K_ECART_BO5 * facteurK(perdant.matchesBo5) * (1 - pBo5);
+    gagnant.matchesBo5 += 1;
+    perdant.matchesBo5 += 1;
+  }
+
   // --- Elo général ---
   const pAttendue = pVictoire(gagnant.overall, perdant.overall);
   const kG = facteurK(gagnant.matchesPlayed);
@@ -143,11 +195,12 @@ export function majElo(
  * IMPORTANT : passe les tournois dans l'ordre CHRONOLOGIQUE.
  * L'Elo est séquentiel — l'ordre change le résultat.
  *
- * @param tournois  Liste de { matches, surface }, du plus ancien au plus récent.
+ * @param tournois  Liste de { matches, surface, bestOf? }, du plus ancien au
+ *                  plus récent. `bestOf` omis vaut 3 (cf. `ecartFormat`).
  * @param initiaux  Elo de départ par joueur (typiquement dérivés du classement).
  */
 export function calculerElos(
-  tournois: { matches: Match[]; surface: Surface }[],
+  tournois: { matches: Match[]; surface: Surface; bestOf?: 3 | 5 }[],
   initiaux: Record<string, number> = {}
 ): Record<string, EloRecord> {
   const records: Record<string, EloRecord> = {};
@@ -159,7 +212,7 @@ export function calculerElos(
     return records[id];
   };
 
-  for (const { matches, surface } of tournois) {
+  for (const { matches, surface, bestOf = 3 } of tournois) {
     // Trier par tour : R128 avant R64, etc.
     const ordre = ordreDesRounds(matches);
     const tries = [...matches].sort(
@@ -179,7 +232,7 @@ export function calculerElos(
       if (!gagnantId) continue;
       const perdantId = gagnantId === p1.id ? p2.id : p1.id;
 
-      majElo(get(gagnantId), get(perdantId), surface);
+      majElo(get(gagnantId), get(perdantId), surface, bestOf);
     }
   }
 
