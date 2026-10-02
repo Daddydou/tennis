@@ -2,7 +2,7 @@
 
 import { sessionValide } from '@/auth/garde';
 import { loadEngineData, surfacePourElo } from '@/db/queries';
-import { equipeEvaluee, fantasyEnCache } from '@/db/fantasy';
+import { equipeEvalueeFigee, fantasyEnCache } from '@/db/fantasy';
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { POIDS_SURFACE } from '@/db/elo';
 import { simulerDepuis } from '@/lib/montecarlo';
@@ -75,7 +75,7 @@ export async function simulerScenario(
       error: "L'équipe Fantasy n'est pas encore calculée : ouvre l'onglet Fantasy puis réessaie.",
     };
   }
-  const evaluation = equipeEvaluee(engine, fantasy);
+  const evaluation = await equipeEvalueeFigee(engine, fantasy);
 
   const bestOf = (tournament.best_of ?? 3) as 3 | 5;
   const surface = surfacePourElo(tournament.surface);
