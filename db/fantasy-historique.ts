@@ -2,7 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from './server';
 import { supabaseAnon } from './anon';
 import type { EngineInput } from './projections';
-import type { Fantasy } from './fantasy-cache';
+import { contexteFantasy, type Fantasy } from './fantasy-cache';
 import {
   compositionPour,
   composerEquipe,
@@ -86,6 +86,100 @@ export function equipeEvaluee(
 }
 
 /* -------------------------------------------------------------------------- */
+/*  ÉQUIPE FIGÉE À LA PREMIÈRE ÉCRITURE                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Équipe déjà enregistrée dans l'historique : ce qui ne doit plus bouger.
+ *
+ * `equipeEvaluee` part des espérances du cache `tn_fantasy`, recalculées avec
+ * l'Elo et les classements DU JOUR après chaque import et chaque mise à jour
+ * des Elo. Sans ce gel, l'équipe d'un tournoi en cours serait recomposée à
+ * chaque recalcul — et celle d'un tournoi joué, choisie en partie sur ses
+ * propres résultats. Dès qu'une ligne existe, sa composition et son
+ * espérance font foi ; seuls les points réels avancent.
+ *
+ * Limite assumée : « figée » veut dire figée à la PREMIÈRE ÉCRITURE, pas au
+ * tirage. Un tournoi importé pour la première fois déjà bien avancé garde une
+ * équipe composée avec un Elo qui connaissait une partie des résultats. Le
+ * volet propre (db/fantasy-anterieur.ts) reste la seule mesure sans ce biais.
+ */
+export interface EquipeStockee {
+  ePredit: number | null;
+  equipe: LigneHistorique['equipe'];
+}
+
+/**
+ * Remplace la composition d'une évaluation fraîche par l'équipe stockée, et
+ * ne recalcule que les points réels de ses membres. Pure, sans base.
+ *
+ * L'évaluation fraîche ne sert qu'à fournir les paliers (libellés) et le
+ * nombre d'éligibles affichés, ainsi que `termine`, qui ne dépend que des
+ * matchs.
+ */
+export function figerEquipe(
+  engine: EngineInput,
+  fraiche: EquipeEvaluee,
+  stockee: EquipeStockee,
+  bareme: number[],
+): EquipeEvaluee {
+  const { tournament, matches } = engine;
+  const rounds = tournament.rounds ?? [];
+  const bestOf = (tournament.best_of ?? 3) as 3 | 5;
+
+  const membres = stockee.equipe.map((s): MembreAvecReel => {
+    const frais = fraiche.membres.find((m) => m.palier.numero === s.palier);
+    const palier = frais?.palier ?? {
+      numero: s.palier,
+      rangMin: 0,
+      rangMax: null,
+      libelle: `Palier ${s.palier}`,
+    };
+    const base = { palier, playerId: s.playerId, eTotal: s.ePoints, eligibles: frais?.eligibles ?? 0 };
+    if (!s.playerId) return { ...base, reel: 0, detailReel: [] };
+    const r = detailReelJoueur(matches, s.playerId, rounds, bareme, bestOf);
+    return { ...base, reel: r.total, detailReel: r.lignes };
+  });
+
+  return {
+    membres,
+    eTotal: stockee.ePredit ?? membres.reduce((s, m) => s + (m.playerId ? m.eTotal : 0), 0),
+    reelTotal: membres.reduce((s, m) => s + m.reel, 0),
+    termine: fraiche.termine,
+  };
+}
+
+/** Équipe stockée d'un tournoi, `null` s'il n'a pas encore de ligne (ou une ligne sans équipe). */
+export async function lireEquipeStockee(tournamentId: string): Promise<EquipeStockee | null> {
+  const { data, error } = await supabaseAnon()
+    .from('tn_fantasy_historique')
+    .select('e_predit, equipe')
+    .eq('tournament_id', tournamentId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const equipe = (data?.equipe ?? null) as LigneHistorique['equipe'] | null;
+  if (!equipe || equipe.length === 0) return null;
+  return {
+    ePredit: data?.e_predit === null || data?.e_predit === undefined ? null : Number(data.e_predit),
+    equipe,
+  };
+}
+
+/**
+ * L'équipe à AFFICHER : celle de l'historique dès qu'elle existe, sinon la
+ * composition optimale sur le cache courant (tournoi pas encore enregistré).
+ * Lecture seule.
+ */
+export async function equipeEvalueeFigee(
+  engine: EngineInput,
+  fantasy: Fantasy,
+): Promise<EquipeEvaluee> {
+  const fraiche = equipeEvaluee(engine, fantasy);
+  const stockee = await lireEquipeStockee(engine.tournament.id);
+  return stockee ? figerEquipe(engine, fraiche, stockee, fantasy.bareme) : fraiche;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  HISTORIQUE PRÉDIT / RÉALISÉ                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -145,6 +239,20 @@ export interface VoletAnterieur {
  * effacer : le chemin d'import ne les calcule pas (il coûterait une simulation
  * de plus à chaque import), et il ne doit pas défaire ce que le backfill a
  * écrit.
+ *
+ * ÉQUIPE FIGÉE (cf. `figerEquipe`). Si une ligne porte déjà une équipe, sa
+ * composition et `e_predit` ne sont JAMAIS réécrits, quelle que soit
+ * `evaluation` : seuls les points réels des membres, `score_reel`,
+ * `termine` et `computed_at` sont mis à jour. C'est ici, au seul point
+ * d'écriture, que la règle est tenue — l'import et le backfill passent tous
+ * deux par cette fonction.
+ *
+ * VOLET PROPRE FIGÉ DE MÊME. Les colonnes antérieures ne sont écrites en
+ * entier que si `e_predit_anterieur` est encore NULL. Une fois présentes,
+ * composition, `e_predit_anterieur`, `elo_releve_le` et `joueurs_sans_elo` ne
+ * bougent plus ; seuls les points réels de l'équipe propre stockée
+ * (`score_reel_anterieur`, `reel` de chaque membre) suivent les résultats —
+ * sans quoi un volet écrit en cours de tournoi garderait un score tronqué.
  */
 export async function enregistrerHistorique(
   engine: EngineInput,
@@ -154,6 +262,43 @@ export async function enregistrerHistorique(
   try {
     const { tournament, players } = engine;
     const sb = supabaseAdmin();
+
+    const { data: existante, error: eLecture } = await supabaseAnon()
+      .from('tn_fantasy_historique')
+      .select('e_predit, equipe, e_predit_anterieur, equipe_anterieure')
+      .eq('tournament_id', tournament.id)
+      .maybeSingle();
+    if (eLecture) return { ok: false, error: eLecture.message };
+
+    const { bareme } = contexteFantasy(tournament);
+    const equipeAnterieure = (existante?.equipe_anterieure ?? null) as LigneHistorique['equipe'] | null;
+    let propreAEcrire: Record<string, unknown> = {};
+    if ((existante?.e_predit_anterieur ?? null) === null) {
+      if (anterieur) propreAEcrire = colonnesAnterieures(anterieur);
+    } else if (equipeAnterieure && equipeAnterieure.length > 0) {
+      const r = reelsActualises(engine, equipeAnterieure, bareme);
+      propreAEcrire = { score_reel_anterieur: r.total, equipe_anterieure: r.equipe };
+    }
+
+    const equipeStockee = (existante?.equipe ?? null) as LigneHistorique['equipe'] | null;
+    if (equipeStockee && equipeStockee.length > 0) {
+      // Nom, rang, espérance et `e_predit` restent ceux de la première
+      // écriture ; `termine` ne dépend que des matchs.
+      const r = reelsActualises(engine, equipeStockee, bareme);
+      const { error } = await sb
+        .from('tn_fantasy_historique')
+        .update({
+          score_reel: r.total,
+          termine: evaluation.termine,
+          equipe: r.equipe,
+          ...propreAEcrire,
+          computed_at: new Date().toISOString(),
+        })
+        .eq('tournament_id', tournament.id);
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    }
+
     const { error } = await sb.from('tn_fantasy_historique').upsert(
       {
         tournament_id: tournament.id,
@@ -168,7 +313,7 @@ export async function enregistrerHistorique(
           ePoints: m.playerId ? m.eTotal : 0,
           reel: m.reel,
         })),
-        ...(anterieur ? colonnesAnterieures(anterieur) : {}),
+        ...propreAEcrire,
         computed_at: new Date().toISOString(),
       },
       { onConflict: 'tournament_id' },
@@ -178,6 +323,26 @@ export async function enregistrerHistorique(
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
+}
+
+/**
+ * Points réels d'une équipe stockée, recalculés sur les matchs du moment.
+ * Composition, noms, rangs et espérances restent tels qu'enregistrés.
+ */
+function reelsActualises(
+  engine: EngineInput,
+  equipe: LigneHistorique['equipe'],
+  bareme: number[],
+): { equipe: LigneHistorique['equipe']; total: number } {
+  const rounds = engine.tournament.rounds ?? [];
+  const bestOf = (engine.tournament.best_of ?? 3) as 3 | 5;
+  const maj = equipe.map((s) => ({
+    ...s,
+    reel: s.playerId
+      ? detailReelJoueur(engine.matches, s.playerId, rounds, bareme, bestOf).total
+      : 0,
+  }));
+  return { equipe: maj, total: maj.reduce((t, m) => t + m.reel, 0) };
 }
 
 function colonnesAnterieures(a: VoletAnterieur) {
@@ -196,6 +361,10 @@ function colonnesAnterieures(a: VoletAnterieur) {
  * Cas d'un tournoi terminé dont le couple courant est définitif : rejouer le
  * calcul de production pour n'en changer que les colonnes propres serait une
  * simulation Monte Carlo pour rien.
+ *
+ * N'écrit que si le volet propre est encore NULL (même règle que
+ * `enregistrerHistorique`) : une correction volontaire d'un volet déjà
+ * présent passe par un script ponctuel, jamais par ce chemin automatique.
  */
 export async function enregistrerAnterieur(
   tournamentId: string,
@@ -205,7 +374,8 @@ export async function enregistrerAnterieur(
     const { error } = await supabaseAdmin()
       .from('tn_fantasy_historique')
       .update(colonnesAnterieures(anterieur))
-      .eq('tournament_id', tournamentId);
+      .eq('tournament_id', tournamentId)
+      .is('e_predit_anterieur', null);
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e) {

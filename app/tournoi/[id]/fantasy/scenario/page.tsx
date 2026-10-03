@@ -4,7 +4,7 @@ import TournoiNav from '../../TournoiNav';
 import ScenarioFantasy, { type DuelReglable } from './ScenarioFantasy';
 import { pilleSelecteur } from '@/app/ui';
 import { loadEngineData, surfacePourElo, tourCourantMatches } from '@/db/queries';
-import { equipeEvaluee, fantasyEnCache } from '@/db/fantasy';
+import { equipeEvalueeFigee, fantasyEnCache } from '@/db/fantasy';
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { POIDS_SURFACE } from '@/db/elo';
 import { eloEffectif, pVictoire } from '@/lib/elo';
@@ -48,7 +48,7 @@ export default async function ScenarioFantasyPage({
         : (constitues[constitues.length - 1] ?? null);
 
   const fantasy = await fantasyEnCache(engine);
-  const equipe = fantasy ? equipeEvaluee(engine, fantasy) : null;
+  const equipe = fantasy ? await equipeEvalueeFigee(engine, fantasy) : null;
   const idsEquipe = new Set(
     (equipe?.membres ?? []).map((m) => m.playerId).filter((p): p is string => p !== null),
   );

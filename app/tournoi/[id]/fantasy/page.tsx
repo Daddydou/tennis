@@ -8,7 +8,7 @@ import { loadEngineData, surfacePourElo } from '@/db/queries';
 import {
   computeAndStoreFantasy,
   contexteFantasy,
-  equipeEvaluee,
+  equipeEvalueeFigee,
   fantasyEnCache,
   type Fantasy,
 } from '@/db/fantasy';
@@ -83,7 +83,7 @@ export default async function FantasyPage({
   // jamais dans le choix du premier — c'est une mesure, pas un critère.
   // Le classement vient de tn_players.rank, complété par le rang publié par
   // Tennis Abstract quand la colonne est vide (cf. rowsToPlayers).
-  const evaluation = equipeEvaluee(engine, fantasy);
+  const evaluation = await equipeEvalueeFigee(engine, fantasy);
 
   // Elo effectif (pondéré surface) : exactement celui que la simulation a
   // utilisé, affiché avec sa source comme dans l'écran Picks.
