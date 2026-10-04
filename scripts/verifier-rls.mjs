@@ -1,6 +1,6 @@
 /**
  * Vérifie, avec la CLÉ PUBLIQUE uniquement, que :
- *   - la lecture des 15 tables fonctionne (policy `for select to anon`)
+ *   - la lecture de chaque table de TABLES fonctionne (policy `for select to anon`)
  *   - toute écriture est refusée          (aucune policy insert/update/delete)
  *   - les deux fonctions SQL ne sont pas appelables en RPC
  *
@@ -61,6 +61,12 @@ const TABLES = [
   'tn_odds_historique',
   // 0021 — insights joueurs (affichage seul, écran Picks)
   'tn_player_insights',
+  // 0022 — copie en lecture seule de l'app bracket de Thomas
+  'tn_bracket_externe_tournois',
+  'tn_bracket_externe_participants',
+  'tn_bracket_externe_joueurs',
+  'tn_bracket_externe_matchs',
+  'tn_bracket_externe_pronostics',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

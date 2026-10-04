@@ -38,7 +38,9 @@ pour les autres.
 
 \- db/\*.ts : requêtes vers la base (supabase/ ne contient plus que migrations/, attendu par la CLI Supabase)
 
-\- supabase/migrations/ : SQL, 20 migrations à ce jour (voir MIGRATIONS.md)
+\- supabase/migrations/ : SQL, 22 migrations à ce jour (voir MIGRATIONS.md)
+
+\- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu]
 
 \- auth/ : mot de passe unique + cookie signé (session.ts, garde.ts)
 
