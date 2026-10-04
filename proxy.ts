@@ -1,5 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { COOKIE_NAME, verifierJeton, verifierJetonAgent } from '@/auth/session';
+import {
+  COOKIE_NAME,
+  ENTETE_VERIF,
+  verifierJeton,
+  verifierJetonAgent,
+  verifierJetonVerif,
+} from '@/auth/session';
 
 /**
  * Porte d'entrée : tout est privé sauf /login.
@@ -26,6 +32,19 @@ export function proxy(request: NextRequest) {
     pathname.startsWith('/api/agent/') &&
     request.method === 'GET' &&
     verifierJetonAgent(request.headers.get('authorization'))
+  ) {
+    return NextResponse.next();
+  }
+
+  // Point de contrôle de production : jeton `x-verif-token`, uniquement en GET
+  // sur /api/verif/<contrôle> (un seul segment). La route re-vérifie le jeton
+  // et ne sert qu'une liste fixe de contrôles en lecture seule. Sans jeton
+  // valide, on tombe dans le 401 commun à toutes les routes /api : rien ne
+  // distingue alors /api/verif d'une autre route.
+  if (
+    /^\/api\/verif\/[^/]+$/.test(pathname) &&
+    request.method === 'GET' &&
+    verifierJetonVerif(request.headers.get(ENTETE_VERIF))
   ) {
     return NextResponse.next();
   }

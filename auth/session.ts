@@ -65,6 +65,22 @@ export function verifierJetonAgent(authorization: string | null | undefined): bo
   return egaliteConstante(authorization.slice('Bearer '.length), attendu);
 }
 
+/** En-tête du jeton de vérification de production. */
+export const ENTETE_VERIF = 'x-verif-token';
+
+/**
+ * Jeton du point de contrôle de production (/api/verif/*) : en-tête
+ * `x-verif-token` comparé à `VERIF_TOKEN`. N'ouvre QUE les contrôles en lecture
+ * seule de /api/verif/ ; jamais accepté ailleurs. Variable absente ou trop
+ * courte (même minimum que le jeton agent) : aucun accès.
+ */
+export function verifierJetonVerif(jeton: string | null | undefined): boolean {
+  const attendu = process.env.VERIF_TOKEN;
+  if (!attendu || attendu.length < LONGUEUR_MIN_JETON_AGENT) return false;
+  if (!jeton) return false;
+  return egaliteConstante(jeton, attendu);
+}
+
 function signer(charge: string): string {
   return createHmac('sha256', cleSignature()).update(charge).digest('base64url');
 }
