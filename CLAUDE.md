@@ -40,7 +40,7 @@ pour les autres.
 
 \- supabase/migrations/ : SQL, 22 migrations à ce jour (voir MIGRATIONS.md)
 
-\- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu]
+\- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu] [--ecraser]. Si tournament_id_interne est posé (à la main), la synchro reporte aussi les pronostics Moi/Laki/Thomas dans tn_bracket_round_picks (lib/bracketExternePont.ts + db/bracketExternePont.ts) : emplacements vides seulement, écarts signalés sans écraser (sauf --ecraser), jamais de suppression.
 
 \- auth/ : mot de passe unique + cookie signé (session.ts, garde.ts)
 
