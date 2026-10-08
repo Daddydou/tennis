@@ -328,3 +328,13 @@ select to_regclass('public.tn_bracket_externe_pronostics') is not null
    and not has_table_privilege('anon', 'public.tn_bracket_externe_pronostics', 'insert')
    as appliquee;
 ```
+
+### 0023 — Exemptions du bracket externe
+prenom/nom facultatifs dans `tn_bracket_externe_joueurs`, seulement pour une
+exemption (`statut = 'BYE'`) ; appliquée = la contrainte existe.
+```sql
+select exists (
+  select 1 from pg_constraint
+  where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'
+) as appliquee;
+```

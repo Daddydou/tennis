@@ -53,16 +53,34 @@ export interface ParticipantThomas {
   pointsTotaux: number | null;
 }
 
+/**
+ * Exemption (tableau à 96, 48…) : `statut: 'BYE'`, et prenom/nom/tete/pays/
+ * classement/apiPlayerId à null. Une place de tableau, PAS un joueur : elle ne
+ * gagne aucun match et ne se pronostique pas (cf. `validerBracket`).
+ */
+export const STATUT_EXEMPTION = 'BYE';
+
 export interface JoueurThomas {
   position: number;
-  prenom: string;
-  nom: string;
+  /** null seulement pour une exemption (`estExemption`). */
+  prenom: string | null;
+  /** null seulement pour une exemption (`estExemption`). */
+  nom: string | null;
   tete: number | null;
-  /** Ex. 'LL', 'Alt'. */
+  /** Ex. 'LL', 'Alt', 'BYE' (exemption). */
   statut: string | null;
   pays: string | null;
   classement: number | null;
   apiPlayerId: string | null;
+}
+
+export function estExemption(j: Pick<JoueurThomas, 'statut'>): boolean {
+  return j.statut === STATUT_EXEMPTION;
+}
+
+/** « Prénom Nom », ou « BYE » pour une exemption. */
+export function nomJoueurThomas(j: JoueurThomas): string {
+  return estExemption(j) ? STATUT_EXEMPTION : `${j.prenom} ${j.nom}`;
 }
 
 export interface PronosticThomas {
@@ -188,12 +206,15 @@ export function lireBracket(raw: unknown): BracketThomas {
     joueurs: liste(r.joueurs, '$.joueurs').map((j, i) => {
       const c = `$.joueurs[${i}]`;
       const o = objet(j, c);
+      const statut = texteOuNull(o.statut, `${c}.statut`);
+      // Exemption : prénom et nom null attendus. Un vrai joueur, lui, en a toujours.
+      const nomOuNull = statut === STATUT_EXEMPTION ? texteOuNull : texte;
       return {
         position: entier(o.position, `${c}.position`),
-        prenom: texte(o.prenom, `${c}.prenom`),
-        nom: texte(o.nom, `${c}.nom`),
+        prenom: nomOuNull(o.prenom, `${c}.prenom`),
+        nom: nomOuNull(o.nom, `${c}.nom`),
         tete: entierOuNull(o.tete, `${c}.tete`),
-        statut: texteOuNull(o.statut, `${c}.statut`),
+        statut,
         pays: texteOuNull(o.pays, `${c}.pays`),
         classement: entierOuNull(o.classement, `${c}.classement`),
         apiPlayerId: texteOuNull(o.apiPlayerId, `${c}.apiPlayerId`),
@@ -261,10 +282,12 @@ export function validerBracket(b: BracketThomas): string[] {
 
   const dansTableau = (p: number) => p >= 1 && p <= drawSize;
   const positions = new Set<number>();
+  const exemptions = new Set<number>();
   for (const j of b.joueurs) {
-    if (!dansTableau(j.position)) erreurs.push(`Joueur ${j.nom} : position ${j.position} hors de 1..${drawSize}.`);
+    if (!dansTableau(j.position)) erreurs.push(`Joueur ${nomJoueurThomas(j)} : position ${j.position} hors de 1..${drawSize}.`);
     if (positions.has(j.position)) erreurs.push(`Position ${j.position} attribuée à deux joueurs.`);
     positions.add(j.position);
+    if (estExemption(j)) exemptions.add(j.position);
   }
 
   const userIds = new Set<string>();
@@ -300,6 +323,9 @@ export function validerBracket(b: BracketThomas): string[] {
       if (m.vainqueur !== null && m.vainqueur !== m.position1 && m.vainqueur !== m.position2) {
         erreurs.push(`${om} : vainqueur ${m.vainqueur} absent du match (${m.position1} / ${m.position2}).`);
       }
+      if (m.vainqueur !== null && exemptions.has(m.vainqueur)) {
+        erreurs.push(`${om} : vainqueur ${m.vainqueur} est une exemption (BYE).`);
+      }
 
       const votants = new Set<string>();
       for (const p of m.pronostics) {
@@ -310,6 +336,8 @@ export function validerBracket(b: BracketThomas): string[] {
           erreurs.push(`${om} : pronostic de ${p.userId} en position ${p.position}, hors de 1..${drawSize}.`);
         } else if (p.position !== null && horsBloc(p.position)) {
           erreurs.push(`${om} : pronostic de ${p.userId} en position ${p.position}, hors du bloc de ce match.`);
+        } else if (p.position !== null && exemptions.has(p.position)) {
+          erreurs.push(`${om} : pronostic de ${p.userId} en position ${p.position}, une exemption (BYE).`);
         }
       }
     }
