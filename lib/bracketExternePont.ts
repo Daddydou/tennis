@@ -27,7 +27,7 @@
  */
 import { resoudreParticipant } from './bracketImport';
 import { clesCandidates } from './matching';
-import type { BracketThomas } from './thomasApi';
+import { estExemption, nomJoueurThomas, type BracketThomas } from './thomasApi';
 
 /** Un match du tableau interne (tn_matches), réduit à ce dont le pont a besoin. */
 export interface MatchInterne {
@@ -82,14 +82,20 @@ export function joueurDePosition(p: number, premierTour: Map<number, MatchIntern
   return p % 2 === 1 ? m.player1Id : m.player2Id;
 }
 
-/** Le même joueur ? Au moins une clé de nom commune (« Xinyu WANG » / « X. Wang »). */
-function memeNom(a: string, b: string): boolean {
-  const cles = new Set(clesCandidates(a));
-  return clesCandidates(b).some((c) => cles.has(c));
+/**
+ * Le même joueur ? Au moins une clé de nom commune (« Xinyu WANG » / « X. Wang »),
+ * prénom et nom de Thomas pris dans les DEUX ordres : pour un nom chinois,
+ * l'ordre varie d'une source à l'autre (« Bu YUNCHAOKETE » chez Thomas,
+ * « Y. Bu » chez nous, Shanghai 2026).
+ */
+function memeNom(prenom: string | null, nom: string | null, nomInterne: string): boolean {
+  const cles = new Set(clesCandidates(nomInterne));
+  return [`${prenom} ${nom}`, `${nom} ${prenom}`].some((n) => clesCandidates(n).some((c) => cles.has(c)));
 }
 
 /**
  * Recoupe chaque joueur de Thomas avec le joueur interne à la même position.
+ * Une exemption (BYE) chez Thomas doit être une place VIDE chez nous.
  * Renvoie la liste des désaccords (vide = tableaux superposables).
  */
 export function verifierJoueurs(
@@ -99,14 +105,18 @@ export function verifierJoueurs(
 ): string[] {
   const erreurs: string[] = [];
   for (const j of b.joueurs) {
-    const nomThomas = `${j.prenom} ${j.nom}`;
+    const nomThomas = nomJoueurThomas(j);
     const id = joueurDePosition(j.position, premierTour);
+    if (estExemption(j)) {
+      if (id !== null) erreurs.push(`Position ${j.position} : exemption chez Thomas, ${nomsInternes.get(id) ?? id} chez nous.`);
+      continue;
+    }
     if (id === null) {
       erreurs.push(`Position ${j.position} (${nomThomas}) : aucun joueur à cette place chez nous.`);
       continue;
     }
     const nomInterne = nomsInternes.get(id);
-    if (!nomInterne || !memeNom(nomThomas, nomInterne)) {
+    if (!nomInterne || !memeNom(j.prenom, j.nom, nomInterne)) {
       erreurs.push(`Position ${j.position} : ${nomThomas} chez Thomas, ${nomInterne ?? id} chez nous.`);
     }
   }
@@ -153,6 +163,7 @@ export function deriverPronostics(
     else pseudosInconnus.push(p.pseudo);
   }
 
+  const exemptions = new Set(b.joueurs.filter(estExemption).map((j) => j.position));
   const pronostics: PronosticDerive[] = [];
   let sansPronostic = 0;
   for (const t of b.tours) {
@@ -164,13 +175,19 @@ export function deriverPronostics(
           sansPronostic++;
           continue;
         }
-        // Déjà garanti par verifierJoueurs (tout joueur de Thomas a un
-        // joueur interne), la base refusant un pronostic hors joueurs.
-        const playerId = joueurDePosition(p.position, premierTour)!;
+        // Une exemption n'est jamais un « joueur » à proposer : déjà refusé
+        // par validerBracket, revérifié ici car une place vide chez nous
+        // donnerait un pronostic sans joueur.
+        const playerId = exemptions.has(p.position) ? null : joueurDePosition(p.position, premierTour);
+        if (playerId === null) {
+          erreurs.push(`Tour ${t.tour}, match ${m.index} : pronostic en position ${p.position}, sans joueur (exemption).`);
+          continue;
+        }
         pronostics.push({ participantId: stockDe.get(p.userId)!, round, position: m.index, playerId });
       }
     }
   }
+  if (erreurs.length) return { ok: false, erreurs };
   return { ok: true, pronostics, pseudosInconnus, sansPronostic };
 }
 

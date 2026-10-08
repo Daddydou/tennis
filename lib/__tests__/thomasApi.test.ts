@@ -195,3 +195,52 @@ describe('format /tournaments et /ids', () => {
     expect(() => lireTournois({ tournois: [{ nom: 'sans id' }] })).toThrow(ErreurFormatThomas);
   });
 });
+
+// Tableau à 96 de Shanghai : 32 exemptions. Tableau synthétique de 4, indépendant de l'exemple.
+describe('exemptions (BYE)', () => {
+  const BYE = { position: 2, prenom: null, nom: null, tete: null, statut: 'BYE', pays: null, classement: null, apiPlayerId: null };
+  const joueur = (position: number, nom: string) => ({
+    position, prenom: nom, nom: nom.toUpperCase(), tete: null, statut: null, pays: null, classement: null, apiPlayerId: null,
+  });
+  const brut4 = () => ({
+    jeu: 'bracket',
+    jeuTennis: 'tennis',
+    tournoi: {
+      id: 't', nom: 'Shanghai', tour: 'ATP', annee: 2026, type: 'MASTERS_1000', surface: 'HARD', lieu: 'Shanghai',
+      drawSize: 4, statut: 'IN_PROGRESS', verrouille: true, lockAt: null,
+    },
+    participants: [{ userId: 'u1', pseudo: 'Daddy', rempli: true, pointsTotaux: 1 }],
+    joueurs: [joueur(1, 'Alpha'), BYE, joueur(3, 'Charlie'), joueur(4, 'Delta')],
+    tours: [
+      {
+        tour: 1, nom: 'Demies', statut: 'COMPLETED',
+        matchs: [
+          { index: 0, position1: 1, position2: 2, vainqueur: 1, score: null, pronostics: [{ userId: 'u1', position: 1, resultat: 'correct' }] },
+          { index: 1, position1: 3, position2: 4, vainqueur: null, score: null, pronostics: [{ userId: 'u1', position: 3, resultat: 'en_attente' }] },
+        ],
+      },
+    ],
+  });
+
+  it('exemption avec prenom/nom/tete/pays/classement/apiPlayerId null : lue et validée', () => {
+    const b = lireBracket(brut4());
+    expect(b.joueurs[1]).toEqual(BYE);
+    expect(validerBracket(b)).toEqual([]);
+    expect(recalculerPointsTotaux(b.tours).get('u1')).toBe(1);
+  });
+
+  it('un vrai joueur sans prénom reste refusé, avec le chemin exact', () => {
+    const brut = brut4();
+    (brut.joueurs[0] as { prenom: string | null }).prenom = null;
+    expect(() => lireBracket(brut)).toThrow('$.joueurs[0].prenom devrait être une chaîne');
+  });
+
+  it('une exemption ne gagne pas de match et ne se pronostique pas', () => {
+    const brut = brut4();
+    brut.tours[0].matchs[0].vainqueur = 2;
+    brut.tours[0].matchs[0].pronostics[0].position = 2;
+    const erreurs = validerBracket(lireBracket(brut)).join('\n');
+    expect(erreurs).toMatch(/vainqueur 2 est une exemption/);
+    expect(erreurs).toMatch(/pronostic de u1 en position 2, une exemption/);
+  });
+});

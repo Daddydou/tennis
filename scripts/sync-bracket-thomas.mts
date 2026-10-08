@@ -52,16 +52,24 @@ const interneForce = option('interne');
 /** Marge sur `updatedSince` : les horloges des deux serveurs ne sont pas les mêmes. */
 const MARGE_MS = 5 * 60 * 1000;
 
+/**
+ * Erreur d'utilisation (option manquante, combinaison interdite). Jamais de
+ * `process.exit()` dans ce script : couper Node pendant que `fetch` ferme
+ * encore sa connexion keep-alive fait planter libuv sous Windows
+ * (« Assertion failed: !(handle->flags & UV_HANDLE_CLOSING) »). On pose
+ * `process.exitCode` et on laisse le processus se terminer de lui-même.
+ */
+class ErreurUsage extends Error {}
+
 function client(ecriture: boolean) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = ecriture ? process.env.SUPABASE_SERVICE_ROLE_KEY : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    console.error(
+    throw new ErreurUsage(
       ecriture
         ? 'NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquantes'
         : 'NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY manquantes',
     );
-    process.exit(1);
   }
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
@@ -117,16 +125,14 @@ async function synchroniser() {
   let bracket: BracketThomas;
   if (fichier) {
     if (!apercu) {
-      console.error('--fichier ne s’utilise qu’avec --apercu : on n’écrit en base que ce qui vient de l’API.');
-      process.exit(1);
+      throw new ErreurUsage('--fichier ne s’utilise qu’avec --apercu : on n’écrit en base que ce qui vient de l’API.');
     }
     bracket = lireBracket(JSON.parse(readFileSync(fichier, 'utf8')));
   } else {
     bracket = await bracketThomas(tournoiId!);
   }
   if (interneForce && !apercu) {
-    console.error('--interne ne s’utilise qu’avec --apercu : en écriture, le lien vient de tournament_id_interne.');
-    process.exit(1);
+    throw new ErreurUsage('--interne ne s’utilise qu’avec --apercu : en écriture, le lien vient de tournament_id_interne.');
   }
 
   if (apercu) {
@@ -175,8 +181,7 @@ try {
   if (liste) await lister();
   else if (tournoiId || fichier) await synchroniser();
   else {
-    console.error('Usage : --liste | --tournoi=<id> [--apercu] [--ecraser] | --fichier=<json> --apercu [--interne=<uuid>]');
-    process.exit(1);
+    throw new ErreurUsage('Usage : --liste | --tournoi=<id> [--apercu] [--ecraser] | --fichier=<json> --apercu [--interne=<uuid>]');
   }
 } catch (e) {
   if (e instanceof BracketIncoherent) {
@@ -187,5 +192,5 @@ try {
     // Messages déjà sûrs (jamais de clé) : ErreurApiThomas, ErreurFormatThomas, erreurs Supabase.
     console.error(`\n${(e as Error).message}`);
   }
-  process.exit(1);
+  process.exitCode = 1;
 }

@@ -99,6 +99,18 @@ function thomas8(): BracketThomas {
   };
 }
 
+/**
+ * Position 2 devient une exemption (tableau à 96 : 32 BYE). Personne ne la
+ * pronostique : au match 0 du tour 1, tout le monde prend la position 1.
+ */
+function avecExemption(b: BracketThomas): BracketThomas {
+  b.joueurs[1] = { position: 2, prenom: null, nom: null, tete: null, statut: 'BYE', pays: null, classement: null, apiPlayerId: null };
+  for (const t of b.tours) {
+    for (const m of t.matchs) for (const p of m.pronostics) if (p.position === 2) p.position = 1;
+  }
+  return b;
+}
+
 describe('correspondanceTours', () => {
   it('même taille : tour 1 = premier tour, dernier tour = finale', () => {
     const c = correspondanceTours(128, ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F']);
@@ -161,6 +173,17 @@ describe('verifierJoueurs', () => {
     const erreurs = verifierJoueurs(thomas8(), new Map(matchs.map((m) => [m.position, m])), noms);
     expect(erreurs).toHaveLength(2);
     expect(erreurs[0]).toContain('Position 1');
+  });
+
+  it('prénom et nom inversés chez Thomas (nom chinois) : même joueur', () => {
+    const { matchs, noms } = interne8();
+    noms.set('j3', 'Y. Bu');
+    const b = thomas8();
+    b.joueurs[2] = { ...b.joueurs[2], prenom: 'Bu', nom: 'YUNCHAOKETE' };
+    expect(verifierJoueurs(b, new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([]);
+    // L'inversion ne rend pas tolérant à un autre joueur.
+    noms.set('j3', 'Z. Zhang');
+    expect(verifierJoueurs(b, new Map(matchs.map((m) => [m.position, m])), noms)).toHaveLength(1);
   });
 
   it('place vide chez nous : signalée', () => {
@@ -227,6 +250,32 @@ describe('deriverPronostics', () => {
     const d = deriverPronostics(b, ['QF', 'SF', 'F'], [...interne8().matchs, ...sf], noms, PARTICIPANTS);
     if (!d.ok) throw new Error(d.erreurs.join('\n'));
     expect(d.pronostics.map((p) => `${p.round}|${p.position}=${p.playerId}`)).toEqual(['SF|0=j4', 'SF|1=j5', 'F|0=j5']);
+  });
+
+  it('exemption chez Thomas = place vide chez nous : accepté, jamais proposée comme joueur', () => {
+    const { matchs, noms } = interne8();
+    matchs[0] = { ...matchs[0], player2Id: null };
+    const b = avecExemption(thomas8());
+    const d = deriverPronostics(b, ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    if (!d.ok) throw new Error(d.erreurs.join('\n'));
+    expect(d.pronostics.every((p) => p.playerId !== null)).toBe(true);
+    expect(d.pronostics.filter((p) => p.round === 'QF' && p.position === 0).map((p) => p.playerId)).toEqual(['j1', 'j1']);
+  });
+
+  it('exemption chez Thomas mais joueur chez nous : refus', () => {
+    const { matchs, noms } = interne8();
+    expect(verifierJoueurs(avecExemption(thomas8()), new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([
+      'Position 2 : exemption chez Thomas, B. Bravo chez nous.',
+    ]);
+  });
+
+  it('pronostic sur une exemption : refus en bloc, rien à écrire', () => {
+    const { matchs, noms } = interne8();
+    matchs[0] = { ...matchs[0], player2Id: null };
+    const b = avecExemption(thomas8());
+    b.tours[0].matchs[0].pronostics[1] = prono('u-laki', 2);
+    const d = deriverPronostics(b, ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    expect(d).toEqual({ ok: false, erreurs: ['Tour 1, match 0 : pronostic en position 2, sans joueur (exemption).'] });
   });
 
   it('tableaux non superposables : refus en bloc, aucun pronostic', () => {
