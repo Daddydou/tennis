@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 20 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 22 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-20-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-22-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -34,6 +34,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0019 | `0019_fusion_identites_wta.sql`          | Fusion de 9 identités WTA dupliquées (US Open 2026)              | 2026-09-13 |              |
 | 0020 | `0020_cotes_historique.sql`              | Table `tn_odds_historique` (une ligne par capture de cotes)       | 2026-09-24 | 2026-09-24   |
 | 0021 | `0021_insights_joueurs.sql`             | `tn_player_insights` rattachée + RLS/grants mis au régime commun | 2026-09-27 | 2026-09-27   |
+| 0022 | `0022_bracket_externe.sql`               | 5 tables `tn_bracket_externe_*` (copie du bracket de Thomas)     | 2026-10-04 | 2026-10-04   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -49,7 +50,7 @@ coup recréerait une table morte, à ne pas faire).
 
 ---
 
-## Contrôle global : les 20 en une requête
+## Contrôle global : les 22 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -127,6 +128,10 @@ with c(num, ok, note) as (values
   ('0021',
    to_regclass('public.tn_player_insights') is not null
    and not has_table_privilege('anon', 'public.tn_player_insights', 'insert'),
+   null),
+  ('0022',
+   to_regclass('public.tn_bracket_externe_pronostics') is not null
+   and not has_table_privilege('anon', 'public.tn_bracket_externe_pronostics', 'insert'),
    null)
 )
 select num,
@@ -312,5 +317,14 @@ Table créée hors migration ; appliquée = anon ne peut plus que lire.
 ```sql
 select to_regclass('public.tn_player_insights') is not null
    and not has_table_privilege('anon', 'public.tn_player_insights', 'insert')
+   as appliquee;
+```
+
+### 0022 — Bracket externe (Thomas)
+Cinq tables `tn_bracket_externe_*`, créées ensemble ; appliquée = la dernière
+existe et anon ne peut que la lire. Ensuite : `npm run verify:rls`.
+```sql
+select to_regclass('public.tn_bracket_externe_pronostics') is not null
+   and not has_table_privilege('anon', 'public.tn_bracket_externe_pronostics', 'insert')
    as appliquee;
 ```

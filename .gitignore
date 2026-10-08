@@ -28,6 +28,11 @@
 # gros (700 Ko pour un tableau de 128), qui n'ont pas à entrer dans l'historique.
 sauvegarde-tournoi-*.json
 
+# Réponse réelle de l'API bracket de Thomas : vrais pseudos et userId internes
+# de son app. Gardée en local (les tests qui la lisent se mettent en pause si
+# elle manque), jamais committée.
+exemple-api-tennis-brackets.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
