@@ -262,6 +262,25 @@ describe('deriverPronostics', () => {
     expect(d.pronostics.filter((p) => p.round === 'QF' && p.position === 0).map((p) => p.playerId)).toEqual(['j1', 'j1']);
   });
 
+  it('duel d’exemption chez nous (status bye) : aucun pronostic écrit, compté dans exemptionsIgnorees', () => {
+    const { matchs, noms } = interne8();
+    matchs[0] = { ...matchs[0], player2Id: null, status: 'bye' };
+    const b = avecExemption(thomas8());
+    const d = deriverPronostics(b, ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    if (!d.ok) throw new Error(d.erreurs.join('\n'));
+    expect(d.exemptionsIgnorees).toBe(1);
+    expect(d.pronostics.filter((p) => p.round === 'QF' && p.position === 0)).toEqual([]);
+    // Le reste du tableau passe : 3 autres QF × 2 stocks, et le joueur exempté reste pronostiquable ensuite.
+    expect(d.pronostics.filter((p) => p.round === 'QF')).toHaveLength(6);
+    expect(d.pronostics.filter((p) => p.round === 'SF' && p.position === 0).map((p) => p.playerId)).toEqual(['j1', 'j4', 'j1']);
+  });
+
+  it('sans duel bye chez nous : exemptionsIgnorees = 0', () => {
+    const { matchs, noms } = interne8();
+    const d = deriverPronostics(thomas8(), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    expect(d).toMatchObject({ ok: true, exemptionsIgnorees: 0 });
+  });
+
   it('exemption chez Thomas mais joueur chez nous : refus', () => {
     const { matchs, noms } = interne8();
     expect(verifierJoueurs(avecExemption(thomas8()), new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([

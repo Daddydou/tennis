@@ -178,6 +178,30 @@ describe('pontVersRoundPicks', () => {
     expect(ecritures).toEqual([]);
   });
 
+  it('tournoi à exemptions : rien n’est écrit sur le duel bye, compté dans le rapport, le reste passe', async () => {
+    const b = bracket();
+    b.joueurs[1] = { position: 2, prenom: null, nom: null, tete: null, statut: 'BYE', pays: null, classement: null, apiPlayerId: null };
+    const duelBye = b.tours[0].matchs[0];
+    duelBye.score = 'BYE';
+    duelBye.vainqueur = 1;
+    duelBye.pronostics = duelBye.pronostics.map((x) => ({ ...x, position: 1 }));
+    const { sb, tables } = base();
+    tables.tn_matches[0] = { ...tables.tn_matches[0], player2_id: null, status: 'bye' };
+
+    const r = await pontVersRoundPicks(sb, sb, b);
+    expect(r).toMatchObject({ statut: 'ok', ecrit: true, exemptionsIgnorees: 1, inseres: 5 });
+    expect(tables.tn_bracket_round_picks.filter((l) => l.round === 'SF' && l.position === 0)).toEqual([]);
+    expect(resume(tables.tn_bracket_round_picks)).toEqual([
+      'id-laki F|0=j4', 'id-laki SF|1=j4',
+      'id-thomas F|0=j1',
+      'moi F|0=j1', 'moi SF|1=j3',
+    ]);
+
+    // Rejouer : toujours rien sur le duel bye, rien de nouveau.
+    const r2 = await pontVersRoundPicks(sb, sb, b);
+    expect(r2).toMatchObject({ statut: 'ok', inseres: 0, identiques: 5, exemptionsIgnorees: 1 });
+  });
+
   it('tableaux non superposables : refus, rien d’écrit', async () => {
     const { sb, tables, ecritures } = base();
     tables.tn_matches[0] = { ...tables.tn_matches[0], player1_id: 'j2', player2_id: 'j1' };

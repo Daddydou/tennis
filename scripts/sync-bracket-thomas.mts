@@ -108,6 +108,7 @@ function afficherPont(r: ResumePont) {
   console.log(`  Tournoi interne ${r.tournamentId}${r.ecrit ? '' : ' (aperçu : rien écrit)'}`);
   console.log(`  ${r.inseres} ajouté(s), ${r.modifies} remplacé(s), ${r.identiques} déjà identique(s)`);
   if (r.sansPronostic) console.log(`  ${r.sansPronostic} match(s) sans pronostic chez Thomas (ignorés)`);
+  if (r.exemptionsIgnorees) console.log(`  ${r.exemptionsIgnorees} exemption(s) ignorée(s) (duels contre BYE : aucun point chez Thomas, aucun pronostic écrit)`);
   if (r.pseudosInconnus.length) console.log(`  ⚠ Pseudo(s) sans correspondance, ignoré(s) : ${r.pseudosInconnus.join(', ')}`);
   if (r.ecarts.length) {
     console.log(

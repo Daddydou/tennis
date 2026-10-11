@@ -97,3 +97,43 @@ avecExemple('preparerSynchro — écart de points', () => {
     expect(lignes.participants[1]).toMatchObject({ points_totaux_thomas: 250, points_totaux_calcule: 240 });
   });
 });
+
+// Tableau à exemptions (Shanghai 2026 : 32 BYE), synthétique : tourne sans le fichier gitignoré.
+describe('preparerSynchro — exemptions (BYE)', () => {
+  const joueur = (position: number, nom: string | null) => ({
+    position, prenom: nom, nom: nom?.toUpperCase() ?? null, tete: null, statut: nom ? null : 'BYE', pays: null, classement: null, apiPlayerId: null,
+  });
+  const p = (userId: string, position: number) => ({ userId, position, resultat: 'correct' });
+  const avecByes = () =>
+    lireBracket({
+      jeu: 'bracket',
+      jeuTennis: 'tennis',
+      tournoi: {
+        id: 't', nom: 'Shanghai', tour: 'ATP', annee: 2026, type: 'MASTERS_1000', surface: 'HARD', lieu: 'Shanghai',
+        drawSize: 4, statut: 'IN_PROGRESS', verrouille: true, lockAt: null,
+      },
+      // Comme Thomas : les duels BYE ne comptent pas (1 point chacun, pas 2).
+      participants: [
+        { userId: 'u1', pseudo: 'Daddy', rempli: true, pointsTotaux: 1 },
+        { userId: 'u2', pseudo: 'Laki', rempli: true, pointsTotaux: 0 },
+      ],
+      joueurs: [joueur(1, 'Alpha'), joueur(2, null), joueur(3, 'Charlie'), joueur(4, 'Delta')],
+      tours: [
+        {
+          tour: 1, nom: 'Demies', statut: 'COMPLETED',
+          matchs: [
+            { index: 0, position1: 1, position2: 2, vainqueur: 1, score: 'BYE', pronostics: [p('u1', 1), p('u2', 1)] },
+            { index: 1, position1: 3, position2: 4, vainqueur: 3, score: '6-4 6-4', pronostics: [p('u1', 3), { ...p('u2', 4), resultat: 'rate' }] },
+          ],
+        },
+      ],
+    });
+
+  it('le recalcul exclut les duels BYE : aucun écart de points, pas de fausse alerte', () => {
+    const { resume, lignes } = preparerSynchro(avecByes());
+    expect(resume.participants.map((x) => [x.pseudo, x.thomas, x.calcule])).toEqual([['Daddy', 1, 1], ['Laki', 0, 0]]);
+    expect(resume.ecartsPoints).toEqual([]);
+    // Le duel BYE est stocké tel quel (score compris) : seul le calcul l'ignore.
+    expect(lignes.matchs.find((m) => m.match_index === 0)).toMatchObject({ score: 'BYE', vainqueur: 1 });
+  });
+});

@@ -35,6 +35,8 @@ export interface MatchInterne {
   position: number;
   player1Id: string | null;
   player2Id: string | null;
+  /** tn_matches.status ; 'bye' = duel d'exemption, jamais pronostiqué. */
+  status?: string | null;
 }
 
 /** Un pronostic à écrire dans tn_bracket_round_picks (participantId null = moi). */
@@ -131,6 +133,12 @@ export type Derivation =
       pseudosInconnus: string[];
       /** Pronostics sans position (rien de choisi) : ignorés. */
       sansPronostic: number;
+      /**
+       * Duels d'exemption chez nous (tn_matches.status = 'bye') : ignorés,
+       * pronostics compris. Ils ne rapportent rien chez Thomas, et le Bracket
+       * du Simulateur compterait des points sur un pronostic écrit là.
+       */
+      exemptionsIgnorees: number;
     }
   | { ok: false; erreurs: string[] };
 
@@ -164,11 +172,17 @@ export function deriverPronostics(
   }
 
   const exemptions = new Set(b.joueurs.filter(estExemption).map((j) => j.position));
+  const duelsBye = new Set(matchsPremierTour.filter((m) => m.status === 'bye').map((m) => `${m.round}|${m.position}`));
   const pronostics: PronosticDerive[] = [];
   let sansPronostic = 0;
+  let exemptionsIgnorees = 0;
   for (const t of b.tours) {
     const round = tours.roundDuTour(t.tour);
     for (const m of t.matchs) {
+      if (duelsBye.has(`${round}|${m.index}`)) {
+        exemptionsIgnorees++;
+        continue;
+      }
       for (const p of m.pronostics) {
         if (!stockDe.has(p.userId)) continue;
         if (p.position === null) {
@@ -188,7 +202,7 @@ export function deriverPronostics(
     }
   }
   if (erreurs.length) return { ok: false, erreurs };
-  return { ok: true, pronostics, pseudosInconnus, sansPronostic };
+  return { ok: true, pronostics, pseudosInconnus, sansPronostic, exemptionsIgnorees };
 }
 
 const cle = (p: { participantId: string | null; round: string; position: number }) =>

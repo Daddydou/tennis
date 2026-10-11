@@ -78,6 +78,15 @@ export function estExemption(j: Pick<JoueurThomas, 'statut'>): boolean {
   return j.statut === STATUT_EXEMPTION;
 }
 
+/**
+ * Duel d'exemption (un joueur contre BYE) : `score: 'BYE'`. Le joueur passe
+ * d'office et Thomas n'accorde AUCUN point, même au pronostic juste
+ * (Shanghai 2026 : 70 / 67 / 69, pas 102 / 99 / 101).
+ */
+export function estMatchExemption(m: Pick<MatchThomas, 'score'>): boolean {
+  return m.score === STATUT_EXEMPTION;
+}
+
 /** « Prénom Nom », ou « BYE » pour une exemption. */
 export function nomJoueurThomas(j: JoueurThomas): string {
   return estExemption(j) ? STATUT_EXEMPTION : `${j.prenom} ${j.nom}`;
@@ -364,7 +373,8 @@ export function pronosticCorrect(m: MatchThomas, p: PronosticThomas): boolean {
 /**
  * Points de chaque participant recalculés depuis les pronostics bruts.
  * Map userId → points ; un participant sans pronostic correct n'y figure pas
- * (lire avec `?? 0`).
+ * (lire avec `?? 0`). Un duel d'exemption (`estMatchExemption`) ne rapporte
+ * rien, comme chez Thomas.
  */
 export function recalculerPointsTotaux(
   tours: TourThomas[],
@@ -373,6 +383,7 @@ export function recalculerPointsTotaux(
   const points = new Map<string, number>();
   for (const t of tours) {
     for (const m of t.matchs) {
+      if (estMatchExemption(m)) continue;
       for (const p of m.pronostics) {
         if (pronosticCorrect(m, p)) points.set(p.userId, (points.get(p.userId) ?? 0) + bareme(t.tour));
       }

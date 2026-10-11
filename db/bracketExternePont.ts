@@ -38,6 +38,7 @@ export type ResumePont =
       ecarts: (Ecart & { stock: string; nomInterne: string; nomThomas: string })[];
       pseudosInconnus: string[];
       sansPronostic: number;
+      exemptionsIgnorees: number;
     };
 
 async function lire<T>(q: PromiseLike<{ data: T | null; error: { message: string } | null }>, quoi: string): Promise<T> {
@@ -78,8 +79,8 @@ export async function pontVersRoundPicks(
   const rounds = tournoi.rounds ?? [];
 
   const [matchs, participants, existants] = await Promise.all([
-    lire<{ round: string; position: number | null; player1_id: string | null; player2_id: string | null }[]>(
-      lecture.from('tn_matches').select('round, position, player1_id, player2_id').eq('tournament_id', interne),
+    lire<{ round: string; position: number | null; player1_id: string | null; player2_id: string | null; status: string | null }[]>(
+      lecture.from('tn_matches').select('round, position, player1_id, player2_id, status').eq('tournament_id', interne),
       'tn_matches',
     ),
     lire<{ id: string; name: string }[]>(lecture.from('tn_participants').select('id, name'), 'tn_participants'),
@@ -94,7 +95,7 @@ export async function pontVersRoundPicks(
 
   const matchsInternes: MatchInterne[] = matchs
     .filter((m) => m.position !== null)
-    .map((m) => ({ round: m.round, position: m.position as number, player1Id: m.player1_id, player2Id: m.player2_id }));
+    .map((m) => ({ round: m.round, position: m.position as number, player1Id: m.player1_id, player2Id: m.player2_id, status: m.status }));
   const ids = [...new Set(matchsInternes.flatMap((m) => [m.player1Id, m.player2Id]).filter((x): x is string => x !== null))];
   const joueurs = ids.length
     ? await lire<{ id: string; name: string }[]>(lecture.from('tn_players').select('id, name').in('id', ids), 'tn_players')
@@ -153,5 +154,6 @@ export async function pontVersRoundPicks(
     })),
     pseudosInconnus: derivation.pseudosInconnus,
     sansPronostic: derivation.sansPronostic,
+    exemptionsIgnorees: derivation.exemptionsIgnorees,
   };
 }
