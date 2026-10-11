@@ -35,6 +35,13 @@ export interface EmplacementDuel {
   vainqueur: string | null;
   /** Le vainqueur vient d'un résultat réel déjà joué — non modifiable. */
   verrouille: boolean;
+  /**
+   * Exemption (BYE) du tirage : duel du PREMIER tour auquel il manque un
+   * entrant. Ne rapporte jamais de point au Bracket, même pronostiqué (cf.
+   * `scoreDuStock`). Un duel d'un tour suivant avec un côté vide n'en est
+   * jamais une, même verrouillé par un résultat réel.
+   */
+  exemption: boolean;
 }
 
 export interface ArbreResolu {
@@ -119,7 +126,8 @@ export function resoudreArbre(
       // match qui l'alimente n'est pas encore résolu — ce duel reste
       // indéterminé (vainqueur null).
 
-      duels.push({ round, position, a, b, vainqueur, verrouille });
+      const exemption = estPremierTour && !(a && b);
+      duels.push({ round, position, a, b, vainqueur, verrouille, exemption });
       suivants.push(vainqueur);
     }
 
@@ -181,6 +189,21 @@ export function ensemblesAtteignables(
 export function vainqueursReels(matches: MatchReel[]): Map<string, string> {
   const out = new Map<string, string>();
   for (const m of matches) if (m.winnerId) out.set(cleDuel(m.round, m.position), m.winnerId);
+  return out;
+}
+
+/**
+ * Clés des duels d'exemption (BYE) : premier tour, un entrant manquant — le
+ * même critère que `EmplacementDuel.exemption`, lu directement sur les
+ * matchs (le premier tour de l'arbre EST la grille des matchs réels).
+ */
+export function clesExemptions(matches: MatchReel[], rounds: string[]): Set<string> {
+  const premier = rounds[0];
+  const out = new Set<string>();
+  if (!premier) return out;
+  for (const m of matches) {
+    if (m.round === premier && !(m.player1Id && m.player2Id)) out.add(cleDuel(m.round, m.position));
+  }
   return out;
 }
 
@@ -257,6 +280,9 @@ export function filtrerApresTour(
  * peut être vainqueur d'un emplacement, dans la référence, que s'il y est
  * structurellement parvenu — une prédiction bâtie sur une hypothèse déjà
  * démentie ne peut donc jamais coïncider par accident.
+ *
+ * Une exemption (BYE) ne rapporte rien, même pronostiquée : il n'y a pas de
+ * match à deviner (0 point aussi chez Thomas).
  */
 export function scoreDuStock(
   predictions: ReadonlyMap<string, string>,
@@ -265,7 +291,7 @@ export function scoreDuStock(
 ): number {
   let total = 0;
   for (const duel of reference.duels) {
-    if (duel.vainqueur === null) continue;
+    if (duel.vainqueur === null || duel.exemption) continue;
     const predit = predictions.get(cleDuel(duel.round, duel.position));
     if (predit && predit === duel.vainqueur) total += pointsDuTour(rounds, duel.round);
   }
@@ -278,6 +304,7 @@ export function scoreDuStock(
  * (le joueur prédit n'est pas encore éliminé et peut structurellement
  * atteindre cet emplacement). « Si toutes ses prédictions restantes se
  * réalisent » — indépendant de tout scénario en cours d'exploration.
+ * Les exemptions (BYE) ne comptent jamais, comme dans `scoreDuStock`.
  */
 export function maxAtteignable(
   predictions: ReadonlyMap<string, string>,
@@ -286,8 +313,10 @@ export function maxAtteignable(
   atteignables: Map<string, Set<string>>,
 ): number {
   const reels = vainqueursReels(matches);
+  const exemptions = clesExemptions(matches, rounds);
   let total = 0;
   for (const [cle, predit] of predictions) {
+    if (exemptions.has(cle)) continue;
     const round = cle.split('|')[0];
     const reel = reels.get(cle);
     if (reel !== undefined) {
