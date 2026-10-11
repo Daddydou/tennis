@@ -28,10 +28,12 @@ import {
   chercherScenariosGagnants,
   cheminDuJoueur,
   cleDuel,
+  clesExemptions,
   ensemblesAtteignables,
   filtrerApresTour,
   filtrerAvantTour,
   filtrerDepuisTour,
+  maxAtteignable,
   maxPossibleStock,
   resoudreArbre,
   scoreDuStock,
@@ -373,6 +375,67 @@ const stocksMC: StockBracket[] = [
     maxThomasAvantSF === totalThomas,
     `dès SF, max possible de Thomas (Tiafoe déjà garanti d'atteindre la finale) = même total qu'à la finale (${totalThomas}, obtenu ${maxThomasAvantSF})`,
   );
+}
+
+/* ========================================================================
+ * EXEMPTIONS (BYE) — 0 point au Bracket, même pronostiquées (0 aussi chez
+ * Thomas). Tableau synthétique à 3 tours (R1/R2/F, barème 1/2/4) :
+ *   R1/0 : X contre personne, vainqueur noté (bye tel qu'en base)
+ *   R1/1 : P bat Q (vrai match)
+ *   R1/2 : Y contre personne, sans vainqueur noté (bye importé en cours)
+ *   R1/3 : R contre S, pas encore joué
+ *   R2/0 : X bat P (vrai match)
+ * ======================================================================== */
+{
+  const roundsExo = ['R1', 'R2', 'F'];
+  const matchesExo: MatchReel[] = [
+    { round: 'R1', position: 0, player1Id: 'X', player2Id: null, winnerId: 'X' },
+    { round: 'R1', position: 1, player1Id: 'P', player2Id: 'Q', winnerId: 'P' },
+    { round: 'R1', position: 2, player1Id: 'Y', player2Id: null, winnerId: null },
+    { round: 'R1', position: 3, player1Id: 'R', player2Id: 'S', winnerId: null },
+    { round: 'R2', position: 0, player1Id: 'X', player2Id: 'P', winnerId: 'X' },
+    { round: 'R2', position: 1, player1Id: 'Y', player2Id: null, winnerId: null },
+    { round: 'F', position: 0, player1Id: null, player2Id: null, winnerId: null },
+  ];
+  const arbre = resoudreArbre(matchesExo, roundsExo, () => null);
+  const duel = (r: string, p: number) => arbre.duels.find((d) => d.round === r && d.position === p)!;
+  assert(duel('R1', 0).exemption && duel('R1', 2).exemption, 'R1/0 et R1/2 (un entrant manquant au premier tour) sont des exemptions');
+  assert(!duel('R1', 1).exemption && !duel('R1', 3).exemption, 'R1/1 et R1/3 (deux joueurs) ne sont pas des exemptions');
+  assert(!duel('R2', 1).exemption, 'R2/1 (côté vide à un tour suivant) n’est pas une exemption');
+
+  // Pronostics exacts sur les deux byes uniquement : 0 point partout.
+  const predsByes = new Map([[cleDuel('R1', 0), 'X'], [cleDuel('R1', 2), 'Y']]);
+  const atteignablesExo = ensemblesAtteignables(matchesExo, roundsExo);
+  const scoreByes = scoreDuStock(predsByes, arbre, roundsExo);
+  assert(scoreByes === 0, `pronostics sur exemptions : scoreDuStock = 0 (obtenu ${scoreByes})`);
+  const maxByes = maxAtteignable(predsByes, matchesExo, roundsExo, atteignablesExo);
+  assert(maxByes === 0, `pronostics sur exemptions : maxAtteignable = 0 (obtenu ${maxByes})`);
+
+  // Byes + duels normaux : seuls les duels normaux comptent, inchangés.
+  const predsMixte = new Map([
+    ...predsByes,
+    [cleDuel('R1', 1), 'P'], // juste, 1 pt
+    [cleDuel('R1', 3), 'R'], // pas joué, encore atteignable, 1 pt au max
+    [cleDuel('R2', 0), 'X'], // juste, 2 pts
+    [cleDuel('F', 0), 'X'], // encore atteignable, 4 pts au max
+  ]);
+  const scoreMixte = scoreDuStock(predsMixte, arbre, roundsExo);
+  assert(scoreMixte === 3, `duels normaux inchangés : scoreDuStock = 1 + 2 = 3 (obtenu ${scoreMixte})`);
+  const maxMixte = maxAtteignable(predsMixte, matchesExo, roundsExo, atteignablesExo);
+  assert(maxMixte === 8, `duels normaux inchangés : maxAtteignable = 1 + 1 + 2 + 4 = 8 (obtenu ${maxMixte})`);
+
+  // Un duel d'un tour suivant, côté vide mais verrouillé par un résultat
+  // (hypothèse « Y va en finale et la gagne ») compte normalement.
+  const augmente = augmenterAvecVictoires(matchesExo, roundsExo, 'Y', 'F')!;
+  const arbreAugmente = resoudreArbre(augmente, roundsExo, () => null);
+  const predsY = new Map([[cleDuel('R2', 1), 'Y'], [cleDuel('F', 0), 'Y']]);
+  const scoreY = scoreDuStock(predsY, arbreAugmente, roundsExo);
+  assert(scoreY === 6, `R2/1 verrouillé avec un côté vide compte (2 + 4 = 6, obtenu ${scoreY})`);
+  const maxY = maxAtteignable(predsY, augmente, roundsExo, ensemblesAtteignables(augmente, roundsExo));
+  assert(maxY === 6, `idem pour maxAtteignable (6, obtenu ${maxY})`);
+
+  // US Open (aucune exemption) : clesExemptions vide, rien ne change.
+  assert(clesExemptions(matches, rounds).size === 0, 'US Open : aucune exemption détectée');
 }
 
 if (echecs > 0) {
