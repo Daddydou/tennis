@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ErreurFormatThomas,
   desaccordsResultat,
+  estMatchExemption,
   lireBracket,
   lireIds,
   lireTournois,
@@ -215,8 +216,9 @@ describe('exemptions (BYE)', () => {
       {
         tour: 1, nom: 'Demies', statut: 'COMPLETED',
         matchs: [
-          { index: 0, position1: 1, position2: 2, vainqueur: 1, score: null, pronostics: [{ userId: 'u1', position: 1, resultat: 'correct' }] },
-          { index: 1, position1: 3, position2: 4, vainqueur: null, score: null, pronostics: [{ userId: 'u1', position: 3, resultat: 'en_attente' }] },
+          // Duel d'exemption tel que Thomas le renvoie (Shanghai 2026) : vainqueur posé, score 'BYE'.
+          { index: 0, position1: 1, position2: 2, vainqueur: 1, score: 'BYE', pronostics: [{ userId: 'u1', position: 1, resultat: 'correct' }] },
+          { index: 1, position1: 3, position2: 4, vainqueur: 3, score: '6-4 6-4', pronostics: [{ userId: 'u1', position: 3, resultat: 'correct' }] },
         ],
       },
     ],
@@ -227,6 +229,18 @@ describe('exemptions (BYE)', () => {
     expect(b.joueurs[1]).toEqual(BYE);
     expect(validerBracket(b)).toEqual([]);
     expect(recalculerPointsTotaux(b.tours).get('u1')).toBe(1);
+  });
+
+  it('un duel d’exemption (score BYE) ne rapporte aucun point, même pronostiqué juste', () => {
+    const b = lireBracket(brut4());
+    expect(estMatchExemption(b.tours[0].matchs[0])).toBe(true);
+    expect(estMatchExemption(b.tours[0].matchs[1])).toBe(false);
+    // 1 point (match 1) et non 2 : comme pointsTotaux chez Thomas.
+    expect(recalculerPointsTotaux(b.tours).get('u1')).toBe(1);
+    expect(recalculerPointsTotaux(b.tours).get('u1')).toBe(b.participants[0].pointsTotaux);
+    // Seul duel juste : le BYE -> personne ne marque.
+    b.tours[0].matchs[1].pronostics[0].position = 4;
+    expect(recalculerPointsTotaux(b.tours).get('u1')).toBeUndefined();
   });
 
   it('un vrai joueur sans prénom reste refusé, avec le chemin exact', () => {
