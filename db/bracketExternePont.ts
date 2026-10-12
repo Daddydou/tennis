@@ -3,6 +3,7 @@ import type { BracketThomas } from '@/lib/thomasApi';
 import {
   deriverPronostics,
   planifierEcriture,
+  type ByeSuspect,
   type Ecart,
   type MatchInterne,
   type PronosticExistant,
@@ -39,6 +40,8 @@ export type ResumePont =
       pseudosInconnus: string[];
       sansPronostic: number;
       exemptionsIgnorees: number;
+      enAttenteNonDesignee: number;
+      byesSuspects: ByeSuspect[];
     };
 
 async function lire<T>(q: PromiseLike<{ data: T | null; error: { message: string } | null }>, quoi: string): Promise<T> {
@@ -155,5 +158,7 @@ export async function pontVersRoundPicks(
     pseudosInconnus: derivation.pseudosInconnus,
     sansPronostic: derivation.sansPronostic,
     exemptionsIgnorees: derivation.exemptionsIgnorees,
+    enAttenteNonDesignee: derivation.enAttenteNonDesignee,
+    byesSuspects: derivation.byesSuspects,
   };
 }

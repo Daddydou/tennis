@@ -93,6 +93,12 @@ function afficherResume(r: ResumeSynchro) {
   if (r.desaccordsResultat) {
     console.log(`  ⚠ ${r.desaccordsResultat} pronostic(s) dont le « resultat » de Thomas contredit notre jugement.`);
   }
+  if (r.placesNonDesignees.length) {
+    console.log(
+      `  Lucky loser(s) non désignée(s) : position(s) ${r.placesNonDesignees.join(', ')} — ` +
+        `${r.pronosticsNonDesignes} pronostic(s) sur une joueuse non désignée.`,
+    );
+  }
 }
 
 function afficherPont(r: ResumePont) {
@@ -109,6 +115,18 @@ function afficherPont(r: ResumePont) {
   console.log(`  ${r.inseres} ajouté(s), ${r.modifies} remplacé(s), ${r.identiques} déjà identique(s)`);
   if (r.sansPronostic) console.log(`  ${r.sansPronostic} match(s) sans pronostic chez Thomas (ignorés)`);
   if (r.exemptionsIgnorees) console.log(`  ${r.exemptionsIgnorees} exemption(s) ignorée(s) (duels contre BYE : aucun point chez Thomas, aucun pronostic écrit)`);
+  if (r.byesSuspects.length) {
+    console.log(`  ⚠ ${r.byesSuspects.length} exemption(s) chez nous sans BYE chez Thomas (non comptée(s) ci-dessus) :`);
+    for (const s of r.byesSuspects) {
+      console.log(
+        `    match ${s.match} : exemption chez nous, mais Thomas a une joueuse (position ${s.positions.join(', ')}) : ` +
+          `${s.pronosticsIgnores} pronostic(s) ignoré(s), réimporte le tableau`,
+      );
+    }
+  }
+  if (r.enAttenteNonDesignee) {
+    console.log(`  ${r.enAttenteNonDesignee} pronostic(s) en attente : joueuse non désignée (écrit(s) à une synchro ultérieure, une fois la place nommée)`);
+  }
   if (r.pseudosInconnus.length) console.log(`  ⚠ Pseudo(s) sans correspondance, ignoré(s) : ${r.pseudosInconnus.join(', ')}`);
   if (r.ecarts.length) {
     console.log(

@@ -27,7 +27,7 @@
  */
 import { resoudreParticipant } from './bracketImport';
 import { clesCandidates } from './matching';
-import { estExemption, nomJoueurThomas, type BracketThomas } from './thomasApi';
+import { estExemption, estNonDesignee, estPlaceSansNom, nomJoueurThomas, type BracketThomas } from './thomasApi';
 
 /** Un match du tableau interne (tn_matches), réduit à ce dont le pont a besoin. */
 export interface MatchInterne {
@@ -97,7 +97,8 @@ function memeNom(prenom: string | null, nom: string | null, nomInterne: string):
 
 /**
  * Recoupe chaque joueur de Thomas avec le joueur interne à la même position.
- * Une exemption (BYE) chez Thomas doit être une place VIDE chez nous.
+ * Une place sans nom chez Thomas (exemption, ou lucky loser pas encore
+ * désignée) doit être une place VIDE chez nous.
  * Renvoie la liste des désaccords (vide = tableaux superposables).
  */
 export function verifierJoueurs(
@@ -109,8 +110,9 @@ export function verifierJoueurs(
   for (const j of b.joueurs) {
     const nomThomas = nomJoueurThomas(j);
     const id = joueurDePosition(j.position, premierTour);
-    if (estExemption(j)) {
-      if (id !== null) erreurs.push(`Position ${j.position} : exemption chez Thomas, ${nomsInternes.get(id) ?? id} chez nous.`);
+    if (estPlaceSansNom(j)) {
+      const quoi = estExemption(j) ? 'exemption' : 'lucky loser non désignée';
+      if (id !== null) erreurs.push(`Position ${j.position} : ${quoi} chez Thomas, ${nomsInternes.get(id) ?? id} chez nous.`);
       continue;
     }
     if (id === null) {
@@ -139,8 +141,30 @@ export type Derivation =
        * du Simulateur compterait des points sur un pronostic écrit là.
        */
       exemptionsIgnorees: number;
+      /**
+       * Pronostics sur une lucky loser pas encore désignée : NON écrits
+       * (player_id ne peut pas être nul). Une synchro ultérieure les écrira
+       * quand la place sera nommée chez Thomas et chez nous.
+       */
+      enAttenteNonDesignee: number;
+      /**
+       * Duels d'exemption CHEZ NOUS (status 'bye') où Thomas n'a pas de BYE :
+       * le match se jouera (Wuhan 2026, match 5 : Parry contre une LL à
+       * nommer). Ignorés comme les autres, mais signalés à part — PAS dans
+       * `exemptionsIgnorees` — car c'est notre tableau qu'il faut réimporter.
+       */
+      byesSuspects: ByeSuspect[];
     }
   | { ok: false; erreurs: string[] };
+
+export interface ByeSuspect {
+  /** Index du match au premier tour (= tn_matches.position). */
+  match: number;
+  /** Positions de tableau vides chez nous, occupées par une joueuse chez Thomas. */
+  positions: number[];
+  /** Pronostics (avec position) des participants connus, ignorés sur ce duel. */
+  pronosticsIgnores: number;
+}
 
 /**
  * Tous les pronostics de Thomas, traduits en emplacements internes. Refuse
@@ -172,21 +196,41 @@ export function deriverPronostics(
   }
 
   const exemptions = new Set(b.joueurs.filter(estExemption).map((j) => j.position));
+  const nonDesignees = new Set(b.joueurs.filter(estNonDesignee).map((j) => j.position));
   const duelsBye = new Set(matchsPremierTour.filter((m) => m.status === 'bye').map((m) => `${m.round}|${m.position}`));
   const pronostics: PronosticDerive[] = [];
   let sansPronostic = 0;
   let exemptionsIgnorees = 0;
+  let enAttenteNonDesignee = 0;
+  const byesSuspects: ByeSuspect[] = [];
   for (const t of b.tours) {
     const round = tours.roundDuTour(t.tour);
     for (const m of t.matchs) {
       if (duelsBye.has(`${round}|${m.index}`)) {
-        exemptionsIgnorees++;
+        // Au premier tour, le match `index` réunit les positions 2·index+1 et
+        // 2·index+2 : sans BYE chez Thomas parmi elles, l'exemption est la nôtre seule.
+        const places = [2 * m.index + 1, 2 * m.index + 2];
+        if (t.tour === 1 && !places.some((p) => exemptions.has(p))) {
+          byesSuspects.push({
+            match: m.index,
+            positions: places.filter((p) => joueurDePosition(p, premierTour) === null),
+            pronosticsIgnores: m.pronostics.filter((p) => stockDe.has(p.userId) && p.position !== null).length,
+          });
+        } else {
+          exemptionsIgnorees++;
+        }
         continue;
       }
       for (const p of m.pronostics) {
         if (!stockDe.has(p.userId)) continue;
         if (p.position === null) {
           sansPronostic++;
+          continue;
+        }
+        // Lucky loser pas encore désignée : pronostic valide, mais sans
+        // joueur à écrire. Compté, pas refusé.
+        if (nonDesignees.has(p.position)) {
+          enAttenteNonDesignee++;
           continue;
         }
         // Une exemption n'est jamais un « joueur » à proposer : déjà refusé
@@ -202,7 +246,7 @@ export function deriverPronostics(
     }
   }
   if (erreurs.length) return { ok: false, erreurs };
-  return { ok: true, pronostics, pseudosInconnus, sansPronostic, exemptionsIgnorees };
+  return { ok: true, pronostics, pseudosInconnus, sansPronostic, exemptionsIgnorees, enAttenteNonDesignee, byesSuspects };
 }
 
 const cle = (p: { participantId: string | null; round: string; position: number }) =>

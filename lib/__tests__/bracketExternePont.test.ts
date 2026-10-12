@@ -269,6 +269,7 @@ describe('deriverPronostics', () => {
     const d = deriverPronostics(b, ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
     if (!d.ok) throw new Error(d.erreurs.join('\n'));
     expect(d.exemptionsIgnorees).toBe(1);
+    expect(d.byesSuspects).toEqual([]);
     expect(d.pronostics.filter((p) => p.round === 'QF' && p.position === 0)).toEqual([]);
     // Le reste du tableau passe : 3 autres QF × 2 stocks, et le joueur exempté reste pronostiquable ensuite.
     expect(d.pronostics.filter((p) => p.round === 'QF')).toHaveLength(6);
@@ -303,6 +304,56 @@ describe('deriverPronostics', () => {
     const d = deriverPronostics(thomas8(), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
     expect(d.ok).toBe(false);
     expect(deriverPronostics(thomas8(), ['SF', 'F'], matchs, noms, PARTICIPANTS).ok).toBe(false);
+  });
+
+  // Wuhan WTA 2026 : lucky loser pas encore désignée, pronostiquée par Laki.
+  // Ici position 4 : Laki (position la plus haute) la prend en QF|1 et SF|0.
+  const avecLL = (b: BracketThomas) => {
+    b.joueurs[3] = { position: 4, prenom: null, nom: null, tete: null, statut: 'LL', pays: null, classement: null, apiPlayerId: null };
+    return b;
+  };
+
+  it('pronostic sur une LL non désignée : non écrit, compté, le reste passe', () => {
+    const { matchs, noms } = interne8();
+    matchs[1] = { ...matchs[1], player2Id: null };
+    const d = deriverPronostics(avecLL(thomas8()), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    if (!d.ok) throw new Error(d.erreurs.join('\n'));
+    expect(d.enAttenteNonDesignee).toBe(2);
+    expect(d.pronostics.filter((p) => p.participantId === LAKI).map((p) => `${p.round}|${p.position}`)).toEqual([
+      'QF|0', 'QF|2', 'QF|3', 'SF|1', 'F|0',
+    ]);
+    // Daddy et moustiton, eux, ne sont pas touchés.
+    expect(d.pronostics.filter((p) => p.participantId !== LAKI)).toHaveLength(4 + 2 + 1 + 2 + 1);
+  });
+
+  it('LL non désignée dans un duel bye chez nous (cas Wuhan) : ignoré, signalé à part, la suite en attente', () => {
+    const { matchs, noms } = interne8();
+    matchs[1] = { ...matchs[1], player2Id: null, status: 'bye' };
+    const d = deriverPronostics(avecLL(thomas8()), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    // Pas une vraie exemption : hors exemptionsIgnorees. Daddy (3) et Laki (4) ignorés, moustiton sans pronostic.
+    expect(d).toMatchObject({
+      ok: true,
+      exemptionsIgnorees: 0,
+      enAttenteNonDesignee: 1,
+      byesSuspects: [{ match: 1, positions: [4], pronosticsIgnores: 2 }],
+    });
+    if (!d.ok) return;
+    expect(d.pronostics.filter((p) => p.round === 'QF' && p.position === 1)).toEqual([]);
+  });
+
+  it('vraie exemption (BYE chez Thomas) et faux BYE chez nous : comptés chacun de leur côté', () => {
+    const { matchs, noms } = interne8();
+    matchs[0] = { ...matchs[0], player2Id: null, status: 'bye' };
+    matchs[1] = { ...matchs[1], player2Id: null, status: 'bye' };
+    const d = deriverPronostics(avecLL(avecExemption(thomas8())), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    expect(d).toMatchObject({ ok: true, exemptionsIgnorees: 1, byesSuspects: [{ match: 1, positions: [4] }] });
+  });
+
+  it('LL non désignée chez Thomas mais joueuse chez nous : refus', () => {
+    const { matchs, noms } = interne8();
+    expect(verifierJoueurs(avecLL(thomas8()), new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([
+      'Position 4 : lucky loser non désignée chez Thomas, D. Delta chez nous.',
+    ]);
   });
 });
 

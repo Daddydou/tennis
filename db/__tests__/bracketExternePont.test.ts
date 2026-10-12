@@ -202,6 +202,29 @@ describe('pontVersRoundPicks', () => {
     expect(r2).toMatchObject({ statut: 'ok', inseres: 0, identiques: 5, exemptionsIgnorees: 1 });
   });
 
+  it('LL non désignée : pronostic en attente, puis écrit au passage suivant une fois nommée', async () => {
+    const b = bracket();
+    // Position 4 = lucky loser pas encore connue (Wuhan 2026) ; Laki la prend en SF|1 et en F.
+    b.joueurs[3] = { position: 4, prenom: null, nom: null, tete: null, statut: 'LL', pays: null, classement: null, apiPlayerId: null };
+    const { sb, tables } = base();
+    tables.tn_matches[1] = { ...tables.tn_matches[1], player2_id: null };
+
+    const r = await pontVersRoundPicks(sb, sb, b);
+    expect(r).toMatchObject({ statut: 'ok', inseres: 6, enAttenteNonDesignee: 2 });
+    expect(tables.tn_bracket_round_picks.filter((l) => l.participant_id === 'id-laki')).toEqual([
+      expect.objectContaining({ round: 'SF', position: 0, player_id: 'j2' }),
+    ]);
+
+    // La LL est nommée, chez Thomas et chez nous : ses pronostics s'écrivent, rien d'autre ne bouge.
+    b.joueurs[3] = { ...b.joueurs[3], prenom: 'Deltao', nom: 'DELTA' };
+    tables.tn_matches[1] = { ...tables.tn_matches[1], player2_id: 'j4' };
+    const r2 = await pontVersRoundPicks(sb, sb, b);
+    expect(r2).toMatchObject({ statut: 'ok', inseres: 2, identiques: 6, enAttenteNonDesignee: 0 });
+    expect(resume(tables.tn_bracket_round_picks).filter((l) => l.startsWith('id-laki'))).toEqual([
+      'id-laki F|0=j4', 'id-laki SF|0=j2', 'id-laki SF|1=j4',
+    ]);
+  });
+
   it('tableaux non superposables : refus, rien d’écrit', async () => {
     const { sb, tables, ecritures } = base();
     tables.tn_matches[0] = { ...tables.tn_matches[0], player1_id: 'j2', player2_id: 'j1' };

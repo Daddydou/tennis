@@ -9,10 +9,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ErreurFormatThomas,
   desaccordsResultat,
+  estExemption,
   estMatchExemption,
+  estNonDesignee,
   lireBracket,
   lireIds,
   lireTournois,
+  pronosticsNonDesignes,
   recalculerPointsTotaux,
   statistiquesPronostics,
   validerBracket,
@@ -256,5 +259,68 @@ describe('exemptions (BYE)', () => {
     const erreurs = validerBracket(lireBracket(brut)).join('\n');
     expect(erreurs).toMatch(/vainqueur 2 est une exemption/);
     expect(erreurs).toMatch(/pronostic de u1 en position 2, une exemption/);
+  });
+});
+
+// Wuhan WTA 2026 : position 12 = lucky loser pas encore désignée, renvoyée sans nom.
+describe('lucky loser non désignée (LL)', () => {
+  const LL = { position: 4, prenom: null, nom: null, tete: null, statut: 'LL', pays: null, classement: null, apiPlayerId: null };
+  const joueur = (position: number, nom: string) => ({
+    position, prenom: nom, nom: nom.toUpperCase(), tete: null, statut: null, pays: null, classement: null, apiPlayerId: null,
+  });
+  const brut4 = () => ({
+    jeu: 'bracket',
+    jeuTennis: 'tennis',
+    tournoi: {
+      id: 't', nom: 'Wuhan', tour: 'WTA', annee: 2026, type: 'WTA_1000', surface: 'HARD', lieu: 'Wuhan',
+      drawSize: 4, statut: 'IN_PROGRESS', verrouille: true, lockAt: null,
+    },
+    participants: [
+      { userId: 'u1', pseudo: 'Daddy', rempli: true, pointsTotaux: 0 },
+      { userId: 'u2', pseudo: 'Laki', rempli: true, pointsTotaux: 0 },
+    ],
+    joueurs: [joueur(1, 'Alpha'), joueur(2, 'Bravo'), joueur(3, 'Parry'), { ...LL }],
+    tours: [
+      {
+        tour: 1, nom: 'Demies', statut: 'EN_COURS',
+        matchs: [
+          { index: 0, position1: 1, position2: 2, vainqueur: null as number | null, score: null, pronostics: [{ userId: 'u1', position: 1, resultat: 'en_attente' }, { userId: 'u2', position: 1, resultat: 'en_attente' }] },
+          // Parry contre la LL à nommer : Daddy prend Parry, Laki prend la LL.
+          { index: 1, position1: 3, position2: 4, vainqueur: null as number | null, score: null, pronostics: [{ userId: 'u1', position: 3, resultat: 'en_attente' }, { userId: 'u2', position: 4, resultat: 'en_attente' }] },
+        ],
+      },
+    ],
+  });
+
+  it('place LL sans nom : lue et validée, pronostic dessus valide mais signalé', () => {
+    const b = lireBracket(brut4());
+    expect(b.joueurs[3]).toEqual(LL);
+    expect(estNonDesignee(b.joueurs[3])).toBe(true);
+    expect(estExemption(b.joueurs[3])).toBe(false);
+    expect(validerBracket(b)).toEqual([]);
+    expect(pronosticsNonDesignes(b)).toEqual([{ tour: 1, index: 1, userId: 'u2', position: 4 }]);
+    expect(recalculerPointsTotaux(b.tours).size).toBe(0);
+  });
+
+  it('une LL nommée est une joueuse comme les autres', () => {
+    const brut = brut4();
+    Object.assign(brut.joueurs[3], { prenom: 'Lucky', nom: 'LOSER' });
+    const b = lireBracket(brut);
+    expect(estNonDesignee(b.joueurs[3])).toBe(false);
+    expect(pronosticsNonDesignes(b)).toEqual([]);
+  });
+
+  it('un vainqueur sur une place sans nom reste une erreur', () => {
+    const brut = brut4();
+    brut.tours[0].matchs[1].vainqueur = 4;
+    expect(validerBracket(lireBracket(brut)).join('\n')).toMatch(/vainqueur 4 est une lucky loser non désignée/);
+  });
+
+  it('une joueuse sans nom, ni BYE ni LL, reste refusée', () => {
+    for (const statut of [null, 'Q', 'Alt']) {
+      const brut = brut4();
+      Object.assign(brut.joueurs[3], { statut });
+      expect(() => lireBracket(brut)).toThrow('$.joueurs[3].prenom devrait être une chaîne');
+    }
   });
 });
