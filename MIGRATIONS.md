@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 22 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 24 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-22-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-24-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -35,6 +35,8 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0020 | `0020_cotes_historique.sql`              | Table `tn_odds_historique` (une ligne par capture de cotes)       | 2026-09-24 | 2026-09-24   |
 | 0021 | `0021_insights_joueurs.sql`             | `tn_player_insights` rattachée + RLS/grants mis au régime commun | 2026-09-27 | 2026-09-27   |
 | 0022 | `0022_bracket_externe.sql`               | 5 tables `tn_bracket_externe_*` (copie du bracket de Thomas)     | 2026-10-04 | 2026-10-04   |
+| 0023 | `0023_bracket_externe_exemptions.sql`    | prenom/nom facultatifs pour une exemption (BYE)                  | 2026-10-08 |              |
+| 0024 | `0024_bracket_externe_lucky_loser.sql`   | … et pour une lucky loser non désignée (LL)                      | 2026-10-12 | 2026-10-12   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -50,7 +52,7 @@ coup recréerait une table morte, à ne pas faire).
 
 ---
 
-## Contrôle global : les 22 en une requête
+## Contrôle global : les 24 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -132,6 +134,13 @@ with c(num, ok, note) as (values
   ('0022',
    to_regclass('public.tn_bracket_externe_pronostics') is not null
    and not has_table_privilege('anon', 'public.tn_bracket_externe_pronostics', 'insert'),
+   null),
+  ('0023',
+   exists (select 1 from pg_constraint where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'),
+   null),
+  ('0024',
+   coalesce((select pg_get_constraintdef(oid) like '%''LL''%' from pg_constraint
+             where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'), false),
    null)
 )
 select num,
@@ -337,4 +346,15 @@ select exists (
   select 1 from pg_constraint
   where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'
 ) as appliquee;
+```
+
+### 0024 — Lucky loser non désignée dans le bracket externe
+Même contrainte que 0023, élargie à `statut = 'LL'` (Wuhan WTA 2026 : une
+lucky loser pas encore connue arrive sans nom) ; appliquée = la définition de
+la contrainte mentionne 'LL'.
+```sql
+select coalesce((
+  select pg_get_constraintdef(oid) like '%''LL''%' from pg_constraint
+  where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'
+), false) as appliquee;
 ```

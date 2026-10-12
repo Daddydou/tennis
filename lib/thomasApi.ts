@@ -60,11 +60,21 @@ export interface ParticipantThomas {
  */
 export const STATUT_EXEMPTION = 'BYE';
 
+/**
+ * Lucky loser. Tant qu'elle n'est pas désignée (Wuhan WTA 2026, position 12),
+ * Thomas renvoie la place comme une exemption — prenom/nom/pays/classement/
+ * apiPlayerId à null — mais avec `statut: 'LL'`. Contrairement à un BYE, la
+ * place jouera : on peut la pronostiquer (« joueuse non désignée »), mais
+ * elle ne peut pas avoir gagné, et rien ne s'écrit dans le Simulateur tant
+ * qu'elle n'a pas de nom.
+ */
+export const STATUT_LUCKY_LOSER = 'LL';
+
 export interface JoueurThomas {
   position: number;
-  /** null seulement pour une exemption (`estExemption`). */
+  /** null seulement pour une place sans nom (`estPlaceSansNom` : BYE ou LL non désignée). */
   prenom: string | null;
-  /** null seulement pour une exemption (`estExemption`). */
+  /** null seulement pour une place sans nom (`estPlaceSansNom` : BYE ou LL non désignée). */
   nom: string | null;
   tete: number | null;
   /** Ex. 'LL', 'Alt', 'BYE' (exemption). */
@@ -78,6 +88,16 @@ export function estExemption(j: Pick<JoueurThomas, 'statut'>): boolean {
   return j.statut === STATUT_EXEMPTION;
 }
 
+/** Lucky loser pas encore désignée : statut 'LL', sans nom. */
+export function estNonDesignee(j: Pick<JoueurThomas, 'statut' | 'prenom' | 'nom'>): boolean {
+  return j.statut === STATUT_LUCKY_LOSER && (j.prenom === null || j.nom === null);
+}
+
+/** Place sans joueur nommé : exemption, ou lucky loser pas encore désignée. */
+export function estPlaceSansNom(j: Pick<JoueurThomas, 'statut' | 'prenom' | 'nom'>): boolean {
+  return estExemption(j) || estNonDesignee(j);
+}
+
 /**
  * Duel d'exemption (un joueur contre BYE) : `score: 'BYE'`. Le joueur passe
  * d'office et Thomas n'accorde AUCUN point, même au pronostic juste
@@ -87,9 +107,11 @@ export function estMatchExemption(m: Pick<MatchThomas, 'score'>): boolean {
   return m.score === STATUT_EXEMPTION;
 }
 
-/** « Prénom Nom », ou « BYE » pour une exemption. */
+/** « Prénom Nom », « BYE » pour une exemption, « LL non désignée » sinon. */
 export function nomJoueurThomas(j: JoueurThomas): string {
-  return estExemption(j) ? STATUT_EXEMPTION : `${j.prenom} ${j.nom}`;
+  if (estExemption(j)) return STATUT_EXEMPTION;
+  if (estNonDesignee(j)) return 'LL non désignée';
+  return `${j.prenom} ${j.nom}`;
 }
 
 export interface PronosticThomas {
@@ -216,8 +238,9 @@ export function lireBracket(raw: unknown): BracketThomas {
       const c = `$.joueurs[${i}]`;
       const o = objet(j, c);
       const statut = texteOuNull(o.statut, `${c}.statut`);
-      // Exemption : prénom et nom null attendus. Un vrai joueur, lui, en a toujours.
-      const nomOuNull = statut === STATUT_EXEMPTION ? texteOuNull : texte;
+      // Exemption ou lucky loser pas encore désignée : prénom et nom peuvent
+      // manquer. Tout autre joueur, lui, en a toujours.
+      const nomOuNull = statut === STATUT_EXEMPTION || statut === STATUT_LUCKY_LOSER ? texteOuNull : texte;
       return {
         position: entier(o.position, `${c}.position`),
         prenom: nomOuNull(o.prenom, `${c}.prenom`),
@@ -292,11 +315,13 @@ export function validerBracket(b: BracketThomas): string[] {
   const dansTableau = (p: number) => p >= 1 && p <= drawSize;
   const positions = new Set<number>();
   const exemptions = new Set<number>();
+  const nonDesignees = new Set<number>();
   for (const j of b.joueurs) {
     if (!dansTableau(j.position)) erreurs.push(`Joueur ${nomJoueurThomas(j)} : position ${j.position} hors de 1..${drawSize}.`);
     if (positions.has(j.position)) erreurs.push(`Position ${j.position} attribuée à deux joueurs.`);
     positions.add(j.position);
     if (estExemption(j)) exemptions.add(j.position);
+    if (estNonDesignee(j)) nonDesignees.add(j.position);
   }
 
   const userIds = new Set<string>();
@@ -335,6 +360,11 @@ export function validerBracket(b: BracketThomas): string[] {
       if (m.vainqueur !== null && exemptions.has(m.vainqueur)) {
         erreurs.push(`${om} : vainqueur ${m.vainqueur} est une exemption (BYE).`);
       }
+      // Une place sans nom ne peut pas avoir gagné. Le pronostic dessus, lui,
+      // est admis (cf. `pronosticsNonDesignes`).
+      if (m.vainqueur !== null && nonDesignees.has(m.vainqueur)) {
+        erreurs.push(`${om} : vainqueur ${m.vainqueur} est une lucky loser non désignée (place sans nom).`);
+      }
 
       const votants = new Set<string>();
       for (const p of m.pronostics) {
@@ -352,6 +382,26 @@ export function validerBracket(b: BracketThomas): string[] {
     }
   }
   return erreurs;
+}
+
+/**
+ * Pronostics sur une lucky loser pas encore désignée : VALIDES (Laki à Wuhan
+ * 2026) mais signalés « joueuse non désignée » — rien ne peut s'en écrire
+ * dans le Simulateur tant que la place n'a pas de nom (lib/bracketExternePont.ts).
+ */
+export function pronosticsNonDesignes(b: BracketThomas): { tour: number; index: number; userId: string; position: number }[] {
+  const nonDesignees = new Set(b.joueurs.filter(estNonDesignee).map((j) => j.position));
+  const out: { tour: number; index: number; userId: string; position: number }[] = [];
+  for (const t of b.tours) {
+    for (const m of t.matchs) {
+      for (const p of m.pronostics) {
+        if (p.position !== null && nonDesignees.has(p.position)) {
+          out.push({ tour: t.tour, index: m.index, userId: p.userId, position: p.position });
+        }
+      }
+    }
+  }
+  return out;
 }
 
 /* -------------------------------------------------------------------------- */

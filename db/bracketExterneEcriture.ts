@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   desaccordsResultat,
+  estNonDesignee,
+  pronosticsNonDesignes,
   recalculerPointsTotaux,
   statistiquesPronostics,
   validerBracket,
@@ -42,6 +44,10 @@ export interface ResumeSynchro {
   ecartsPoints: EcartPoints[];
   /** Pronostics dont le `resultat` de Thomas contredit notre jugement. */
   desaccordsResultat: number;
+  /** Positions des lucky losers pas encore désignées (place sans nom). */
+  placesNonDesignees: number[];
+  /** Pronostics valides sur une de ces places : « joueuse non désignée ». */
+  pronosticsNonDesignes: number;
 }
 
 /** Incohérences qui bloquent l'écriture : rien n'est écrit. */
@@ -148,6 +154,8 @@ export function preparerSynchro(b: BracketThomas, maintenant = new Date().toISOS
     participants,
     ecartsPoints: participants.filter((p) => p.thomas !== p.calcule),
     desaccordsResultat: desaccordsResultat(b.tours).length,
+    placesNonDesignees: b.joueurs.filter(estNonDesignee).map((j) => j.position),
+    pronosticsNonDesignes: pronosticsNonDesignes(b).length,
   };
   return { lignes, resume };
 }
