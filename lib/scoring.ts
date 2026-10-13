@@ -9,7 +9,12 @@
  *                              un set perdu rapporte 0
  *   - Walkover (w/o) ......... le match n'a pas eu lieu : +5 pts de base
  *                              uniquement pour le vainqueur. Aucun bonus
- *                              de set ni de dominance.
+ *                              de set ni de dominance. Au jeu des picks,
+ *                              10 pts à partir du 2026-10-05 en 3 sets
+ *                              gagnants : la valeur arrive par `ptsForfait`,
+ *                              choisie par `pointsForfaitPour`
+ *                              (lib/picksRegles.ts). Défaut 5 : le Fantasy
+ *                              et le Bracket ne la passent jamais.
  *   - Abandon (ret.) ......... seuls les sets entièrement joués avant
  *                              l'abandon sont comptés ; mêmes règles pour
  *                              le vainqueur et le perdant sur ces sets.
@@ -62,6 +67,9 @@ function setTermine(a: number, b: number): boolean {
  * @param won     Le joueur a-t-il gagné le match ?
  * @param status  Statut du match.
  * @param bestOf  3 ou 5. Détermine le nombre de sets à gagner.
+ * @param ptsForfait  Points d'un forfait GAGNÉ (`walkover`). Défaut : la
+ *                victoire simple. Seul le jeu des picks en passe une autre,
+ *                via `pointsForfaitPour` (lib/picksRegles.ts).
  */
 export function scoreMatch(
   sets: SetPair[],
@@ -69,7 +77,8 @@ export function scoreMatch(
   status: MatchStatus = 'completed',
   // Gardé pour la stabilité de l'API : le barème ne dépend pas (encore) du format.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bestOf: 3 | 5 = 3
+  bestOf: 3 | 5 = 3,
+  ptsForfait: number = POINTS_VICTOIRE
 ): ScoreBreakdown {
   if (STATUTS_SANS_POINTS.includes(status)) {
     return { match: 0, netSets: 0, netGames: 0, total: 0 };
@@ -92,12 +101,13 @@ export function scoreMatch(
     }
   }
 
-  const match = won ? POINTS_VICTOIRE : 0;
+  const match = won ? (status === 'walkover' ? ptsForfait : POINTS_VICTOIRE) : 0;
   const netSetsPts = Math.max(0, setsWon - setsLost) * POINTS_PAR_NET_SET;
   const netGamesPts = Math.max(0, netGames);
 
   // Walkover : le match n'a pas eu lieu, `sets` est vide, netSetsPts et
-  // netGamesPts valent donc déjà 0 — seul le point de match compte.
+  // netGamesPts valent donc déjà 0 — seul le point de match (`ptsForfait`)
+  // compte.
   // Abandon : le filtre ci-dessus n'a laissé passer que les sets entièrement
   // joués, donc netSetsPts/netGamesPts ne portent déjà que sur ces sets,
   // symétriquement pour le vainqueur et le perdant.
@@ -135,18 +145,20 @@ export function setsPourJoueur(match: Match, playerId: string): SetPair[] {
 /**
  * Score d'un joueur sur un match donné, directement depuis l'objet Match.
  * Retourne null si le joueur ne figure pas dans ce match.
+ * `ptsForfait` : cf. `scoreMatch` (défaut 5).
  */
 export function scorePlayerInMatch(
   match: Match,
   playerId: string,
-  bestOf: 3 | 5 = 3
+  bestOf: 3 | 5 = 3,
+  ptsForfait: number = POINTS_VICTOIRE
 ): ScoreBreakdown | null {
   const idx = match.players.findIndex((p) => p.id === playerId);
   if (idx === -1) return null;
 
   const sets = setsPourJoueur(match, playerId);
   const won = match.players[idx].winner;
-  return scoreMatch(sets, won, match.status, bestOf);
+  return scoreMatch(sets, won, match.status, bestOf, ptsForfait);
 }
 
 /**

@@ -311,12 +311,33 @@ create index if not exists idx_tn_fantasy_hist_lookup
 --          abandon (ret.) : seuls les sets entièrement joués avant
 --          l'abandon comptent, mêmes règles pour le vainqueur et le
 --          perdant sur ces sets
+--          forfait gagné : `p_pts_forfait` (défaut 5) ; aux picks,
+--          tn_recompute_picks passe tn_points_forfait (10 dès le
+--          2026-10-05 en bo3, migration 0025)
 -- =====================================================================
+
+-- Miroir de `pointsForfaitPour` (lib/picksRegles.ts).
+create or replace function tn_points_forfait(
+  p_start_date  date,
+  p_best_of     integer
+)
+returns integer
+language sql
+immutable
+as $$
+  select case
+    when p_start_date >= date '2026-10-05' and coalesce(p_best_of, 3) = 3
+      then 10
+    else 5
+  end;
+$$;
+
 create or replace function tn_score_match(
-  p_sets      jsonb,      -- [{"g1":6,"g2":4}, ...] du point de vue du joueur
-  p_won       boolean,
-  p_status    text,
-  p_best_of   integer default 3
+  p_sets        jsonb,      -- [{"g1":6,"g2":4}, ...] du point de vue du joueur
+  p_won         boolean,
+  p_status      text,
+  p_best_of     integer default 3,
+  p_pts_forfait integer default 5   -- forfait gagné ; cf. tn_points_forfait
 )
 returns table (
   pts_match  integer,
@@ -372,9 +393,13 @@ begin
     end if;
   end loop;
 
-  -- Points de victoire
+  -- Points de victoire : `p_pts_forfait` sur un forfait gagné, 5 sinon
   if p_won then
-    v_match := 5;
+    if p_status = 'walkover' then
+      v_match := coalesce(p_pts_forfait, 5);
+    else
+      v_match := 5;
+    end if;
   end if;
 
   -- Net sets, plancher à 0
@@ -409,9 +434,13 @@ declare
   v_score   record;
   v_count   integer := 0;
   v_best_of integer;
+  v_start_date  date;
+  v_pts_forfait integer;
 begin
-  select best_of into v_best_of
+  select best_of, start_date into v_best_of, v_start_date
   from tn_tournaments where id = p_tournament_id;
+
+  v_pts_forfait := tn_points_forfait(v_start_date, coalesce(v_best_of,3));
 
   for v_pick in
     select * from tn_picks where tournament_id = p_tournament_id
@@ -447,7 +476,8 @@ begin
 
     select * into v_score
     from tn_score_match(coalesce(v_sets,'[]'::jsonb), v_won,
-                        v_match.status, coalesce(v_best_of,3));
+                        v_match.status, coalesce(v_best_of,3),
+                        v_pts_forfait);
 
     update tn_picks
        set points       = v_score.pts_total,
@@ -554,5 +584,7 @@ grant select on tn_tournament_summary, tn_used_players to anon, authenticated;
 -- tn_recompute_picks écrit : pas appelable en RPC avec la clé publique.
 revoke all on function tn_recompute_picks(uuid)
   from public, anon, authenticated;
-revoke all on function tn_score_match(jsonb, boolean, text, integer)
+revoke all on function tn_score_match(jsonb, boolean, text, integer, integer)
+  from public, anon, authenticated;
+revoke all on function tn_points_forfait(date, integer)
   from public, anon, authenticated;

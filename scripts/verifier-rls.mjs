@@ -72,7 +72,10 @@ const TABLES = [
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */
 const FONCTIONS = [
   ['tn_recompute_picks', { p_tournament_id: '00000000-0000-0000-0000-000000000000' }],
+  // Appel à 4 paramètres : p_pts_forfait (0025) prend son défaut.
   ['tn_score_match', { p_sets: [], p_won: true, p_status: 'completed', p_best_of: 3 }],
+  // 0025 — points d'un forfait gagné au jeu des picks
+  ['tn_points_forfait', { p_start_date: '2026-10-05', p_best_of: 3 }],
 ];
 
 let ko = 0;

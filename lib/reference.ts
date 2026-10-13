@@ -21,6 +21,7 @@
  */
 
 import { genererSlots, recommanderPourTour, type Esperances } from './optimizer';
+import { pointsForfaitPour } from './picksRegles';
 import { scorePlayerInMatch } from './scoring';
 import { STATUTS_DECIDES } from './types';
 import type {
@@ -86,6 +87,10 @@ function matchDe(
  *   tour R, celles simulées DEPUIS R (cache `tn_projections`, from_round = R).
  *   Seuls les tours présents dans cet objet sont évalués — c'est l'appelant qui
  *   décide lesquels (cf. `toursJoues`).
+ * @param startDate  `tn_tournaments.start_date` : avec `bestOf`, choisit les
+ *   points d'un forfait gagné (`pointsForfaitPour`), comme pour les vrais
+ *   picks — la référence se compare à `tn_picks.points`, même barème. Absente :
+ *   règle historique.
  */
 export function construireReference(
   matches: Match[],
@@ -93,7 +98,9 @@ export function construireReference(
   rounds: string[],
   esperancesParTour: Record<string, Esperances>,
   bestOf: 3 | 5 = 3,
+  startDate: string | null = null,
 ): Reference {
+  const ptsForfait = pointsForfaitPour({ start_date: startDate, best_of: bestOf });
   const slots = genererSlots(rounds);
   const slotsDe = new Map<string, Slot[]>();
   for (const s of slots) {
@@ -145,7 +152,7 @@ export function construireReference(
       // scoreMatch rend 0 sur un match indécis (scheduled, live, in_progress) :
       // un tour en cours ne gonfle pas la référence, exactement comme le score
       // réel de l'utilisateur.
-      const score = m ? scorePlayerInMatch(m, meilleur.playerId, bestOf) : null;
+      const score = m ? scorePlayerInMatch(m, meilleur.playerId, bestOf, ptsForfait) : null;
       total += score?.total ?? 0;
 
       picks.push({

@@ -38,7 +38,7 @@ pour les autres.
 
 \- db/\*.ts : requêtes vers la base (supabase/ ne contient plus que migrations/, attendu par la CLI Supabase)
 
-\- supabase/migrations/ : SQL, 24 migrations à ce jour (voir MIGRATIONS.md)
+\- supabase/migrations/ : SQL, 25 migrations à ce jour (voir MIGRATIONS.md)
 
 \- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu] [--ecraser]. Si tournament_id_interne est posé (à la main), la synchro reporte aussi les pronostics Moi/Laki/Thomas dans tn_bracket_round_picks (lib/bracketExternePont.ts + db/bracketExternePont.ts) : emplacements vides seulement, écarts signalés sans écraser (sauf --ecraser), jamais de suppression.
 
@@ -58,7 +58,7 @@ pour les autres.
 
 \- Nouvelle migration = nouveau fichier numéroté + une ligne ajoutée dans MIGRATIONS.md.
 
-\- Le barème du jeu est dans lib/scoring.ts, déjà validé : ne pas le réimplémenter ailleurs (voir README « Où corriger le barème »).
+\- Le barème du jeu est dans lib/scoring.ts, déjà validé : ne pas le réimplémenter ailleurs (voir README « Où corriger le barème des picks »). Ses règles datées sont dans lib/picksRegles.ts (pointsForfaitPour : forfait gagné à 10 pts dès le 2026-10-05 en bo3, miroir SQL tn_points_forfait, migration 0025) ; seuls tn_recompute_picks et le Score de référence l'utilisent, le Fantasy et le Bracket gardent le défaut 5.
 
 \- lib/ est LA référence : c'est tennis-picks (autre dossier) qui en a une copie dépassée, pas l'inverse.
 

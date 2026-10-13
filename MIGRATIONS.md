@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 24 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 25 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-24-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-25-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -37,6 +37,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0022 | `0022_bracket_externe.sql`               | 5 tables `tn_bracket_externe_*` (copie du bracket de Thomas)     | 2026-10-04 | 2026-10-04   |
 | 0023 | `0023_bracket_externe_exemptions.sql`    | prenom/nom facultatifs pour une exemption (BYE)                  | 2026-10-08 |              |
 | 0024 | `0024_bracket_externe_lucky_loser.sql`   | … et pour une lucky loser non désignée (LL)                      | 2026-10-12 | 2026-10-12   |
+| 0025 | `0025_picks_forfait_10_points.sql`       | Picks : forfait gagné = 10 pts dès le 2026-10-05 en bo3 (⁴)      | 2026-10-13 | 2026-10-13   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -50,9 +51,13 @@ appliquée, les deux ne laissent plus aucune trace : la requête les signale
 « remplacée », ce qui compte comme appliquée (rejouer 0015 ou 0016 après
 coup recréerait une table morte, à ne pas faire).
 
+(⁴) 0025 ne recalcule aucun pick : rejouer ensuite `tn_recompute_picks`
+pour chaque tournoi commencé le 2026-10-05 ou après (les seuls que la règle
+change). Le Fantasy n'est pas concerné : pas de backfill à rejouer.
+
 ---
 
-## Contrôle global : les 24 en une requête
+## Contrôle global : les 25 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -102,7 +107,7 @@ with c(num, ok, note) as (values
   ('0012', null::boolean,
    'suppression pure, aucune trace : voir la requête 0012 ci-dessous'),
   ('0013',
-   coalesce(pg_get_functiondef(to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)'))
+   coalesce(pg_get_functiondef(coalesce(to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer,integer)'), to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)')))
             like '%coup_ net%', false),
    null),
   ('0014',
@@ -141,6 +146,12 @@ with c(num, ok, note) as (values
   ('0024',
    coalesce((select pg_get_constraintdef(oid) like '%''LL''%' from pg_constraint
              where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'), false),
+   null),
+  ('0025',
+   to_regprocedure('public.tn_points_forfait(date,integer)') is not null
+   and to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)') is null
+   and coalesce(pg_get_functiondef('public.tn_recompute_picks(uuid)'::regprocedure)
+                like '%tn_points_forfait%', false),
    null)
 )
 select num,
@@ -267,7 +278,7 @@ where t.category = 'GS' or (t.category is null and coalesce(t.draw_size, 0) >= 1
 La fonction `tn_score_match` contient le commentaire propre à la version
 corrigée (« set entamé puis coupé net »). `coup_ net` évite tout souci d'accent.
 ```sql
-select coalesce(pg_get_functiondef(to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)'))
+select coalesce(pg_get_functiondef(coalesce(to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer,integer)'), to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)')))
                 like '%coup_ net%', false) as appliquee;
 ```
 
@@ -357,4 +368,16 @@ select coalesce((
   select pg_get_constraintdef(oid) like '%''LL''%' from pg_constraint
   where conname = 'tn_bracket_externe_joueurs_nom_sauf_bye'
 ), false) as appliquee;
+```
+
+### 0025 — Picks : forfait gagné à 10 points
+`tn_points_forfait` existe, l'ancienne signature à 4 paramètres de
+`tn_score_match` a disparu (remplacée par celle à 5, `p_pts_forfait default
+5`), et `tn_recompute_picks` utilise la nouvelle règle.
+```sql
+select to_regprocedure('public.tn_points_forfait(date,integer)') is not null
+   and to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)') is null
+   and coalesce(pg_get_functiondef('public.tn_recompute_picks(uuid)'::regprocedure)
+                like '%tn_points_forfait%', false)
+   as appliquee;
 ```
