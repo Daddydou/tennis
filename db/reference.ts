@@ -84,6 +84,7 @@ export const chargerReference = cache(
       rounds,
       esperancesParTour,
       (engine.tournament.best_of ?? 3) as 3 | 5,
+      engine.tournament.start_date,
     );
 
     return { ...reference, roundsManquants };

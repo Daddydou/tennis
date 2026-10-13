@@ -7,6 +7,9 @@ Supabase + Tailwind v4.
 
 À chaque tour d'un tournoi, on « pique » des joueurs. Barème : 5 pts par match
 gagné, net sets ×3 (plancher 0), net games sur les sets gagnés uniquement. Un
+forfait gagné vaut 5 pts secs, **10 pts** pour un tournoi en 3 sets gagnants
+commencé le 2026-10-05 ou après (Shanghai 2026) — voir
+[Où corriger le barème des picks](#où-corriger-le-barème-des-picks). Un
 joueur ne peut être pické **qu'une seule fois** sur tout le tournoi — c'est la
 contrainte structurante du jeu. 12 picks par tournoi (2 par tour jusqu'aux quarts,
 puis 1 en demi et 1 en finale).
@@ -488,8 +491,9 @@ et par Next.js 16 :
   **nomme tout statut hors vocabulaire** plutôt que de laisser remonter une
   erreur SQL brute.
 - **`best_of` et `surface`** déduits à l'import (`devinerBestOf`, `devinerSurface`),
-  stockés sur `tn_tournaments` et propagés au scoring (un walkover en Grand Chelem
-  masculin vaut 20 pts, pas 15) comme à la simulation.
+  stockés sur `tn_tournaments` et propagés au scoring comme à la simulation
+  (depuis 0025, `best_of` décide aussi si un forfait gagné vaut 10 pts aux
+  picks : jamais en 5 sets).
 - **Le schéma ne stocke pas la tête de série** (ni la moitié de tableau) sur
   `tn_players`. Après import, les structures du moteur (`Match[]`, `Player`) sont
   reconstruites depuis la DB (`db/queries.ts`) : la moitié se déduit du
@@ -584,11 +588,31 @@ lib/cotes.ts                     AJOUT : dévigorisation, consensus des books,
                                  scores de Brier et log-loss (mesure seule)
 lib/reference.ts                 AJOUT : picks recommandés tour par tour sous
                                  contrainte d'unicité, et leurs points réels
+lib/picksRegles.ts               AJOUT : règles datées du jeu des picks
+                                 (forfait gagné à 10 pts, pointsForfaitPour)
 lib/faceAFace.ts                 AJOUT : bilan des rencontres entre deux joueurs
 lib/bilanSaison.ts               AJOUT : agrégats du bilan de saison
 lib/cotesEvolution.ts            AJOUT : séries de cotes avant chaque match
 lib/fantasyScenario.ts           AJOUT : probabilités surchargées, score projeté
 ```
+
+### Où corriger le barème des picks
+
+Le barème d'un match est dans `lib/scoring.ts` (`scoreMatch`) et son miroir SQL
+`tn_score_match` : les deux doivent rester identiques. Une règle qui change en
+cours de saison n'y est **pas** écrite en dur : elle est datée dans
+`lib/picksRegles.ts` (miroir SQL `tn_points_forfait`, migration 0025), sur le
+modèle de `compositionPour` — c'est la `start_date` du tournoi qui choisit, et
+une règle déjà jouée n'est jamais modifiée.
+
+Aujourd'hui : un forfait gagné vaut 5 pts, **10 pts** à partir du 2026-10-05
+pour un tournoi en 3 sets gagnants (`pointsForfaitPour`). Abandons, perdant du
+forfait et Grands Chelems masculins en 5 sets inchangés.
+
+Périmètre : `tn_recompute_picks` (donc `tn_picks.points`) et le Score de
+référence de l'onglet Résultats. Le Fantasy, le Bracket et les équipes figées
+gardent le défaut de `scoreMatch` (5 pts). Après un changement de règle,
+rejouer `tn_recompute_picks` sur les seuls tournois concernés.
 
 ### Où corriger le barème de multiplicateurs
 
