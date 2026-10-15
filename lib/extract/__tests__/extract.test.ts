@@ -84,33 +84,68 @@ describe('WTA — Wuhan 2026 (vraie page, réduite)', () => {
   });
 });
 
-describe('ATP — fixture synthétique', () => {
-  const html = fixture('atp-synthetique.html');
+describe('ATP — Shanghai 2026 (vraie page, réduite)', () => {
+  const html = fixture('atp-shanghai-2026.html');
   const extrait = extractAtp(dom(html, URL_ATP).window.document, URL_ATP)!;
+  const match = (round: string, position: number) => extrait.matches.find((m) => m.round === round && m.position === position)!;
 
   it('parité exacte avec le snippet ATP', async () => {
     const attendu = await executerSnippet(fixture('snippet-atp.js'), html, URL_ATP);
     expect(sansHorodatage(extrait)).toEqual(sansHorodatage(attendu));
   });
 
-  it('statuts, BYE, tie-break, positions et métadonnées', () => {
+  it('127 matchs, 7 tours nommés d’après les en-têtes', () => {
     expect(extrait.tournament).toEqual({ slug: 'shanghai', atp_id: '5014', year: new Date().getFullYear() });
-    expect(extrait.rounds_found).toEqual(['QF', 'SF', 'F']);
-    expect(extrait.matches.map((m) => `${m.round}:${m.position}:${m.status}`)).toEqual([
-      'QF:0:completed',
-      'QF:1:walkover',
-      'QF:2:retired',
-      'QF:3:bye',
-      'SF:0:live',
-      'SF:2:scheduled',
-      'F:0:scheduled',
-    ]);
-    const [qf0] = extrait.matches;
-    expect(qf0.match_id).toBe('ms001');
-    expect(qf0.players[0]).toMatchObject({ id: 'S0AG', seed: '1', country: 'ITA', winner: true });
-    expect(qf0.players[0].sets[1]).toEqual({ games: 7, tiebreak: 7 });
-    expect(qf0.players[1].country).toBe('AUS');
-    expect(extrait.matches[3].players[1]).toMatchObject({ name: 'BYE', isBye: true, id: null });
+    expect(extrait.tour).toBe('ATP');
+    expect(extrait.match_count).toBe(127);
+    expect(extrait.rounds_found).toEqual(['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F']);
+    const libelles = Object.fromEntries(extrait.matches.map((m) => [m.round, m.round_label]));
+    expect(libelles).toEqual({
+      R128: 'Round of 128',
+      R64: 'Round of 64',
+      R32: 'Round of 32',
+      R16: 'Round of 16',
+      QF: 'Quarterfinals',
+      SF: 'Semifinals',
+      F: 'Final',
+    });
+    const parTour = extrait.rounds_found.map((r) => extrait.matches.filter((m) => m.round === r).length);
+    expect(parTour).toEqual([64, 32, 16, 8, 4, 2, 1]);
+  });
+
+  it('vainqueur connu, avec tie-break et identifiant de match', () => {
+    const r16 = match('R16', 0);
+    expect(r16).toMatchObject({ match_id: 'ms008', status: 'completed', half: 'top' });
+    expect(r16.players[0]).toMatchObject({ id: 'Z355', name: 'A. Zverev', seed: '1', country: 'GER', winner: true });
+    expect(r16.players[1]).toMatchObject({ id: 'BK92', winner: false });
+    expect(r16.players[1].sets[0]).toEqual({ games: 6, tiebreak: 6 });
+  });
+
+  it('exemptions du R128 : 32 BYE, vainqueur = la tête de série', () => {
+    expect(extrait.matches.filter((m) => m.status === 'bye')).toHaveLength(32);
+    const bye = match('R128', 0);
+    expect(bye.status).toBe('bye');
+    expect(bye.players[0]).toMatchObject({ id: 'Z355', winner: true });
+    expect(bye.players[1]).toMatchObject({ name: 'BYE', isBye: true, id: null });
+  });
+
+  it('forfait, abandon, matchs à venir', () => {
+    expect(match('R64', 4).status).toBe('walkover');
+    expect(match('QF', 1)).toMatchObject({ status: 'retired', match_id: 'ms005' });
+    expect(match('QF', 1).players[1]).toMatchObject({ id: 'DH50', winner: true });
+    expect(match('QF', 0).status).toBe('scheduled');
+  });
+
+  it('joueurs TBA : 5 places sans ID (demi-finales et finale)', () => {
+    const tba = extrait.matches.flatMap((m) => m.players.filter((p) => p.name === 'TBA').map(() => `${m.round}#${m.position}`));
+    expect(tba).toEqual(['SF#0', 'SF#1', 'SF#1', 'F#0', 'F#0']);
+    expect(match('F', 0).players[0]).toMatchObject({ id: null, isBye: false, winner: false });
+    // verifierExtraction ne connaît pas « TBA » parmi les places d'attente : il le signale.
+    expect(controlerExtrait(extrait)).toEqual({
+      ok: true,
+      avertissements: ['5 joueur(s) sans ID ATP : TBA'],
+      matchs: 127,
+    });
   });
 
   it('archive avec année', () => {
@@ -134,8 +169,8 @@ describe('linkedom (parseur du serveur) == jsdom', () => {
     expect(sansHorodatage(extractWta(avecLinkedom(html), URL_WUHAN)!)).toEqual(sansHorodatage(attendu));
   });
 
-  it('ATP synthétique', () => {
-    const html = fixture('atp-synthetique.html');
+  it('ATP Shanghai', () => {
+    const html = fixture('atp-shanghai-2026.html');
     const attendu = extractAtp(dom(html, URL_ATP).window.document, URL_ATP)!;
     expect(sansHorodatage(extractAtp(avecLinkedom(html), URL_ATP)!)).toEqual(sansHorodatage(attendu));
   });
@@ -143,7 +178,7 @@ describe('linkedom (parseur du serveur) == jsdom', () => {
 
 describe('aiguillage par domaine', () => {
   it('choisit l’extracteur selon l’hôte, null ailleurs', () => {
-    const doc = dom(fixture('atp-synthetique.html'), URL_ATP).window.document;
+    const doc = dom(fixture('atp-shanghai-2026.html'), URL_ATP).window.document;
     expect(extraireDepuisDocument(doc, URL_ATP)?.tour).toBe('ATP');
     expect(extraireDepuisDocument(doc, 'https://exemple.com/draws')).toBeNull();
   });
