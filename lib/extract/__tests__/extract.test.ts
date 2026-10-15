@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { JSDOM, VirtualConsole } from 'jsdom';
+import { parseHTML } from 'linkedom';
 import { controlerExtrait, extractAtp, extractWta, extraireDepuisDocument, type ExtraitBrut } from '..';
 import { parseExtract, verifierExtraction } from '@/lib/parser';
 
@@ -119,6 +120,24 @@ describe('ATP — fixture synthétique', () => {
       atp_id: '1536',
       year: 2025,
     });
+  });
+});
+
+describe('linkedom (parseur du serveur) == jsdom', () => {
+  // Le serveur lit les pages avec linkedom : jsdom ne se charge pas sur
+  // Vercel (dépendance ESM requise en CommonJS). Même extraction exigée.
+  const avecLinkedom = (html: string) => parseHTML(html).document as unknown as Document;
+
+  it('WTA Wuhan', () => {
+    const html = fixture('wta-wuhan-2026.html');
+    const attendu = extractWta(dom(html, URL_WUHAN).window.document, URL_WUHAN)!;
+    expect(sansHorodatage(extractWta(avecLinkedom(html), URL_WUHAN)!)).toEqual(sansHorodatage(attendu));
+  });
+
+  it('ATP synthétique', () => {
+    const html = fixture('atp-synthetique.html');
+    const attendu = extractAtp(dom(html, URL_ATP).window.document, URL_ATP)!;
+    expect(sansHorodatage(extractAtp(avecLinkedom(html), URL_ATP)!)).toEqual(sansHorodatage(attendu));
   });
 });
 

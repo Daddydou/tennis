@@ -1,5 +1,5 @@
 import 'server-only';
-import { JSDOM } from 'jsdom';
+import { parseHTML } from 'linkedom';
 import { supabaseAdmin } from './server';
 import { construireMatchPayload, compterMatchsChanges, importerExtraitCoeur } from './importCoeur';
 import {
@@ -192,17 +192,15 @@ async function lirePageWta(url: string): Promise<{ extrait: ExtraitBrut | null; 
   };
   if (!res.ok) return { extrait: null, diagnostic };
 
-  // jsdom SANS exécution de scripts : on ne lit que le HTML rendu côté serveur.
-  const { window } = new JSDOM(html, { url });
-  try {
-    diagnostic.lignes_joueuses = window.document.querySelectorAll('.js-player-row').length;
-    const extrait = extractWta(window.document, url);
-    diagnostic.matchs_extraits = extrait?.match_count ?? 0;
-    diagnostic.rounds = extrait?.rounds_found ?? [];
-    return { extrait, diagnostic };
-  } finally {
-    window.close();
-  }
+  // linkedom, pas jsdom : jsdom ne se charge pas sur Vercel (une de ses
+  // dépendances est un module ESM requis en CommonJS). linkedom n'exécute
+  // aucun script ; même extraction que jsdom, vérifiée par les tests.
+  const doc = parseHTML(html).document as unknown as Document;
+  diagnostic.lignes_joueuses = doc.querySelectorAll('.js-player-row').length;
+  const extrait = extractWta(doc, url);
+  diagnostic.matchs_extraits = extrait?.match_count ?? 0;
+  diagnostic.rounds = extrait?.rounds_found ?? [];
+  return { extrait, diagnostic };
 }
 
 /** Comparaison à blanc avec la base : matchs en base, matchs qui changeraient. */
