@@ -28,6 +28,7 @@ declare function GM_xmlhttpRequest(details: {
   headers?: Record<string, string>;
   data?: string;
   timeout?: number;
+  anonymous?: boolean;
   onload: (r: { status: number; responseText: string }) => void;
   onerror: () => void;
   ontimeout: () => void;
@@ -36,6 +37,8 @@ declare function GM_xmlhttpRequest(details: {
 const BASE = 'https://tennis-nine-zeta.vercel.app';
 const CLE_JETON = 'importAuto.jeton';
 const CLE_REFUS = 'importAuto.jetonRefuseLe';
+const CLE_REFUS_CONSECUTIFS = 'importAuto.refusConsecutifs';
+const REFUS_AVANT_OUBLI = 3;
 const CLE_VERROU = 'importAuto.verrou';
 const CLE_DERNIER = 'importAuto.dernier';
 const INTERVALLE_MS = 30 * 60 * 1000;
@@ -85,6 +88,9 @@ function appeler(methode: 'GET' | 'POST', chemin: string, j: string, corps?: unk
       headers: { 'x-import-token': j, 'Content-Type': 'application/json' },
       data: corps === undefined ? undefined : JSON.stringify(corps),
       timeout: 180_000,
+      // Sans les cookies de l'app : seul le jeton doit ouvrir l'accès, jamais
+      // la session de l'utilisateur connecté.
+      anonymous: true,
       onload: (r) => {
         let json: Record<string, unknown> | null = null;
         try {
@@ -197,12 +203,23 @@ async function cycle() {
   if (!verrou) return;
   try {
     const etat = await appeler('GET', '/api/import-auto/etat', j);
-    if (etat.status === 404) {
-      // Jeton refusé (faux, ou IMPORT_AUTO_TOKEN absent côté serveur) : on l'oublie.
-      GM_setValue(CLE_JETON, '');
-      noter(false, 'jeton refusé — il sera redemandé');
+    if (etat.status === 401 || etat.status === 404) {
+      // Jeton faux, IMPORT_AUTO_TOKEN absent côté serveur, ou routes pas
+      // encore déployées : indiscernables (le serveur ne révèle rien). Le
+      // jeton n'est oublié qu'après plusieurs refus d'affilée, pour ne pas le
+      // redemander à cause d'une panne passagère.
+      const refus = GM_getValue<number>(CLE_REFUS_CONSECUTIFS, 0) + 1;
+      if (refus >= REFUS_AVANT_OUBLI) {
+        GM_setValue(CLE_JETON, '');
+        GM_setValue(CLE_REFUS_CONSECUTIFS, 0);
+        noter(false, `refusé ${refus} fois de suite : jeton oublié, il sera redemandé`);
+      } else {
+        GM_setValue(CLE_REFUS_CONSECUTIFS, refus);
+        noter(false, `refusé (HTTP ${etat.status}) : jeton faux ou import auto pas encore en production`);
+      }
       return;
     }
+    GM_setValue(CLE_REFUS_CONSECUTIFS, 0);
     if (etat.status !== 200 || !etat.json) {
       noter(false, `état HTTP ${etat.status}`);
       return;

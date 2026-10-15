@@ -74,9 +74,14 @@ Le fichier `.user.js` est **généré** : après toute modification de
 `lib/extract/` ou `tools/userscript/src/`, lancer `npm run build:userscript`
 (un test échoue sinon).
 
-**Changer de jeton** : quand le serveur refuse le jeton (404), le script
-l'oublie et le redemande au passage suivant. Pour forcer : Tampermonkey →
-le script → onglet *Stockage* → vider `importAuto.jeton`.
+**Jeton refusé** : le serveur répond de la même façon (401/404) à un jeton
+faux, à une variable `IMPORT_AUTO_TOKEN` absente et à des routes pas encore
+déployées en production. Le badge affiche alors « refusé » ; après **3 refus
+d'affilée** (~1 h 30), le script oublie le jeton et le redemande. Pour forcer :
+Tampermonkey → le script → onglet *Stockage* → vider `importAuto.jeton`.
+
+Le script n'envoie **jamais** les cookies de l'app (requêtes anonymes) : seul
+le jeton ouvre l'accès, même si tu es connecté à l'app dans le même navigateur.
 
 ### Limite honnête
 

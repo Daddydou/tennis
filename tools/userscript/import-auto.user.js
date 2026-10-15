@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Tennis — import auto des tableaux
 // @namespace    https://tennis-nine-zeta.vercel.app/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Réimporte les tableaux ATP (et WTA en repli) dans l'app tennis toutes les 12 h, jusqu'à la finale.
 // @match        https://www.atptour.com/*
 // @match        https://www.wtatennis.com/*
@@ -554,6 +554,8 @@
   var BASE = "https://tennis-nine-zeta.vercel.app";
   var CLE_JETON = "importAuto.jeton";
   var CLE_REFUS = "importAuto.jetonRefuseLe";
+  var CLE_REFUS_CONSECUTIFS = "importAuto.refusConsecutifs";
+  var REFUS_AVANT_OUBLI = 3;
   var CLE_VERROU = "importAuto.verrou";
   var CLE_DERNIER = "importAuto.dernier";
   var INTERVALLE_MS = 30 * 60 * 1e3;
@@ -581,6 +583,9 @@
         headers: { "x-import-token": j, "Content-Type": "application/json" },
         data: corps === void 0 ? void 0 : JSON.stringify(corps),
         timeout: 18e4,
+        // Sans les cookies de l'app : seul le jeton doit ouvrir l'accès, jamais
+        // la session de l'utilisateur connecté.
+        anonymous: true,
         onload: (r) => {
           let json = null;
           try {
@@ -669,11 +674,19 @@
     if (!verrou) return;
     try {
       const etat = await appeler("GET", "/api/import-auto/etat", j);
-      if (etat.status === 404) {
-        GM_setValue(CLE_JETON, "");
-        noter(false, "jeton refusé — il sera redemandé");
+      if (etat.status === 401 || etat.status === 404) {
+        const refus = GM_getValue(CLE_REFUS_CONSECUTIFS, 0) + 1;
+        if (refus >= REFUS_AVANT_OUBLI) {
+          GM_setValue(CLE_JETON, "");
+          GM_setValue(CLE_REFUS_CONSECUTIFS, 0);
+          noter(false, `refusé ${refus} fois de suite : jeton oublié, il sera redemandé`);
+        } else {
+          GM_setValue(CLE_REFUS_CONSECUTIFS, refus);
+          noter(false, `refusé (HTTP ${etat.status}) : jeton faux ou import auto pas encore en production`);
+        }
         return;
       }
+      GM_setValue(CLE_REFUS_CONSECUTIFS, 0);
       if (etat.status !== 200 || !etat.json) {
         noter(false, `état HTTP ${etat.status}`);
         return;

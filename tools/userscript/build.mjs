@@ -18,7 +18,7 @@ const SORTIE = ici('./import-auto.user.js');
 export const ENTETE = `// ==UserScript==
 // @name         Tennis — import auto des tableaux
 // @namespace    https://tennis-nine-zeta.vercel.app/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Réimporte les tableaux ATP (et WTA en repli) dans l'app tennis toutes les 12 h, jusqu'à la finale.
 // @match        https://www.atptour.com/*
 // @match        https://www.wtatennis.com/*
