@@ -1,11 +1,20 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   COOKIE_NAME,
+  ENTETE_IMPORT_AUTO,
   ENTETE_VERIF,
   verifierJeton,
   verifierJetonAgent,
+  verifierJetonImportAuto,
   verifierJetonVerif,
 } from '@/auth/session';
+
+/** Seuls couples « MÉTHODE chemin » ouverts au jeton d'import automatique. */
+const ROUTES_IMPORT_AUTO = new Set([
+  'GET /api/import-auto/etat',
+  'POST /api/import-auto/ingest',
+  'POST /api/import-auto/run',
+]);
 
 /**
  * Porte d'entrée : tout est privé sauf /login.
@@ -45,6 +54,15 @@ export function proxy(request: NextRequest) {
     /^\/api\/verif\/[^/]+$/.test(pathname) &&
     request.method === 'GET' &&
     verifierJetonVerif(request.headers.get(ENTETE_VERIF))
+  ) {
+    return NextResponse.next();
+  }
+
+  // Import automatique : jeton `x-import-token`, uniquement sur trois couples
+  // méthode + chemin EXACTS. Les routes re-vérifient le jeton de leur côté.
+  if (
+    ROUTES_IMPORT_AUTO.has(`${request.method} ${pathname}`) &&
+    verifierJetonImportAuto(request.headers.get(ENTETE_IMPORT_AUTO))
   ) {
     return NextResponse.next();
   }

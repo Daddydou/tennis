@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 25 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 26 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-25-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-26-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -38,6 +38,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0023 | `0023_bracket_externe_exemptions.sql`    | prenom/nom facultatifs pour une exemption (BYE)                  | 2026-10-08 |              |
 | 0024 | `0024_bracket_externe_lucky_loser.sql`   | … et pour une lucky loser non désignée (LL)                      | 2026-10-12 | 2026-10-12   |
 | 0025 | `0025_picks_forfait_10_points.sql`       | Picks : forfait gagné = 10 pts dès le 2026-10-05 en bo3 (⁴)      | 2026-10-13 | 2026-10-13   |
+| 0026 | `0026_import_auto.sql`                  | Tables privées `tn_import_auto` et `tn_import_log` (import auto) | 2026-10-15 |              |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -57,7 +58,7 @@ change). Le Fantasy n'est pas concerné : pas de backfill à rejouer.
 
 ---
 
-## Contrôle global : les 25 en une requête
+## Contrôle global : les 26 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -152,6 +153,12 @@ with c(num, ok, note) as (values
    and to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)') is null
    and coalesce(pg_get_functiondef('public.tn_recompute_picks(uuid)'::regprocedure)
                 like '%tn_points_forfait%', false),
+   null),
+  ('0026',
+   to_regclass('public.tn_import_auto') is not null
+   and to_regclass('public.tn_import_log') is not null
+   and not has_table_privilege('anon', 'public.tn_import_auto', 'select')
+   and not has_table_privilege('anon', 'public.tn_import_log', 'select'),
    null)
 )
 select num,
@@ -379,5 +386,16 @@ select to_regprocedure('public.tn_points_forfait(date,integer)') is not null
    and to_regprocedure('public.tn_score_match(jsonb,boolean,text,integer)') is null
    and coalesce(pg_get_functiondef('public.tn_recompute_picks(uuid)'::regprocedure)
                 like '%tn_points_forfait%', false)
+   as appliquee;
+```
+
+### 0026 — Import automatique (surveillance + journal)
+Les deux tables existent et la clé publique ne peut PAS les lire (régime
+privé, contrairement aux autres tables `tn_*`).
+```sql
+select to_regclass('public.tn_import_auto') is not null
+   and to_regclass('public.tn_import_log') is not null
+   and not has_table_privilege('anon', 'public.tn_import_auto', 'select')
+   and not has_table_privilege('anon', 'public.tn_import_log', 'select')
    as appliquee;
 ```

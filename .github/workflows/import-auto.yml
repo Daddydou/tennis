@@ -1,0 +1,67 @@
+# Import automatique des tableaux WTA (mode « serveur ») toutes les 12 h.
+#
+# Pourquoi GitHub Actions et pas un cron Vercel : sur le plan Hobby, Vercel
+# n'autorise qu'UN passage par jour par cron (doc « Cron jobs — usage and
+# pricing » : « Hobby accounts are limited to cron jobs that run once per day »).
+#
+# Secrets à créer (Settings > Secrets and variables > Actions) :
+#   IMPORT_AUTO_TOKEN  même valeur que la variable IMPORT_AUTO_TOKEN de Vercel
+#   IMPORT_AUTO_URL    https://tennis-nine-zeta.vercel.app  (sans / final)
+#
+# Le job ÉCHOUE si au moins un tournoi est en erreur : l'e-mail d'échec de
+# GitHub sert d'alerte. Il ne déclenche JAMAIS la synchro du bracket de
+# Thomas (npm run sync:bracket-thomas reste manuelle).
+
+name: Import auto WTA
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'À blanc (aucune écriture en base)'
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: import-auto
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Appeler /api/import-auto/run
+        env:
+          IMPORT_AUTO_TOKEN: ${{ secrets.IMPORT_AUTO_TOKEN }}
+          IMPORT_AUTO_URL: ${{ secrets.IMPORT_AUTO_URL }}
+          DRY: ${{ github.event.inputs.dry == 'true' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${IMPORT_AUTO_TOKEN:-}" ] || [ -z "${IMPORT_AUTO_URL:-}" ]; then
+            echo "::error::Secrets IMPORT_AUTO_TOKEN / IMPORT_AUTO_URL manquants."
+            exit 1
+          fi
+          url="${IMPORT_AUTO_URL%/}/api/import-auto/run"
+          [ "$DRY" = "1" ] && url="$url?dry=1"
+          # Jeton lu sur l'entrée standard (-H @-) : jamais dans les arguments du processus.
+          code=$(printf 'x-import-token: %s\n' "$IMPORT_AUTO_TOKEN" \
+            | curl -sS -X POST -H @- --max-time 320 -o reponse.json -w '%{http_code}' "$url") || {
+            echo "::error::Appel impossible (réseau ou délai dépassé)."; exit 1; }
+          echo "HTTP $code"
+          jq . reponse.json || cat reponse.json
+          if [ "$code" != "200" ]; then
+            echo "::error::HTTP $code"
+            exit 1
+          fi
+          erreurs=$(jq '.erreurs // 1' reponse.json)
+          jq -r '.resultats[] | "\(.statut)\t\(.tournament_id)\t\(.detail // "")"' reponse.json || true
+          if [ "$erreurs" != "0" ]; then
+            echo "::error::$erreurs tournoi(s) en erreur — voir /import, section Imports automatiques."
+            exit 1
+          fi

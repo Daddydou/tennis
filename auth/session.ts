@@ -81,6 +81,22 @@ export function verifierJetonVerif(jeton: string | null | undefined): boolean {
   return egaliteConstante(jeton, attendu);
 }
 
+/** En-tête du jeton de l'import automatique. */
+export const ENTETE_IMPORT_AUTO = 'x-import-token';
+
+/**
+ * Jeton de l'import automatique (/api/import-auto/{etat,ingest,run}) : en-tête
+ * `x-import-token` comparé à `IMPORT_AUTO_TOKEN`. Utilisé par le workflow
+ * GitHub (cron) et le userscript Tampermonkey ; jamais accepté ailleurs.
+ * Variable absente ou trop courte : aucun accès.
+ */
+export function verifierJetonImportAuto(jeton: string | null | undefined): boolean {
+  const attendu = process.env.IMPORT_AUTO_TOKEN;
+  if (!attendu || attendu.length < LONGUEUR_MIN_JETON_AGENT) return false;
+  if (!jeton) return false;
+  return egaliteConstante(jeton, attendu);
+}
+
 function signer(charge: string): string {
   return createHmac('sha256', cleSignature()).update(charge).digest('base64url');
 }

@@ -1,9 +1,15 @@
 import Link from 'next/link';
+import { sessionValide } from '@/auth/garde';
 import ImportForm from './ImportForm';
+import ImportsAuto from './ImportsAuto';
 
 export const dynamic = 'force-dynamic';
 
-export default function ImportPage() {
+export default async function ImportPage() {
+  // Les tables de l'import automatique sont privées : on ne les lit qu'avec
+  // une session valide, sans compter sur la seule redirection du proxy.
+  const connecte = await sessionValide();
+
   return (
     <div className="max-w-3xl space-y-4">
       <div>
@@ -23,6 +29,7 @@ export default function ImportPage() {
         </Link>
         .
       </p>
+      {connecte && <ImportsAuto />}
     </div>
   );
 }

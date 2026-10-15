@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Copies VERBATIM des snippets console (tests de parité) : à ne pas retoucher.
+    "lib/extract/__tests__/fixtures/**",
+    // Bundle généré du userscript (npm run build:userscript).
+    "tools/userscript/import-auto.user.js",
   ]),
 ]);
 

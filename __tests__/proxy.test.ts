@@ -92,3 +92,62 @@ describe('le jeton de vérification n’ouvre rien d’autre', () => {
     expect(laissePasser(passer('/login'))).toBe(true);
   });
 });
+
+describe('/api/import-auto/* (jeton x-import-token)', () => {
+  // Valeur de TEST, pas le vrai jeton (que seul l'utilisateur crée).
+  const JETON_IMPORT = 'jeton-import-de-test-'.padEnd(48, 'y');
+  const avecImport = (chemin: string, methode: string, jeton?: string) =>
+    proxy(
+      new NextRequest(`http://localhost${chemin}`, {
+        method: methode,
+        headers: jeton === undefined ? {} : { 'x-import-token': jeton },
+      }),
+    );
+
+  beforeEach(() => vi.stubEnv('IMPORT_AUTO_TOKEN', JETON_IMPORT));
+
+  it('les trois couples méthode + chemin exacts passent avec le jeton', () => {
+    expect(laissePasser(avecImport('/api/import-auto/etat', 'GET', JETON_IMPORT))).toBe(true);
+    expect(laissePasser(avecImport('/api/import-auto/ingest', 'POST', JETON_IMPORT))).toBe(true);
+    expect(laissePasser(avecImport('/api/import-auto/run?dry=1', 'POST', JETON_IMPORT))).toBe(true);
+  });
+
+  it('sans jeton, jeton faux, variable absente : 401', () => {
+    expect(avecImport('/api/import-auto/etat', 'GET').status).toBe(401);
+    expect(avecImport('/api/import-auto/run', 'POST', 'faux').status).toBe(401);
+    vi.stubEnv('IMPORT_AUTO_TOKEN', '');
+    expect(avecImport('/api/import-auto/run', 'POST', '').status).toBe(401);
+    vi.stubEnv('IMPORT_AUTO_TOKEN', 'trop-court');
+    expect(avecImport('/api/import-auto/run', 'POST', 'trop-court').status).toBe(401);
+  });
+
+  it('mauvaise méthode ou chemin voisin : 401 même avec le jeton', () => {
+    for (const [chemin, methode] of [
+      ['/api/import-auto/etat', 'POST'],
+      ['/api/import-auto/run', 'GET'],
+      ['/api/import-auto/ingest', 'GET'],
+      ['/api/import-auto/ingest', 'DELETE'],
+      ['/api/import-auto', 'GET'],
+      ['/api/import-auto/', 'POST'],
+      ['/api/import-auto/run/plus', 'POST'],
+      ['/api/import-auto/autre', 'POST'],
+      ['/api/recompute', 'POST'],
+      ['/api/verif/sante', 'GET'],
+    ] as const) {
+      expect(avecImport(chemin, methode, JETON_IMPORT).status, `${methode} ${chemin}`).toBe(401);
+    }
+  });
+
+  it('le jeton d’import n’ouvre aucune page', () => {
+    for (const chemin of ['/', '/import', '/tournoi/x/picks']) {
+      expect(versLogin(avecImport(chemin, 'GET', JETON_IMPORT)), chemin).toBe(true);
+    }
+  });
+
+  it('le jeton de vérification n’ouvre pas l’import automatique', () => {
+    const r = proxy(
+      new NextRequest('http://localhost/api/import-auto/etat', { headers: { 'x-verif-token': JETON } }),
+    );
+    expect(r.status).toBe(401);
+  });
+});
