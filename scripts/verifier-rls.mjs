@@ -122,13 +122,14 @@ for (const t of TABLES) {
 
 console.log('\nTABLES PRIVÉES (lecture ET écriture doivent être refusées)');
 for (const t of TABLES_PRIVEES) {
-  const { count, error } = await compte(sb, t);
+  // GET et non HEAD (`compte`) : une requête HEAD n'a pas de corps, donc ni
+  // code ni message d'erreur — le refus 42501 y serait indiscernable.
+  const { data, error } = await sb.from(t).select('*').limit(1);
   if (error && (error.code === '42501' || /permission/i.test(error.message)))
     ok(`${t} : lecture refusée (${error.code ?? '—'})`);
+  else if (error?.code === 'PGRST205') bad(`${t} : table introuvable (migration appliquée ?)`);
   else if (error) bad(`${t} : lecture en erreur mais pas par refus de droit → ${error.code} ${error.message}`);
-  // Une table absente répond sans erreur à une requête HEAD, avec un compte nul.
-  else if (count === null) bad(`${t} : table introuvable (migration appliquée ?)`);
-  else bad(`${t} : LECTURE PUBLIQUE POSSIBLE (${count} ligne(s) visibles)`);
+  else bad(`${t} : LECTURE PUBLIQUE POSSIBLE (${data.length} ligne(s) lue(s))`);
 
   const { error: eIns } = await sb.from(t).insert({});
   if (!eIns) bad(`${t} : INSERT ACCEPTÉ — écriture publique possible !`);
