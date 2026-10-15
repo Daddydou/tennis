@@ -46,6 +46,8 @@ pour les autres.
 
 \- app/tournoi/\[id]/simulateur/ : simulateur de bracket (Monte Carlo, scénarios de victoire)
 
+\- Import automatique (voir docs/import-auto.md) : lib/extract/ = portage pur des snippets ATP/WTA (parité testée), db/importCoeur.ts = cœur d'import SANS garde de session (l'appelant vérifie : session pour l'action, jeton x-import-token / IMPORT\_AUTO\_TOKEN pour /api/import-auto/{etat,ingest,run}), tables privées tn\_import\_auto / tn\_import\_log (0026, aucune lecture publique). Cron WTA = GitHub Actions (.github/workflows/import-auto.yml), ATP = userscript tools/userscript/ (npm run build:userscript après toute modif de lib/extract/).
+
 
 
 \## Règles

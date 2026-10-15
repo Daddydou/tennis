@@ -69,6 +69,17 @@ const TABLES = [
   'tn_bracket_externe_pronostics',
 ];
 
+/**
+ * Tables PRIVÉES : RLS sans aucune policy et privilèges retirés à anon — la
+ * clé publique ne doit ni les lire ni y écrire (seule la service role, côté
+ * serveur, y accède). Régime volontairement différent de TABLES.
+ */
+const TABLES_PRIVEES = [
+  // 0026 — import automatique : surveillance et journal
+  'tn_import_auto',
+  'tn_import_log',
+];
+
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */
 const FONCTIONS = [
   ['tn_recompute_picks', { p_tournament_id: '00000000-0000-0000-0000-000000000000' }],
@@ -107,6 +118,24 @@ for (const t of TABLES) {
   else if (error.code === '42501' || /permission|policy|row-level/i.test(error.message))
     ok(`${t} : insert refusé (${error.code ?? '—'})`);
   else bad(`${t} : refusé mais pas par la RLS → ${error.code} ${error.message}`);
+}
+
+console.log('\nTABLES PRIVÉES (lecture ET écriture doivent être refusées)');
+for (const t of TABLES_PRIVEES) {
+  // GET et non HEAD (`compte`) : une requête HEAD n'a pas de corps, donc ni
+  // code ni message d'erreur — le refus 42501 y serait indiscernable.
+  const { data, error } = await sb.from(t).select('*').limit(1);
+  if (error && (error.code === '42501' || /permission/i.test(error.message)))
+    ok(`${t} : lecture refusée (${error.code ?? '—'})`);
+  else if (error?.code === 'PGRST205') bad(`${t} : table introuvable (migration appliquée ?)`);
+  else if (error) bad(`${t} : lecture en erreur mais pas par refus de droit → ${error.code} ${error.message}`);
+  else bad(`${t} : LECTURE PUBLIQUE POSSIBLE (${data.length} ligne(s) lue(s))`);
+
+  const { error: eIns } = await sb.from(t).insert({});
+  if (!eIns) bad(`${t} : INSERT ACCEPTÉ — écriture publique possible !`);
+  else if (eIns.code === '42501' || /permission|policy|row-level/i.test(eIns.message))
+    ok(`${t} : insert refusé (${eIns.code ?? '—'})`);
+  else bad(`${t} : refusé mais pas par la RLS → ${eIns.code} ${eIns.message}`);
 }
 
 console.log('\nRPC (doivent être refusés)');

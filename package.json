@@ -24,10 +24,12 @@
     "test:fantasy-scenario": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-fantasy-scenario.mts",
     "test:fantasy-paliers": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-fantasy-paliers.mts",
     "test:elo-format": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-elo-format.mts",
-    "test:components": "vitest run"
+    "test:components": "vitest run",
+    "build:userscript": "node tools/userscript/build.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
+    "linkedom": "^0.18.13",
     "next": "^16.3.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -38,10 +40,12 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.7.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "^16.3.6",
     "jsdom": "^29.1.1",
