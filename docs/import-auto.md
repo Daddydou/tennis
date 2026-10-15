@@ -68,7 +68,32 @@ GitHub t'envoie alors un e-mail (alerte gratuite).
    `tennis-nine-zeta.vercel.app` : choisir **Toujours autoriser le domaine**.
 
 Un petit badge en bas à gauche de la page indique le dernier résultat
-(vert = OK, rouge = erreur). Il ne bloque rien (transparent aux clics).
+(vert = OK, rouge = erreur, gris = en cours dans un onglet d'arrière-plan).
+Il ne bloque rien (transparent aux clics).
+
+### Page draws non ouverte : onglet d'arrière-plan (depuis la 1.0.2)
+
+Si tu es sur une autre page d'atptour.com quand un tournoi est dû, le script
+télécharge d'abord la page draws (HTML brut). Si ce HTML ne contient pas le
+tableau (il peut être ajouté par JavaScript), il ouvre la page draws dans un
+**onglet d'arrière-plan** — sans lui donner le focus, en fin de barre
+d'onglets. Le script y lit le tableau affiché, l'envoie (ou journalise
+l'échec), puis **ferme l'onglet** ; au plus tard 60 s après son ouverture.
+
+Garde-fous : au plus **une ouverture par heure et par tournoi** ; jamais pour
+un tournoi pas dû ou arrêté ; seulement si le précédent échec de
+téléchargement de ce tournoi date de plus de 30 min. Sinon, l'échec est
+signalé au serveur comme avant. L'onglet est reconnu par une marque à usage
+unique dans l'adresse (`#tennis-import-auto=…`) : une page draws que tu
+ouvres toi-même n'est jamais fermée par le script.
+
+### Mettre à jour le script
+
+L'en-tête porte `@version` : à chaque nouvelle version, remplacer le contenu
+du script dans Tampermonkey (tableau de bord → le script → éditeur → tout
+remplacer par `tools/userscript/import-auto.user.js` → *Fichier* →
+*Enregistrer*). Si la version ajoute une permission (`@grant`), Tampermonkey
+la signale à l'enregistrement : l'accepter. Le jeton déjà saisi est conservé.
 
 Le fichier `.user.js` est **généré** : après toute modification de
 `lib/extract/` ou `tools/userscript/src/`, lancer `npm run build:userscript`
@@ -86,8 +111,10 @@ le jeton ouvre l'accès, même si tu es connecté à l'app dans le même navigat
 ### Limite honnête
 
 Le userscript ne tourne que si **le navigateur est ouvert sur atptour.com**
-(n'importe quelle page du site). S'il n'y a aucun onglet ouvert, rien ne se
-passe : le tournoi reste « dû » et sera traité à la prochaine visite.
+(n'importe quelle page du site ; si ce n'est pas la page draws, le script
+ouvre au besoin un onglet d'arrière-plan, voir plus haut). S'il n'y a aucun
+onglet ouvert, rien ne se passe : le tournoi reste « dû » et sera traité à la
+prochaine visite.
 
 Suggestion : une tâche planifiée Windows qui ouvre la page draws deux fois par
 jour. Planificateur de tâches → *Créer une tâche de base* → quotidienne, à
