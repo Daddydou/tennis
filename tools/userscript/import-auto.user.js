@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Tennis — import auto des tableaux
 // @namespace    https://tennis-nine-zeta.vercel.app/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Réimporte les tableaux ATP (et WTA en repli) dans l'app tennis toutes les 12 h, jusqu'à la finale.
 // @match        https://www.atptour.com/*
 // @match        https://www.wtatennis.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_openInTab
+// @grant        window.close
 // @connect      tennis-nine-zeta.vercel.app
 // @run-at       document-idle
 // @noframes
@@ -137,7 +139,16 @@
   function estJoueurNomme(name) {
     const n = name.trim().toLowerCase();
     if (!n || n === "-") return false;
-    return !["bye", "qualifier", "qualificato", "q", "tbd", "to be determined"].includes(n);
+    return ![
+      "bye",
+      "qualifier",
+      "qualificato",
+      "q",
+      "tbd",
+      "to be determined",
+      "tba",
+      "to be announced"
+    ].includes(n);
   }
   function verifierExtraction(extract) {
     const av = [];
@@ -561,6 +572,15 @@
   var INTERVALLE_MS = 30 * 60 * 1e3;
   var VERROU_MS = 10 * 60 * 1e3;
   var UNE_JOURNEE = 24 * 60 * 60 * 1e3;
+  var CLE_ONGLET_DE_FOND = "importAuto.ongletDeFond";
+  var CLE_ONGLET_OUVERT = "importAuto.ongletOuvertLe.";
+  var CLE_ECHEC_FETCH = "importAuto.echecFetchLe.";
+  var ONGLET_PAR_TOURNOI_MS = 60 * 60 * 1e3;
+  var ECHEC_FETCH_MIN_MS = 30 * 60 * 1e3;
+  var FERMETURE_SECURITE_MS = 60 * 1e3;
+  var MARQUE_VALIDE_MS = 5 * 60 * 1e3;
+  var ATTENTE_TABLEAU_MS = 20 * 1e3;
+  var ANCRE = "tennis-import-auto=";
   function jeton() {
     const j = GM_getValue(CLE_JETON, "");
     if (j) return j;
@@ -613,11 +633,11 @@
       return;
     }
     const heure = new Date(d.quand).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-    el.style.background = d.ok ? "#15803d" : "#b91c1c";
-    el.textContent = `Import auto ${d.ok ? "OK" : "ERREUR"} · ${heure} · ${d.texte}`;
+    el.style.background = d.enCours ? "#52525b" : d.ok ? "#15803d" : "#b91c1c";
+    el.textContent = `Import auto ${d.enCours ? "EN COURS" : d.ok ? "OK" : "ERREUR"} · ${heure} · ${d.texte}`;
   }
-  function noter(ok, texte) {
-    const d = { ok, quand: Date.now(), texte };
+  function noter(ok, texte, enCours = false) {
+    const d = { ok, quand: Date.now(), texte, ...enCours ? { enCours } : {} };
     GM_setValue(CLE_DERNIER, d);
     afficherBadge(d);
   }
@@ -641,29 +661,94 @@
       return false;
     }
   }
-  async function documentDe(url) {
-    if (surCettePage(url)) return document;
-    const res = await fetch(url, { credentials: "include" });
-    if (!res.ok) throw new Error(`HTTP ${res.status} sur la page draws`);
-    return new DOMParser().parseFromString(await res.text(), "text/html");
+  var sansAncre = (url) => url.split("#")[0];
+  function signalerEchec(t, j, erreur) {
+    return appeler("POST", "/api/import-auto/ingest", j, { tournament_id: t.tournament_id, echec: erreur });
   }
-  async function traiter(t, j) {
-    let doc;
-    try {
-      doc = await documentDe(t.source_url);
-    } catch (e) {
-      await appeler("POST", "/api/import-auto/ingest", j, { tournament_id: t.tournament_id, echec: e.message });
-      throw e;
-    }
-    const extrait = extraireDepuisDocument(doc, t.source_url);
+  async function envoyer(t, j, extrait) {
     const controle = controlerExtrait(extrait);
     if (!controle.ok) {
-      await appeler("POST", "/api/import-auto/ingest", j, { tournament_id: t.tournament_id, echec: controle.erreur });
+      await signalerEchec(t, j, controle.erreur);
       throw new Error(controle.erreur);
     }
     const r = await appeler("POST", "/api/import-auto/ingest", j, { tournament_id: t.tournament_id, json: extrait });
     if (r.status !== 200) throw new Error(String(r.json?.detail ?? r.json?.error ?? `HTTP ${r.status}`));
     return r.json?.statut === "inchange" ? "inchangé" : `${r.json?.matchs_changes ?? "?"} matchs changés`;
+  }
+  function ouvrirOngletDraws(t) {
+    const maintenant = Date.now();
+    const cleEchec = CLE_ECHEC_FETCH + t.tournament_id;
+    const echecPrecedent = GM_getValue(cleEchec, 0);
+    GM_setValue(cleEchec, maintenant);
+    if (maintenant - echecPrecedent < ECHEC_FETCH_MIN_MS) return false;
+    const cleOnglet = CLE_ONGLET_OUVERT + t.tournament_id;
+    if (maintenant - GM_getValue(cleOnglet, 0) < ONGLET_PAR_TOURNOI_MS) return false;
+    if (typeof GM_openInTab !== "function") return false;
+    const marque2 = { nonce: Math.random().toString(36).slice(2), tournament_id: t.tournament_id, quand: maintenant };
+    GM_setValue(CLE_ONGLET_DE_FOND, marque2);
+    GM_setValue(cleOnglet, maintenant);
+    const onglet = GM_openInTab(`${sansAncre(t.source_url)}#${ANCRE}${marque2.nonce}`, { active: false, insert: false });
+    setTimeout(() => {
+      try {
+        onglet?.close?.();
+      } catch {
+      }
+    }, FERMETURE_SECURITE_MS + 15e3);
+    return true;
+  }
+  async function traiter(t, j) {
+    if (surCettePage(t.source_url)) return { texte: await envoyer(t, j, extraireDepuisDocument(document, t.source_url)) };
+    let extrait = null;
+    let erreur = null;
+    try {
+      const res = await fetch(t.source_url, { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status} sur la page draws`);
+      extrait = extraireDepuisDocument(new DOMParser().parseFromString(await res.text(), "text/html"), t.source_url);
+    } catch (e) {
+      erreur = e.message;
+    }
+    const controle = controlerExtrait(extrait);
+    if (controle.ok) return { texte: await envoyer(t, j, extrait) };
+    const motif = erreur ?? controle.erreur;
+    if (ouvrirOngletDraws(t)) return { texte: `HTML brut sans tableau, page draws ouverte en arrière-plan`, enCours: true };
+    await signalerEchec(t, j, motif);
+    throw new Error(motif);
+  }
+  function marqueOngletDeFond() {
+    const m = location.hash.match(new RegExp(`${ANCRE}([a-z0-9]+)`));
+    if (!m) return null;
+    const marque2 = GM_getValue(CLE_ONGLET_DE_FOND, null);
+    if (!marque2 || marque2.nonce !== m[1] || Date.now() - marque2.quand > MARQUE_VALIDE_MS) return null;
+    GM_setValue(CLE_ONGLET_DE_FOND, null);
+    return marque2;
+  }
+  async function attendreTableau() {
+    const fin = Date.now() + ATTENTE_TABLEAU_MS;
+    while (Date.now() < fin && !document.querySelector(".draw-item, .js-player-row")) {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+  async function traiterOngletDeFond(marque2) {
+    const fermer = () => {
+      try {
+        window.close();
+      } catch {
+      }
+    };
+    setTimeout(fermer, FERMETURE_SECURITE_MS);
+    try {
+      const j = GM_getValue(CLE_JETON, "");
+      if (!j) return;
+      const etat = await appeler("GET", "/api/import-auto/etat", j);
+      const t = (etat.json?.tournois ?? []).find((x) => x.tournament_id === marque2.tournament_id);
+      if (etat.status !== 200 || !t || !t.du || !surCettePage(t.source_url)) return;
+      await attendreTableau();
+      noter(true, `onglet d'arrière-plan : ${await envoyer(t, j, extraireDepuisDocument(document, t.source_url))}`);
+    } catch (e) {
+      noter(false, `onglet d'arrière-plan : ${e.message}`);
+    } finally {
+      fermer();
+    }
   }
   async function cycle() {
     const circuit = circuitDeUrl(location.href);
@@ -703,7 +788,8 @@
           }
         })();
         try {
-          noter(true, `${nom} : ${await traiter(t, j)}`);
+          const r = await traiter(t, j);
+          noter(true, `${nom} : ${r.texte}`, r.enCours);
         } catch (e) {
           noter(false, `${nom} : ${e.message}`);
         }
@@ -715,6 +801,11 @@
     }
   }
   afficherBadge(GM_getValue(CLE_DERNIER, null));
-  setTimeout(cycle, 5e3);
-  setInterval(cycle, INTERVALLE_MS);
+  var marque = marqueOngletDeFond();
+  if (marque) {
+    traiterOngletDeFond(marque);
+  } else {
+    setTimeout(cycle, 5e3);
+    setInterval(cycle, INTERVALLE_MS);
+  }
 })();

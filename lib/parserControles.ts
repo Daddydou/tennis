@@ -72,13 +72,24 @@ export function devinerBestOf(tour: Tour, slug: string | null): 3 | 5 {
  * Un slot de match désigne-t-il un joueur identifiable ?
  *
  * Les tableaux en cours contiennent des slots d'attente : vides pour les
- * tours pas encore alimentés, ou étiquetés (« Qualifier », « TBD »). Aucun
- * n'est un joueur dont l'ID manquerait — il n'y a simplement personne encore.
+ * tours pas encore alimentés, ou étiquetés (« Qualifier », « TBD », « TBA »
+ * — ce dernier sur atptour.com, demi-finales et finale à venir). Aucun n'est
+ * un joueur dont l'ID manquerait — il n'y a simplement personne encore.
+ * Ne sert qu'aux avertissements : rien de ce qui est écrit en base n'en dépend.
  */
 function estJoueurNomme(name: string): boolean {
   const n = name.trim().toLowerCase();
   if (!n || n === '-') return false;
-  return !['bye', 'qualifier', 'qualificato', 'q', 'tbd', 'to be determined'].includes(n);
+  return ![
+    'bye',
+    'qualifier',
+    'qualificato',
+    'q',
+    'tbd',
+    'to be determined',
+    'tba',
+    'to be announced',
+  ].includes(n);
 }
 
 /**

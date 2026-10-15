@@ -140,12 +140,8 @@ describe('ATP — Shanghai 2026 (vraie page, réduite)', () => {
     const tba = extrait.matches.flatMap((m) => m.players.filter((p) => p.name === 'TBA').map(() => `${m.round}#${m.position}`));
     expect(tba).toEqual(['SF#0', 'SF#1', 'SF#1', 'F#0', 'F#0']);
     expect(match('F', 0).players[0]).toMatchObject({ id: null, isBye: false, winner: false });
-    // verifierExtraction ne connaît pas « TBA » parmi les places d'attente : il le signale.
-    expect(controlerExtrait(extrait)).toEqual({
-      ok: true,
-      avertissements: ['5 joueur(s) sans ID ATP : TBA'],
-      matchs: 127,
-    });
+    // « TBA » est une place d'attente, comme « TBD » : aucun avertissement.
+    expect(controlerExtrait(extrait)).toEqual({ ok: true, avertissements: [], matchs: 127 });
   });
 
   it('archive avec année', () => {

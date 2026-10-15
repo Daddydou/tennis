@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import { extractWta } from '@/lib/extract';
+import { extractAtp, extractWta, type ExtraitBrut } from '@/lib/extract';
 
 type Op = { table: string; op: string; payload?: unknown; opts?: unknown; filtres: [string, unknown][] };
 let journal: Op[] = [];
@@ -118,6 +118,43 @@ describe('importerExtraitCoeur — import de Wuhan 2026', () => {
     journal = [];
     const r = await importerExtraitCoeur(JSON.stringify(extrait));
     expect(r.matchsChanges).toBe(0);
+  });
+});
+
+describe('importerExtraitCoeur — Shanghai 2026 : places « TBA »', () => {
+  const URL_ATP = 'https://www.atptour.com/en/scores/current/shanghai/5014/draws';
+  const htmlAtp = readFileSync(
+    fileURLToPath(new URL('../../lib/extract/__tests__/fixtures/atp-shanghai-2026.html', import.meta.url)),
+    'utf8',
+  );
+  const shanghai = extractAtp(new JSDOM(htmlAtp, { url: URL_ATP }).window.document, URL_ATP)!;
+  const sansIdNomme = (a: string[]) => a.filter((x) => /sans ID/.test(x));
+  const ecrit = (table: string) => journal.find((o) => o.table === table && o.op === 'upsert')!.payload as Record<string, unknown>[];
+
+  it('aucun avertissement pour les 5 « TBA », écritures inchangées pour leurs matchs', async () => {
+    const r = await importerExtraitCoeur(JSON.stringify(shanghai));
+    expect(r.ok).toBe(true);
+    expect(sansIdNomme(r.avertissements)).toEqual([]);
+
+    // Les places TBA restent sans joueur ni vainqueur, et n'entrent pas dans tn_players.
+    const matchs = ecrit('tn_matches');
+    const ligne = (round: string, position: number) => matchs.find((m) => m.round === round && m.position === position)!;
+    expect(ligne('F', 0)).toMatchObject({ player1_id: null, player2_id: null, winner_id: null, status: 'scheduled' });
+    expect(ligne('SF', 1)).toMatchObject({ player1_id: null, player2_id: null, winner_id: null, status: 'scheduled' });
+    expect(ligne('SF', 0)).toMatchObject({ player1_id: null, player2_id: 'DH50', winner_id: null });
+    expect(ecrit('tn_players').some((j) => j.name === 'TBA' || j.id === null)).toBe(false);
+    expect(matchs).toHaveLength(127);
+  });
+
+  it('insensible à la casse ; un vrai joueur sans ID reste signalé', async () => {
+    const copie: ExtraitBrut = JSON.parse(JSON.stringify(shanghai));
+    const f = copie.matches.find((m) => m.round === 'F')!;
+    f.players[0].name = 'tba';
+    f.players[1].name = ' Tba ';
+    const qf = copie.matches.find((m) => m.round === 'QF' && m.position === 0)!;
+    qf.players[0].id = null; // A. Zverev, nommé mais sans ID
+    const r = await importerExtraitCoeur(JSON.stringify(copie));
+    expect(sansIdNomme(r.avertissements)).toEqual(['1 joueur(s) sans ID ATP : A. Zverev']);
   });
 });
 

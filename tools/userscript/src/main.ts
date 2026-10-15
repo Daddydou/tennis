@@ -11,8 +11,13 @@
  *   2. pour chaque tournoi dû de ce site (ATP, ou WTA en mode « navigateur ») :
  *      DOM vivant si on est sur sa page draws, sinon fetch même origine
  *      (cookies Cloudflare du navigateur) + DOMParser ;
- *   3. extraction + contrôle (parseExtract/verifierExtraction) ; 0 match =>
- *      échec signalé au serveur, jamais d'import du vide ; sinon POST /ingest.
+ *   3. extraction + contrôle (parseExtract/verifierExtraction) ; si OK,
+ *      POST /ingest. Jamais d'import du vide ;
+ *   4. si le HTML brut ne contient pas le tableau (injecté par JavaScript),
+ *      ouverture de la page draws dans un ONGLET D'ARRIÈRE-PLAN (au plus une
+ *      fois par heure et par tournoi) : le script, qui y tourne aussi, lit le
+ *      DOM vivant, envoie à /ingest (ou journalise l'échec) puis ferme
+ *      l'onglet — au plus tard après 60 s. Sinon, échec signalé au serveur.
  *
  * Le jeton IMPORT_AUTO_TOKEN est demandé une fois et rangé dans le stockage
  * de Tampermonkey (GM_setValue) — jamais dans ce fichier.
@@ -33,6 +38,10 @@ declare function GM_xmlhttpRequest(details: {
   onerror: () => void;
   ontimeout: () => void;
 }): void;
+declare function GM_openInTab(
+  url: string,
+  options: { active: boolean; insert: boolean },
+): { close?: () => void } | undefined;
 
 const BASE = 'https://tennis-nine-zeta.vercel.app';
 const CLE_JETON = 'importAuto.jeton';
@@ -44,6 +53,17 @@ const CLE_DERNIER = 'importAuto.dernier';
 const INTERVALLE_MS = 30 * 60 * 1000;
 const VERROU_MS = 10 * 60 * 1000;
 const UNE_JOURNEE = 24 * 60 * 60 * 1000;
+
+// Onglet d'arrière-plan (voie de repli quand le HTML brut n'a pas le tableau).
+const CLE_ONGLET_DE_FOND = 'importAuto.ongletDeFond';
+const CLE_ONGLET_OUVERT = 'importAuto.ongletOuvertLe.'; // + tournament_id
+const CLE_ECHEC_FETCH = 'importAuto.echecFetchLe.'; // + tournament_id
+const ONGLET_PAR_TOURNOI_MS = 60 * 60 * 1000; // au plus une ouverture par heure
+const ECHEC_FETCH_MIN_MS = 30 * 60 * 1000; // dernier échec fetch > 30 min
+const FERMETURE_SECURITE_MS = 60 * 1000;
+const MARQUE_VALIDE_MS = 5 * 60 * 1000;
+const ATTENTE_TABLEAU_MS = 20 * 1000;
+const ANCRE = 'tennis-import-auto=';
 
 interface TournoiEtat {
   tournament_id: string;
@@ -57,6 +77,14 @@ interface Dernier {
   ok: boolean;
   quand: number;
   texte: string;
+  /** Résultat pas encore connu (onglet d'arrière-plan en cours). */
+  enCours?: boolean;
+}
+
+interface Marque {
+  nonce: string;
+  tournament_id: string;
+  quand: number;
 }
 
 /* ------------------------------- Jeton ---------------------------------- */
@@ -126,12 +154,12 @@ function afficherBadge(d: Dernier | null) {
     return;
   }
   const heure = new Date(d.quand).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  el.style.background = d.ok ? '#15803d' : '#b91c1c';
-  el.textContent = `Import auto ${d.ok ? 'OK' : 'ERREUR'} · ${heure} · ${d.texte}`;
+  el.style.background = d.enCours ? '#52525b' : d.ok ? '#15803d' : '#b91c1c';
+  el.textContent = `Import auto ${d.enCours ? 'EN COURS' : d.ok ? 'OK' : 'ERREUR'} · ${heure} · ${d.texte}`;
 }
 
-function noter(ok: boolean, texte: string) {
-  const d: Dernier = { ok, quand: Date.now(), texte };
+function noter(ok: boolean, texte: string, enCours = false) {
+  const d: Dernier = { ok, quand: Date.now(), texte, ...(enCours ? { enCours } : {}) };
   GM_setValue(CLE_DERNIER, d);
   afficherBadge(d);
 }
@@ -166,30 +194,128 @@ function surCettePage(url: string): boolean {
   }
 }
 
-async function documentDe(url: string): Promise<Document> {
-  if (surCettePage(url)) return document;
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error(`HTTP ${res.status} sur la page draws`);
-  return new DOMParser().parseFromString(await res.text(), 'text/html');
+const sansAncre = (url: string) => url.split('#')[0];
+
+function signalerEchec(t: TournoiEtat, j: string, erreur: string) {
+  return appeler('POST', '/api/import-auto/ingest', j, { tournament_id: t.tournament_id, echec: erreur });
 }
 
-async function traiter(t: TournoiEtat, j: string): Promise<string> {
-  let doc: Document;
-  try {
-    doc = await documentDe(t.source_url);
-  } catch (e) {
-    await appeler('POST', '/api/import-auto/ingest', j, { tournament_id: t.tournament_id, echec: (e as Error).message });
-    throw e;
-  }
-  const extrait = extraireDepuisDocument(doc, t.source_url);
+/** Contrôle puis envoi d'une extraction ; un contrôle raté est journalisé côté serveur. */
+async function envoyer(t: TournoiEtat, j: string, extrait: ReturnType<typeof extraireDepuisDocument>): Promise<string> {
   const controle = controlerExtrait(extrait);
   if (!controle.ok) {
-    await appeler('POST', '/api/import-auto/ingest', j, { tournament_id: t.tournament_id, echec: controle.erreur });
+    await signalerEchec(t, j, controle.erreur);
     throw new Error(controle.erreur);
   }
   const r = await appeler('POST', '/api/import-auto/ingest', j, { tournament_id: t.tournament_id, json: extrait });
   if (r.status !== 200) throw new Error(String(r.json?.detail ?? r.json?.error ?? `HTTP ${r.status}`));
   return r.json?.statut === 'inchange' ? 'inchangé' : `${r.json?.matchs_changes ?? '?'} matchs changés`;
+}
+
+/**
+ * Ouvre la page draws en arrière-plan si les garde-fous le permettent :
+ * dernier échec « fetch » de ce tournoi > 30 min, et au plus une ouverture
+ * par heure et par tournoi. L'onglet est reconnu par un jeton à usage unique
+ * dans l'ancre (#tennis-import-auto=…) : une page draws ouverte à la main
+ * n'est jamais prise pour lui, ni fermée.
+ */
+function ouvrirOngletDraws(t: TournoiEtat): boolean {
+  const maintenant = Date.now();
+  const cleEchec = CLE_ECHEC_FETCH + t.tournament_id;
+  const echecPrecedent = GM_getValue<number>(cleEchec, 0);
+  GM_setValue(cleEchec, maintenant);
+  if (maintenant - echecPrecedent < ECHEC_FETCH_MIN_MS) return false;
+
+  const cleOnglet = CLE_ONGLET_OUVERT + t.tournament_id;
+  if (maintenant - GM_getValue<number>(cleOnglet, 0) < ONGLET_PAR_TOURNOI_MS) return false;
+  if (typeof GM_openInTab !== 'function') return false;
+
+  const marque: Marque = { nonce: Math.random().toString(36).slice(2), tournament_id: t.tournament_id, quand: maintenant };
+  GM_setValue(CLE_ONGLET_DE_FOND, marque);
+  GM_setValue(cleOnglet, maintenant);
+  const onglet = GM_openInTab(`${sansAncre(t.source_url)}#${ANCRE}${marque.nonce}`, { active: false, insert: false });
+  // Ceinture et bretelles : l'onglet se ferme lui-même, sinon on le ferme d'ici.
+  setTimeout(() => {
+    try {
+      onglet?.close?.();
+    } catch {
+      /* déjà fermé */
+    }
+  }, FERMETURE_SECURITE_MS + 15_000);
+  return true;
+}
+
+async function traiter(t: TournoiEtat, j: string): Promise<{ texte: string; enCours?: boolean }> {
+  // Sur la page draws elle-même : DOM vivant.
+  if (surCettePage(t.source_url)) return { texte: await envoyer(t, j, extraireDepuisDocument(document, t.source_url)) };
+
+  // 1re tentative : HTML brut de la page draws (fetch même origine).
+  let extrait: ReturnType<typeof extraireDepuisDocument> = null;
+  let erreur: string | null = null;
+  try {
+    const res = await fetch(t.source_url, { credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} sur la page draws`);
+    extrait = extraireDepuisDocument(new DOMParser().parseFromString(await res.text(), 'text/html'), t.source_url);
+  } catch (e) {
+    erreur = (e as Error).message;
+  }
+  const controle = controlerExtrait(extrait);
+  if (controle.ok) return { texte: await envoyer(t, j, extrait) };
+  const motif = erreur ?? controle.erreur;
+
+  // 2e tentative : la page draws dans un onglet d'arrière-plan. L'échec n'est
+  // PAS signalé ici : le serveur mettrait le tournoi en pause une heure et
+  // l'onglet le trouverait « pas dû ». C'est l'onglet qui envoie le résultat
+  // ou journalise l'échec.
+  if (ouvrirOngletDraws(t)) return { texte: `HTML brut sans tableau, page draws ouverte en arrière-plan`, enCours: true };
+
+  await signalerEchec(t, j, motif);
+  throw new Error(motif);
+}
+
+/* ------------------------- Onglet d'arrière-plan ------------------------- */
+
+/** Cet onglet a-t-il été ouvert par le script ? (ancre + marque, usage unique) */
+function marqueOngletDeFond(): Marque | null {
+  const m = location.hash.match(new RegExp(`${ANCRE}([a-z0-9]+)`));
+  if (!m) return null;
+  const marque = GM_getValue<Marque | null>(CLE_ONGLET_DE_FOND, null);
+  if (!marque || marque.nonce !== m[1] || Date.now() - marque.quand > MARQUE_VALIDE_MS) return null;
+  GM_setValue(CLE_ONGLET_DE_FOND, null);
+  return marque;
+}
+
+/** Le tableau peut arriver après le chargement (injecté par JavaScript). */
+async function attendreTableau() {
+  const fin = Date.now() + ATTENTE_TABLEAU_MS;
+  while (Date.now() < fin && !document.querySelector('.draw-item, .js-player-row')) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+async function traiterOngletDeFond(marque: Marque) {
+  const fermer = () => {
+    try {
+      window.close();
+    } catch {
+      /* fermeture refusée : la sécurité côté ouvreur prendra le relais */
+    }
+  };
+  setTimeout(fermer, FERMETURE_SECURITE_MS);
+  try {
+    const j = GM_getValue<string>(CLE_JETON, '');
+    if (!j) return; // jamais de saisie de jeton dans un onglet invisible
+    const etat = await appeler('GET', '/api/import-auto/etat', j);
+    const t = ((etat.json?.tournois as TournoiEtat[]) ?? []).find((x) => x.tournament_id === marque.tournament_id);
+    // Arrêté (absent de la liste), plus dû, ou pas cette page : on ne fait rien.
+    if (etat.status !== 200 || !t || !t.du || !surCettePage(t.source_url)) return;
+    await attendreTableau();
+    noter(true, `onglet d'arrière-plan : ${await envoyer(t, j, extraireDepuisDocument(document, t.source_url))}`);
+  } catch (e) {
+    noter(false, `onglet d'arrière-plan : ${(e as Error).message}`);
+  } finally {
+    fermer();
+  }
 }
 
 /* -------------------------------- Cycle --------------------------------- */
@@ -239,7 +365,8 @@ async function cycle() {
         }
       })();
       try {
-        noter(true, `${nom} : ${await traiter(t, j)}`);
+        const r = await traiter(t, j);
+        noter(true, `${nom} : ${r.texte}`, r.enCours);
       } catch (e) {
         noter(false, `${nom} : ${(e as Error).message}`);
       }
@@ -252,5 +379,12 @@ async function cycle() {
 }
 
 afficherBadge(GM_getValue<Dernier | null>(CLE_DERNIER, null));
-setTimeout(cycle, 5_000);
-setInterval(cycle, INTERVALLE_MS);
+const marque = marqueOngletDeFond();
+if (marque) {
+  // Onglet ouvert par le script : un seul traitement, puis fermeture. Pas de
+  // cycle périodique ici (il doublonnerait l'envoi).
+  traiterOngletDeFond(marque);
+} else {
+  setTimeout(cycle, 5_000);
+  setInterval(cycle, INTERVALLE_MS);
+}
