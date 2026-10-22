@@ -29,7 +29,7 @@ function Carte({ t }: { t: TournoiImportable }) {
           <span className={t.tour === 'WTA' ? 'text-fuchsia-700' : 'text-blue-700'}>{t.tour}</span> {t.nom}
         </p>
         <p className="text-zinc-500">{details}</p>
-        {t.enBase && (
+        {t.enBase?.source === 'api' && (
           <p className="mt-1 text-emerald-700">
             Déjà importé{t.enBase.surveille ? (t.enBase.actif ? ' · mise à jour auto toutes les 6 h' : ' · surveillance arrêtée') : ''} ·{' '}
             <Link href={`/tournoi/${t.enBase.tournamentId}/picks`} className="underline">
@@ -37,12 +37,19 @@ function Carte({ t }: { t: TournoiImportable }) {
             </Link>
           </p>
         )}
+        {t.enBase?.source === 'bookmarklet' && (
+          <p className="mt-1 text-zinc-600">
+            Déjà importé par le bookmarklet (« {t.enBase.nom} »), mis à jour comme avant ·{' '}
+            <Link href={`/tournoi/${t.enBase.tournamentId}/picks`} className="underline">
+              ouvrir
+            </Link>
+          </p>
+        )}
       </div>
-      {t.enBase ? (
+      {t.enBase?.source === 'api' && (
         <BoutonImportApi cible={{ tournamentId: t.enBase.tournamentId }} libelle="Mettre à jour maintenant" principal={false} />
-      ) : (
-        <BoutonImportApi cible={{ seasonId: t.seasonId, type: t.type }} libelle="Importer le tableau" />
       )}
+      {!t.enBase && <BoutonImportApi cible={{ seasonId: t.seasonId, type: t.type }} libelle="Importer le tableau" />}
     </li>
   );
 }

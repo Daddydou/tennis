@@ -19,6 +19,15 @@ export default async function ImportPage() {
 
       {connecte && <ImportsAuto />}
 
+      {connecte && (
+        <p className="text-sm">
+          <Link href="/import/thomas" className="font-medium underline">
+            Synchroniser le bracket de Thomas
+          </Link>{' '}
+          <span className="text-zinc-500">— pronostics de Moi, Laki et Thomas vers le Simulateur.</span>
+        </p>
+      )}
+
       <details>
         <summary className="cursor-pointer text-sm font-medium text-zinc-700">
           Import manuel par collage (secours : bookmarklet ATP ou WTA)

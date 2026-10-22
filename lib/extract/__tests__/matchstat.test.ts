@@ -149,7 +149,9 @@ describe('tournois et URL', () => {
   });
 
   it('retrouve la clé du référentiel', () => {
-    expect(slugDepuisNomApi('Grand Prix Auvergne-Rhone-Alpes - Lyon', 'ATP')).toBe('lyon');
+    // Le Lyon d'octobre (indoor) n'est pas celui de mai (terre battue).
+    expect(slugDepuisNomApi('Grand Prix Auvergne-Rhone-Alpes - Lyon', 'ATP')).toBe('grand-prix-auvergne-rhone-alpes');
+    expect(slugDepuisNomApi('Open Parc Auvergne-Rhone-Alpes Lyon - Lyon', 'ATP')).toBe('lyon');
     expect(slugDepuisNomApi('Almaty Open - Almaty', 'ATP')).toBe('almaty');
     expect(slugDepuisNomApi('Japan Open - Osaka', 'WTA')).toBe('osaka');
     expect(slugDepuisNomApi('Ningbo Open - Ningbo', 'WTA')).toBe('ningbo');
