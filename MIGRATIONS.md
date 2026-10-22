@@ -39,7 +39,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0024 | `0024_bracket_externe_lucky_loser.sql`   | … et pour une lucky loser non désignée (LL)                      | 2026-10-12 | 2026-10-12   |
 | 0025 | `0025_picks_forfait_10_points.sql`       | Picks : forfait gagné = 10 pts dès le 2026-10-05 en bo3 (⁴)      | 2026-10-13 | 2026-10-13   |
 | 0026 | `0026_import_auto.sql`                  | Tables privées `tn_import_auto` et `tn_import_log` (import auto) | 2026-10-15 |              |
-| 0027 | `0027_import_api.sql`                   | Mode `api`, table privée `tn_player_source_ids`, cotes réelles   | 2026-10-22 |              |
+| 0027 | `0027_import_api.sql`                   | Mode `api`, table privée `tn_player_source_ids`, cotes réelles   | 2026-10-22 | 2026-10-22   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.

@@ -120,6 +120,9 @@ export const CALENDRIER: Record<string, Fiche> = {
   // European Open : Anvers jusqu'en 2025, Bruxelles depuis 2026.
   'brussels': { surface: H, categorie: 'ATP250', semaine: 43, nom: 'Bruxelles' },
   'stockholm': { surface: H, categorie: 'ATP250', semaine: 43 },
+  // Grand Prix Auvergne-Rhône-Alpes : 2e tournoi lyonnais (indoor, octobre),
+  // distinct de 'lyon' (terre battue, mai). Nom tel que l'API tennis l'écrit.
+  'grand-prix-auvergne-rhone-alpes': { surface: H, categorie: 'ATP250', semaine: 43, nom: 'Lyon (indoor)' },
   'vienna': { surface: H, categorie: 'ATP500', semaine: 44 },
   'basel': { surface: H, categorie: 'ATP500', semaine: 44 },
   'paris': { surface: H, categorie: 'M1000', semaine: 45 },

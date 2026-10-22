@@ -10,6 +10,8 @@ import {
   PREFIXE_ID,
   probaSansMarge,
   reidentifier,
+  slugDepuisNomApi,
+  slugifier,
   type CoteTableau,
   type TournoiApi,
 } from '@/lib/extract/matchstat';
@@ -57,8 +59,12 @@ export interface TournoiImportable {
   startDate: string;
   surface: string | null;
   categorie: string | null;
-  /** Déjà en base (importé depuis l'API) : id du tournoi et état de la surveillance. */
-  enBase: { tournamentId: string; nom: string; surveille: boolean; actif: boolean } | null;
+  /**
+   * Déjà en base : id du tournoi, état de la surveillance, et origine —
+   * 'api' (importé depuis l'API) ou 'bookmarklet' (même slug, circuit et
+   * année, identifiant du site officiel : peut passer à l'API).
+   */
+  enBase: { tournamentId: string; nom: string; surveille: boolean; actif: boolean; source: 'api' | 'bookmarklet' } | null;
 }
 
 const JOUR = 24 * 60 * 60 * 1000;
@@ -105,8 +111,8 @@ export async function tournoisImportables(maintenant = new Date()): Promise<Tour
   const sb = supabaseAdmin();
   const { data: tournois, error } = await sb
     .from('tn_tournaments')
-    .select('id, name, external_id, tour, year')
-    .in('external_id', lus.map((t) => `${PREFIXE_ID}${t.seasonId}`));
+    .select('id, name, external_id, slug, tour, year, start_date')
+    .in('year', annees);
   if (error) throw new Error(`Tournois : ${error.message}`);
   const ids = (tournois ?? []).map((t) => t.id as string);
   const { data: surv, error: eS } = ids.length
@@ -116,8 +122,32 @@ export async function tournoisImportables(maintenant = new Date()): Promise<Tour
   const actifs = new Map((surv ?? []).map((s) => [s.tournament_id as string, s.actif as boolean]));
 
   for (const t of lus) {
-    const b = (tournois ?? []).find((x) => x.external_id === `${PREFIXE_ID}${t.seasonId}` && x.tour === t.tour && x.year === t.annee);
-    if (b) t.enBase = { tournamentId: b.id, nom: b.name, surveille: actifs.has(b.id), actif: actifs.get(b.id) ?? false };
+    const memeEdition = (x: { tour: string; year: number }) => x.tour === t.tour && x.year === t.annee;
+    const viaApi = (tournois ?? []).find((x) => memeEdition(x) && x.external_id === `${PREFIXE_ID}${t.seasonId}`);
+    // Import bookmarklet de la même édition : même slug (clé du référentiel ou
+    // ville), et date de début proche OU surveillance active — une ville peut
+    // accueillir deux tournois la même année (Lyon en mai et en octobre).
+    const slugs = new Set([slugDepuisNomApi(t.nom, t.tour), slugifier(t.nom.split(/\s+-\s+/).pop() ?? t.nom)]);
+    const proche = (d: string | null) => !!d && Math.abs(new Date(d).getTime() - new Date(t.startDate).getTime()) <= 10 * JOUR;
+    const viaBookmarklet = viaApi
+      ? undefined
+      : (tournois ?? []).find(
+          (x) =>
+            memeEdition(x) &&
+            slugs.has(String(x.slug ?? '')) &&
+            !String(x.external_id ?? '').startsWith(PREFIXE_ID) &&
+            (proche(x.start_date as string | null) || actifs.get(x.id as string) === true),
+        );
+    const b = viaApi ?? viaBookmarklet;
+    if (b) {
+      t.enBase = {
+        tournamentId: b.id,
+        nom: b.name,
+        surveille: actifs.has(b.id),
+        actif: actifs.get(b.id) ?? false,
+        source: viaApi ? 'api' : 'bookmarklet',
+      };
+    }
   }
   return lus.sort((a, b) => a.startDate.localeCompare(b.startDate) || a.tour.localeCompare(b.tour) || a.nom.localeCompare(b.nom));
 }

@@ -128,7 +128,9 @@ export default async function ResultatsPage({
           Aucun pick pour ce tournoi. Rends-toi sur l&apos;onglet Picks.
         </p>
       ) : (
-        <table className="w-full text-sm">
+        // Sur téléphone, le tableau (8 colonnes) défile dans son cadre au lieu d'élargir toute la page.
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[26rem] text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
               <th className="py-2 pr-3 font-medium">Tour</th>
@@ -193,6 +195,7 @@ export default async function ResultatsPage({
             </tr>
           </tfoot>
         </table>
+        </div>
       )}
     </div>
   );
