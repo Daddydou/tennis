@@ -422,3 +422,15 @@ select to_regclass('public.tn_player_source_ids') is not null
                  where conname = 'tn_import_auto_mode_check'), false)
    as appliquee;
 ```
+
+### 0028 — Elo maison
+Tables `tn_elo_maison` (notes calculées sur l'historique 1990→, une ligne par joueur,
+colonnes `elo_*` au format de `ta_elo`) et `tn_elo_maison_suivi` (dernier jour traité par
+circuit). Lecture publique, écriture service role seulement.
+```sql
+select to_regclass('public.tn_elo_maison') is not null
+   and to_regclass('public.tn_elo_maison_suivi') is not null
+   and has_table_privilege('anon', 'public.tn_elo_maison', 'select')
+   and not has_table_privilege('anon', 'public.tn_elo_maison', 'insert')
+   as appliquee;
+```

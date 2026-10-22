@@ -25,6 +25,7 @@ import {
 } from '@/lib/importAutoRegles';
 import type { DrawExtract } from '@/lib/types';
 import { ecrireApresImport, parametresDeSurveillance, preparerDepuisApi } from './importApi';
+import { mettreAJourEloMaison } from './eloMaison';
 
 /**
  * IMPORT AUTOMATIQUE — les deux chemins d'entrée :
@@ -265,6 +266,27 @@ export async function passage({ dry, urlTest }: { dry: boolean; urlTest?: string
       const detail = (e as Error).message;
       if (!dry) await echouer(s.tournament_id, 'serveur', detail, maintenant.getTime());
       resultats.push({ tournament_id: s.tournament_id, statut: 'erreur', detail });
+    }
+  }
+
+  // Elo maison : résultats de la veille (tous niveaux), APRÈS les tableaux pour qu'un quota
+  // serré serve d'abord aux tournois suivis. Une fois par jour en pratique : les passages
+  // suivants trouvent le suivi à jour et ne font aucune requête.
+  if (!dry) {
+    try {
+      for (const r of await mettreAJourEloMaison(6, maintenant)) {
+        if (r.statut === 'non_amorce') continue;
+        resultats.push({
+          tournament_id: `elo-maison-${r.tour}`,
+          statut: r.statut === 'mis_a_jour' || r.statut === 'partiel' ? 'importe' : 'ignore',
+          detail:
+            r.statut === 'en_retard'
+              ? `Elo maison ${r.tour.toUpperCase()} : plus de 10 jours de retard (dernier jour ${r.jusquau}), à ré-amorcer.`
+              : `Elo maison ${r.tour.toUpperCase()} : ${r.jours} jour(s), ${r.matchs} match(s), ${r.nouveaux} nouveau(x) joueur(s), ${r.requetes} requête(s), à jour au ${r.jusquau}.`,
+        });
+      }
+    } catch (e) {
+      resultats.push({ tournament_id: 'elo-maison', statut: 'erreur', detail: `Elo maison : ${(e as Error).message}` });
     }
   }
   return rapport(dry, resultats);

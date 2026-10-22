@@ -95,14 +95,33 @@ Leçon principale : **l'historique des petits tournois compte plus que tous
 les réglages fins**. Un Elo calculé sur les seuls tournois du circuit (ce que
 faisait l'ancien « Elo maison » de l'app) est nettement moins bon.
 
+## Comparaison préliminaire avec Tennis Abstract (22/10/2026)
+
+759 matchs de l'app depuis fin juillet, trou de l'archive comblé seulement avec les
+matchs du circuit (pas encore Wimbledon ni Challengers) — `resultats/comparaison-2026-10-22.txt` :
+Tennis Abstract 0,6091 de log-loss, maison 0,6035 (écart −0,0056, IC 95 % [−0,0162 ; +0,0051],
+non significatif). ATP ≈ égalité, WTA plutôt en faveur de la maison. Sur les 334 matchs avec
+cotes : TA 0,6102, maison 0,6154, marché 0,5934 — le marché reste devant les deux.
+À refaire une fois le trou comblé (`comparer.mts`).
+
+## Intégration dans l'app
+
+- `lib/eloMaison.ts` : le moteur (pur, testé), paramètres de production figés.
+- Migration `0028` : `tn_elo_maison` (une ligne par joueur, colonnes `elo_*` au format
+  `ta_elo`, transformées par `colonnesApp` pour que le mélange 0,6/0,4 et l'échelle 400 de
+  l'app redonnent exactement les probabilités maison recalibrées) et `tn_elo_maison_suivi`.
+- `amorcer.mts --ecrire` : rejoue tout l'historique et écrit les notes (service role).
+- `db/eloMaison.ts` : à chaque passage du cron (après les tableaux), les résultats de la
+  veille, tous niveaux, ≈ 1 à 3 requêtes API par circuit et par jour. Plus de 10 jours de
+  retard → statut `en_retard`, ré-amorcer plutôt que rattraper.
+- `db/elo.ts` : `SOURCE_ELO=maison` (Vercel) fait lire `tn_elo_maison` à la place de `ta_elo` ;
+  vide ou `ta`, rien ne change. Repli automatique sur Tennis Abstract si la table est vide.
+
 ## Reste à faire
 
 1. Finir de combler juin → octobre 2026 avec l'API (≈ 50 requêtes, 2 jours).
-2. Comparer, sur les matchs de l'app depuis fin juillet, l'Elo maison à
-   l'Elo Tennis Abstract (archives `ta_elo_historique`) et aux cotes
-   (`tn_odds`) — mêmes matchs, mêmes mesures.
-3. Brancher dans l'app (table des notes, mise à jour quotidienne par l'API,
-   choix de la source), sans retirer Tennis Abstract.
+2. Refaire la comparaison maison / Tennis Abstract / marché sur ces données complètes.
+3. Appliquer la migration 0028, amorcer (`amorcer.mts --ecrire`), puis choisir la source.
 
 ## Reproduire
 

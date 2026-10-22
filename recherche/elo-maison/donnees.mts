@@ -15,11 +15,12 @@ import { join } from 'node:path';
 
 export const RACINE = 'C:\\Users\\lolor\\Projets\\_donnees';
 
-/** Niveau du match, pour le facteur K et le choix des matchs évalués. */
-export type Niveau = 'G' | 'M' | 'A' | 'F' | 'C' | 'S' | 'Q' | 'D';
-// G Grand Chelem · M Masters 1000 / WTA 1000 · A autres tournois du circuit · F Masters de fin d'année
-// C Challenger / WTA 125 / ITF ≥ 60 K · S Futures / ITF · Q qualifications du circuit · D Coupe Davis, BJK, United Cup
-export type Surface = 'hard' | 'clay' | 'grass' | 'carpet';
+import { lireScoreTexte, type NiveauElo, type SurfaceElo } from '../../lib/eloMaison.ts';
+
+/** Niveau du match, pour le facteur K et le choix des matchs évalués (cf. lib/eloMaison.ts). */
+export type Niveau = NiveauElo;
+export type Surface = SurfaceElo;
+export { lireScoreTexte };
 
 export interface MatchHisto {
   tour: 'ATP' | 'WTA';
@@ -76,30 +77,6 @@ const ORDRE_TOURS: Record<string, number> = {
 
 const jourDe = (aaaammjj: string) =>
   Math.floor(Date.UTC(+aaaammjj.slice(0, 4), +aaaammjj.slice(4, 6) - 1, +aaaammjj.slice(6, 8)) / 86400000);
-
-/** « 7-6(5) 3-6 6-2 », « 6-1 3-0 RET », « W/O » → jeux, abandon, forfait. */
-export function lireScoreTexte(score: string): { jeuxG: number; jeuxP: number; abandon: boolean; forfait: boolean } {
-  const s = (score ?? '').toUpperCase();
-  if (!s.trim() || /W\/O|WALKOVER|\bDEF\b(?!.*\d)/.test(s) || s.includes('UNFINISHED')) {
-    return { jeuxG: 0, jeuxP: 0, abandon: false, forfait: true };
-  }
-  let g = 0;
-  let p = 0;
-  for (const m of s.matchAll(/(\d+)-(\d+)(?:\(\d+\))?/g)) {
-    const a = +m[1];
-    const b = +m[2];
-    // Super tie-break noté « 10-8 » à la place d'un 3e set : compte pour un jeu.
-    if (a >= 10 || b >= 10) {
-      if (a > b) g += 1;
-      else p += 1;
-      continue;
-    }
-    g += a;
-    p += b;
-  }
-  const abandon = /RET|ABD|ABN|DEF/.test(s);
-  return { jeuxG: g, jeuxP: p, abandon, forfait: g + p === 0 };
-}
 
 function niveauSackmann(tour: 'ATP' | 'WTA', lvl: string, round: string, fichier: string): Niveau | null {
   const qualif = round.startsWith('Q');
