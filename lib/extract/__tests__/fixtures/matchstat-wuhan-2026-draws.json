@@ -1,0 +1,2192 @@
+{
+ "singles": [
+  {
+   "roundId": 5,
+   "result": "3-6 6-4 7-6(5)",
+   "date": "2026-10-14T11:00:00.000Z",
+   "seed1": null,
+   "seed2": "1",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 45866,
+   "player2Id": 18455,
+   "tournamentId": 16750,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45866,
+    "name": "Ann Li",
+    "countryAcr": "USA",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 18455,
+    "name": "Aryna Sabalenka",
+    "countryAcr": "BLR",
+    "seed": "1",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871865,
+   "winnerId": 45866
+  },
+  {
+   "roundId": 9,
+   "result": "6-4 6-1",
+   "date": "2026-10-16T11:10:00.000Z",
+   "seed1": "7",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 45854,
+   "player2Id": 45866,
+   "tournamentId": 16750,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45854,
+    "name": "Iga Swiatek",
+    "countryAcr": "POL",
+    "seed": "7",
+    "odd": null
+   },
+   "player2": {
+    "id": 45866,
+    "name": "Ann Li",
+    "countryAcr": "USA",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 13189778,
+   "winnerId": 45854
+  },
+  {
+   "roundId": 6,
+   "result": "6-1 7-6(1)",
+   "date": "2026-10-15T13:15:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "1.571",
+   "odd2": "2.38",
+   "player1Id": 45866,
+   "player2Id": 60341,
+   "tournamentId": 16750,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45866,
+    "name": "Ann Li",
+    "countryAcr": "USA",
+    "seed": null,
+    "odd": 1.571
+   },
+   "player2": {
+    "id": 60341,
+    "name": "Janice Tjen",
+    "countryAcr": "INA",
+    "seed": null,
+    "odd": "2.38"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871898,
+   "winnerId": 45866
+  },
+  {
+   "roundId": 10,
+   "result": "7-5 6-1",
+   "date": "2026-10-17T11:40:00.000Z",
+   "seed1": "16",
+   "seed2": "7",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 43323,
+   "player2Id": 45854,
+   "tournamentId": 16750,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": null
+   },
+   "player2": {
+    "id": 45854,
+    "name": "Iga Swiatek",
+    "countryAcr": "POL",
+    "seed": "7",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 43985933,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 12,
+   "result": "2-6 6-4 6-2",
+   "date": "2026-10-18T10:40:00.000Z",
+   "seed1": "16",
+   "seed2": null,
+   "odd1": "2.09",
+   "odd2": "1.75",
+   "player1Id": 43323,
+   "player2Id": 66591,
+   "tournamentId": 16750,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": 2.09
+   },
+   "player2": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": "1.75"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 73553398,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 9,
+   "result": "6-0 3-6 7-5",
+   "date": "2026-10-16T07:35:00.000Z",
+   "seed1": "16",
+   "seed2": null,
+   "odd1": "2.09",
+   "odd2": "1.73",
+   "player1Id": 43323,
+   "player2Id": 13541,
+   "tournamentId": 16750,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": 2.09
+   },
+   "player2": {
+    "id": 13541,
+    "name": "Maria Sakkari",
+    "countryAcr": "GRE",
+    "seed": null,
+    "odd": "1.73"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 9494674,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 6,
+   "result": "6-1 6-4",
+   "date": "2026-10-15T11:15:00.000Z",
+   "seed1": "7",
+   "seed2": "LL",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 45854,
+   "player2Id": 64343,
+   "tournamentId": 16750,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45854,
+    "name": "Iga Swiatek",
+    "countryAcr": "POL",
+    "seed": "7",
+    "odd": null
+   },
+   "player2": {
+    "id": 64343,
+    "name": "Ashlyn Krueger",
+    "countryAcr": "USA",
+    "seed": "LL",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871904,
+   "winnerId": 45854
+  },
+  {
+   "roundId": 5,
+   "result": "7-5 6-3",
+   "date": "2026-10-14T07:00:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "2.32",
+   "odd2": "1.6",
+   "player1Id": 60341,
+   "player2Id": 55173,
+   "tournamentId": 16750,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 60341,
+    "name": "Janice Tjen",
+    "countryAcr": "INA",
+    "seed": null,
+    "odd": 2.32
+   },
+   "player2": {
+    "id": 55173,
+    "name": "Daria Snigur",
+    "countryAcr": "UKR",
+    "seed": null,
+    "odd": "1.6"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871897,
+   "winnerId": 60341
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 3-0 ret.",
+   "date": "2026-10-13T10:06:00.000Z",
+   "seed1": null,
+   "seed2": "LL",
+   "odd1": "1.8",
+   "odd2": "2",
+   "player1Id": 45866,
+   "player2Id": 44040,
+   "tournamentId": 16750,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45866,
+    "name": "Ann Li",
+    "countryAcr": "USA",
+    "seed": null,
+    "odd": 1.8
+   },
+   "player2": {
+    "id": 44040,
+    "name": "Maria Camila Osorio Serrano",
+    "countryAcr": "COL",
+    "seed": "LL",
+    "odd": "2"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871881,
+   "winnerId": 45866
+  },
+  {
+   "roundId": 10,
+   "result": "7-6(9) 7-6(5)",
+   "date": "2026-10-17T09:05:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "1.9",
+   "odd2": "1.9",
+   "player1Id": 66591,
+   "player2Id": 16628,
+   "tournamentId": 16750,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": 1.9
+   },
+   "player2": {
+    "id": 16628,
+    "name": "Jelena Ostapenko",
+    "countryAcr": "LAT",
+    "seed": null,
+    "odd": "1.9"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 41521984,
+   "winnerId": 66591
+  },
+  {
+   "roundId": 5,
+   "result": "2-6 6-1 6-1",
+   "date": "2026-10-14T11:05:00.000Z",
+   "seed1": "LL",
+   "seed2": "LL",
+   "odd1": "2.24",
+   "odd2": "1.64",
+   "player1Id": 64343,
+   "player2Id": 66626,
+   "tournamentId": 16750,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 64343,
+    "name": "Ashlyn Krueger",
+    "countryAcr": "USA",
+    "seed": "LL",
+    "odd": 2.24
+   },
+   "player2": {
+    "id": 66626,
+    "name": "Lanlana Tararudee",
+    "countryAcr": "THA",
+    "seed": "LL",
+    "odd": "1.64"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871906,
+   "winnerId": 64343
+  },
+  {
+   "roundId": 6,
+   "result": "6-4 6-1",
+   "date": "2026-10-15T05:20:00.000Z",
+   "seed1": "16",
+   "seed2": "10",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 43323,
+   "player2Id": 80381,
+   "tournamentId": 16750,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": null
+   },
+   "player2": {
+    "id": 80381,
+    "name": "Iva Jovic",
+    "countryAcr": "USA",
+    "seed": "10",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871917,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-1",
+   "date": "2026-10-12T04:50:00.000Z",
+   "seed1": null,
+   "seed2": "q",
+   "odd1": "1.34",
+   "odd2": "3.22",
+   "player1Id": 60341,
+   "player2Id": 61481,
+   "tournamentId": 16750,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 60341,
+    "name": "Janice Tjen",
+    "countryAcr": "INA",
+    "seed": null,
+    "odd": 1.34
+   },
+   "player2": {
+    "id": 61481,
+    "name": "Aoi Ito",
+    "countryAcr": "JPN",
+    "seed": "q",
+    "odd": "3.22"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871901,
+   "winnerId": 60341
+  },
+  {
+   "roundId": 9,
+   "result": "6-2 2-6 6-4",
+   "date": "2026-10-16T05:10:00.000Z",
+   "seed1": null,
+   "seed2": "5",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 66591,
+   "player2Id": 11371,
+   "tournamentId": 16750,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 11371,
+    "name": "Elina Svitolina",
+    "countryAcr": "UKR",
+    "seed": "5",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 5799686,
+   "winnerId": 66591
+  },
+  {
+   "roundId": 5,
+   "result": "6-2 6-1",
+   "date": "2026-10-14T03:00:00.000Z",
+   "seed1": "7",
+   "seed2": "LL",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 45854,
+   "player2Id": 17155,
+   "tournamentId": 16750,
+   "draw": 4,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 45854,
+    "name": "Iga Swiatek",
+    "countryAcr": "POL",
+    "seed": "7",
+    "odd": null
+   },
+   "player2": {
+    "id": 17155,
+    "name": "Magdalena Frech",
+    "countryAcr": "POL",
+    "seed": "LL",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871859,
+   "winnerId": 45854
+  },
+  {
+   "roundId": 6,
+   "result": "6-1 6-4",
+   "date": "2026-10-15T04:00:00.000Z",
+   "seed1": null,
+   "seed2": "WC",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 13541,
+   "player2Id": 90390,
+   "tournamentId": 16750,
+   "draw": 4,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 13541,
+    "name": "Maria Sakkari",
+    "countryAcr": "GRE",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 90390,
+    "name": "Mia Pohankova",
+    "countryAcr": "SVK",
+    "seed": "WC",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871919,
+   "winnerId": 13541
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 7-5",
+   "date": "2026-10-13T08:20:00.000Z",
+   "seed1": null,
+   "seed2": "14",
+   "odd1": "3.02",
+   "odd2": "1.38",
+   "player1Id": 55173,
+   "player2Id": 13351,
+   "tournamentId": 16750,
+   "draw": 4,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 55173,
+    "name": "Daria Snigur",
+    "countryAcr": "UKR",
+    "seed": null,
+    "odd": 3.02
+   },
+   "player2": {
+    "id": 13351,
+    "name": "Elise Mertens",
+    "countryAcr": "BEL",
+    "seed": "14",
+    "odd": "1.38"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871850,
+   "winnerId": 55173
+  },
+  {
+   "roundId": 9,
+   "result": "7-6(6) 6-1",
+   "date": "2026-10-16T03:00:00.000Z",
+   "seed1": null,
+   "seed2": "11",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 16628,
+   "player2Id": 65911,
+   "tournamentId": 16750,
+   "draw": 4,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 16628,
+    "name": "Jelena Ostapenko",
+    "countryAcr": "LAT",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 65911,
+    "name": "Diana Shnaider",
+    "countryAcr": "RUS",
+    "seed": "11",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 3336457,
+   "winnerId": 16628
+  },
+  {
+   "roundId": 6,
+   "result": "6-1 6-4",
+   "date": "2026-10-15T04:30:00.000Z",
+   "seed1": "5",
+   "seed2": "WC",
+   "odd1": "1.099",
+   "odd2": "6.8",
+   "player1Id": 11371,
+   "player2Id": 32308,
+   "tournamentId": 16750,
+   "draw": 5,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 11371,
+    "name": "Elina Svitolina",
+    "countryAcr": "UKR",
+    "seed": "5",
+    "odd": 1.099
+   },
+   "player2": {
+    "id": 32308,
+    "name": "Hanyu Guo",
+    "countryAcr": "CHN",
+    "seed": "WC",
+    "odd": "6.8"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871875,
+   "winnerId": 11371
+  },
+  {
+   "roundId": 5,
+   "result": "6-4 6-1",
+   "date": "2026-10-14T05:00:00.000Z",
+   "seed1": "10",
+   "seed2": "WC",
+   "odd1": "1.23",
+   "odd2": "4.1",
+   "player1Id": 80381,
+   "player2Id": 37266,
+   "tournamentId": 16750,
+   "draw": 5,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 80381,
+    "name": "Iva Jovic",
+    "countryAcr": "USA",
+    "seed": "10",
+    "odd": 1.23
+   },
+   "player2": {
+    "id": 37266,
+    "name": "Dayana Yastremska",
+    "countryAcr": "UKR",
+    "seed": "WC",
+    "odd": "4.1"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871876,
+   "winnerId": 80381
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-0",
+   "date": "2026-10-13T11:00:00.000Z",
+   "seed1": "LL",
+   "seed2": null,
+   "odd1": "1.59",
+   "odd2": "2.34",
+   "player1Id": 64343,
+   "player2Id": 4263,
+   "tournamentId": 16750,
+   "draw": 5,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 64343,
+    "name": "Ashlyn Krueger",
+    "countryAcr": "USA",
+    "seed": "LL",
+    "odd": 1.59
+   },
+   "player2": {
+    "id": 4263,
+    "name": "Shuai Zhang",
+    "countryAcr": "CHN",
+    "seed": null,
+    "odd": "2.34"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871844,
+   "winnerId": 64343
+  },
+  {
+   "roundId": 5,
+   "result": "1-6 6-1 6-1",
+   "date": "2026-10-14T03:00:00.000Z",
+   "seed1": "16",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 43323,
+   "player2Id": 24572,
+   "tournamentId": 16750,
+   "draw": 6,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": null
+   },
+   "player2": {
+    "id": 24572,
+    "name": "Marie Bouzkova",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871871,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 6,
+   "result": "6-2 6-0",
+   "date": "2026-10-15T09:50:00.000Z",
+   "seed1": null,
+   "seed2": "15",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 66591,
+   "player2Id": 14362,
+   "tournamentId": 16750,
+   "draw": 6,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 14362,
+    "name": "Jasmine Paolini",
+    "countryAcr": "ITA",
+    "seed": "15",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871857,
+   "winnerId": 66591
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 6-1",
+   "date": "2026-10-12T03:00:00.000Z",
+   "seed1": "LL",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 66626,
+   "player2Id": 51151,
+   "tournamentId": 16750,
+   "draw": 6,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66626,
+    "name": "Lanlana Tararudee",
+    "countryAcr": "THA",
+    "seed": "LL",
+    "odd": null
+   },
+   "player2": {
+    "id": 51151,
+    "name": "Diane Parry",
+    "countryAcr": "FRA",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871891,
+   "winnerId": 66626
+  },
+  {
+   "roundId": 6,
+   "result": "7-5 6-3",
+   "date": "2026-10-15T03:00:00.000Z",
+   "seed1": "11",
+   "seed2": "6",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 65911,
+   "player2Id": 18482,
+   "tournamentId": 16750,
+   "draw": 7,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 65911,
+    "name": "Diana Shnaider",
+    "countryAcr": "RUS",
+    "seed": "11",
+    "odd": null
+   },
+   "player2": {
+    "id": 18482,
+    "name": "Karolina Muchova",
+    "countryAcr": "CZE",
+    "seed": "6",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871866,
+   "winnerId": 65911
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 7-6(5)",
+   "date": "2026-10-12T06:25:00.000Z",
+   "seed1": "LL",
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 17155,
+   "player2Id": 49995,
+   "tournamentId": 16750,
+   "draw": 7,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 17155,
+    "name": "Magdalena Frech",
+    "countryAcr": "POL",
+    "seed": "LL",
+    "odd": null
+   },
+   "player2": {
+    "id": 49995,
+    "name": "Mananchaya Sawangkaew",
+    "countryAcr": "THA",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871889,
+   "winnerId": 17155
+  },
+  {
+   "roundId": 5,
+   "result": "7-6(2) 6-7(7) 6-1",
+   "date": "2026-10-13T12:45:00.000Z",
+   "seed1": "WC",
+   "seed2": "WC",
+   "odd1": "3.28",
+   "odd2": "1.33",
+   "player1Id": 90390,
+   "player2Id": 43872,
+   "tournamentId": 16750,
+   "draw": 7,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 90390,
+    "name": "Mia Pohankova",
+    "countryAcr": "SVK",
+    "seed": "WC",
+    "odd": 3.28
+   },
+   "player2": {
+    "id": 43872,
+    "name": "Xiyu Wang",
+    "countryAcr": "CHN",
+    "seed": "WC",
+    "odd": "1.33"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871880,
+   "winnerId": 90390
+  },
+  {
+   "roundId": 6,
+   "result": "6-1 1-6 6-4",
+   "date": "2026-10-15T07:30:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 16628,
+   "player2Id": 49081,
+   "tournamentId": 16750,
+   "draw": 8,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 16628,
+    "name": "Jelena Ostapenko",
+    "countryAcr": "LAT",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 49081,
+    "name": "Leylah Annie Fernandez",
+    "countryAcr": "CAN",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871887,
+   "winnerId": 16628
+  },
+  {
+   "roundId": 5,
+   "result": "4-6 6-2 6-2",
+   "date": "2026-10-13T08:35:00.000Z",
+   "seed1": null,
+   "seed2": "8",
+   "odd1": "2.6",
+   "odd2": "1.49",
+   "player1Id": 13541,
+   "player2Id": 47742,
+   "tournamentId": 16750,
+   "draw": 8,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 13541,
+    "name": "Maria Sakkari",
+    "countryAcr": "GRE",
+    "seed": null,
+    "odd": 2.6
+   },
+   "player2": {
+    "id": 47742,
+    "name": "Marta Kostyuk",
+    "countryAcr": "UKR",
+    "seed": "8",
+    "odd": "1.49"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871886,
+   "winnerId": 13541
+  },
+  {
+   "roundId": 5,
+   "result": "6-2 5-7 6-2",
+   "date": "2026-10-14T03:00:00.000Z",
+   "seed1": "5",
+   "seed2": null,
+   "odd1": "1.333",
+   "odd2": "3.26",
+   "player1Id": 11371,
+   "player2Id": 24368,
+   "tournamentId": 16750,
+   "draw": 9,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 11371,
+    "name": "Elina Svitolina",
+    "countryAcr": "UKR",
+    "seed": "5",
+    "odd": 1.333
+   },
+   "player2": {
+    "id": 24368,
+    "name": "Liudmila Samsonova",
+    "countryAcr": "RUS",
+    "seed": null,
+    "odd": "3.26"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871870,
+   "winnerId": 11371
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 5-7 6-3",
+   "date": "2026-10-13T03:00:00.000Z",
+   "seed1": "WC",
+   "seed2": null,
+   "odd1": "1.7",
+   "odd2": "2.14",
+   "player1Id": 37266,
+   "player2Id": 24344,
+   "tournamentId": 16750,
+   "draw": 10,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 37266,
+    "name": "Dayana Yastremska",
+    "countryAcr": "UKR",
+    "seed": "WC",
+    "odd": 1.7
+   },
+   "player2": {
+    "id": 24344,
+    "name": "Cristina Bucsa",
+    "countryAcr": "ESP",
+    "seed": null,
+    "odd": "2.14"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871869,
+   "winnerId": 37266
+  },
+  {
+   "roundId": 5,
+   "result": "6-4 4-6 7-6(3)",
+   "date": "2026-10-14T07:45:00.000Z",
+   "seed1": "WC",
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 32308,
+   "player2Id": 52790,
+   "tournamentId": 16750,
+   "draw": 10,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 32308,
+    "name": "Hanyu Guo",
+    "countryAcr": "CHN",
+    "seed": "WC",
+    "odd": null
+   },
+   "player2": {
+    "id": 52790,
+    "name": "Katie Volynets",
+    "countryAcr": "USA",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871894,
+   "winnerId": 32308
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 2-0 ret.",
+   "date": "2026-10-12T04:55:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 24572,
+   "player2Id": 54989,
+   "tournamentId": 16750,
+   "draw": 11,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 24572,
+    "name": "Marie Bouzkova",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 54989,
+    "name": "Clara Tauson",
+    "countryAcr": "DEN",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871896,
+   "winnerId": 24572
+  },
+  {
+   "roundId": 5,
+   "result": "7-6(5) 6-3",
+   "date": "2026-10-14T05:00:00.000Z",
+   "seed1": "15",
+   "seed2": null,
+   "odd1": "2.48",
+   "odd2": "1.53",
+   "player1Id": 14362,
+   "player2Id": 71092,
+   "tournamentId": 16750,
+   "draw": 11,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 14362,
+    "name": "Jasmine Paolini",
+    "countryAcr": "ITA",
+    "seed": "15",
+    "odd": 2.48
+   },
+   "player2": {
+    "id": 71092,
+    "name": "Nikola Bartunkova",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": "1.53"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871910,
+   "winnerId": 14362
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-2",
+   "date": "2026-10-13T05:10:00.000Z",
+   "seed1": "16",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 43323,
+   "player2Id": 13706,
+   "tournamentId": 16750,
+   "draw": 12,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43323,
+    "name": "Maja Chwalinska",
+    "countryAcr": "POL",
+    "seed": "16",
+    "odd": null
+   },
+   "player2": {
+    "id": 13706,
+    "name": "Mayar Sherif",
+    "countryAcr": "EGY",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871852,
+   "winnerId": 43323
+  },
+  {
+   "roundId": 5,
+   "result": "6-0 7-5",
+   "date": "2026-10-14T03:00:00.000Z",
+   "seed1": null,
+   "seed2": "9",
+   "odd1": "2.6",
+   "odd2": "1.49",
+   "player1Id": 66591,
+   "player2Id": 14056,
+   "tournamentId": 16750,
+   "draw": 12,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": 2.6
+   },
+   "player2": {
+    "id": 14056,
+    "name": "Belinda Bencic",
+    "countryAcr": "SUI",
+    "seed": "9",
+    "odd": "1.49"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871855,
+   "winnerId": 66591
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 6-3",
+   "date": "2026-10-12T04:35:00.000Z",
+   "seed1": "WC",
+   "seed2": "LL",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 90390,
+   "player2Id": 31728,
+   "tournamentId": 16750,
+   "draw": 13,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 90390,
+    "name": "Mia Pohankova",
+    "countryAcr": "SVK",
+    "seed": "WC",
+    "odd": null
+   },
+   "player2": {
+    "id": 31728,
+    "name": "Anna Bondar",
+    "countryAcr": "HUN",
+    "seed": "LL",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871874,
+   "winnerId": 90390
+  },
+  {
+   "roundId": 5,
+   "result": "3-6 7-6(1) 7-6(4)",
+   "date": "2026-10-14T05:00:00.000Z",
+   "seed1": "6",
+   "seed2": "q",
+   "odd1": "1.25",
+   "odd2": "3.9",
+   "player1Id": 18482,
+   "player2Id": 41569,
+   "tournamentId": 16750,
+   "draw": 13,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 18482,
+    "name": "Karolina Muchova",
+    "countryAcr": "CZE",
+    "seed": "6",
+    "odd": 1.25
+   },
+   "player2": {
+    "id": 41569,
+    "name": "Caty McNally",
+    "countryAcr": "USA",
+    "seed": "q",
+    "odd": "3.9"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871878,
+   "winnerId": 18482
+  },
+  {
+   "roundId": 5,
+   "result": "6-2 6-2",
+   "date": "2026-10-14T05:00:00.000Z",
+   "seed1": "11",
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 65911,
+   "player2Id": 12390,
+   "tournamentId": 16750,
+   "draw": 14,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 65911,
+    "name": "Diana Shnaider",
+    "countryAcr": "RUS",
+    "seed": "11",
+    "odd": null
+   },
+   "player2": {
+    "id": 12390,
+    "name": "Yulia Putintseva",
+    "countryAcr": "KAZ",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871849,
+   "winnerId": 65911
+  },
+  {
+   "roundId": 4,
+   "result": "6-2 6-0",
+   "date": "2026-10-12T11:40:00.000Z",
+   "seed1": "WC",
+   "seed2": null,
+   "odd1": "1.89",
+   "odd2": "1.9",
+   "player1Id": 43872,
+   "player2Id": 47152,
+   "tournamentId": 16750,
+   "draw": 14,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 43872,
+    "name": "Xiyu Wang",
+    "countryAcr": "CHN",
+    "seed": "WC",
+    "odd": 1.89
+   },
+   "player2": {
+    "id": 47152,
+    "name": "Xinyu Wang",
+    "countryAcr": "CHN",
+    "seed": null,
+    "odd": "1.9"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871885,
+   "winnerId": 43872
+  },
+  {
+   "roundId": 5,
+   "result": "6-3 6-4",
+   "date": "2026-10-14T14:10:00.000Z",
+   "seed1": null,
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 49081,
+   "player2Id": 67639,
+   "tournamentId": 16750,
+   "draw": 15,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 49081,
+    "name": "Leylah Annie Fernandez",
+    "countryAcr": "CAN",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 67639,
+    "name": "Han Shi",
+    "countryAcr": "CHN",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871907,
+   "winnerId": 49081
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 6-2",
+   "date": "2026-10-12T07:25:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "1.51",
+   "odd2": "2.54",
+   "player1Id": 13541,
+   "player2Id": 13498,
+   "tournamentId": 16750,
+   "draw": 15,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 13541,
+    "name": "Maria Sakkari",
+    "countryAcr": "GRE",
+    "seed": null,
+    "odd": 1.51
+   },
+   "player2": {
+    "id": 13498,
+    "name": "Donna Vekic",
+    "countryAcr": "CRO",
+    "seed": null,
+    "odd": "2.54"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871851,
+   "winnerId": 13541
+  },
+  {
+   "roundId": 5,
+   "result": "2-6 7-6(7) 6-3",
+   "date": "2026-10-14T07:50:00.000Z",
+   "seed1": null,
+   "seed2": "2",
+   "odd1": "5.05",
+   "odd2": "1.166",
+   "player1Id": 16628,
+   "player2Id": 11712,
+   "tournamentId": 16750,
+   "draw": 16,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 16628,
+    "name": "Jelena Ostapenko",
+    "countryAcr": "LAT",
+    "seed": null,
+    "odd": 5.05
+   },
+   "player2": {
+    "id": 11712,
+    "name": "Jessica Pegula",
+    "countryAcr": "USA",
+    "seed": "2",
+    "odd": "1.166"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871848,
+   "winnerId": 16628
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 5-7 6-2",
+   "date": "2026-10-13T03:00:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 24368,
+   "player2Id": 17501,
+   "tournamentId": 16750,
+   "draw": 18,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 24368,
+    "name": "Liudmila Samsonova",
+    "countryAcr": "RUS",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 17501,
+    "name": "Katerina Siniakova",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871861,
+   "winnerId": 24368
+  },
+  {
+   "roundId": 4,
+   "result": "6-7(1) 7-6(3) 6-3",
+   "date": "2026-10-13T03:00:00.000Z",
+   "seed1": "q",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 52790,
+   "player2Id": 18427,
+   "tournamentId": 16750,
+   "draw": 19,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 52790,
+    "name": "Katie Volynets",
+    "countryAcr": "USA",
+    "seed": "q",
+    "odd": null
+   },
+   "player2": {
+    "id": 18427,
+    "name": "Kimberly Birrell",
+    "countryAcr": "AUS",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871864,
+   "winnerId": 52790
+  },
+  {
+   "roundId": 4,
+   "result": "1-6 7-6(6) 7-5",
+   "date": "2026-10-13T05:35:00.000Z",
+   "seed1": "WC",
+   "seed2": "12",
+   "odd1": "6.1",
+   "odd2": "1.121",
+   "player1Id": 32308,
+   "player2Id": 6019,
+   "tournamentId": 16750,
+   "draw": 20,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 32308,
+    "name": "Hanyu Guo",
+    "countryAcr": "CHN",
+    "seed": "WC",
+    "odd": 6.1
+   },
+   "player2": {
+    "id": 6019,
+    "name": "Sorana Cirstea",
+    "countryAcr": "ROU",
+    "seed": "12",
+    "odd": "1.121"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871845,
+   "winnerId": 32308
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-4",
+   "date": "2026-10-12T06:10:00.000Z",
+   "seed1": "15",
+   "seed2": null,
+   "odd1": "1.89",
+   "odd2": "1.9",
+   "player1Id": 14362,
+   "player2Id": 71163,
+   "tournamentId": 16750,
+   "draw": 21,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 14362,
+    "name": "Jasmine Paolini",
+    "countryAcr": "ITA",
+    "seed": "15",
+    "odd": 1.89
+   },
+   "player2": {
+    "id": 71163,
+    "name": "Sara Bejlek",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": "1.9"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871911,
+   "winnerId": 14362
+  },
+  {
+   "roundId": 4,
+   "result": "7-6(4) 2-6 6-1",
+   "date": "2026-10-13T06:45:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 71092,
+   "player2Id": 79778,
+   "tournamentId": 16750,
+   "draw": 22,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 71092,
+    "name": "Nikola Bartunkova",
+    "countryAcr": "CZE",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 79778,
+    "name": "Lilli Tagger",
+    "countryAcr": "AUT",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871916,
+   "winnerId": 71092
+  },
+  {
+   "roundId": 4,
+   "result": "7-5 6-3",
+   "date": "2026-10-12T03:05:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 66591,
+   "player2Id": 16043,
+   "tournamentId": 16750,
+   "draw": 23,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66591,
+    "name": "Sonay Kartal",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 16043,
+    "name": "Anhelina Kalinina",
+    "countryAcr": "UKR",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871858,
+   "winnerId": 66591
+  },
+  {
+   "roundId": 4,
+   "result": "2-6 7-6(2) 6-4",
+   "date": "2026-10-12T08:00:00.000Z",
+   "seed1": "q",
+   "seed2": null,
+   "odd1": "1.55",
+   "odd2": "2.43",
+   "player1Id": 41569,
+   "player2Id": 41888,
+   "tournamentId": 16750,
+   "draw": 26,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 41569,
+    "name": "Caty McNally",
+    "countryAcr": "USA",
+    "seed": "q",
+    "odd": 1.55
+   },
+   "player2": {
+    "id": 41888,
+    "name": "Yuliia Starodubtseva",
+    "countryAcr": "UKR",
+    "seed": null,
+    "odd": "2.43"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871879,
+   "winnerId": 41569
+  },
+  {
+   "roundId": 4,
+   "result": "6-7(1) 6-3 7-5",
+   "date": "2026-10-13T05:30:00.000Z",
+   "seed1": "q",
+   "seed2": "q",
+   "odd1": "1.81",
+   "odd2": "1.99",
+   "player1Id": 12390,
+   "player2Id": 49991,
+   "tournamentId": 16750,
+   "draw": 27,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 12390,
+    "name": "Yulia Putintseva",
+    "countryAcr": "KAZ",
+    "seed": "q",
+    "odd": 1.81
+   },
+   "player2": {
+    "id": 49991,
+    "name": "Zeynep Sonmez",
+    "countryAcr": "TUR",
+    "seed": "q",
+    "odd": "1.99"
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871888,
+   "winnerId": 12390
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-1",
+   "date": "2026-10-13T06:25:00.000Z",
+   "seed1": "11",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 65911,
+   "player2Id": 14175,
+   "tournamentId": 16750,
+   "draw": 28,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 65911,
+    "name": "Diana Shnaider",
+    "countryAcr": "RUS",
+    "seed": "11",
+    "odd": null
+   },
+   "player2": {
+    "id": 14175,
+    "name": "Katie Boulter",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871856,
+   "winnerId": 65911
+  },
+  {
+   "roundId": 4,
+   "result": "4-6 6-3 6-3",
+   "date": "2026-10-12T13:05:00.000Z",
+   "seed1": "q",
+   "seed2": "13",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 67639,
+   "player2Id": 67792,
+   "tournamentId": 16750,
+   "draw": 29,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 67639,
+    "name": "Han Shi",
+    "countryAcr": "CHN",
+    "seed": "q",
+    "odd": null
+   },
+   "player2": {
+    "id": 67792,
+    "name": "Alexandra Eala",
+    "countryAcr": "PHI",
+    "seed": "13",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871908,
+   "winnerId": 67639
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 3-6 6-3",
+   "date": "2026-10-12T03:05:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 49081,
+   "player2Id": 14054,
+   "tournamentId": 16750,
+   "draw": 30,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 49081,
+    "name": "Leylah Annie Fernandez",
+    "countryAcr": "CAN",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 14054,
+    "name": "Ekaterina Alexandrova",
+    "countryAcr": "RUS",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871854,
+   "winnerId": 49081
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 6-1",
+   "date": "2026-10-13T08:45:00.000Z",
+   "seed1": null,
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 16628,
+   "player2Id": 17503,
+   "tournamentId": 16750,
+   "draw": 31,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 16628,
+    "name": "Jelena Ostapenko",
+    "countryAcr": "LAT",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 17503,
+    "name": "Daria Kasatkina",
+    "countryAcr": "AUS",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "matchId": 871862,
+   "winnerId": 16628
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 1,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 18455,
+    "name": "Aryna Sabalenka",
+    "countryAcr": "BLR",
+    "seed": "1",
+    "odd": null
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 8,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 45854,
+    "name": "Iga Swiatek",
+    "countryAcr": "POL",
+    "seed": "7",
+    "odd": null
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 9,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 80381,
+    "name": "Iva Jovic",
+    "countryAcr": "USA",
+    "seed": "10",
+    "odd": null
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 16,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 47742,
+    "name": "Marta Kostyuk",
+    "countryAcr": "UKR",
+    "seed": "8",
+    "odd": "1.49"
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 17,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 11371,
+    "name": "Elina Svitolina",
+    "countryAcr": "UKR",
+    "seed": "5",
+    "odd": null
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 24,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 14056,
+    "name": "Belinda Bencic",
+    "countryAcr": "SUI",
+    "seed": "9",
+    "odd": "1.49"
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 25,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 18482,
+    "name": "Karolina Muchova",
+    "countryAcr": "CZE",
+    "seed": "6",
+    "odd": null
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "",
+   "date": "",
+   "draw": 32,
+   "tournamentId": 16750,
+   "tournament": {
+    "id": 16750,
+    "name": "Wuhan Open - Wuhan"
+   },
+   "player1": {
+    "id": 11712,
+    "name": "Jessica Pegula",
+    "countryAcr": "USA",
+    "seed": "2",
+    "odd": "1.166"
+   },
+   "player2": {
+    "id": null,
+    "name": "BYE",
+    "bye": true
+   },
+   "matchId": null,
+   "bye": true,
+   "isBye": true
+  }
+ ]
+}

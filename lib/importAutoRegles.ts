@@ -8,8 +8,14 @@
  */
 
 import type { DrawExtract, Tour } from './types';
+import { lireUrlTableauApi } from './extract/matchstat';
 
-export type ModeImportAuto = 'serveur' | 'navigateur';
+/**
+ * 'serveur'    : page WTA lue par le cron ;
+ * 'navigateur' : page lue par le userscript (ATP) ;
+ * 'api'        : tableau lu par le cron dans l'API tennis (ATP et WTA), sans page web.
+ */
+export type ModeImportAuto = 'serveur' | 'navigateur' | 'api';
 export type SourceImport = 'serveur' | 'navigateur' | 'manuel';
 export type MotifArret = 'finale_importee' | 'plafond_21j' | 'fin_tournoi' | 'manuel';
 
@@ -18,6 +24,17 @@ const JOUR = 24 * HEURE;
 
 /** Délai minimal entre deux imports réussis (passages à 12 h, avec marge). */
 export const INTERVALLE_DU_MS = 11.5 * HEURE;
+/**
+ * Mode 'api' : passages toutes les 6 h (avec marge). Une requête par tournoi
+ * et par passage : 4 par jour et par tournoi, sous le plafond de 50
+ * requêtes/jour du plan gratuit même avec 6 ou 7 tournois en même temps.
+ */
+export const INTERVALLE_DU_API_MS = 5.5 * HEURE;
+
+/** Délai entre deux imports réussis pour un mode donné. */
+export function intervalleDu(mode?: ModeImportAuto | null): number {
+  return mode === 'api' ? INTERVALLE_DU_API_MS : INTERVALLE_DU_MS;
+}
 /** Pas de relance automatique moins d'une heure après un échec automatique. */
 export const PAUSE_APRES_ECHEC_MS = HEURE;
 /** Surveillance coupée au plus tard 21 jours après le premier import. */
@@ -30,8 +47,23 @@ export const MARGE_FIN_MS = 2 * JOUR;
  * (récupérable par le cron) ; atptour.com répond 403 Cloudflare hors
  * navigateur, l'ATP passe donc toujours par le userscript.
  */
-export function modeParDefaut(tour: Tour): ModeImportAuto {
+export function modeParDefaut(tour: Tour, sourceUrl?: string | null): ModeImportAuto {
+  if (sourceUrl && estUrlApi(sourceUrl, tour)) return 'api';
   return tour === 'WTA' ? 'serveur' : 'navigateur';
+}
+
+/**
+ * URL de tableau de l'API tennis, pour ce circuit (même garde-fou SSRF que
+ * `urlSourceAutorisee` : https, hôte RapidAPI exact, chemin de tableau).
+ */
+export function estUrlApi(url: string, tour: Tour): boolean {
+  const u = lireUrlTableauApi(url);
+  return !!u && (u.type === 'wta' ? 'WTA' : 'ATP') === tour;
+}
+
+/** URL source acceptable pour la surveillance : site officiel du circuit ou API tennis. */
+export function urlSourceValide(url: string, tour: Tour): boolean {
+  return urlSourceAutorisee(url, tour) || estUrlApi(url, tour);
 }
 
 /** Domaines d'où une page de tableau peut être lue, par circuit. */
@@ -58,16 +90,17 @@ export function urlSourceAutorisee(url: string, tour: Tour): boolean {
 export interface EtatSurveillance {
   actif: boolean;
   dernier_succes_at: string | null;
+  mode?: ModeImportAuto | null;
 }
 
 /**
  * Un tournoi actif est dû s'il n'a jamais été importé avec succès ou si son
- * dernier succès date de plus de 11 h 30.
+ * dernier succès date de plus de 11 h 30 (5 h 30 en mode 'api').
  */
 export function estDu(s: EtatSurveillance, maintenant: Date): boolean {
   if (!s.actif) return false;
   if (!s.dernier_succes_at) return true;
-  return maintenant.getTime() - new Date(s.dernier_succes_at).getTime() > INTERVALLE_DU_MS;
+  return maintenant.getTime() - new Date(s.dernier_succes_at).getTime() > intervalleDu(s.mode);
 }
 
 /** Un échec automatique récent (< 1 h) bloque la relance. */
@@ -79,7 +112,7 @@ export function enPauseApresEchec(dernierEchecAutoAt: string | null, maintenant:
 /** Prochain passage prévu (affichage) : dernier succès + 11 h 30, ou « dès que possible ». */
 export function prochainPassage(s: EtatSurveillance): Date | null {
   if (!s.actif || !s.dernier_succes_at) return null;
-  return new Date(new Date(s.dernier_succes_at).getTime() + INTERVALLE_DU_MS);
+  return new Date(new Date(s.dernier_succes_at).getTime() + intervalleDu(s.mode));
 }
 
 export interface FaitsArret {

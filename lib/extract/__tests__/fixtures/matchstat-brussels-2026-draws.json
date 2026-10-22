@@ -1,0 +1,1138 @@
+{
+ "singles": [
+  {
+   "roundId": 5,
+   "result": "w/o",
+   "date": "2026-10-22T08:00:00.000Z",
+   "seed1": "1",
+   "seed2": null,
+   "odd1": "1.33",
+   "odd2": "3.28",
+   "player1Id": 83135,
+   "player2Id": 31358,
+   "tournamentId": 21358,
+   "draw": 1,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 83135,
+    "name": "Arthur Fils",
+    "countryAcr": "FRA",
+    "seed": "1",
+    "odd": 1.33
+   },
+   "player2": {
+    "id": 31358,
+    "name": "Jaume Antoni Munar Clar",
+    "countryAcr": "ESP",
+    "seed": null,
+    "odd": "3.28"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 152953321,
+   "winnerId": 83135
+  },
+  {
+   "date": null,
+   "roundId": 4,
+   "draw": 1,
+   "result": "bye",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": "1",
+   "seed2": null,
+   "player1Id": 83135,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 83135,
+    "name": "Arthur Fils",
+    "countryAcr": "FRA",
+    "seed": "1",
+    "odd": null
+   },
+   "player2": {
+    "id": 3700,
+    "name": "BYE",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "bye": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 138882,
+   "isBye": true
+  },
+  {
+   "date": null,
+   "roundId": 9,
+   "draw": 1,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": "1",
+   "seed2": null,
+   "player1Id": 83135,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 83135,
+    "name": "Arthur Fils",
+    "countryAcr": "FRA",
+    "seed": "1",
+    "odd": null
+   },
+   "player2": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 412023,
+   "awaitingParticipants": true
+  },
+  {
+   "date": null,
+   "roundId": 10,
+   "draw": 1,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": null,
+   "seed2": null,
+   "player1Id": 3700,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "player2": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 138865,
+   "awaitingParticipants": true
+  },
+  {
+   "date": null,
+   "roundId": 12,
+   "draw": 1,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": null,
+   "seed2": null,
+   "player1Id": 3700,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "player2": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 138866,
+   "awaitingParticipants": true
+  },
+  {
+   "roundId": 4,
+   "result": "6-4 6-3",
+   "date": "2026-10-19T10:10:00.000Z",
+   "seed1": null,
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 31358,
+   "player2Id": 95698,
+   "tournamentId": 21358,
+   "draw": 2,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 31358,
+    "name": "Jaume Antoni Munar Clar",
+    "countryAcr": "ESP",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 95698,
+    "name": "Federico Cina",
+    "countryAcr": "ITA",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 116429876,
+   "winnerId": 31358
+  },
+  {
+   "date": null,
+   "roundId": 9,
+   "draw": 2,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": null,
+   "seed2": null,
+   "player1Id": 14177,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 14177,
+    "name": "Jan-Lennard Struff",
+    "countryAcr": "GER",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 3700,
+    "name": "TBA",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "tbd": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 498024,
+   "awaitingParticipants": true
+  },
+  {
+   "date": "2026-10-22T13:15:00.000Z",
+   "roundId": 5,
+   "draw": 2,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": "7.8",
+   "odd2": "1.077",
+   "seed1": "WC",
+   "seed2": "5",
+   "player1Id": 11226,
+   "player2Id": 92985,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 11226,
+    "name": "David Goffin",
+    "countryAcr": "BEL",
+    "seed": "WC",
+    "odd": 7.8
+   },
+   "player2": {
+    "id": 92985,
+    "name": "Alex Michelsen",
+    "countryAcr": "USA",
+    "seed": "5",
+    "odd": "1.077"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 492172
+  },
+  {
+   "roundId": 4,
+   "result": "3-6 6-3 6-4",
+   "date": "2026-10-21T16:10:00.000Z",
+   "seed1": "WC",
+   "seed2": "LL",
+   "odd1": "2.2",
+   "odd2": "1.66",
+   "player1Id": 11226,
+   "player2Id": 35296,
+   "tournamentId": 21358,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 11226,
+    "name": "David Goffin",
+    "countryAcr": "BEL",
+    "seed": "WC",
+    "odd": 2.2
+   },
+   "player2": {
+    "id": 35296,
+    "name": "Remy Bertola",
+    "countryAcr": "SUI",
+    "seed": "LL",
+    "odd": "1.66"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 192301991,
+   "winnerId": 11226
+  },
+  {
+   "roundId": 5,
+   "result": "6-4 6-2",
+   "date": "2026-10-21T18:35:00.000Z",
+   "seed1": null,
+   "seed2": "LL",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 14177,
+   "player2Id": 56641,
+   "tournamentId": 21358,
+   "draw": 3,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 14177,
+    "name": "Jan-Lennard Struff",
+    "countryAcr": "GER",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 56641,
+    "name": "Gauthier Onclin",
+    "countryAcr": "BEL",
+    "seed": "LL",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 195113279,
+   "winnerId": 14177
+  },
+  {
+   "date": "2026-10-23T08:00:00.000Z",
+   "roundId": 9,
+   "draw": 3,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": "2.34",
+   "odd2": "1.59",
+   "seed1": "q",
+   "seed2": "3",
+   "player1Id": 55828,
+   "player2Id": 52279,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 55828,
+    "name": "Clement Chidekh",
+    "countryAcr": "FRA",
+    "seed": "q",
+    "odd": 2.34
+   },
+   "player2": {
+    "id": 52279,
+    "name": "Francisco Cerundolo",
+    "countryAcr": "ARG",
+    "seed": "3",
+    "odd": "1.59"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 486357
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 6-2",
+   "date": "2026-10-19T13:40:00.000Z",
+   "seed1": "5",
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 92985,
+   "player2Id": 40187,
+   "tournamentId": 21358,
+   "draw": 4,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 92985,
+    "name": "Alex Michelsen",
+    "countryAcr": "USA",
+    "seed": "5",
+    "odd": null
+   },
+   "player2": {
+    "id": 40187,
+    "name": "Andrea Guerrieri",
+    "countryAcr": "ITA",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 120643592,
+   "winnerId": 92985
+  },
+  {
+   "date": "2026-10-23T08:00:00.000Z",
+   "roundId": 9,
+   "draw": 4,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": "2.92",
+   "odd2": "1.4",
+   "seed1": null,
+   "seed2": "2",
+   "player1Id": 33860,
+   "player2Id": 61838,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 33860,
+    "name": "Tallon Griekspoor",
+    "countryAcr": "NED",
+    "seed": null,
+    "odd": 2.92
+   },
+   "player2": {
+    "id": 61838,
+    "name": "Jiri Lehecka",
+    "countryAcr": "CZE",
+    "seed": "2",
+    "odd": "1.4"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 548047
+  },
+  {
+   "date": "2026-10-22T15:00:00.000Z",
+   "roundId": 5,
+   "draw": 4,
+   "result": "",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": "3.125",
+   "odd2": "1.36",
+   "seed1": null,
+   "seed2": "6",
+   "player1Id": 13447,
+   "player2Id": 37741,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 13447,
+    "name": "Damir Dzumhur",
+    "countryAcr": "BIH",
+    "seed": null,
+    "odd": 3.125
+   },
+   "player2": {
+    "id": 37741,
+    "name": "Zizou Bergs",
+    "countryAcr": "BEL",
+    "seed": "6",
+    "odd": "1.36"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 477621
+  },
+  {
+   "roundId": 5,
+   "result": "7-6(4) 6-2",
+   "date": "2026-10-21T13:40:00.000Z",
+   "seed1": "q",
+   "seed2": null,
+   "odd1": "2.28",
+   "odd2": "1.62",
+   "player1Id": 55828,
+   "player2Id": 68090,
+   "tournamentId": 21358,
+   "draw": 5,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 55828,
+    "name": "Clement Chidekh",
+    "countryAcr": "FRA",
+    "seed": "q",
+    "odd": 2.28
+   },
+   "player2": {
+    "id": 68090,
+    "name": "Jacob Fearnley",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": "1.62"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 189490790,
+   "winnerId": 55828
+  },
+  {
+   "date": null,
+   "roundId": 4,
+   "draw": 5,
+   "result": "bye",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": "LL",
+   "seed2": null,
+   "player1Id": 56641,
+   "player2Id": 3700,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 56641,
+    "name": "Gauthier Onclin",
+    "countryAcr": "BEL",
+    "seed": "LL",
+    "odd": null
+   },
+   "player2": {
+    "id": 3700,
+    "name": "BYE",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "bye": true
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 412012,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "7-6(3) 7-6(3)",
+   "date": "2026-10-20T11:40:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "1.53",
+   "odd2": "2.48",
+   "player1Id": 14177,
+   "player2Id": 18736,
+   "tournamentId": 21358,
+   "draw": 6,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 14177,
+    "name": "Jan-Lennard Struff",
+    "countryAcr": "GER",
+    "seed": null,
+    "odd": 1.53
+   },
+   "player2": {
+    "id": 18736,
+    "name": "Marcos Giron",
+    "countryAcr": "USA",
+    "seed": null,
+    "odd": "2.48"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 152953317,
+   "winnerId": 14177
+  },
+  {
+   "roundId": 5,
+   "result": "6-4 7-6(4)",
+   "date": "2026-10-21T09:35:00.000Z",
+   "seed1": "3",
+   "seed2": "LL",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 52279,
+   "player2Id": 72574,
+   "tournamentId": 21358,
+   "draw": 6,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 52279,
+    "name": "Francisco Cerundolo",
+    "countryAcr": "ARG",
+    "seed": "3",
+    "odd": null
+   },
+   "player2": {
+    "id": 72574,
+    "name": "Martin Damm",
+    "countryAcr": "USA",
+    "seed": "LL",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 182463272,
+   "winnerId": 52279
+  },
+  {
+   "roundId": 5,
+   "result": "7-6(4) 7-5",
+   "date": "2026-10-21T11:30:00.000Z",
+   "seed1": null,
+   "seed2": "8",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 33860,
+   "player2Id": 66828,
+   "tournamentId": 21358,
+   "draw": 7,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 33860,
+    "name": "Tallon Griekspoor",
+    "countryAcr": "NED",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 66828,
+    "name": "Mariano Navone",
+    "countryAcr": "ARG",
+    "seed": "8",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 186679683,
+   "winnerId": 33860
+  },
+  {
+   "roundId": 4,
+   "result": "7-6(5) 2-6 6-2",
+   "date": "2026-10-21T09:35:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 13447,
+   "player2Id": 85899,
+   "tournamentId": 21358,
+   "draw": 7,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 13447,
+    "name": "Damir Dzumhur",
+    "countryAcr": "BIH",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 85899,
+    "name": "Dino Prizmic",
+    "countryAcr": "CRO",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 185274185,
+   "winnerId": 13447
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 7-6(3)",
+   "date": "2026-10-20T16:03:00.000Z",
+   "seed1": "6",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 37741,
+   "player2Id": 79068,
+   "tournamentId": 21358,
+   "draw": 8,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 37741,
+    "name": "Zizou Bergs",
+    "countryAcr": "BEL",
+    "seed": "6",
+    "odd": null
+   },
+   "player2": {
+    "id": 79068,
+    "name": "Toby Samuel",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 158573597,
+   "winnerId": 37741
+  },
+  {
+   "roundId": 5,
+   "result": "6-4 6-2",
+   "date": "2026-10-22T11:30:00.000Z",
+   "seed1": "2",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 61838,
+   "player2Id": 84235,
+   "tournamentId": 21358,
+   "draw": 8,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 61838,
+    "name": "Jiri Lehecka",
+    "countryAcr": "CZE",
+    "seed": "2",
+    "odd": null
+   },
+   "player2": {
+    "id": 84235,
+    "name": "Raphael Collignon",
+    "countryAcr": "BEL",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 219011126,
+   "winnerId": 61838
+  },
+  {
+   "roundId": 4,
+   "result": "6-1 6-4",
+   "date": "2026-10-20T12:10:00.000Z",
+   "seed1": "q",
+   "seed2": "7",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 55828,
+   "player2Id": 24249,
+   "tournamentId": 21358,
+   "draw": 9,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 55828,
+    "name": "Clement Chidekh",
+    "countryAcr": "FRA",
+    "seed": "q",
+    "odd": null
+   },
+   "player2": {
+    "id": 24249,
+    "name": "Botic Van De Zandschulp",
+    "countryAcr": "NED",
+    "seed": "7",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 152953319,
+   "winnerId": 55828
+  },
+  {
+   "roundId": 4,
+   "result": "6-3 6-0",
+   "date": "2026-10-20T14:10:00.000Z",
+   "seed1": null,
+   "seed2": null,
+   "odd1": "1.36",
+   "odd2": "3.125",
+   "player1Id": 68090,
+   "player2Id": 46747,
+   "tournamentId": 21358,
+   "draw": 10,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 68090,
+    "name": "Jacob Fearnley",
+    "countryAcr": "GBR",
+    "seed": null,
+    "odd": 1.36
+   },
+   "player2": {
+    "id": 46747,
+    "name": "Hugo Gaston",
+    "countryAcr": "FRA",
+    "seed": null,
+    "odd": "3.125"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 155763405,
+   "winnerId": 68090
+  },
+  {
+   "roundId": 4,
+   "result": "7-5 6-3",
+   "date": "2026-10-19T11:50:00.000Z",
+   "seed1": "LL",
+   "seed2": null,
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 72574,
+   "player2Id": 14856,
+   "tournamentId": 21358,
+   "draw": 11,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 72574,
+    "name": "Martin Damm",
+    "countryAcr": "USA",
+    "seed": "LL",
+    "odd": null
+   },
+   "player2": {
+    "id": 14856,
+    "name": "Yannick Hanfmann",
+    "countryAcr": "GER",
+    "seed": null,
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 117834427,
+   "winnerId": 72574
+  },
+  {
+   "date": null,
+   "roundId": 4,
+   "draw": 12,
+   "result": "bye",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": null,
+   "seed2": "3",
+   "player1Id": 3700,
+   "player2Id": 52279,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 3700,
+    "name": "BYE",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "bye": true
+   },
+   "player2": {
+    "id": 52279,
+    "name": "Francisco Cerundolo",
+    "countryAcr": "ARG",
+    "seed": "3",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 138868,
+   "isBye": true
+  },
+  {
+   "roundId": 4,
+   "result": "7-6(10) 6-2",
+   "date": "2026-10-20T09:35:00.000Z",
+   "seed1": "8",
+   "seed2": null,
+   "odd1": "1.66",
+   "odd2": "2.2",
+   "player1Id": 66828,
+   "player2Id": 52934,
+   "tournamentId": 21358,
+   "draw": 13,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 66828,
+    "name": "Mariano Navone",
+    "countryAcr": "ARG",
+    "seed": "8",
+    "odd": 1.66
+   },
+   "player2": {
+    "id": 52934,
+    "name": "Juan Manuel Cerundolo",
+    "countryAcr": "ARG",
+    "seed": null,
+    "odd": "2.2"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 150143462,
+   "winnerId": 66828
+  },
+  {
+   "roundId": 4,
+   "result": "7-6(3) 6-7(5) 7-5",
+   "date": "2026-10-20T09:35:00.000Z",
+   "seed1": null,
+   "seed2": "WC",
+   "odd1": "1.22",
+   "odd2": "4.25",
+   "player1Id": 33860,
+   "player2Id": 95311,
+   "tournamentId": 21358,
+   "draw": 14,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 33860,
+    "name": "Tallon Griekspoor",
+    "countryAcr": "NED",
+    "seed": null,
+    "odd": 1.22
+   },
+   "player2": {
+    "id": 95311,
+    "name": "Max Schoenhaus",
+    "countryAcr": "GER",
+    "seed": "WC",
+    "odd": "4.25"
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 150143472,
+   "winnerId": 33860
+  },
+  {
+   "roundId": 4,
+   "result": "3-6 6-3 6-4",
+   "date": "2026-10-20T17:55:00.000Z",
+   "seed1": null,
+   "seed2": "q",
+   "odd1": null,
+   "odd2": null,
+   "player1Id": 84235,
+   "player2Id": 92184,
+   "tournamentId": 21358,
+   "draw": 15,
+   "winner_entry": null,
+   "loser_entry": null,
+   "best_of": null,
+   "player1": {
+    "id": 84235,
+    "name": "Raphael Collignon",
+    "countryAcr": "BEL",
+    "seed": null,
+    "odd": null
+   },
+   "player2": {
+    "id": 92184,
+    "name": "Nishesh Basavareddy",
+    "countryAcr": "USA",
+    "seed": "q",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 161383934,
+   "winnerId": 84235
+  },
+  {
+   "date": null,
+   "roundId": 4,
+   "draw": 16,
+   "result": "bye",
+   "complete": null,
+   "live": null,
+   "timeGame": null,
+   "reserveInt": null,
+   "reserveString": null,
+   "odd1": null,
+   "odd2": null,
+   "seed1": null,
+   "seed2": "2",
+   "player1Id": 3700,
+   "player2Id": 61838,
+   "tournamentId": 21358,
+   "player1": {
+    "id": 3700,
+    "name": "BYE",
+    "countryAcr": "N/A",
+    "seed": null,
+    "odd": null,
+    "bye": true
+   },
+   "player2": {
+    "id": 61838,
+    "name": "Jiri Lehecka",
+    "countryAcr": "CZE",
+    "seed": "2",
+    "odd": null
+   },
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "matchId": 138870,
+   "isBye": true
+  },
+  {
+   "roundId": 10,
+   "draw": 2,
+   "result": "",
+   "date": "",
+   "tournamentId": 21358,
+   "tournament": {
+    "id": 21358,
+    "name": "European Open - Brussels"
+   },
+   "player1": {
+    "id": null,
+    "name": "TBA",
+    "tbd": true
+   },
+   "player2": {
+    "id": null,
+    "name": "TBA",
+    "tbd": true
+   },
+   "matchId": null,
+   "fromBracket": true,
+   "awaitingParticipants": true
+  }
+ ]
+}

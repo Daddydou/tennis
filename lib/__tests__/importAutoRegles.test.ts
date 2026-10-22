@@ -108,3 +108,25 @@ describe('divers', () => {
     expect(contenuAEmpreinter(a)).not.toBe(contenuAEmpreinter({ ...a, matches: [2] }));
   });
 });
+
+describe('mode api (API tennis)', () => {
+  const URL_API = 'https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/tournament/atp/European%20Open%20-%20Brussels/2026/draws?fullBracket=true';
+
+  it('dû toutes les 5 h 30 (cron toutes les 6 h)', async () => {
+    expect(estDu({ actif: true, dernier_succes_at: ilYa(5.6), mode: 'api' }, T0)).toBe(true);
+    expect(estDu({ actif: true, dernier_succes_at: ilYa(5.4), mode: 'api' }, T0)).toBe(false);
+    // Les autres modes gardent 11 h 30.
+    expect(estDu({ actif: true, dernier_succes_at: ilYa(5.6), mode: 'serveur' }, T0)).toBe(false);
+  });
+
+  it('inscription en mode api pour une URL de l’API du bon circuit seulement', async () => {
+    const { modeParDefaut: mode, estUrlApi, urlSourceValide } = await import('../importAutoRegles');
+    expect(mode('ATP', URL_API)).toBe('api');
+    expect(mode('WTA', URL_API)).toBe('serveur');
+    expect(estUrlApi(URL_API, 'ATP')).toBe(true);
+    expect(estUrlApi(URL_API, 'WTA')).toBe(false);
+    expect(urlSourceValide(URL_API, 'ATP')).toBe(true);
+    expect(urlSourceValide('https://tennis-api-atp-wta-itf.p.rapidapi.com.evil.io/tennis/v2/tournament/atp/X/2026/draws', 'ATP')).toBe(false);
+    expect(urlSourceValide('https://example.com/tennis/v2/tournament/atp/X/2026/draws', 'ATP')).toBe(false);
+  });
+});

@@ -34,7 +34,11 @@ export interface MatchBrut {
 export interface ExtraitBrut {
   extracted_at: string;
   source_url: string;
-  tournament: { slug: string | null; atp_id: string | null; year: number };
+  /**
+   * `start_date` (AAAA-MM-JJ) n'est produit que par l'import depuis l'API
+   * (lib/extract/matchstat.ts) ; importerExtraitCoeur le lit déjà s'il est là.
+   */
+  tournament: { slug: string | null; atp_id: string | null; year: number; start_date?: string };
   tour: 'ATP' | 'WTA';
   rounds_found: string[];
   match_count: number;

@@ -1,0 +1,789 @@
+{
+ "data": [
+  {
+   "id": 21357,
+   "name": "Almaty Open - Almaty",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "KAZ",
+   "prize": "$1.075M",
+   "courtId": 3,
+   "rankId": 2,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 2,
+    "name": "Main tour"
+   }
+  },
+  {
+   "id": 22105,
+   "name": "Cali Challenger",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "COL",
+   "prize": "$107K",
+   "courtId": 2,
+   "rankId": 1,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 21358,
+   "name": "European Open - Brussels",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "BEL",
+   "prize": "723K",
+   "courtId": 3,
+   "rankId": 2,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 2,
+    "name": "Main tour"
+   }
+  },
+  {
+   "id": 22108,
+   "name": "Florence Challenger",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "ITA",
+   "prize": "56K",
+   "courtId": 2,
+   "rankId": 1,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 22106,
+   "name": "Fort Worth Challenger",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "USA",
+   "prize": "$107K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 21359,
+   "name": "Grand Prix Auvergne-Rhone-Alpes - Lyon",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "FRA",
+   "prize": "757K",
+   "courtId": 3,
+   "rankId": 2,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 2,
+    "name": "Main tour"
+   }
+  },
+  {
+   "id": 22107,
+   "name": "Guangzhou Challenger",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "CHN",
+   "prize": "$107K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 22104,
+   "name": "Lisbon Challenger",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "POR",
+   "prize": "160K",
+   "courtId": 2,
+   "rankId": 1,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 22168,
+   "name": "M15 Bol",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "CRO",
+   "prize": "$15K",
+   "courtId": 2,
+   "rankId": 0,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22173,
+   "name": "M15 Heraklion",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "GRE",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22172,
+   "name": "M15 Ithaca",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "USA",
+   "prize": "$15K",
+   "courtId": 3,
+   "rankId": 0,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22169,
+   "name": "M15 Maceio",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "BRA",
+   "prize": "$15K",
+   "courtId": 2,
+   "rankId": 0,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22166,
+   "name": "M15 Monastir",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "TUN",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22165,
+   "name": "M15 Sharm ElSheikh",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "EGY",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22167,
+   "name": "M15 Shenzhen",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "CHN",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22171,
+   "name": "M15 Singapore",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "SGP",
+   "prize": "$15K",
+   "courtId": 3,
+   "rankId": 0,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22170,
+   "name": "M15 Tanagura",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "JPN",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22160,
+   "name": "M25 Luanda",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "ANG",
+   "prize": "$25K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22163,
+   "name": "M25 Mumbai",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "IND",
+   "prize": "$25K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22162,
+   "name": "M25 Redbridge",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "GBR",
+   "prize": "$25K",
+   "courtId": 3,
+   "rankId": 0,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22164,
+   "name": "M25 Santa Margherita di Pula",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "ITA",
+   "prize": "$25K",
+   "courtId": 2,
+   "rankId": 0,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22161,
+   "name": "M25 Sarreguemines",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "FRA",
+   "prize": "$25K",
+   "courtId": 4,
+   "rankId": 0,
+   "court": {
+    "id": 4,
+    "name": "Carpet"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 22159,
+   "name": "M25 Tamworth",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "atp",
+   "countryAcr": "AUS",
+   "prize": "$25K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 16752,
+   "name": "Japan Open - Osaka",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "JPN",
+   "prize": "$283K",
+   "courtId": 1,
+   "rankId": 2,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 2,
+    "name": "Main tour"
+   }
+  },
+  {
+   "id": 16751,
+   "name": "Ningbo Open - Ningbo",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "CHN",
+   "prize": "$1.206M",
+   "courtId": 1,
+   "rankId": 2,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 2,
+    "name": "Main tour"
+   }
+  },
+  {
+   "id": 17346,
+   "name": "W100 Wrexham",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "GBR",
+   "prize": "$100K",
+   "courtId": 3,
+   "rankId": 1,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17361,
+   "name": "W15 Bol",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "CRO",
+   "prize": "$15K",
+   "courtId": 2,
+   "rankId": 0,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17357,
+   "name": "W15 Campina Grande",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "BRA",
+   "prize": "$15K",
+   "courtId": 2,
+   "rankId": 0,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17356,
+   "name": "W15 Karlovy Vary",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "CZE",
+   "prize": "$15K",
+   "courtId": 3,
+   "rankId": 0,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17358,
+   "name": "W15 Sharm ElSheikh",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "EGY",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17359,
+   "name": "W15 Singapore",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "SGP",
+   "prize": "$15K",
+   "courtId": 3,
+   "rankId": 0,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17360,
+   "name": "W15 Villena",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "ESP",
+   "prize": "$15K",
+   "courtId": 1,
+   "rankId": 0,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 0,
+    "name": "Futures/Satellites/ITF tournaments $10K"
+   }
+  },
+  {
+   "id": 17350,
+   "name": "W35 Bakersfield",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "USA",
+   "prize": "$35K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17351,
+   "name": "W35 Loule",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "POR",
+   "prize": "$35K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17353,
+   "name": "W35 Monastir",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "TUN",
+   "prize": "$35K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17354,
+   "name": "W35 Qian Daohu",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "CHN",
+   "prize": "$35K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17352,
+   "name": "W35 Santa Margherita di Pula",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "ITA",
+   "prize": "$35K",
+   "courtId": 2,
+   "rankId": 1,
+   "court": {
+    "id": 2,
+    "name": "Clay"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17355,
+   "name": "W35 Sydney",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "AUS",
+   "prize": "$35K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17349,
+   "name": "W50 Austin",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "USA",
+   "prize": "$50K",
+   "courtId": 1,
+   "rankId": 1,
+   "court": {
+    "id": 1,
+    "name": "Hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17348,
+   "name": "W50 Cherbourg-en-Cotentin",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "FRA",
+   "prize": "$50K",
+   "courtId": 3,
+   "rankId": 1,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  },
+  {
+   "id": 17347,
+   "name": "W75 Saguenay",
+   "date": "2026-10-19T00:00:00.000Z",
+   "startDate": "2026-10-19",
+   "tour": "wta",
+   "countryAcr": "CAN",
+   "prize": "$75K",
+   "courtId": 3,
+   "rankId": 1,
+   "court": {
+    "id": 3,
+    "name": "I.hard"
+   },
+   "rank": {
+    "id": 1,
+    "name": "Challengers/ITF tournaments > $10K"
+   }
+  }
+ ],
+ "rangeStart": "2026-10-19",
+ "rangeEnd": "2026-10-25",
+ "weekStart": "2026-10-19",
+ "weekEnd": "2026-10-25",
+ "qualify": false,
+ "count": 41
+}

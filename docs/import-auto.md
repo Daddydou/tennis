@@ -1,7 +1,49 @@
 # Import automatique des tableaux
 
-Après le **premier import manuel** d'un tournoi (écran `/import`, comme
-aujourd'hui), le tournoi est « surveillé » : il est réimporté toutes les ~12 h
+## Depuis l'API tennis (recommandé, ATP et WTA, sur téléphone)
+
+Depuis la migration 0027, `/import` commence par **Tournois de la semaine** :
+les tournois ATP/WTA du circuit principal qui commencent entre il y a 10 jours
+et dans 9 jours, lus dans le calendrier de l'API tennis (Matchstat, via
+RapidAPI). Un appui sur **Importer le tableau** suffit :
+
+1. le serveur lit le tableau dans l'API (1 requête) — tableau, résultats,
+   forfaits (« w/o »), abandons (« ret. »), qualifiés/WC/LL et cotes
+   avant-match dans la même réponse ;
+2. il le convertit en extrait du bookmarklet (`lib/extract/matchstat.ts`) et
+   l'importe par le même chemin qu'un collage ;
+3. le tournoi passe en surveillance **mode `api`** : le workflow GitHub le
+   réimporte toutes les **6 h** jusqu'à la finale, sans navigateur ni
+   userscript ;
+4. les cotes des matchs à venir sont archivées (`tn_odds`,
+   `tn_odds_historique`), avec les **vraies cotes** du bookmaker
+   (`cote_a`/`cote_b`) en plus de la probabilité sans marge.
+
+**Joueurs.** La source a ses propres identifiants et donne l'état civil
+complet (« Maria Camila Osorio Serrano » pour « C. Osorio »). Au premier
+import, chaque joueur est rapproché par le nom (formes « X. Nom », pays
+concordant) ; la correspondance est ensuite mémorisée dans
+`tn_player_source_ids` et ne dépend plus du nom. Un joueur retrouvé garde son
+ID et son nom de la base (donc son Elo Tennis Abstract) ; un inconnu est créé
+avec un ID préfixé `ms`. Deux noms ambigus (les deux « X. Wang ») ne sont
+jamais fusionnés : leur correspondance est déclarée dans la migration 0027.
+
+**Quota.** Plan Basic : **50 requêtes par jour**, plafond strict. Une
+importation ou mise à jour = 1 requête ; le calendrier = 2 requêtes par jour
+(cache Next de 24 h). Avec 6 tournois surveillés : 6 × 4 + 2 ≈ 26 par jour.
+Chaque bouton « Mettre à jour maintenant » en consomme 1.
+
+**Prérequis.** Variable `RAPIDAPI_KEY` dans Vercel (type sensitive) et dans
+`.env.local`. Sans elle, la section est désactivée et rien d'autre ne change.
+
+**À savoir.** Un tournoi déjà importé par le bookmarklet n'est pas réimporté
+depuis l'API (refus explicite : on ne crée pas un second tournoi). Les abandons
+sont enregistrés `retired` (le bookmarklet WTA les marquait `completed`).
+
+## Bookmarklet et userscript (secours)
+
+Après le **premier import manuel** d'un tournoi (écran `/import`, collage),
+le tournoi est « surveillé » : il est réimporté toutes les ~12 h
 jusqu'à ce que la finale soit importée. Rien d'autre ne change pour l'import
 manuel.
 
@@ -12,7 +54,8 @@ La synchro du bracket de Thomas (`npm run sync:bracket-thomas`) reste
 
 | Circuit | Mode par défaut | Qui récupère la page draws | Quand |
 |---|---|---|---|
-| WTA | `serveur` | Vercel, appelé par le workflow GitHub `import-auto.yml` | 06:00 et 18:00 UTC |
+| ATP / WTA | `api` | Vercel, dans l'API tennis, appelé par le workflow GitHub `import-auto.yml` | passages à 00, 06, 12 et 18 h UTC, dû toutes les 5 h 30 |
+| WTA | `serveur` | Vercel, appelé par le workflow GitHub `import-auto.yml` | mêmes passages, dû toutes les 11 h 30 |
 | ATP | `navigateur` | Le userscript Tampermonkey, dans ton navigateur | toutes les 30 min sur un onglet atptour.com ouvert, si le tournoi est dû |
 
 - atptour.com répond **403 Cloudflare** aux requêtes serveur : seul ton

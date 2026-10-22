@@ -9,7 +9,7 @@ import {
   modeParDefaut,
   motifArret,
   PAUSE_APRES_ECHEC_MS,
-  urlSourceAutorisee,
+  urlSourceValide,
   type ModeImportAuto,
   type MotifArret,
   type SourceImport,
@@ -207,7 +207,7 @@ export async function noterSucces(p: {
   const maintenant = p.maintenant ?? new Date();
   const sb = supabaseAdmin();
   const existante = await lireSurveillance(p.tournamentId);
-  const urlValide = urlSourceAutorisee(p.sourceUrl, p.tour);
+  const urlValide = urlSourceValide(p.sourceUrl, p.tour);
 
   if (!existante) {
     if (!urlValide) {
@@ -220,7 +220,7 @@ export async function noterSucces(p: {
       tournament_id: p.tournamentId,
       tour: p.tour,
       source_url: p.sourceUrl,
-      mode: modeParDefaut(p.tour),
+      mode: modeParDefaut(p.tour, p.sourceUrl),
       premier_import_at: maintenant.toISOString(),
       dernier_succes_at: maintenant.toISOString(),
       dernier_hash: p.hash,
@@ -303,11 +303,15 @@ export interface EtatTournoi {
   dernier_succes_at: string | null;
 }
 
-/** GET /api/import-auto/etat : tournois actifs et leur échéance. Lecture seule. */
+/**
+ * GET /api/import-auto/etat : tournois actifs et leur échéance. Lecture seule.
+ * Lu par le userscript : les tournois en mode 'api' en sont EXCLUS (le
+ * serveur s'en charge seul ; leur URL source n'est pas une page à ouvrir).
+ */
 export async function etatSurveillances(maintenant = new Date()): Promise<EtatTournoi[]> {
   const [lignes, echecs] = await Promise.all([listerSurveillances(), echecsAutoRecents(maintenant)]);
   return lignes
-    .filter((s) => s.actif)
+    .filter((s) => s.actif && s.mode !== 'api')
     .map((s) => ({
       tournament_id: s.tournament_id,
       tour: s.tour,
