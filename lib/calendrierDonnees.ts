@@ -117,6 +117,8 @@ export const CALENDRIER: Record<string, Fiche> = {
   'shanghai': { surface: H, categorie: 'M1000', semaine: 41 },
   'almaty': { surface: H, categorie: 'ATP250', semaine: 43 },
   'antwerp': { surface: H, categorie: 'ATP250', semaine: 43 },
+  // European Open : Anvers jusqu'en 2025, Bruxelles depuis 2026.
+  'brussels': { surface: H, categorie: 'ATP250', semaine: 43, nom: 'Bruxelles' },
   'stockholm': { surface: H, categorie: 'ATP250', semaine: 43 },
   'vienna': { surface: H, categorie: 'ATP500', semaine: 44 },
   'basel': { surface: H, categorie: 'ATP500', semaine: 44 },

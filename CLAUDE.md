@@ -42,6 +42,8 @@ pour les autres.
 
 \- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu] [--ecraser]. Si tournament_id_interne est posé (à la main), la synchro reporte aussi les pronostics Moi/Laki/Thomas dans tn_bracket_round_picks (lib/bracketExternePont.ts + db/bracketExternePont.ts) : emplacements vides seulement, écarts signalés sans écraser (sauf --ecraser), jamais de suppression.
 
+\- Import depuis l'API tennis (Matchstat via RapidAPI, clé RAPIDAPI\_KEY jamais affichée, 50 requêtes/jour) : externe/tennisApiClient.ts (HTTP) → lib/extract/matchstat.ts (conversion pure en extrait du bookmarklet, testée sur fixtures réelles) → db/importApi.ts (correspondance des joueurs via tn\_player\_source\_ids, cotes) → importerExtraitCoeur. Bouton dans /import, mise à jour auto en mode 'api' toutes les 6 h. Voir docs/import-auto.md.
+
 \- auth/ : mot de passe unique + cookie signé (session.ts, garde.ts)
 
 \- app/tournoi/\[id]/simulateur/ : simulateur de bracket (Monte Carlo, scénarios de victoire)

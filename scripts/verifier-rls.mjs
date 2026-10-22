@@ -78,6 +78,8 @@ const TABLES_PRIVEES = [
   // 0026 — import automatique : surveillance et journal
   'tn_import_auto',
   'tn_import_log',
+  // 0027 - import depuis l'API tennis : correspondance des identifiants
+  'tn_player_source_ids',
 ];
 
 /** Fonctions SQL révoquées pour anon (cf. migration 0001). */

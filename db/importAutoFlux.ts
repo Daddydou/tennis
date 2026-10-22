@@ -24,6 +24,7 @@ import {
   type MotifArret,
 } from '@/lib/importAutoRegles';
 import type { DrawExtract } from '@/lib/types';
+import { ecrireApresImport, parametresDeSurveillance, preparerDepuisApi } from './importApi';
 
 /**
  * IMPORT AUTOMATIQUE — les deux chemins d'entrée :
@@ -281,6 +282,7 @@ async function passageTournoi(
     if (!dry) await evaluerEtArreter(id, maintenant);
     return { tournament_id: id, statut: 'arrete', arret: motif, detail: dry ? 'Serait arrêté (à blanc).' : undefined };
   }
+  if (s.mode === 'api') return passageApi(s, dry, maintenant, dernierEchec);
   if (s.tour !== 'WTA' || s.mode !== 'serveur') return { tournament_id: id, statut: 'ignore', detail: `Mode ${s.mode} (${s.tour}) : userscript.` };
   if (!estDu(s, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Pas encore dû.' };
   if (enPauseApresEchec(dernierEchec, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Échec il y a moins d’une heure : pas de relance.' };
@@ -307,6 +309,44 @@ async function passageTournoi(
     return { tournament_id: id, statut: 'erreur', detail, diagnostic };
   }
   return importerPourSurveillance(extrait, 'serveur', id);
+}
+
+/**
+ * Mode 'api' (ATP et WTA) : 1 requête à l'API tennis par tournoi dû, puis
+ * le même chemin que le userscript (importerPourSurveillance : contrôle
+ * d'identité, tableau inchangé, import, surveillance). Correspondances des
+ * joueurs et cotes avant-match ensuite. Une erreur remonte à `passage`, qui
+ * la journalise comme les autres.
+ */
+async function passageApi(
+  s: LigneImportAuto,
+  dry: boolean,
+  maintenant: Date,
+  dernierEchec: string | null,
+): Promise<ResultatTournoi> {
+  const id = s.tournament_id;
+  if (!estDu(s, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Pas encore dû.' };
+  if (enPauseApresEchec(dernierEchec, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Échec il y a moins d’une heure : pas de relance.' };
+
+  const prep = await preparerDepuisApi(await parametresDeSurveillance(id, s.source_url));
+  if (dry) {
+    const diagnostic: DiagnosticPage = {
+      url: s.source_url,
+      statut_http: 200,
+      taille: JSON.stringify(prep.brut).length,
+      lignes_joueuses: 0,
+      matchs_extraits: prep.brut.match_count,
+      rounds: prep.brut.rounds_found,
+    };
+    await comparerAvecBase(prep.brut, diagnostic, s.dernier_hash);
+    return { tournament_id: id, statut: 'ignore', detail: 'À blanc : aucune écriture (1 requête API utilisée).', diagnostic };
+  }
+  const r = await importerPourSurveillance(prep.brut, 'serveur', id);
+  if (r.statut === 'importe' || r.statut === 'inchange') {
+    const suite = await ecrireApresImport(id, s.tour, prep, maintenant);
+    r.avertissements = [...prep.avertissements, ...(r.avertissements ?? []), ...suite];
+  }
+  return r;
 }
 
 function rapport(dry: boolean, resultats: ResultatTournoi[]): RapportPassage {

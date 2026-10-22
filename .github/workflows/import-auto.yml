@@ -12,12 +12,14 @@
 # GitHub sert d'alerte. Il ne déclenche JAMAIS la synchro du bracket de
 # Thomas (npm run sync:bracket-thomas reste manuelle).
 
-name: Import auto WTA
+name: Import auto (API tennis + WTA)
 
+# Toutes les 6 h : les tournois en mode « api » (ATP et WTA, 1 requête API
+# chacun) sont dus toutes les 5 h 30 ; ceux en mode « serveur » (page WTA)
+# restent dus toutes les 11 h 30, les passages intermédiaires les ignorent.
 on:
   schedule:
-    - cron: '0 6 * * *'
-    - cron: '0 18 * * *'
+    - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
     inputs:
       dry:

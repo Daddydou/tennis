@@ -56,6 +56,19 @@ function normaliser(slug: string | null): string | null {
 const EST_125 = /(^|-)125(-|$)/;
 
 function fiche(slug: string | null, tour: Tour): Fiche | null {
+  return trouver(slug, tour)?.fiche ?? null;
+}
+
+/**
+ * Clé du référentiel qui correspond à un slug (même recherche que
+ * `metaTournoi`), ou null. Sert à donner un slug « propre » aux tournois
+ * importés depuis l'API, dont le nom est libre (« European Open - Brussels »).
+ */
+export function cleCalendrier(slug: string | null, tour: Tour): string | null {
+  return trouver(slug, tour)?.cle ?? null;
+}
+
+function trouver(slug: string | null, tour: Tour): { cle: string; fiche: Fiche } | null {
   const s = normaliser(slug);
   if (!s) return null;
 
@@ -66,7 +79,7 @@ function fiche(slug: string | null, tour: Tour): Fiche | null {
   const cible = tour === 'WTA' ? ALIAS_WTA[s] ?? s : s;
 
   for (const table of tables) {
-    if (table[cible]) return table[cible];
+    if (table[cible]) return { cle: cible, fiche: table[cible] };
     if (EST_125.test(cible)) continue;
     // Slugs composés du type 'rolex-monte-carlo' ou 'us-open-tennis'. La clé la
     // plus longue gagne : sans cela « us-open » pourrait être capté par « open »
@@ -74,7 +87,7 @@ function fiche(slug: string | null, tour: Tour): Fiche | null {
     const cle = Object.keys(table)
       .filter((k) => cible.includes(k))
       .sort((a, b) => b.length - a.length)[0];
-    if (cle) return table[cle];
+    if (cle) return { cle, fiche: table[cle] };
   }
   return null;
 }

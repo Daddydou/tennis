@@ -31,9 +31,15 @@ function prochain(s: VueSurveillance): string {
   if (!s.actif) return '—';
   const p = prochainPassage(s);
   if (!p) return 'dès le prochain passage';
-  const quand = s.mode === 'serveur' ? 'au 1er passage du cron après le' : 'à la 1re visite du site après le';
+  const quand = s.mode === 'navigateur' ? 'à la 1re visite du site après le' : 'au 1er passage du cron après le';
   return `${quand} ${date(p.toISOString())}`;
 }
+
+const MODES: Record<string, string> = {
+  api: 'API (serveur, toutes les 6 h)',
+  serveur: 'page WTA (serveur)',
+  navigateur: 'userscript (navigateur)',
+};
 
 export function SectionImportsAuto({ lignes }: { lignes: VueSurveillance[] }) {
   const enAlerte = lignes.filter((s) => s.actif && s.echecs_consecutifs >= 2);
@@ -55,8 +61,8 @@ export function SectionImportsAuto({ lignes }: { lignes: VueSurveillance[] }) {
 
       {lignes.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          Aucun tournoi surveillé. Le premier import manuel réussi d&apos;un tournoi l&apos;inscrit :
-          il est ensuite réimporté toutes les 12 h jusqu&apos;à la finale.
+          Aucun tournoi surveillé. Le premier import réussi d&apos;un tournoi l&apos;inscrit :
+          il est ensuite réimporté automatiquement jusqu&apos;à la finale.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -66,7 +72,7 @@ export function SectionImportsAuto({ lignes }: { lignes: VueSurveillance[] }) {
                 <p className="font-medium">
                   {s.nom}{' '}
                   <span className="font-normal text-zinc-500">
-                    · {s.tour} · mode {s.mode} ·{' '}
+                    · {s.tour} · {MODES[s.mode] ?? `mode ${s.mode}`} ·{' '}
                     {s.actif
                       ? 'actif'
                       : `arrêté (${MOTIFS[s.motif_arret ?? ''] ?? s.motif_arret}, ${date(s.arrete_at)})`}
