@@ -1,0 +1,12 @@
+Référence (paramètres retenus) : log-loss validation 0.60670
+sans conversion 3 sets gagnants (bo5)            0.60688  (+0.00017)
+sans marge de victoire                           0.60805  (+0.00135)
+K identique pour tous les niveaux                0.60678  (+0.00008)
+abandons comptés comme un match normal           0.60695  (+0.00025)
+poids surface 0,5 (au lieu de 0,40)              0.60750  (+0.00080)
+poids surface 0,6 (réglage actuel de l’app)      0.60924  (+0.00254)
+sans plancher de K                               0.60742  (+0.00071)
+échelle 400 (au lieu de 507)                     0.60667  (-0.00004)
+sans les Futures / ITF (niveau S ignoré)         0.61127  (+0.00456)
+sans les Challengers / qualifs                   0.62226  (+0.01556)
+FiveThirtyEight (paramètres publiés)             0.60878  (+0.00207)
