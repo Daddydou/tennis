@@ -25,7 +25,9 @@ import {
 } from '@/lib/importAutoRegles';
 import type { DrawExtract } from '@/lib/types';
 import { ecrireApresImport, parametresDeSurveillance, preparerDepuisApi } from './importApi';
-import { mettreAJourEloMaison } from './eloMaison';
+import { mettreAJourEloMaison, retardEloMaison } from './eloMaison';
+import { quotaApi } from '@/externe/tennisApiClient';
+import { eloEnPremier, graviteRetard } from '@/lib/eloMaisonSuivi';
 
 /**
  * IMPORT AUTOMATIQUE — les deux chemins d'entrée :
@@ -258,6 +260,40 @@ export async function passage({ dry, urlTest }: { dry: boolean; urlTest?: string
     return rapport(dry, resultats);
   }
 
+  // Quota de l'API : inconnu en début de passage (un processus Vercel chaud peut en servir
+  // plusieurs). Les tableaux et l'Elo maison se partagent les 50 requêtes du jour : chaque
+  // réponse met à jour `quotaApi`, que l'Elo consulte pour garder une réserve aux tableaux.
+  quotaApi.restant = null;
+  const retardElo = dry ? 0 : await retardEloMaison(maintenant).catch(() => 0);
+
+  // Elo maison : résultats des jours complets (tous niveaux), jusqu'à 6 requêtes. En retard
+  // d'au moins 2 jours, il passe AVANT les tableaux (sinon un quota épuisé par eux le laisserait
+  // dériver jusqu'au seuil de ré-amorçage) ; à 3 jours de retard le passage est en ERREUR, ce qui
+  // fait échouer le job GitHub (e-mail d'alerte), comme une panne de tableau.
+  const etapeElo = async () => {
+    try {
+      for (const r of await mettreAJourEloMaison(6, maintenant)) {
+        if (r.statut === 'non_amorce') continue;
+        const circuit = `Elo maison ${r.tour.toUpperCase()}`;
+        const bilan = `${r.jours} jour(s), ${r.matchs} match(s), ${r.nouveaux} nouveau(x) joueur(s), ${r.requetes} requête(s), à jour au ${r.jusquau}`;
+        let statut: StatutTournoi = r.statut === 'mis_a_jour' || r.statut === 'partiel' ? 'importe' : 'ignore';
+        let detail = `${circuit} : ${bilan}.`;
+        if (r.statut === 'en_retard') {
+          statut = 'erreur';
+          detail = `${circuit} : plus de 10 jours de retard (dernier jour ${r.jusquau}) : ré-amorcer (recherche/elo-maison/amorcer.mts --ecrire).`;
+        } else if (graviteRetard(r.retard) === 'alerte') {
+          statut = 'erreur';
+          detail = `${circuit} : ${r.retard} jours de retard (dernier jour ${r.jusquau}), quota API insuffisant ou panne : ${bilan}.`;
+        } else if (r.statut === 'quota') {
+          detail = `${circuit} : quota API bas (reste ${quotaApi.restant ?? '?'}), reprise au prochain passage (retard ${r.retard} j).`;
+        }
+        resultats.push({ tournament_id: `elo-maison-${r.tour}`, statut, detail });
+      }
+    } catch (e) {
+      resultats.push({ tournament_id: 'elo-maison', statut: 'erreur', detail: `Elo maison : ${(e as Error).message}` });
+    }
+  };
+  if (!dry && eloEnPremier(retardElo)) await etapeElo();
   const [surveillances, echecs] = await Promise.all([listerSurveillances(), echecsAutoRecents(maintenant)]);
   for (const s of surveillances.filter((x) => x.actif)) {
     try {
@@ -269,27 +305,10 @@ export async function passage({ dry, urlTest }: { dry: boolean; urlTest?: string
     }
   }
 
-  // Elo maison : résultats de la veille (tous niveaux), APRÈS les tableaux pour qu'un quota
-  // serré serve d'abord aux tournois suivis. Une fois par jour en pratique : les passages
-  // suivants trouvent le suivi à jour et ne font aucune requête.
-  if (!dry) {
-    try {
-      for (const r of await mettreAJourEloMaison(6, maintenant)) {
-        if (r.statut === 'non_amorce') continue;
-        resultats.push({
-          tournament_id: `elo-maison-${r.tour}`,
-          statut: r.statut === 'mis_a_jour' || r.statut === 'partiel' ? 'importe' : 'ignore',
-          detail:
-            r.statut === 'en_retard'
-              ? `Elo maison ${r.tour.toUpperCase()} : plus de 10 jours de retard (dernier jour ${r.jusquau}), à ré-amorcer.`
-              : `Elo maison ${r.tour.toUpperCase()} : ${r.jours} jour(s), ${r.matchs} match(s), ${r.nouveaux} nouveau(x) joueur(s), ${r.requetes} requête(s), à jour au ${r.jusquau}.`,
-        });
-      }
-    } catch (e) {
-      resultats.push({ tournament_id: 'elo-maison', statut: 'erreur', detail: `Elo maison : ${(e as Error).message}` });
-    }
-  }
-  return rapport(dry, resultats);
+  // Elo maison, cas normal : APRÈS les tableaux, pour qu'un quota serré serve d'abord aux
+  // tournois suivis. Une fois par jour en pratique : les passages suivants trouvent le suivi à
+  // jour et ne font aucune requête. (En retard, il est passé AVANT : cf. etapeElo.)
+  if (!dry && !eloEnPremier(retardElo)) await etapeElo();  return rapport(dry, resultats);
 }
 
 async function passageTournoi(

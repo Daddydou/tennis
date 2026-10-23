@@ -14,6 +14,15 @@ import {
   type NoteElo,
 } from '@/lib/eloMaison';
 import { normaliserNom } from '@/lib/matching';
+import { quotaApi } from '@/externe/tennisApiClient';
+import {
+  dernierJourComplet,
+  jourIso,
+  jourNum,
+  peutLireJour,
+  RETARD_MAX_JOURS,
+  retardJours,
+} from '@/lib/eloMaisonSuivi';
 
 /**
  * ELO MAISON — mise à jour quotidienne (table tn_elo_maison, migration 0028).
@@ -30,8 +39,6 @@ import { normaliserNom } from '@/lib/matching';
  */
 
 const JOUR_MS = 86400000;
-const jourIso = (d: Date) => d.toISOString().slice(0, 10);
-const jourNum = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / JOUR_MS);
 
 interface Ligne {
   ta_slug: string;
@@ -75,24 +82,46 @@ interface MatchApi {
 
 export interface RapportEloMaison {
   tour: 'atp' | 'wta';
-  statut: 'a_jour' | 'mis_a_jour' | 'partiel' | 'non_amorce' | 'en_retard';
+  /** `quota` : budget ou quota API trop bas pour lire un jour, reprise au prochain passage. */
+  statut: 'a_jour' | 'mis_a_jour' | 'partiel' | 'quota' | 'non_amorce' | 'en_retard';
   jours: number;
   matchs: number;
   nouveaux: number;
   requetes: number;
   jusquau: string | null;
+  /** Jours de retard du suivi sur le dernier jour complet, APRES ce passage (0 = a jour). */
+  retard: number;
 }
 
-async function lireJour(tour: 'atp' | 'wta', jour: string, budget: { reste: number }): Promise<MatchApi[] | null> {
+interface Budget {
+  reste: number;
+  /** Vrai quand la lecture s'est arretee faute de quota (et non faute de jours a lire). */
+  limite?: boolean;
+}
+
+async function lireJour(tour: 'atp' | 'wta', jour: string, budget: Budget, retard: number): Promise<MatchApi[] | null> {
   const out: MatchApi[] = [];
   for (let page = 1; ; page++) {
-    if (budget.reste <= 0) return null;
+    // Budget du passage epuise, ou quota de l'API trop bas (reserve pour les tableaux) : on
+    // s'arrete SANS marquer le jour traite ; le passage suivant le relit en entier.
+    if (budget.reste <= 0 || !peutLireJour(quotaApi.restant, retard)) {
+      budget.limite = true;
+      return null;
+    }
     budget.reste--;
     const res = await fetch(`https://${HOTE_API}/tennis/v2/${tour}/results/${jour}?pageSize=500&pageNo=${page}`, {
       headers: { 'X-RapidAPI-Key': cleApi(), 'X-RapidAPI-Host': HOTE_API },
       cache: 'no-store',
       signal: AbortSignal.timeout(20000),
     });
+    const restant = Number(res.headers.get('x-ratelimit-requests-remaining') ?? NaN);
+    if (Number.isFinite(restant)) quotaApi.restant = restant;
+    // 429 : quota du jour atteint. Ce n'est pas une panne : l'Elo reprend au prochain passage.
+    if (res.status === 429) {
+      quotaApi.restant = 0;
+      budget.limite = true;
+      return null;
+    }
     if (!res.ok) throw new Error(`API tennis (résultats ${tour} ${jour}) : HTTP ${res.status}`);
     const j = (await res.json()) as { data?: MatchApi[]; hasNextPage?: boolean };
     out.push(...(j.data ?? []));
@@ -101,30 +130,35 @@ async function lireJour(tour: 'atp' | 'wta', jour: string, budget: { reste: numb
 }
 
 /** Met à jour un circuit ; renvoie ce qui a été fait. */
-async function mettreAJourCircuit(tour: 'atp' | 'wta', budget: { reste: number }, maintenant: Date): Promise<RapportEloMaison> {
+async function mettreAJourCircuit(tour: 'atp' | 'wta', budget: Budget, maintenant: Date): Promise<RapportEloMaison> {
   const sb = supabaseAdmin();
   const { data: suivi, error } = await sb.from('tn_elo_maison_suivi').select('*').eq('tour', tour).maybeSingle();
   // Migration 0028 pas encore appliquée : rien à faire, sans erreur.
   if (error && (error.code === '42P01' || error.code === 'PGRST205')) {
-    return { tour, statut: 'non_amorce', jours: 0, matchs: 0, nouveaux: 0, requetes: 0, jusquau: null };
+    return { tour, statut: 'non_amorce', jours: 0, matchs: 0, nouveaux: 0, requetes: 0, jusquau: null, retard: 0 };
   }
   if (error) throw new Error(`Suivi Elo maison : ${error.message}`);
-  const rapport: RapportEloMaison = { tour, statut: 'a_jour', jours: 0, matchs: 0, nouveaux: 0, requetes: 0, jusquau: suivi?.dernier_jour_traite ?? null };
+  const rapport: RapportEloMaison = { tour, statut: 'a_jour', jours: 0, matchs: 0, nouveaux: 0, requetes: 0, jusquau: suivi?.dernier_jour_traite ?? null, retard: 0 };
   if (!suivi) return { ...rapport, statut: 'non_amorce' };
 
-  const hier = jourIso(new Date(maintenant.getTime() - JOUR_MS));
+  const hier = dernierJourComplet(maintenant);
   let jour = jourIso(new Date(Date.parse(`${suivi.dernier_jour_traite}T00:00:00Z`) + JOUR_MS));
   // Garde-fou quota : plus de 10 jours de retard (amorçage ancien, panne prolongée), on ne
   // rattrape PAS jour par jour (≈ 1 requête par jour et par circuit) — ré-amorcer plutôt
   // (recherche/elo-maison : combler-api.mjs puis amorcer.mts --ecrire).
-  if (jourNum(hier) - jourNum(suivi.dernier_jour_traite) > 10) return { ...rapport, statut: 'en_retard' };
+  const retard0 = retardJours(suivi.dernier_jour_traite, maintenant);
+  rapport.retard = retard0;
+  if (retard0 > RETARD_MAX_JOURS) return { ...rapport, statut: 'en_retard' };
   let total = suivi.matchs_traites as number;
 
   while (jour <= hier) {
     const avant = budget.reste;
-    const brut = await lireJour(tour, jour, budget);
+    const brut = await lireJour(tour, jour, budget, retard0);
     rapport.requetes += avant - budget.reste;
-    if (!brut) return { ...rapport, statut: rapport.jours ? 'partiel' : 'a_jour' };
+    if (!brut) {
+      rapport.retard = retardJours(rapport.jusquau ?? suivi.dernier_jour_traite, maintenant);
+      return { ...rapport, statut: rapport.jours ? 'partiel' : 'quota' };
+    }
 
     // Simples seulement (les doubles ont « / » dans le nom), forfaits écartés.
     const matchs = brut
@@ -220,6 +254,7 @@ async function mettreAJourCircuit(tour: 'atp' | 'wta', budget: { reste: number }
     rapport.statut = 'mis_a_jour';
     jour = jourIso(new Date(Date.parse(`${jour}T00:00:00Z`) + JOUR_MS));
   }
+  rapport.retard = retardJours(rapport.jusquau ?? suivi.dernier_jour_traite, maintenant);
   return rapport;
 }
 
@@ -229,8 +264,19 @@ async function mettreAJourCircuit(tour: 'atp' | 'wta', budget: { reste: number }
  */
 export async function mettreAJourEloMaison(budgetMax = 6, maintenant = new Date()): Promise<RapportEloMaison[]> {
   if (!cleApi()) return [];
-  const budget = { reste: budgetMax };
+  const budget: Budget = { reste: budgetMax };
   const out: RapportEloMaison[] = [];
   for (const tour of ['atp', 'wta'] as const) out.push(await mettreAJourCircuit(tour, budget, maintenant));
   return out;
+}
+
+/**
+ * Retard du suivi (en jours, le pire des deux circuits), SANS requete a l'API : sert au passage
+ * a decider si l'Elo doit passer AVANT les tableaux (lib/eloMaisonSuivi.ts). 0 si la table
+ * n'est pas amorcee.
+ */
+export async function retardEloMaison(maintenant = new Date()): Promise<number> {
+  const { data, error } = await supabaseAdmin().from('tn_elo_maison_suivi').select('tour, dernier_jour_traite');
+  if (error || !data) return 0;
+  return Math.max(0, ...data.map((s) => retardJours(s.dernier_jour_traite as string, maintenant)));
 }

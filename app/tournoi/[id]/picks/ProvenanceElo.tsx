@@ -18,6 +18,9 @@ export default function ProvenanceElo({
   // survivants du tour affiché) : c'est le tableau entier qu'on veut contrôler.
   // Propriété du tournoi, pas du stock affiché.
   const sources = compterSources(elos);
+  // Base d'Elo réellement utilisée (SOURCE_ELO) : la même pour tous les joueurs du tournoi.
+  const nomBase =
+    Object.values(elos).find(Boolean)?.base === 'maison' ? 'Elo maison' : 'Elo Tennis Abstract';
   const tourTa = tour.toLowerCase();
   const aCompleter = playerRows
     .filter((p) => elos[p.id] && elos[p.id].source !== 'ta')
@@ -49,11 +52,11 @@ export default function ProvenanceElo({
     <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
       <summary className="cursor-pointer text-zinc-600">
         <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
-        joueur(s) sur {sources.total} avec Elo Tennis Abstract,{' '}
+        joueur(s) sur {sources.total} avec {nomBase},{' '}
         <span className={sources.maison > 0 ? 'font-medium text-amber-600' : ''}>
           {sources.maison}
         </span>{' '}
-        en repli maison,{' '}
+        en repli import,{' '}
         <span className={sources.defaut > 0 ? 'font-medium text-red-600' : ''}>{sources.defaut}</span>{' '}
         en défaut,{' '}
         <span className={sources.ambigu > 0 ? 'font-medium text-violet-600' : ''}>{sources.ambigu}</span>{' '}
@@ -65,12 +68,12 @@ export default function ProvenanceElo({
 
       {aCompleter.length === 0 ? (
         <p className="mt-2 text-zinc-500">
-          Tous les joueurs du tableau ont un Elo Tennis Abstract.
+          Tous les joueurs du tableau ont un {nomBase}.
         </p>
       ) : (
         <div className="mt-2 space-y-3">
           <p className="text-zinc-500">
-            Sans Elo Tennis Abstract retenu. Beaucoup sont des spécialistes de
+            Sans {nomBase} retenu. Beaucoup sont des spécialistes de
             double ou des joueurs inactifs, absents du rapport — pour les
             autres, déclarer la correspondance dans{' '}
             <code className="rounded bg-zinc-100 px-1">ta_name_exceptions</code>.
@@ -110,7 +113,7 @@ export default function ProvenanceElo({
               .map((j) => (
                 <li key={j.cle} className="flex items-baseline gap-2">
                   <span className={j.source === 'defaut' ? 'text-red-600' : 'text-amber-600'}>
-                    {j.source === 'defaut' ? 'défaut' : 'maison'}
+                    {j.source === 'defaut' ? 'défaut' : 'import'}
                   </span>
                   <span className="text-zinc-700">{j.nom}</span>
                   <code className="text-zinc-400">{j.cle}</code>

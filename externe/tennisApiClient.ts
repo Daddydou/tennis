@@ -35,6 +35,14 @@ export interface ReponseApi<T> {
   quotaRestant: number | null;
 }
 
+/**
+ * Dernier quota restant connu (en-tete x-ratelimit-requests-remaining de la derniere reponse),
+ * partage par tout ce qui appelle l'API dans le meme processus : les tableaux et l'Elo maison
+ * (db/eloMaison.ts) se partagent les 50 requetes du jour. `null` = inconnu. Le passage du cron
+ * le remet a `null` en debut de passage (un processus Vercel chaud peut en servir plusieurs).
+ */
+export const quotaApi: { restant: number | null } = { restant: null };
+
 async function appeler<T>(cle: string, chemin: string, init?: RequestInit & { next?: unknown }): Promise<ReponseApi<T>> {
   if (!cle) throw new ErreurApiTennis('RAPIDAPI_KEY absente : la clé se configure dans Vercel et .env.local.', null);
   let res: Response;
@@ -49,6 +57,7 @@ async function appeler<T>(cle: string, chemin: string, init?: RequestInit & { ne
   }
   const restant = Number(res.headers.get('x-ratelimit-requests-remaining') ?? NaN);
   const quotaRestant = Number.isFinite(restant) ? restant : null;
+  if (quotaRestant !== null) quotaApi.restant = quotaRestant;
   if (!res.ok) {
     const corps = (await res.text().catch(() => '')).slice(0, 200);
     const raison =

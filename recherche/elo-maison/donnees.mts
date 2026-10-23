@@ -115,6 +115,41 @@ export function cleNom(nom: string): string {
     .trim();
 }
 
+/**
+ * Jetons d'un nom pour le rattachement API <-> archive : sans accents, apostrophes et traits
+ * d'union COLLES (« O'Connell » = « Oconnell »), le point d'une initiale est un separateur.
+ */
+export function jetonsNom(nom: string): string[] {
+  return nom
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/['’`-]/g, '')
+    .replace(/\./g, ' ')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Codes pays qui different entre l'archive (IOC) et l'API pour un meme pays. */
+const ALIAS_PAYS: Record<string, string> = { LBN: 'LIB', TWN: 'TPE', DEU: 'GER', NED: 'NED', HOL: 'NED' };
+export const normPays = (p: string | null | undefined): string => (p ? (ALIAS_PAYS[p] ?? p) : '');
+
+/**
+ * Troisieme regle de rattachement (apres le nom complet et « meme prenom + meme pays ») :
+ * meme pays, meme INITIALE de prenom, et au moins un mot de nom de famille (4 lettres ou plus)
+ * en commun. Couvre « Cori Gauff » / « Coco Gauff », « Jeff Wolf » / « J J Wolf »,
+ * « Diego Dedura » / « Diego Dedura Palomero ». Retourne vrai si les deux noms se ressemblent
+ * assez pour etre CANDIDATS ; l'appelant n'accepte que s'il n'y a qu'un seul candidat.
+ */
+export function memeFamille(nomApi: string, nomArchive: string): boolean {
+  const a = jetonsNom(nomApi);
+  const b = jetonsNom(nomArchive);
+  if (a.length < 2 || b.length < 2 || a[0][0] !== b[0][0]) return false;
+  const reste = new Set(b.slice(1));
+  return a.slice(1).some((t) => t.length >= 4 && reste.has(t));
+}
+
 export interface Joueur {
   cle: string;
   nom: string;
@@ -233,25 +268,57 @@ function ajouterApi(
     const j = joueurs.get(k);
     if (!j) continue;
     const t = cleNom(j.nom).split(' ');
-    const cle = `${k.slice(0, 3)}|${t[0]}|${j.pays ?? ''}`;
+    const cle = `${k.slice(0, 3)}|${t[0]}|${normPays(j.pays)}`;
     (parPrenomPays.get(cle) ?? parPrenomPays.set(cle, []).get(cle)!).push(j);
   }
+  // Pays + initiale du prenom : candidats de la regle « meme famille ».
+  const parInitialePays = new Map<string, Joueur[]>();
+  for (const k of actifs) {
+    const j = joueurs.get(k);
+    const t = j ? jetonsNom(j.nom) : [];
+    if (!j || !j.pays || t.length < 2) continue;
+    const cle = `${k.slice(0, 3)}|${t[0][0]}|${normPays(j.pays)}`;
+    (parInitialePays.get(cle) ?? parInitialePays.set(cle, []).get(cle)!).push(j);
+  }
+  // Joueur de l'archive deja rattache a un identifiant API : la regle « meme famille » ne le reprend pas.
+  const reclames = new Map<string, string>();
 
   const rattacher = (tour: 'ATP' | 'WTA', id: number, nom: string, pays: string | null): string => {
     const cleApi = `${tour}:m${id}`;
     if (liens.has(cleApi)) return liens.get(cleApi)!;
     let cible: string | null = null;
-    const exacts = (parNom.get(`${tour}|${cleNom(nom)}`) ?? []).filter((j) => !pays || !j.pays || j.pays === pays);
+    const exacts = (parNom.get(`${tour}|${cleNom(nom)}`) ?? []).filter((j) => !pays || !j.pays || normPays(j.pays) === normPays(pays));
     if (exacts.length === 1) cible = exacts[0].cle;
+    if (!cible && pays) {
+      // Changement de nationalite (Potapova RUS -> AUT, Blinkova RUS -> FRA, Topo GER -> SRB...) :
+      // un seul joueur actif de l'archive porte exactement ce nom, et personne d'autre ne l'a repris.
+      const memeNom = (parNom.get(`${tour}|${cleNom(nom)}`) ?? []).filter((j) => !reclames.has(j.cle));
+      if (memeNom.length === 1) {
+        cible = memeNom[0].cle;
+        compter(`api lien nationalite ${tour}`);
+      }
+    }
     if (!cible && pays) {
       // « Jaume Antoni Munar Clar » ↔ « Jaume Munar » : même prénom, même pays, tous les mots du
       // nom de l'archive présents dans celui de l'API.
       const t = cleNom(nom).split(' ');
-      const cands = (parPrenomPays.get(`${tour}|${t[0]}|${pays}`) ?? []).filter((j) =>
+      const cands = (parPrenomPays.get(`${tour}|${t[0]}|${normPays(pays)}`) ?? []).filter((j) =>
         cleNom(j.nom).split(' ').slice(1).every((mot) => t.includes(mot)),
       );
       if (cands.length === 1) cible = cands[0].cle;
     }
+    if (!cible && pays) {
+      // Meme famille (cf. memeFamille) : un seul candidat libre, sinon on ne rattache pas.
+      const ti = jetonsNom(nom);
+      const cands = (ti.length >= 2 ? (parInitialePays.get(`${tour}|${ti[0][0]}|${normPays(pays)}`) ?? []) : []).filter(
+        (j) => memeFamille(nom, j.nom) && !reclames.has(j.cle),
+      );
+      if (cands.length === 1) {
+        cible = cands[0].cle;
+        compter(`api lien famille ${tour}`);
+      }
+    }
+    if (cible) reclames.set(cible, cleApi);
     if (cible) compter(`api lien ${tour}`);
     else {
       compter(`api nouveau ${tour}`);
