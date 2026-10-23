@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "verify:rls": "node --env-file=.env.local scripts/verifier-rls.mjs",
+    "verify:game-tracker": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/verifier-game-tracker.mts",
     "verify:auth": "node --env-file=.env.local scripts/verifier-auth.mjs",
     "backfill:tournois": "node --env-file=.env.local scripts/backfill-tournois.mts",
     "sync:bracket-thomas": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/sync-bracket-thomas.mts",

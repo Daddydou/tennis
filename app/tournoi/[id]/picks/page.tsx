@@ -7,6 +7,7 @@ import ProvenanceElo from './ProvenanceElo';
 import RecapParticipant from './RecapParticipant';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
 import PanneauGameTracker from './PanneauGameTracker';
+import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import { carte, pilleSelecteur } from '@/app/ui';
 import {
@@ -276,6 +277,7 @@ export default async function PicksPage({
     `/tournoi/${id}/picks?round=${r}${stockId ? `&participant=${stockId}` : ''}`;
 
   return (
+    <FournisseurPoolGT>
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="picks" />
       <NoteCotesUtilisees n={coteUtilisables} />
@@ -376,5 +378,6 @@ export default async function PicksPage({
       {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
       {recap && <RecapParticipant recap={recap} nomJoueur={nomJoueur} />}
     </div>
+    </FournisseurPoolGT>
   );
 }

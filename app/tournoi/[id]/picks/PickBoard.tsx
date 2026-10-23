@@ -6,6 +6,7 @@ import { validerPick, supprimerPick } from './actions';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
 import InsightBadge from './InsightBadge';
 import InsightDetail from './InsightDetail';
+import { usePoolGT } from './PoolGameTracker';
 import { boutonPrimaire, boutonDanger, Spinner } from '@/app/ui';
 import type { PlayerInsight } from '@/lib/insights';
 import type { Half } from '@/lib/types';
@@ -65,6 +66,9 @@ function ColonnePick({
   const [detailOuvert, setDetailOuvert] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const pool = usePoolGT();
+  // Le pool est celui de MON compte Game Tracker : jamais sur la vue d'un autre participant.
+  const poolActif = participantId === null && pool && pool.roundLocal === round ? pool : null;
 
   const modifie = choix !== colonne.pickActuel;
 
@@ -135,6 +139,10 @@ function ColonnePick({
           const aDetail =
             !!c.insight && (!!c.insight.summary || c.insight.facts.length > 0);
           const ouvert = aDetail && detailOuvert === c.playerId;
+          // Repères Game Tracker : seulement après « Lire Game Tracker », et
+          // seulement pour le tour qu'il a ouvert. INDICATIF : ne bloque rien.
+          const etatGT = poolActif?.parJoueur[c.playerId];
+          const horsPool = !!poolActif && !etatGT;
           return (
             <div key={c.playerId}>
             <label
@@ -172,6 +180,30 @@ function ColonnePick({
                 </span>
                 {/* Hors de la zone tronquée : le badge reste visible sur mobile. */}
                 <InsightBadge insight={c.insight} />
+                {horsPool && (
+                  <span
+                    className="ml-1 shrink-0 rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
+                    title="Pas dans ton pool Game Tracker pour ce tour : l'envoi serait refusé."
+                  >
+                    hors pool GT
+                  </span>
+                )}
+                {etatGT?.dejaPicke && (
+                  <span
+                    className="ml-1 shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-800"
+                    title="Déjà pické chez Game Tracker à un autre tour : l'envoi serait refusé."
+                  >
+                    déjà pické GT
+                  </span>
+                )}
+                {etatGT?.enAttente && (
+                  <span
+                    className="ml-1 shrink-0 rounded bg-sky-100 px-1 text-[10px] font-medium text-sky-800"
+                    title="Son match du tour précédent n'est pas joué : s'il le perd, Game Tracker redirigera le pick."
+                  >
+                    en attente
+                  </span>
+                )}
                 {aDetail && (
                   // Un bouton dans un <label> n'active pas le radio : ouvrir le
                   // détail ne change jamais le choix en cours.
