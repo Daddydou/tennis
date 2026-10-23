@@ -108,6 +108,16 @@ function num(v: number | string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Source des Elo de l'app : `ta` (défaut) ou `maison` (variable SOURCE_ELO). */
+export function sourceEloConfiguree(): 'ta' | 'maison' {
+  return process.env.SOURCE_ELO?.trim().toLowerCase() === 'maison' ? 'maison' : 'ta';
+}
+
+/** 42P01 (Postgres) / PGRST205 (cache PostgREST) : table pas encore créée. */
+function tableAbsente(code: string | undefined): boolean {
+  return code === '42P01' || code === 'PGRST205';
+}
+
 /**
  * Charge les Elo Tennis Abstract d'un circuit et construit l'index de
  * rapprochement (exceptions comprises).
@@ -119,6 +129,37 @@ function num(v: number | string | null | undefined): number | null {
 export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
   const sb = supabaseAnon();
   const t = tour.toLowerCase() as 'atp' | 'wta';
+
+  // Elo maison (recherche/elo-maison, table tn_elo_maison) : même forme de ligne que
+  // ta_elo, colonnes déjà transformées pour que le mélange 0,6/0,4 de l'app reproduise
+  // ses probabilités. Activé par SOURCE_ELO=maison ; repli sur Tennis Abstract si la
+  // table est absente ou vide. Les exceptions de noms visent des slugs TA : non reprises.
+  if (sourceEloConfiguree() === 'maison') {
+    // ~5000 joueurs par circuit : PostgREST plafonne une réponse à 1000 lignes → pages.
+    const lignes: TaEloRow[] = [];
+    const PAGE = 1000;
+    let absente = false;
+    for (let debut = 0; ; debut += PAGE) {
+      const page = await sb
+        .from('tn_elo_maison')
+        .select(
+          'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at',
+        )
+        .eq('tour', t)
+        .order('ta_slug')
+        .range(debut, debut + PAGE - 1);
+      if (page.error) {
+        if (tableAbsente(page.error.code)) {
+          absente = true;
+          break;
+        }
+        throw new Error(`tn_elo_maison : ${page.error.message}`);
+      }
+      lignes.push(...((page.data ?? []) as TaEloRow[]));
+      if ((page.data ?? []).length < PAGE) break;
+    }
+    if (!absente && lignes.length > 0) return construireIndex(lignes, []);
+  }
 
   const [elos, exceptions] = await Promise.all([
     sb

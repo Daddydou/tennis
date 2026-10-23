@@ -1,0 +1,59 @@
+Départ : log-loss entraînement 0.58432, validation 0.60878
+  passe 1 · kDecal = 5.5000 → 0.58431
+  passe 1 · kDecal = 6.2500 → 0.58430
+  passe 1 · kDecal = 8.0000 → 0.58429
+  passe 1 · kMin = 18.0000 → 0.58425
+  passe 1 · wSurface = 0.3500 → 0.58379
+  passe 1 · niveau.F = 0.6000 → 0.58378
+  passe 1 · niveau.F = 0.8000 → 0.58378
+  passe 1 · niveau.C = 0.6000 → 0.58366
+  passe 1 · niveau.C = 0.8000 → 0.58363
+  passe 1 · niveau.S = 1.1000 → 0.58359
+  passe 1 · niveau.Q = 1.1000 → 0.58359
+  passe 1 · niveau.D = 0.9000 → 0.58358
+  passe 1 · abandon = 1.2500 → 0.58354
+  passe 1 · marge = 0.3000 → 0.58314
+  passe 1 · bo5 = true → 0.58256
+  passe 1 · echelle = 420.0000 → 0.58246
+  passe 1 · echelle = 460.0000 → 0.58241
+Fin de passe 1 : entraînement 0.58241 · validation 0.60726
+  → retenus (meilleure validation jusqu'ici)
+  passe 2 · kMin = 19.8000 → 0.58236
+  passe 2 · kMin = 22.5000 → 0.58232
+  passe 2 · wSurface = 0.4025 → 0.58229
+  passe 2 · niveau.F = 0.7200 → 0.58229
+  passe 2 · niveau.S = 1.2100 → 0.58228
+  passe 2 · marge = 0.3300 → 0.58225
+  passe 2 · marge = 0.3750 → 0.58221
+  passe 2 · marge = 0.4800 → 0.58214
+  passe 2 · echelle = 483.0000 → 0.58211
+Fin de passe 2 : entraînement 0.58211 · validation 0.60688
+  → retenus (meilleure validation jusqu'ici)
+  passe 3 · kDecal = 8.8000 → 0.58211
+  passe 3 · kMin = 24.7500 → 0.58209
+  passe 3 · niveau.M = 0.9000 → 0.58209
+  passe 3 · marge = 0.5280 → 0.58205
+  passe 3 · marge = 0.6000 → 0.58202
+  passe 3 · marge = 0.7680 → 0.58200
+  passe 3 · echelle = 507.1500 → 0.58193
+Fin de passe 3 : entraînement 0.58193 · validation 0.60670
+  → retenus (meilleure validation jusqu'ici)
+  passe 4 · kDecal = 9.6800 → 0.58193
+  passe 4 · kDecal = 11.0000 → 0.58193
+  passe 4 · niveau.F = 0.6480 → 0.58193
+  passe 4 · niveau.C = 0.7200 → 0.58192
+  passe 4 · niveau.D = 0.8100 → 0.58192
+  passe 4 · marge = 0.8448 → 0.58190
+  passe 4 · echelle = 532.5075 → 0.58189
+Fin de passe 4 : entraînement 0.58189 · validation 0.60701
+  passe 5 · kDecal = 6.6000 → 0.58189
+  passe 5 · kDecal = 8.8000 → 0.58189
+  passe 5 · niveau.C = 0.7920 → 0.58189
+  passe 5 · marge = 0.9293 → 0.58187
+Fin de passe 5 : entraînement 0.58187 · validation 0.60677
+  passe 6 · kDecal = 9.6800 → 0.58187
+  passe 6 · niveau.C = 0.7128 → 0.58187
+  passe 6 · marge = 1.0222 → 0.58186
+  passe 6 · echelle = 559.1329 → 0.58185
+Fin de passe 6 : entraînement 0.58185 · validation 0.60710
+Terminé. Validation retenue : 0.60670

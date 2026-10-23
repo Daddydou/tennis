@@ -67,6 +67,9 @@ const TABLES = [
   'tn_bracket_externe_joueurs',
   'tn_bracket_externe_matchs',
   'tn_bracket_externe_pronostics',
+  // 0028 — Elo maison (notes et suivi de la mise à jour quotidienne)
+  'tn_elo_maison',
+  'tn_elo_maison_suivi',
 ];
 
 /**

@@ -1,0 +1,7 @@
+Matchs de l'app comparables : 765 (écartés : 254 sans Elo TA, 86 sans Elo maison)
+Tous                               n= 765 | log-loss TA 0.6154 · TA 50/50+bo5 0.6154 · maison 0.6108 | Brier 0.2131 / 0.2108 | exact. 65.4 / 66.3 % | écart maison−TA -0.0047 [-0.0140 ; 0.0046]
+ATP                                n= 418 | log-loss TA 0.6403 · TA 50/50+bo5 0.6401 · maison 0.6383 | Brier 0.2241 / 0.2225 | exact. 62.9 / 63.6 % | écart maison−TA -0.0020 [-0.0160 ; 0.0120]
+WTA                                n= 347 | log-loss TA 0.5855 · TA 50/50+bo5 0.5856 · maison 0.5776 | Brier 0.2000 / 0.1966 | exact. 68.3 / 69.5 % | écart maison−TA -0.0079 [-0.0196 ; 0.0038]
+Grand Chelem                       n= 215 | log-loss TA 0.5355 · TA 50/50+bo5 0.5359 · maison 0.5435 | Brier 0.1792 / 0.1809 | exact. 73.0 / 75.3 % | écart maison−TA +0.0081 [-0.0120 ; 0.0281]
+Avec cotes (TA / maison / marché)  n= 333 | log-loss TA 0.6114 · TA 50/50+bo5 0.6123 · maison 0.6102 · marché 0.5940 | Brier 0.2123 / 0.2106 | exact. 63.7 / 64.9 % / marché 66.4 % | écart maison−TA -0.0013 [-0.0157 ; 0.0132]
+Historique jusqu'au 20261022, 0 matchs de l'app ajoutés après.
