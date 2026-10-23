@@ -65,6 +65,7 @@ pour les autres.
 \- Le barème du jeu est dans lib/scoring.ts, déjà validé : ne pas le réimplémenter ailleurs (voir README « Où corriger le barème des picks »). Ses règles datées sont dans lib/picksRegles.ts (pointsForfaitPour : forfait gagné à 10 pts dès le 2026-10-05 en bo3, miroir SQL tn_points_forfait, migration 0025) ; seuls tn_recompute_picks et le Score de référence l'utilisent, le Fantasy et le Bracket gardent le défaut 5.
 
 \- lib/ est LA référence : c'est tennis-picks (autre dossier) qui en a une copie dépassée, pas l'inverse.
+\- Onglet Procédures (/procedures) : mode d'emploi de tous les gestes, contenu dans app/procedures/procedures.ts. Quand un geste change ou qu'on en crée un (nouvel import, nouvelle variable, nouvelle commande...), mettre à jour la fiche dans la MÊME PR (et sa date `maj`). Jamais de valeur secrète dedans, seulement le nom des variables.
 
 
 

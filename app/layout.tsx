@@ -61,6 +61,12 @@ export default async function RootLayout({
               >
                 Participants
               </Link>
+              <Link
+                href="/procedures"
+                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Procédures
+              </Link>
             </nav>
             {connecte && (
               <form action={seDeconnecter} className="ml-auto">
