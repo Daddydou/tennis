@@ -90,7 +90,7 @@ export function joueurDePosition(p: number, premierTour: Map<number, MatchIntern
  * l'ordre varie d'une source à l'autre (« Bu YUNCHAOKETE » chez Thomas,
  * « Y. Bu » chez nous, Shanghai 2026).
  */
-function memeNom(prenom: string | null, nom: string | null, nomInterne: string): boolean {
+export function memeNom(prenom: string | null, nom: string | null, nomInterne: string): boolean {
   const cles = new Set(clesCandidates(nomInterne));
   return [`${prenom} ${nom}`, `${nom} ${prenom}`].some((n) => clesCandidates(n).some((c) => cles.has(c)));
 }
