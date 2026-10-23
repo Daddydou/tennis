@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MatchInterne } from '../bracketExternePont';
 import {
+  candidatsLienGT,
   ecartsApresEnvoi,
   lireEtatGT,
   lireReponsePostGT,
@@ -18,6 +19,8 @@ import {
   type ParametresEnvoi,
   type PickLocal,
   type TourOuvertGT,
+  type TournoiInterneGT,
+  type TournoiPicksGT,
 } from '../gameTrackerPicks';
 
 const NOMS = [
@@ -277,5 +280,45 @@ describe('lecture des réponses', () => {
     expect(ok).toMatchObject({ enregistre: true, tour: 3, monPick: { haut: { position: 9 }, bas: { position: 27 } } });
     const ko = lireReponsePostGT({ jeu: 'tennis-picks', enregistre: false, erreur: 'Ce tour est verrouillé' });
     expect(ko).toMatchObject({ enregistre: false, erreur: 'Ce tour est verrouillé', monPick: null });
+  });
+});
+
+describe('candidatsLienGT (relier un tournoi absent de l’API bracket)', () => {
+  const lyon: TournoiInterneGT = { name: 'Lyon 2026', tour: 'ATP', year: 2026, drawSize: 32 };
+  const gt = (id: string, nom: string, extra: Partial<TournoiPicksGT> = {}): TournoiPicksGT => ({
+    id, nom, tour: 'ATP', annee: 2026, drawSize: 32, statut: 'ONGOING', tourOuvert: null, ...extra,
+  });
+
+  it('propose en premier celui dont le nom contient la ville', () => {
+    const r = candidatsLienGT(lyon, [gt('a', 'ATP 250 Almaty'), gt('b', 'Vieil ATP 250 Lyon')]);
+    expect(r.map((c) => c.id)).toEqual(['b', 'a']);
+    expect(r[0].suggere).toBe(true);
+    expect(r[1].suggere).toBe(false);
+  });
+
+  it('écarte un autre circuit, une autre année, une autre taille de tableau', () => {
+    const r = candidatsLienGT(lyon, [
+      gt('wta', 'WTA Lyon', { tour: 'WTA' }),
+      gt('vieux', 'ATP Lyon 2025', { annee: 2025 }),
+      gt('gros', 'ATP Lyon 128', { drawSize: 128 }),
+      gt('ok', 'ATP Lyon'),
+    ]);
+    expect(r.map((c) => c.id)).toEqual(['ok']);
+  });
+
+  it('insensible aux accents et à la casse', () => {
+    const r = candidatsLienGT({ ...lyon, name: 'Lyon 2026' }, [gt('b', 'Open de LYON')]);
+    expect(r[0].suggere).toBe(true);
+    const e = candidatsLienGT({ name: 'Genève 2026', tour: 'atp', year: 2026, drawSize: 32 }, [gt('g', 'ATP 250 Geneve')]);
+    expect(e[0].suggere).toBe(true);
+  });
+
+  it('année ou taille inconnues chez nous : pas de filtre sur ce critère', () => {
+    const r = candidatsLienGT({ name: 'Lyon 2026', tour: 'ATP', year: null, drawSize: null }, [gt('x', 'ATP Lyon', { annee: 2030, drawSize: 64 })]);
+    expect(r).toHaveLength(1);
+  });
+
+  it('aucune correspondance : liste vide', () => {
+    expect(candidatsLienGT(lyon, [])).toEqual([]);
   });
 });

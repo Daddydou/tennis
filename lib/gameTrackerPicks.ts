@@ -451,3 +451,52 @@ export function ecartsApresEnvoi(
   if (!unSeulPick && envoye.bas !== (reel.bas?.position ?? null)) out.push({ cote: 'bas', envoye: envoye.bas, reel: reel.bas?.position ?? null });
   return out;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Lien tournoi interne <-> tournoi Game Tracker                             */
+/* -------------------------------------------------------------------------- */
+
+/** Ce qu'on sait de NOTRE tournoi pour le rapprocher de celui de Game Tracker. */
+export interface TournoiInterneGT {
+  name: string;
+  tour: string;
+  year: number | null;
+  drawSize: number | null;
+}
+
+export interface CandidatLienGT {
+  id: string;
+  nom: string;
+  tour: string;
+  statut: string;
+  /** Le nom de Game Tracker contient la ville du nôtre : proposé en premier, JAMAIS relié sans clic. */
+  suggere: boolean;
+}
+
+const sansAccents = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/** « Lyon 2026 » -> « lyon ». */
+const villeDe = (name: string) =>
+  sansAccents(name)
+    .replace(/\b(19|20)\d{2}\b/g, '')
+    .replace(/[^a-z]+/g, ' ')
+    .trim();
+
+/**
+ * Tournois de Game Tracker qui PEUVENT correspondre au nôtre : même circuit,
+ * même année, même taille de tableau. Sert à choisir le lien depuis l'écran
+ * picks quand le tournoi n'est pas dans l'API bracket de Thomas (cas de Lyon :
+ * présent côté picks, absent de /import/thomas). Le choix reste à l'utilisateur.
+ */
+export function candidatsLienGT(interne: TournoiInterneGT, liste: TournoiPicksGT[]): CandidatLienGT[] {
+  const ville = villeDe(interne.name);
+  return liste
+    .filter(
+      (t) =>
+        t.tour.toUpperCase() === interne.tour.toUpperCase() &&
+        (interne.year === null || t.annee === interne.year) &&
+        (interne.drawSize === null || t.drawSize === interne.drawSize),
+    )
+    .map((t) => ({ id: t.id, nom: t.nom, tour: t.tour, statut: t.statut, suggere: ville !== '' && sansAccents(t.nom).includes(ville) }))
+    .sort((a, b) => Number(b.suggere) - Number(a.suggere));
+}

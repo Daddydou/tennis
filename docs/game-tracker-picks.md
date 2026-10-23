@@ -7,7 +7,10 @@ Résumé de l'API « Picks tennis » de Game Tracker (l'app de Thomas) et de la 
 1. L'admin de Game Tracker te donne une clé `bk_live_…` portant le droit `write:tennis-picks`. Elle agit au nom d'UN seul joueur (toi).
 2. Mets-la dans `.env.local` : `GAMETRACKER_PICKS_KEY=bk_live_…` (jamais dans le code, jamais dans une conversation).
 3. Sur Vercel : Settings > Environment Variables > `GAMETRACKER_PICKS_KEY`, type **sensitive**, puis redéploie (une variable ne s'applique qu'aux nouveaux déploiements).
-4. Relie chaque tournoi à son tournoi Game Tracker depuis **Import > Thomas** (le même lien que pour le pont bracket). Sans lien, le panneau le dit et n'envoie rien.
+4. Relie chaque tournoi à son tournoi Game Tracker. Sans lien, rien n'est envoyé. Deux façons :
+   - depuis le panneau Game Tracker de l'écran Picks : « Lire Game Tracker » propose la liste des tournois correspondants (même circuit, même année, même tableau) ; choisis-en un et clique sur **Relier** ;
+   - ou depuis la page « Synchroniser le bracket de Thomas » (`/import/thomas`), qui ne liste que les tournois présents dans l'API bracket de Thomas (Lyon n'y est pas, alors qu'il est dans l'API picks).
+   Le lien est le même dans les deux cas (`tn_bracket_externe_tournois.tournament_id_interne`).
 
 ## Utilisation
 

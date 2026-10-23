@@ -1,23 +1,27 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { MatchInterne } from '@/lib/bracketExternePont';
-import type { PickLocal } from '@/lib/gameTrackerPicks';
+import type { PickLocal, TournoiInterneGT, TournoiPicksGT } from '@/lib/gameTrackerPicks';
 
 /**
- * LECTURE (seule) de ce qu'il faut savoir chez nous pour parler à l'API picks
- * de Game Tracker (lib/gameTrackerPicks.ts, externe/gameTrackerPicksClient.ts).
+ * Ce qu'il faut savoir chez nous pour parler à l'API picks de Game Tracker
+ * (lib/gameTrackerPicks.ts, externe/gameTrackerPicksClient.ts).
  *
- * Client Supabase INJECTÉ, comme db/bracketExternePont.ts : la clé publique
- * (RLS = select) suffit. Cette fonction n'écrit RIEN dans notre base — l'envoi
- * vers Game Tracker ne modifie aucun de nos picks.
+ * Clients Supabase INJECTÉS, comme db/bracketExternePont.ts.
+ * `chargerContexteLocalGT` est en LECTURE seule (clé publique, RLS = select) :
+ * l'envoi vers Game Tracker ne modifie aucun de nos picks.
+ * `ecrireLienGT` est la SEULE écriture de ce module (service role, injecté).
  *
  * Lien tournoi interne <-> tournoi Game Tracker : le MÊME que celui du pont de
- * Thomas (tn_bracket_externe_tournois.tournament_id_interne, posé depuis
- * /import/thomas), lu à l'envers. Jamais deviné par le nom.
+ * Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers.
+ * Posé depuis /import/thomas, ou depuis le panneau Game Tracker de l'écran
+ * picks (tournoi absent de l'API bracket). Jamais posé sans un choix explicite.
  */
 
 export interface ContexteLocalGT {
   /** Identifiant du tournoi chez Game Tracker, ou null si le lien n'est pas posé. */
   gtId: string | null;
+  /** Notre tournoi, de quoi le rapprocher de ceux de Game Tracker. */
+  interne: TournoiInterneGT;
   rounds: string[];
   matchs: MatchInterne[];
   noms: Map<string, string>;
@@ -37,8 +41,8 @@ export async function chargerContexteLocalGT(lecture: SupabaseClient, tournament
       lecture.from('tn_bracket_externe_tournois').select('id').eq('tournament_id_interne', tournamentId).limit(1),
       'tn_bracket_externe_tournois',
     ),
-    lire<{ rounds: string[] | null } | null>(
-      lecture.from('tn_tournaments').select('rounds').eq('id', tournamentId).maybeSingle(),
+    lire<{ name: string; tour: string; year: number | null; draw_size: number | null; rounds: string[] | null } | null>(
+      lecture.from('tn_tournaments').select('name, tour, year, draw_size, rounds').eq('id', tournamentId).maybeSingle(),
       'tn_tournaments',
     ),
     lire<{ round: string; position: number | null; player1_id: string | null; player2_id: string | null; status: string | null }[]>(
@@ -59,6 +63,7 @@ export async function chargerContexteLocalGT(lecture: SupabaseClient, tournament
 
   return {
     gtId: lien[0]?.id ?? null,
+    interne: { name: tournoi.name, tour: tournoi.tour, year: tournoi.year, drawSize: tournoi.draw_size },
     rounds: tournoi.rounds ?? [],
     matchs: matchs
       .filter((m) => m.position !== null)
@@ -66,4 +71,53 @@ export async function chargerContexteLocalGT(lecture: SupabaseClient, tournament
     noms: new Map(joueurs.map((j) => [j.id, j.name])),
     picks: picks.map((p) => ({ round: p.round, half: p.half, playerId: p.player_id })),
   };
+}
+
+/**
+ * Pose le lien entre notre tournoi et un tournoi de Game Tracker, dans la même
+ * table que le pont de Thomas (tn_bracket_externe_tournois) : AUCUNE migration.
+ * Utile pour un tournoi présent dans l'API picks mais pas dans l'API bracket
+ * (la ligne est alors créée a minima ; une synchro bracket ultérieure la
+ * complétera sans toucher au lien, cf. db/bracketExterneEcriture.ts).
+ *
+ * `ecriture` = service role, INJECTÉ : l'appelant (Server Action) a déjà
+ * vérifié la session. Refuse si notre tournoi est déjà relié à un autre
+ * tournoi Game Tracker (on ne remplace jamais un lien en silence).
+ */
+export async function ecrireLienGT(
+  ecriture: SupabaseClient,
+  tournamentId: string,
+  gt: TournoiPicksGT,
+): Promise<{ ok: true; cree: boolean } | { ok: false; erreur: string }> {
+  const deja = await lire<{ id: string }[]>(
+    ecriture.from('tn_bracket_externe_tournois').select('id').eq('tournament_id_interne', tournamentId).limit(1),
+    'tn_bracket_externe_tournois',
+  );
+  if (deja[0] && deja[0].id !== gt.id) {
+    return { ok: false, erreur: 'Ce tournoi est déjà relié à un autre tournoi Game Tracker.' };
+  }
+  const existant = await lire<{ id: string; tournament_id_interne: string | null } | null>(
+    ecriture.from('tn_bracket_externe_tournois').select('id, tournament_id_interne').eq('id', gt.id).maybeSingle(),
+    'tn_bracket_externe_tournois',
+  );
+  if (existant) {
+    if (existant.tournament_id_interne && existant.tournament_id_interne !== tournamentId) {
+      return { ok: false, erreur: 'Ce tournoi Game Tracker est déjà relié à un autre de nos tournois.' };
+    }
+    const { error } = await ecriture.from('tn_bracket_externe_tournois').update({ tournament_id_interne: tournamentId }).eq('id', gt.id);
+    if (error) return { ok: false, erreur: `tn_bracket_externe_tournois : ${error.message}` };
+    return { ok: true, cree: false };
+  }
+  const { error } = await ecriture.from('tn_bracket_externe_tournois').insert({
+    id: gt.id,
+    nom: gt.nom,
+    tour: gt.tour,
+    annee: gt.annee,
+    draw_size: gt.drawSize,
+    statut: gt.statut,
+    verrouille: false,
+    tournament_id_interne: tournamentId,
+  });
+  if (error) return { ok: false, erreur: `tn_bracket_externe_tournois : ${error.message}` };
+  return { ok: true, cree: true };
 }

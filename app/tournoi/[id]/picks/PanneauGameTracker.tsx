@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { envoyerGameTracker, lireGameTracker, type EnvoiGameTracker, type LectureGameTracker } from './gameTrackerActions';
-import { boutonPrimaire, boutonSecondaire, carte, Spinner } from '@/app/ui';
+import { envoyerGameTracker, lierGameTracker, lireGameTracker, type EnvoiGameTracker, type LectureGameTracker } from './gameTrackerActions';
+import { boutonPrimaire, boutonSecondaire, carte, champTexte, Spinner } from '@/app/ui';
 import type { LigneEnvoi, PickGT } from '@/lib/gameTrackerPicks';
 
 /**
@@ -28,11 +28,26 @@ const ORIGINE: Record<LigneEnvoi['origine'], string> = {
 export default function PanneauGameTracker({ tournamentId }: { tournamentId: string }) {
   const [lecture, setLecture] = useState<LectureGameTracker | null>(null);
   const [envoi, setEnvoi] = useState<EnvoiGameTracker | null>(null);
+  const [choixLien, setChoixLien] = useState('');
+  const [erreurLien, setErreurLien] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function lire() {
     setEnvoi(null);
     startTransition(async () => setLecture(await lireGameTracker(tournamentId)));
+  }
+
+  function lier(gtId: string) {
+    setErreurLien(null);
+    startTransition(async () => {
+      const r = await lierGameTracker(tournamentId, gtId);
+      if (!r.ok) {
+        setErreurLien(r.erreur);
+        return;
+      }
+      // Lien posé : on relit tout de suite l'état chez Game Tracker.
+      setLecture(await lireGameTracker(tournamentId));
+    });
   }
 
   function envoyer(attendu: { tour: number; haut: number | null; bas: number | null }) {
@@ -63,7 +78,37 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         </button>
 
         {lecture && !lecture.ok && <p className="text-xs text-red-600">{lecture.erreur}</p>}
-        {lecture && lecture.ok && !lecture.lie && <p className="text-xs text-amber-700">{lecture.message}</p>}
+        {lecture && lecture.ok && !lecture.lie && (
+          <div className="space-y-2 rounded-xl bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+            <p>{lecture.message}</p>
+            {lecture.candidats.length === 0 ? (
+              <p>
+                Aucun tournoi Game Tracker ne correspond (même circuit, même année, même taille de tableau). Si le tournoi vient de
+                commencer, réessaie dans un moment.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select
+                  value={choixLien || lecture.candidats[0].id}
+                  onChange={(e) => setChoixLien(e.target.value)}
+                  className={`w-full ${champTexte}`}
+                  aria-label="Tournoi Game Tracker"
+                >
+                  {lecture.candidats.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nom} ({c.tour}, {c.statut}){c.suggere ? ' — suggéré' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button onClick={() => lier(choixLien || lecture.candidats[0].id)} disabled={pending} className={boutonPrimaire}>
+                  {pending && <Spinner />}
+                  Relier
+                </button>
+              </div>
+            )}
+            {erreurLien && <p className="text-red-700">{erreurLien}</p>}
+          </div>
+        )}
 
         {etat && !to && <p className="text-xs text-zinc-600">Aucun tour ouvert aux picks chez Game Tracker pour l&apos;instant.</p>}
 

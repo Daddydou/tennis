@@ -1,11 +1,15 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
+import { supabaseAdmin } from '@/db/server';
 import { supabaseAnon } from '@/db/anon';
-import { chargerContexteLocalGT } from '@/db/gameTrackerPicks';
-import { etatPicksGT, poserPicksGT } from '@/externe/gameTrackerPicksClient';
+import { chargerContexteLocalGT, ecrireLienGT } from '@/db/gameTrackerPicks';
+import { etatPicksGT, listerTournoisPicks, poserPicksGT } from '@/externe/gameTrackerPicksClient';
 import {
+  candidatsLienGT,
   ecartsApresEnvoi,
+  type CandidatLienGT,
   preparerEnvoi,
   type EcartApresEnvoi,
   type EtatGT,
@@ -19,8 +23,9 @@ import {
  *   - `lireGameTracker`   : lecture seule (GET), montre ce qui serait envoyé ;
  *   - `envoyerGameTracker`: UN POST, au nom du joueur de la clé.
  *
- * Aucune de ces actions n'écrit dans NOTRE base : tout est lu avec la clé
- * publique (RLS = select). Le client ne fournit que l'identifiant du tournoi
+ * `lireGameTracker` et `envoyerGameTracker` n'écrivent RIEN dans NOTRE base :
+ * tout est lu avec la clé publique (RLS = select). Seule `lierGameTracker`
+ * écrit (le lien tournoi, sur choix explicite). Le client ne fournit que l'identifiant du tournoi
  * (et, pour l'envoi, ce qu'il a vu à l'écran) : les positions sont TOUJOURS
  * recalculées ici, côté serveur, depuis nos picks.
  *
@@ -32,7 +37,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REFUS = { ok: false as const, erreur: 'Non authentifié.' };
 
 export type LectureGameTracker =
-  | { ok: true; lie: false; message: string }
+  | { ok: true; lie: false; message: string; candidats: CandidatLienGT[] }
   | { ok: true; lie: true; etat: EtatGT; preparation: PreparationEnvoi }
   | { ok: false; erreur: string };
 
@@ -55,11 +60,11 @@ export type EnvoiGameTracker =
   | { ok: false; erreur: string };
 
 const MESSAGE_SANS_LIEN =
-  'Ce tournoi n’est pas relié à un tournoi Game Tracker. Pose le lien depuis Import > Thomas (choix du tournoi interne), puis reviens ici.';
+  'Ce tournoi n’est pas encore relié à un tournoi Game Tracker. Choisis-le dans la liste ci-dessous.';
 
 async function preparer(tournamentId: string) {
   const ctx = await chargerContexteLocalGT(supabaseAnon(), tournamentId);
-  if (!ctx.gtId) return { lie: false as const };
+  if (!ctx.gtId) return { lie: false as const, interne: ctx.interne };
   const etat = await etatPicksGT(ctx.gtId);
   const preparation = preparerEnvoi({
     etat,
@@ -77,8 +82,46 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
   if (!UUID.test(tournamentId)) return { ok: false, erreur: 'Tournoi invalide.' };
   try {
     const r = await preparer(tournamentId);
-    if (!r.lie) return { ok: true, lie: false, message: MESSAGE_SANS_LIEN };
+    if (!r.lie) {
+      // Pas de lien : on propose les tournois de l'API picks (Lyon y est, alors
+      // qu'il manque à l'API bracket de Thomas), restreints à ceux qui peuvent
+      // correspondre. Le choix reste à l'utilisateur.
+      const liste = await listerTournoisPicks();
+      return { ok: true, lie: false, message: MESSAGE_SANS_LIEN, candidats: candidatsLienGT(r.interne, liste) };
+    }
     return { ok: true, lie: true, etat: r.etat, preparation: r.preparation };
+  } catch (e) {
+    return { ok: false, erreur: (e as Error).message };
+  }
+}
+
+const ID_GT = /^[A-Za-z0-9_-]{1,80}$/;
+
+/**
+ * Relie notre tournoi à un tournoi Game Tracker, sur choix explicite.
+ * Seule écriture de ce fichier : service role APRÈS la garde de session, et
+ * seulement vers un tournoi que l'API picks liste ET qui correspond au nôtre
+ * (même circuit, même année, même tableau).
+ */
+export async function lierGameTracker(
+  tournamentId: string,
+  gtId: string,
+): Promise<{ ok: true } | { ok: false; erreur: string }> {
+  if (!(await sessionValide())) return REFUS;
+  if (!UUID.test(tournamentId)) return { ok: false, erreur: 'Tournoi invalide.' };
+  if (!ID_GT.test(gtId)) return { ok: false, erreur: 'Identifiant Game Tracker invalide.' };
+  try {
+    const ctx = await chargerContexteLocalGT(supabaseAnon(), tournamentId);
+    const liste = await listerTournoisPicks();
+    const gt = liste.find((t) => t.id === gtId);
+    if (!gt || !candidatsLienGT(ctx.interne, [gt]).length) {
+      return { ok: false, erreur: 'Ce tournoi Game Tracker ne correspond pas à celui-ci (circuit, année ou taille du tableau).' };
+    }
+    const r = await ecrireLienGT(supabaseAdmin(), tournamentId, gt);
+    if (!r.ok) return r;
+    revalidatePath(`/tournoi/${tournamentId}/picks`);
+    revalidatePath('/import/thomas');
+    return { ok: true };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }

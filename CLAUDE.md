@@ -95,7 +95,7 @@ L'API `https://bowling-tracker-phi.vercel.app/api/v1/tennis/picks` permet de lir
 - Le POST remplace le pick du tour en entier : un côté non posé chez nous est renvoyé tel que Game Tracker l'a déjà, jamais vidé par accident.
 - Game Tracker peut rediriger un pick après coup (joueur « en attente » éliminé) : après chaque envoi on relit le pick RÉEL et on signale les écarts.
 - Pas d'appel à chaque affichage de page (la doc de l'API le déconseille) : seul le bouton « Lire Game Tracker » interroge.
-- Lien tournoi interne <-> tournoi Game Tracker : le même que celui du pont de Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers. Aucune migration.
+- Lien tournoi interne <-> tournoi Game Tracker : le même que celui du pont de Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers. Aucune migration. Posé depuis /import/thomas, OU depuis le panneau Game Tracker (action `lierGameTracker`, sur choix explicite parmi les tournois de l'API picks de même circuit/année/tableau) : nécessaire pour un tournoi présent côté picks mais absent de l'API bracket de Thomas (cas de Lyon). C'est la seule écriture en base de cette fonction (service role après sessionValide).
 
 ## Vérifier la prod (point de contrôle /api/verif)
 
