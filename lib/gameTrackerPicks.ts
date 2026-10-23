@@ -500,3 +500,42 @@ export function candidatsLienGT(interne: TournoiInterneGT, liste: TournoiPicksGT
     .map((t) => ({ id: t.id, nom: t.nom, tour: t.tour, statut: t.statut, suggere: ville !== '' && sansAccents(t.nom).includes(ville) }))
     .sort((a, b) => Number(b.suggere) - Number(a.suggere));
 }
+/* -------------------------------------------------------------------------- */
+/*  Pool Game Tracker vu depuis NOS joueurs (repères sur l'écran picks)        */
+/* -------------------------------------------------------------------------- */
+
+export interface PoolLocalGT {
+  /** Code de NOTRE tour correspondant au tour ouvert chez Game Tracker (R16, QF…). */
+  roundLocal: string;
+  /** Candidats du pool, par player_id interne ; un joueur absent d'ici est HORS pool. */
+  parJoueur: Record<string, { enAttente: boolean; dejaPicke: boolean }>;
+}
+
+/**
+ * Le pool du tour ouvert chez Game Tracker, traduit en NOS player_id, pour
+ * signaler sur l'écran picks les joueurs qui seraient refusés à l'envoi.
+ * null si aucun tour n'est ouvert ou si les tableaux ne se superposent pas.
+ *
+ * INDICATIF : le recoupement par le nom se fait à l'envoi (`preparerEnvoi`),
+ * qui reste la seule garde avant d'écrire chez Game Tracker.
+ */
+export function poolParJoueur(etat: EtatGT, rounds: string[], matchsPremierTour: MatchInterne[]): PoolLocalGT | null {
+  const to = etat.tourOuvert;
+  if (!to) return null;
+  const tours = correspondanceTours(etat.tournoi.drawSize, rounds);
+  if (!tours.ok) return null;
+  const roundLocal = tours.roundDuTour(to.numero);
+  if (!roundLocal) return null;
+
+  const idDePosition = new Map<number, string>();
+  for (const m of matchsPremierTour.filter((x) => x.round === tours.premierRound)) {
+    if (m.player1Id) idDePosition.set(2 * m.position + 1, m.player1Id);
+    if (m.player2Id) idDePosition.set(2 * m.position + 2, m.player2Id);
+  }
+  const parJoueur: PoolLocalGT['parJoueur'] = {};
+  for (const j of [...to.pool.haut, ...to.pool.bas]) {
+    const id = idDePosition.get(j.position);
+    if (id) parJoueur[id] = { enAttente: j.enAttente, dejaPicke: j.dejaPicke };
+  }
+  return { roundLocal, parJoueur };
+}

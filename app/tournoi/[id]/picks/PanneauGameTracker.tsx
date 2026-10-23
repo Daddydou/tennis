@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { envoyerGameTracker, lierGameTracker, lireGameTracker, type EnvoiGameTracker, type LectureGameTracker } from './gameTrackerActions';
 import { boutonPrimaire, boutonSecondaire, carte, champTexte, Spinner } from '@/app/ui';
+import { useDefinirPoolGT } from './PoolGameTracker';
 import type { LigneEnvoi, PickGT } from '@/lib/gameTrackerPicks';
 
 /**
@@ -31,10 +32,17 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
   const [choixLien, setChoixLien] = useState('');
   const [erreurLien, setErreurLien] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const definirPool = useDefinirPoolGT();
+
+  /** Affiche la lecture ET publie le pool pour la grille de picks (repères « hors pool »). */
+  function appliquer(r: LectureGameTracker) {
+    setLecture(r);
+    definirPool(r.ok && r.lie ? r.pool : null);
+  }
 
   function lire() {
     setEnvoi(null);
-    startTransition(async () => setLecture(await lireGameTracker(tournamentId)));
+    startTransition(async () => appliquer(await lireGameTracker(tournamentId)));
   }
 
   function lier(gtId: string) {
@@ -46,7 +54,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         return;
       }
       // Lien posé : on relit tout de suite l'état chez Game Tracker.
-      setLecture(await lireGameTracker(tournamentId));
+      appliquer(await lireGameTracker(tournamentId));
     });
   }
 
@@ -54,7 +62,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
     startTransition(async () => {
       setEnvoi(await envoyerGameTracker(tournamentId, attendu));
       // L'état affiché vieillit dès qu'on envoie : on le relit.
-      setLecture(await lireGameTracker(tournamentId));
+      appliquer(await lireGameTracker(tournamentId));
     });
   }
 

@@ -14,7 +14,9 @@ import {
   type EcartApresEnvoi,
   type EtatGT,
   type PickGT,
+  type PoolLocalGT,
   type PreparationEnvoi,
+  poolParJoueur,
 } from '@/lib/gameTrackerPicks';
 
 /**
@@ -38,7 +40,7 @@ const REFUS = { ok: false as const, erreur: 'Non authentifié.' };
 
 export type LectureGameTracker =
   | { ok: true; lie: false; message: string; candidats: CandidatLienGT[] }
-  | { ok: true; lie: true; etat: EtatGT; preparation: PreparationEnvoi }
+  | { ok: true; lie: true; etat: EtatGT; preparation: PreparationEnvoi; pool: PoolLocalGT | null }
   | { ok: false; erreur: string };
 
 export interface Attendu {
@@ -74,7 +76,8 @@ async function preparer(tournamentId: string) {
     picksLocaux: ctx.picks,
     maintenant: new Date(),
   });
-  return { lie: true as const, gtId: ctx.gtId, etat, preparation };
+  const pool = poolParJoueur(etat, ctx.rounds, ctx.matchs);
+  return { lie: true as const, gtId: ctx.gtId, etat, preparation, pool };
 }
 
 export async function lireGameTracker(tournamentId: string): Promise<LectureGameTracker> {
@@ -89,7 +92,7 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
       const liste = await listerTournoisPicks();
       return { ok: true, lie: false, message: MESSAGE_SANS_LIEN, candidats: candidatsLienGT(r.interne, liste) };
     }
-    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation };
+    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, pool: r.pool };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }

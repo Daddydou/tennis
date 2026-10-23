@@ -21,6 +21,12 @@ Résumé de l'API « Picks tennis » de Game Tracker (l'app de Thomas) et de la 
 
 Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques sur « Lire ».
 
+**Repères sur la grille de picks.** Après « Lire Game Tracker », chaque joueur du tour ouvert chez eux est marqué : **hors pool GT** (pas dans ton pool : l'envoi serait refusé), **déjà pické GT** (utilisé à un autre tour chez eux : refusé aussi), **en attente** (son match précédent n'est pas joué : le pick pourra être redirigé). Ces repères sont indicatifs, ils ne bloquent pas la sélection ; ils ne s'affichent que pour le tour que Game Tracker a ouvert, et jamais sur la vue d'un autre participant. Le recoupement par le nom se fait à l'envoi.
+
+## Vérifier l'API en direct (lecture seule)
+
+`npm run verify:game-tracker` liste les tournois jouables ; `npm run verify:game-tracker -- --tournoi=<id>` affiche en plus le tour ouvert, le pool, ton pick et le classement. Il passe par le même client et les mêmes lecteurs que l'app : si Game Tracker change la forme de ses réponses, il échoue ici avec le chemin fautif. Il n'envoie jamais de POST.
+
 ## Règles de Game Tracker (appliquées par leur serveur, les mêmes que dans l'app)
 
 - Chaque tour : un joueur du haut du tableau et un du bas. En demi-finale et finale : un seul pick, dans `haut`.

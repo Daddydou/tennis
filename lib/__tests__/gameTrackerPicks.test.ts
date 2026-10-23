@@ -12,6 +12,7 @@ import {
   lireEtatGT,
   lireReponsePostGT,
   lireTournoisPicksGT,
+  poolParJoueur,
   positionDeJoueur,
   preparerEnvoi,
   type EtatGT,
@@ -320,5 +321,36 @@ describe('candidatsLienGT (relier un tournoi absent de l’API bracket)', () => 
 
   it('aucune correspondance : liste vide', () => {
     expect(candidatsLienGT(lyon, [])).toEqual([]);
+  });
+});
+describe('poolParJoueur (repères « hors pool » sur l’écran picks)', () => {
+  it('traduit le pool Game Tracker en player_id internes, avec ses drapeaux', () => {
+    const to = tourOuvert();
+    to.pool.haut = [joueur(3, { enAttente: true }), joueur(5)];
+    to.pool.bas = [joueur(12, { dejaPicke: true })];
+    const r = poolParJoueur(etat(to), ROUNDS, matchs);
+    expect(r?.roundLocal).toBe('R16');
+    expect(r?.parJoueur).toEqual({
+      p3: { enAttente: true, dejaPicke: false },
+      p5: { enAttente: false, dejaPicke: false },
+      p12: { enAttente: false, dejaPicke: true },
+    });
+    // Un joueur hors du pool n'y figure pas : c'est ce qui le fait signaler.
+    expect(r?.parJoueur.p1).toBeUndefined();
+  });
+
+  it('aucun tour ouvert : null', () => {
+    expect(poolParJoueur(etat(null), ROUNDS, matchs)).toBeNull();
+  });
+
+  it('demi-finale : le tour local suit la correspondance des tours', () => {
+    const to = tourOuvert({ numero: 3, nom: 'Demi-finale', picksAttendus: 1 });
+    to.pool = { haut: [joueur(5), joueur(12)], bas: [] };
+    expect(poolParJoueur(etat(to), ROUNDS, matchs)?.roundLocal).toBe('SF');
+  });
+
+  it('tableaux non superposables : null', () => {
+    const e = etat(tourOuvert(), { tournoi: { id: 'gt1', nom: 'X', drawSize: 64, statut: 'ONGOING' } });
+    expect(poolParJoueur(e, ROUNDS, matchs)).toBeNull();
   });
 });
