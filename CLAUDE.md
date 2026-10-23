@@ -38,7 +38,7 @@ pour les autres.
 
 \- db/\*.ts : requêtes vers la base (supabase/ ne contient plus que migrations/, attendu par la CLI Supabase)
 
-\- supabase/migrations/ : SQL, 25 migrations à ce jour (voir MIGRATIONS.md)
+\- supabase/migrations/ : SQL, 28 migrations à ce jour (voir MIGRATIONS.md)
 
 \- externe/ : clients HTTP d'API tierces, sans Next ni Supabase (thomasClient.ts : API bracket de Thomas, GET seulement, clé THOMAS\_API\_KEY jamais affichée). Synchro manuelle : npm run sync:bracket-thomas -- --liste | --tournoi=<id> [--apercu] [--ecraser]. Si tournament_id_interne est posé (à la main), la synchro reporte aussi les pronostics Moi/Laki/Thomas dans tn_bracket_round_picks (lib/bracketExternePont.ts + db/bracketExternePont.ts) : emplacements vides seulement, écarts signalés sans écraser (sauf --ecraser), jamais de suppression.
 
@@ -49,8 +49,8 @@ pour les autres.
 \- app/tournoi/\[id]/simulateur/ : simulateur de bracket (Monte Carlo, scénarios de victoire)
 
 \- Import automatique (voir docs/import-auto.md) : lib/extract/ = portage pur des snippets ATP/WTA (parité testée), db/importCoeur.ts = cœur d'import SANS garde de session (l'appelant vérifie : session pour l'action, jeton x-import-token / IMPORT\_AUTO\_TOKEN pour /api/import-auto/{etat,ingest,run}), tables privées tn\_import\_auto / tn\_import\_log (0026, aucune lecture publique). Cron WTA = GitHub Actions (.github/workflows/import-auto.yml), ATP = userscript tools/userscript/ (npm run build:userscript après toute modif de lib/extract/).
-
-
+\- Elo maison (voir docs/elo-maison.md) : lib/eloMaison.ts (moteur pur), lib/eloMaisonIdentites.ts (homonymes, valeur par défaut 2000 ATP / 2100 WTA), lib/eloMaisonSuivi.ts (retard du suivi quotidien, réserve de quota API), db/eloMaison.ts (mise à jour quotidienne dans le cron), tables tn\_elo\_maison / tn\_elo\_maison\_suivi (0028). SOURCE_ELO=maison (Vercel) fait lire cette table à la place de ta_elo (db/elo.ts). Recherche, comparaisons et ré-amorçage : recherche/elo-maison/ (jamais de ré-amorçage sans lire docs/elo-maison.md).
+\- Quota API tennis : 50 requêtes / 24 h glissantes, partagées entre tableaux, Elo maison quotidien et rattrapages (externe/tennisApiClient.ts : quotaApi).
 
 \## Règles
 
