@@ -84,6 +84,19 @@ pour les autres.
 
 
 
+## Game Tracker : picks (lecture ET écriture, seule exception à « jamais d'écriture chez Thomas »)
+
+L'API `https://bowling-tracker-phi.vercel.app/api/v1/tennis/picks` permet de lire le jeu de picks de Game Tracker et d'y poser MES picks du tour ouvert. Doc complète : docs/game-tracker-picks.md.
+
+- Code : lib/gameTrackerPicks.ts (pur : lecture des réponses, picks -> positions, construction de l'envoi), externe/gameTrackerPicksClient.ts (HTTP), db/gameTrackerPicks.ts (lecture seule de notre base), app/tournoi/[id]/picks/gameTrackerActions.ts (Server Actions) et PanneauGameTracker.tsx (écran picks, mes picks uniquement).
+- Clé : `GAMETRACKER_PICKS_KEY` (droit write:tennis-picks, agit au nom d'UN seul joueur). Jamais préfixée NEXT_PUBLIC_, jamais affichée, jamais journalisée. Claude ne la génère pas : c'est l'admin de Game Tracker qui la délivre.
+- Le seul POST autorisé est `POST /picks`, depuis `envoyerGameTracker`, après `sessionValide()`, déclenché par un bouton MANUEL. Aucun envoi automatique, aucun cron, aucun POST à l'ouverture de la page.
+- Les positions envoyées sont TOUJOURS recalculées côté serveur depuis nos picks (le client ne les fournit que pour confirmer ce qu'il a vu). Au moindre doute (nom différent à la même position, joueur hors pool, tour verrouillé), on n'envoie rien.
+- Le POST remplace le pick du tour en entier : un côté non posé chez nous est renvoyé tel que Game Tracker l'a déjà, jamais vidé par accident.
+- Game Tracker peut rediriger un pick après coup (joueur « en attente » éliminé) : après chaque envoi on relit le pick RÉEL et on signale les écarts.
+- Pas d'appel à chaque affichage de page (la doc de l'API le déconseille) : seul le bouton « Lire Game Tracker » interroge.
+- Lien tournoi interne <-> tournoi Game Tracker : le même que celui du pont de Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers. Aucune migration. Posé depuis /import/thomas, OU depuis le panneau Game Tracker (action `lierGameTracker`, sur choix explicite parmi les tournois de l'API picks de même circuit/année/tableau) : nécessaire pour un tournoi présent côté picks mais absent de l'API bracket de Thomas (cas de Lyon). C'est la seule écriture en base de cette fonction (service role après sessionValide).
+
 ## Vérifier la prod (point de contrôle /api/verif)
 
 GET /api/verif/<controle> permet de vérifier la prod SANS cookie de session ni AUTH_SECRET.
