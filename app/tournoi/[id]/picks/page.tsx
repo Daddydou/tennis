@@ -6,6 +6,7 @@ import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import ProvenanceElo from './ProvenanceElo';
 import RecapParticipant from './RecapParticipant';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
+import PanneauGameTracker from './PanneauGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import { carte, pilleSelecteur } from '@/app/ui';
 import {
@@ -367,6 +368,10 @@ export default async function PicksPage({
           participantId={stockId}
         />
       )}
+
+      {/* ── Game Tracker : MES picks uniquement (la clé agit au nom d'un seul
+          joueur). Rien ne se charge ici : le bouton « Lire » interroge. ── */}
+      {stockId === null && <PanneauGameTracker tournamentId={id} />}
 
       {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
       {recap && <RecapParticipant recap={recap} nomJoueur={nomJoueur} />}
