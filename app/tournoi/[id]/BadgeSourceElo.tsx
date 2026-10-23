@@ -21,9 +21,9 @@ const STYLE_BADGE: Record<
   maison: {
     classes:
       'border-amber-300 bg-amber-50 text-amber-700',
-    libelle: 'maison',
+    libelle: 'import',
     titre:
-      'Aucune correspondance Tennis Abstract : Elo calculé sur les seuls tournois importés ici.',
+      'Aucune correspondance dans la base d’Elo : Elo calculé sur les seuls tournois importés ici.',
   },
   defaut: {
     classes:

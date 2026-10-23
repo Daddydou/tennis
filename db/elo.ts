@@ -17,6 +17,7 @@
 
 import { supabaseAnon } from './anon';
 import { eloDepuisRang, eloEffectif } from '@/lib/elo';
+import { departagerHomonymes, ELO_DEFAUT_MAISON } from '@/lib/eloMaisonIdentites';
 import {
   chercherCorrespondance,
   construireIndex,
@@ -57,12 +58,17 @@ export interface TaEloRow {
   elo_grass: number | string | null;
   atp_rank: number | null;
   updated_at: string | null;
+  /** Elo maison seulement (tn_elo_maison) : matchs joués et jour du dernier match. */
+  n?: number | null;
+  dernier_jour?: number | null;
 }
 
 /** Ce dont la résolution a besoin côté `tn_players`. */
 export interface JoueurAResoudre {
   id: string;
   name: string;
+  /** Pays (code à 3 lettres) : départage des homonymes dans l'Elo maison. */
+  country?: string | null;
   rank?: number | null;
   elo_overall?: number | string | null;
   elo_hard?: number | string | null;
@@ -70,7 +76,17 @@ export interface JoueurAResoudre {
   elo_grass?: number | string | null;
 }
 
+/**
+ * D'où viennent les lignes de l'index : le relevé Tennis Abstract (`ta_elo`) ou l'Elo maison
+ * (`tn_elo_maison`, SOURCE_ELO=maison). Distinct de `SourceElo` : une ligne maison est
+ * rapprochée exactement comme une ligne TA, donc sa source reste `ta` ; c'est `base` qui dit
+ * laquelle des deux a servi.
+ */
+export type BaseElo = 'ta' | 'maison';
+
 export interface ElosResolus {
+  /** Base d'Elo de l'index qui a servi (affichage : « Elo maison » ou « Tennis Abstract »). */
+  base: BaseElo;
   eloOverall: number;
   eloHard: number;
   eloClay: number;
@@ -93,7 +109,12 @@ export interface ElosResolus {
   repli: 'maison' | 'defaut' | null;
 }
 
-export type IndexElo = IndexTa<TaEloRow>;
+export type IndexElo = IndexTa<TaEloRow> & {
+  /** Absent = Tennis Abstract. */
+  base?: BaseElo;
+  /** Elo d'un joueur inconnu de cet index ; absent = `ELO_DEFAUT_RESOLU` (échelle TA). */
+  eloDefaut?: number;
+};
 
 /** Index vide : aucun Elo TA disponible (table non encore peuplée). */
 export const INDEX_ELO_VIDE: IndexElo = {
@@ -143,7 +164,7 @@ export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
       const page = await sb
         .from('tn_elo_maison')
         .select(
-          'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at',
+          'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at, n, dernier_jour',
         )
         .eq('tour', t)
         .order('ta_slug')
@@ -158,7 +179,9 @@ export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
       lignes.push(...((page.data ?? []) as TaEloRow[]));
       if ((page.data ?? []).length < PAGE) break;
     }
-    if (!absente && lignes.length > 0) return construireIndex(lignes, []);
+    if (!absente && lignes.length > 0) {
+      return { ...construireIndex(lignes, []), base: 'maison', eloDefaut: ELO_DEFAUT_MAISON[t] };
+    }
   }
 
   const [elos, exceptions] = await Promise.all([
@@ -196,13 +219,22 @@ export function resoudreElos(
   joueur: JoueurAResoudre,
   index: IndexElo = INDEX_ELO_VIDE,
 ): ElosResolus {
-  const corr = chercherCorrespondance(index, joueur.name);
+  const base: BaseElo = index.base ?? 'ta';
+  let corr = chercherCorrespondance(index, joueur.name);
+
+  // Homonymes que le pays ou le poids des lignes (matchs joues, dernier match) departagent
+  // sans equivoque (Elo maison) : cf. lib/eloMaisonIdentites.ts. Les cas douteux restent ambigus.
+  if (corr.statut === 'ambigu') {
+    const choisi = departagerHomonymes(corr.candidats, joueur.country, Math.floor(Date.now() / 86400000));
+    if (choisi) corr = { statut: 'trouve', ligne: choisi, via: `${corr.via}+departage`, exception: false };
+  }
 
   // 1. Tennis Abstract
   if (corr.statut === 'trouve') {
     const taOverall = num(corr.ligne.elo_overall);
     if (taOverall !== null) {
       return {
+        base,
         eloOverall: taOverall,
         eloHard: num(corr.ligne.elo_hard) ?? taOverall,
         eloClay: num(corr.ligne.elo_clay) ?? taOverall,
@@ -233,11 +265,15 @@ export function resoudreElos(
 
   // 2. Elo maison. À défaut d'Elo calculé, un Elo dérivé du classement reste
   //    une estimation maison — pas un défaut.
+  //    Avec l'Elo maison (echelle propre), ni les colonnes de tn_players ni le classement ne
+  //    sont a la meme echelle : un joueur absent de la table recoit le defaut de CETTE echelle.
   const maisonOverall =
-    num(joueur.elo_overall) ??
-    (joueur.rank != null ? eloDepuisRang(joueur.rank) : null);
+    base === 'maison'
+      ? null
+      : (num(joueur.elo_overall) ?? (joueur.rank != null ? eloDepuisRang(joueur.rank) : null));
   if (maisonOverall !== null) {
     return {
+      base,
       eloOverall: maisonOverall,
       eloHard: num(joueur.elo_hard) ?? maisonOverall,
       eloClay: num(joueur.elo_clay) ?? maisonOverall,
@@ -253,11 +289,13 @@ export function resoudreElos(
   }
 
   // 3. Défaut
+  const defaut = index.eloDefaut ?? ELO_DEFAUT_RESOLU;
   return {
-    eloOverall: ELO_DEFAUT_RESOLU,
-    eloHard: ELO_DEFAUT_RESOLU,
-    eloClay: ELO_DEFAUT_RESOLU,
-    eloGrass: ELO_DEFAUT_RESOLU,
+    base,
+    eloOverall: defaut,
+    eloHard: defaut,
+    eloClay: defaut,
+    eloGrass: defaut,
     source: source ?? 'defaut',
     taName: null,
     taSlug: null,

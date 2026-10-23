@@ -101,6 +101,7 @@ export interface EvaluationAnterieure {
  * le look-ahead par la porte de derrière.
  */
 const SANS_ELO: ElosResolus = {
+  base: 'ta',
   eloOverall: ELO_DEFAUT_RESOLU,
   eloHard: ELO_DEFAUT_RESOLU,
   eloClay: ELO_DEFAUT_RESOLU,
