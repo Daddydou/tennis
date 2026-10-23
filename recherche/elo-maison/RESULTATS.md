@@ -117,11 +117,46 @@ cotes : TA 0,6102, maison 0,6154, marché 0,5934 — le marché reste devant les
 - `db/elo.ts` : `SOURCE_ELO=maison` (Vercel) fait lire `tn_elo_maison` à la place de `ta_elo` ;
   vide ou `ta`, rien ne change. Repli automatique sur Tennis Abstract si la table est vide.
 
+## Comparaison complète (23/10/2026, trou comblé)
+
+800 matchs de l'app comparables - `resultats/comparaison-2026-10-23.txt` : log-loss Tennis Abstract
+0,6165, maison 0,6115 (écart -0,0050, IC 95 % [-0,0141 ; +0,0041], non significatif). ATP -0,0039,
+WTA -0,0063, tous deux dans la marge d'erreur. Grand Chelem (n = 230) : maison un peu moins bon
+(+0,0109, non significatif) - piste pour un facteur K spécifique au bo5. Sur les 341 matchs avec
+cotes : TA 0,6154, maison 0,6118, marché 0,5983 : le marché reste devant les deux.
+
+## Poids du mélange Elo / marché
+
+Log-loss de p = w x Elo + (1 - w) x marché sur les 341 matchs avec cotes (production : w = 0,30) :
+
+| Groupe | marché seul | w = 0,3 | w* | Elo seul | bootstrap 5-95 % de w* |
+|---|---|---|---|---|---|
+| Tous (maison) | 0,5983 | 0,5998 | 0,00 | 0,6118 | [0,00 ; 0,50] |
+| ATP (maison) | 0,6088 | 0,6140 | 0,00 | 0,6380 | [0,00 ; 0,35] |
+| WTA (maison) | 0,5884 | 0,5863 | 0,60 | 0,5870 | [0,00 ; 1,00] |
+
+Décision : **`POIDS_ELO_MARCHE` reste à 0,30**. Le w optimal est 0 sur l'ensemble et l'ATP, mais
+l'intervalle bootstrap contient 0,30 partout et l'écart avec le marché seul est faible (0,0015 en
+log-loss). Sur la WTA le mélange à 0,30 bat déjà le marché seul. Pas de preuve suffisante pour
+changer ; à refaire avec plus de matchs cotés (`comparer.mts`).
+
+## Intégration dans l'app
+
+- `lib/eloMaison.ts` : le moteur (pur, testé), paramètres de production figés.
+- Migration `0028` : `tn_elo_maison` et `tn_elo_maison_suivi`.
+- `amorcer.mts --ecrire` : rejoue tout l'historique et écrit les notes (service role).
+- `db/eloMaison.ts` : mise à jour quotidienne dans le cron, alertes de retard.
+- `db/elo.ts` : `SOURCE_ELO=maison` (actif en production depuis le 23/10/2026).
+- Procédures, alertes et pièges : `docs/elo-maison.md`.
+
 ## Reste à faire
 
-1. Finir de combler juin → octobre 2026 avec l'API (≈ 50 requêtes, 2 jours).
-2. Refaire la comparaison maison / Tennis Abstract / marché sur ces données complètes.
-3. Appliquer la migration 0028, amorcer (`amorcer.mts --ecrire`), puis choisir la source.
+1. Facteur K spécifique Grand Chelem / bo5, séparation dur indoor / outdoor : les données ne
+   contiennent ni indicateur indoor ni pays du tournoi, à ajouter avant de tester.
+2. Recalibrer c (0,862) sur les matchs de l'app une fois assez nombreux ; joueurs inactifs ou
+   retraités (déclin des notes) à mesurer avant de modifier le moteur.
+3. Ajustement « insights » : impossible à valider sur l'historique (pas de données passées).
+4. Refaire la comparaison de temps en temps (`comparer.mts`) : marché toujours devant.
 
 ## Reproduire
 

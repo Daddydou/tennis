@@ -17,6 +17,11 @@ const eslintConfig = defineConfig([
     // Bundle généré du userscript (npm run build:userscript).
     "tools/userscript/import-auto.user.js",
   ]),
+  // Scripts de recherche (hors app, lecture de JSON/CSV bruts) : 'any' toléré.
+  {
+    files: ["recherche/**"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
 ]);
 
 export default eslintConfig;

@@ -193,5 +193,39 @@ bloc('WTA', lignes.filter((x) => x.tour === 'WTA'), false);
 bloc('Grand Chelem', lignes.filter((x) => x.gs), false);
 const avecCotes = lignes.filter((x) => x.marche !== null);
 bloc('Avec cotes (TA / maison / marché)', avecCotes, true);
-console.log(sortie.join('\n'));
+
+// --- Poids du mélange Elo / marché : p = w·Elo + (1−w)·marché (`blendAvecCotes`, lib/elo.ts) ---
+// Production : POIDS_ELO_MARCHE = 0,3. On cherche le w qui minimise la log-loss sur les matchs
+// AVEC cotes, pour l'Elo maison et pour Tennis Abstract, puis un bootstrap (rééchantillonnage
+// des matchs) dit si l'écart au poids de production est réel ou du bruit.
+{
+  const ll = (l: typeof lignes, w: number, cle: 'maison' | 'ta') =>
+    l.reduce((s, x) => s - Math.log(Math.max(1e-9, w * x[cle] + (1 - w) * x.marche!)), 0) / l.length;
+  const grille = Array.from({ length: 21 }, (_, i) => i / 20);
+  const meilleur = (l: typeof lignes, cle: 'maison' | 'ta') =>
+    grille.reduce((b, w) => (ll(l, w, cle) < ll(l, b, cle) ? w : b), 0);
+  let graine = 12345;
+  const alea = () => ((graine = (graine * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  sortie.push('', 'Poids du mélange Elo / marché (w = part de l’Elo ; production 0,30) — log-loss, plus bas = mieux');
+  for (const [nom, l] of [['Tous', avecCotes], ['ATP', avecCotes.filter((x) => x.tour === 'ATP')], ['WTA', avecCotes.filter((x) => x.tour === 'WTA')]] as const) {
+    if (l.length < 30) continue;
+    for (const cle of ['maison', 'ta'] as const) {
+      const w0 = meilleur(l, cle);
+      const optima: number[] = [];
+      const gains: number[] = [];
+      for (let b = 0; b < 1000; b++) {
+        const ech = Array.from({ length: l.length }, () => l[Math.floor(alea() * l.length)]);
+        const wb = meilleur(ech, cle);
+        optima.push(wb);
+        gains.push(ll(ech, 0.3, cle) - ll(ech, wb, cle));
+      }
+      optima.sort((a, b) => a - b);
+      gains.sort((a, b) => a - b);
+      sortie.push(
+        `${nom.padEnd(5)} ${cle.padEnd(6)} n=${String(l.length).padStart(3)} | marché seul ${ll(l, 0, cle).toFixed(4)} · w=0,3 ${ll(l, 0.3, cle).toFixed(4)} · w*=${w0.toFixed(2)} ${ll(l, w0, cle).toFixed(4)} · Elo seul ${ll(l, 1, cle).toFixed(4)}` +
+          ` | w* bootstrap 5-95 % [${optima[50].toFixed(2)} ; ${optima[949].toFixed(2)}] · gain moyen de w* sur 0,3 : ${(gains.reduce((a, b) => a + b, 0) / gains.length).toFixed(4)}`,
+      );
+    }
+  }
+}console.log(sortie.join('\n'));
 writeFileSync(join(DOSSIER, `comparaison-${new Date().toISOString().slice(0, 10)}.txt`), `${sortie.join('\n')}\nHistorique jusqu'au ${finHisto}, ${extra.length} matchs de l'app ajoutés après.\n`);

@@ -1,6 +1,6 @@
 # Migrations Supabase
 
-Les 27 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 28 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
@@ -40,6 +40,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0025 | `0025_picks_forfait_10_points.sql`       | Picks : forfait gagné = 10 pts dès le 2026-10-05 en bo3 (⁴)      | 2026-10-13 | 2026-10-13   |
 | 0026 | `0026_import_auto.sql`                  | Tables privées `tn_import_auto` et `tn_import_log` (import auto) | 2026-10-15 |              |
 | 0027 | `0027_import_api.sql`                   | Mode `api`, table privée `tn_player_source_ids`, cotes réelles   | 2026-10-22 | 2026-10-22   |
+| 0028 | `0028_elo_maison.sql`                   | Tables `tn_elo_maison` et `tn_elo_maison_suivi` (Elo maison)     | 2026-10-22 | 2026-10-23   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -434,3 +435,10 @@ select to_regclass('public.tn_elo_maison') is not null
    and not has_table_privilege('anon', 'public.tn_elo_maison', 'insert')
    as appliquee;
 ```
+
+Écart fichier / base (constaté le 23/10/2026) : le fichier du dépôt est un sur-ensemble
+idempotent de ce qui a été exécuté sur Supabase (mêmes tables, mêmes colonnes, mêmes
+droits, avec en plus des `if not exists`). L'état final est identique ; rejouer le
+fichier est sans danger. Les colonnes d'état du moteur (`note_*`, `n_*`, `dernier_jour`,
+`matchstat_id`) et l'index unique sur (`tour`, `matchstat_id`) sont décrits dans
+`docs/elo-maison.md`.
