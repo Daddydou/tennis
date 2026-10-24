@@ -64,6 +64,7 @@ function etat(to: TourOuvertGT | null, extra: Partial<EtatGT> = {}): EtatGT {
     tourOuvert: to,
     dejaPickes: [],
     classement: [],
+    tours: [],
     ...extra,
   };
 }

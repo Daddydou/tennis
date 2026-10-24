@@ -68,11 +68,12 @@ export const GROUPES: Groupe[] = [
           'Valider le tour.',
         ],
         attention: [
-          'Un joueur ne se pique qu’une fois par tournoi : les joueurs déjà utilisés sont grisés.',
+          'Un joueur ne se pique qu’une fois par tournoi PAR participant : Moi, Laki et Thomas peuvent prendre le même joueur.',
+          'Vérifier pour qui on pique : un bandeau orange s’affiche quand on modifie les picks de Laki ou de Thomas.',
           'En demi-finale et en finale : un seul pick.',
         ],
         doc: 'README.md (principe du jeu)',
-        maj: '2026-10-23',
+        maj: '2026-10-24',
       },
       {
         id: 'envoyer-game-tracker',
@@ -85,15 +86,17 @@ export const GROUPES: Groupe[] = [
           'Si le tournoi n’est pas encore relié, choisir le bon tournoi dans la liste puis `Relier` (une seule fois par tournoi).',
           'Appuyer sur `Envoyer sur Game Tracker`.',
           'Relire le résultat affiché : l’app relit le pick réel et signale tout écart.',
+          'À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous pour Moi, Laki et Thomas : c’est leur jeu qui compte. Le panneau liste les changements.',
         ],
         attention: [
           'Rien ne part tout seul : seul le bouton envoie.',
+          'Rien à piquer pour le tour ouvert ? Notre tableau n’a sans doute pas encore les résultats du tour précédent : mettre le tableau à jour (`Importer`), puis relire.',
           'Game Tracker peut rediriger un pick si un joueur « en attente » perd : relire juste avant le verrou.',
           'Le POST remplace le pick du tour en entier (un côté non posé reste tel que chez eux).',
           'La clé est `GAMETRACKER_PICKS_KEY` (Vercel, type sensitive). Elle est donnée par l’admin de Game Tracker, jamais collée dans une conversation.',
         ],
         doc: 'docs/game-tracker-picks.md',
-        maj: '2026-10-23',
+        maj: '2026-10-24',
       },
       {
         id: 'fantasy',

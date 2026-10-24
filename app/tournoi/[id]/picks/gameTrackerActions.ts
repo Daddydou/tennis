@@ -5,6 +5,8 @@ import { sessionValide } from '@/auth/garde';
 import { supabaseAdmin } from '@/db/server';
 import { supabaseAnon } from '@/db/anon';
 import { chargerContexteLocalGT, ecrireLienGT } from '@/db/gameTrackerPicks';
+import { alignerSurGameTracker } from '@/db/gameTrackerAlignement';
+import { decrireChangement } from '@/lib/gameTrackerAlignement';
 import { etatPicksGT, listerTournoisPicks, poserPicksGT } from '@/externe/gameTrackerPicksClient';
 import {
   candidatsLienGT,
@@ -22,12 +24,15 @@ import {
 /**
  * PICKS -> GAME TRACKER, depuis l'écran picks. Deux actions, TOUJOURS
  * déclenchées à la main :
- *   - `lireGameTracker`   : lecture seule (GET), montre ce qui serait envoyé ;
+ *   - `lireGameTracker`   : un GET chez Game Tracker, montre ce qui serait envoyé
+ *                           et aligne nos tours verrouillés (voir ci-dessous) ;
  *   - `envoyerGameTracker`: UN POST, au nom du joueur de la clé.
  *
- * `lireGameTracker` et `envoyerGameTracker` n'écrivent RIEN dans NOTRE base :
- * tout est lu avec la clé publique (RLS = select). Seule `lierGameTracker`
- * écrit (le lien tournoi, sur choix explicite). Le client ne fournit que l'identifiant du tournoi
+ * `envoyerGameTracker` n'écrit RIEN dans NOTRE base. `lireGameTracker` aligne
+ * nos picks (Moi, Laki, Thomas) sur ceux de Game Tracker pour les tours DÉJÀ
+ * verrouillés chez eux (leur jeu fait foi, db/gameTrackerAlignement.ts) ; le
+ * tour ouvert n'est jamais touché. `lierGameTracker` écrit le lien tournoi,
+ * sur choix explicite. Le client ne fournit que l'identifiant du tournoi
  * (et, pour l'envoi, ce qu'il a vu à l'écran) : les positions sont TOUJOURS
  * recalculées ici, côté serveur, depuis nos picks.
  *
@@ -38,9 +43,21 @@ import {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const REFUS = { ok: false as const, erreur: 'Non authentifié.' };
 
+/** Ce que la lecture a aligné chez nous sur les tours verrouillés de Game Tracker. */
+export type AlignementLu =
+  | { ok: true; rounds: string[]; changements: string[]; avertissements: string[] }
+  | { ok: false; raisons: string[] };
+
 export type LectureGameTracker =
   | { ok: true; lie: false; message: string; candidats: CandidatLienGT[] }
-  | { ok: true; lie: true; etat: EtatGT; preparation: PreparationEnvoi; pool: PoolLocalGT | null }
+  | {
+      ok: true;
+      lie: true;
+      etat: EtatGT;
+      preparation: PreparationEnvoi;
+      pool: PoolLocalGT | null;
+      alignement: AlignementLu;
+    }
   | { ok: false; erreur: string };
 
 export interface Attendu {
@@ -64,10 +81,10 @@ export type EnvoiGameTracker =
 const MESSAGE_SANS_LIEN =
   'Ce tournoi n’est pas encore relié à un tournoi Game Tracker. Choisis-le dans la liste ci-dessous.';
 
-async function preparer(tournamentId: string) {
+async function preparer(tournamentId: string, etatDeja?: EtatGT) {
   const ctx = await chargerContexteLocalGT(supabaseAnon(), tournamentId);
   if (!ctx.gtId) return { lie: false as const, interne: ctx.interne };
-  const etat = await etatPicksGT(ctx.gtId);
+  const etat = etatDeja ?? (await etatPicksGT(ctx.gtId));
   const preparation = preparerEnvoi({
     etat,
     rounds: ctx.rounds,
@@ -92,7 +109,24 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
       const liste = await listerTournoisPicks();
       return { ok: true, lie: false, message: MESSAGE_SANS_LIEN, candidats: candidatsLienGT(r.interne, liste) };
     }
-    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, pool: r.pool };
+    // Tours verrouillés ou terminés chez Game Tracker : LEUR jeu fait foi, on
+    // aligne nos picks (Moi, Laki, Thomas). Le tour ouvert n'est jamais touché.
+    let alignement: AlignementLu;
+    try {
+      const a = await alignerSurGameTracker(tournamentId, r.etat);
+      alignement = a.ok
+        ? { ok: true, rounds: a.rounds, changements: a.changements.map(decrireChangement), avertissements: a.avertissements }
+        : { ok: false, raisons: a.raisons };
+    } catch (e) {
+      alignement = { ok: false, raisons: [(e as Error).message] };
+    }
+    if (alignement.ok && alignement.changements.length > 0) {
+      revalidatePath(`/tournoi/${tournamentId}`, 'layout');
+      // Nos picks ont changé : ce qui serait envoyé est recalculé (même état lu, pas de 2e appel).
+      const r2 = await preparer(tournamentId, r.etat);
+      if (r2.lie) return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, pool: r2.pool, alignement };
+    }
+    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, pool: r.pool, alignement };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }

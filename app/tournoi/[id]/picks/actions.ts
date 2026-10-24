@@ -52,9 +52,9 @@ export async function validerPick(
   if (ailleurs) {
     return {
       ok: false,
-      error: `Ce joueur est déjà pické au tour ${ailleurs.round}${
-        ailleurs.half ? ` (${ailleurs.half})` : ''
-      }. Un joueur ne peut être utilisé qu'une fois par tournoi (par ce stock).`,
+      error: `${participantId === null ? 'Tu as' : 'Ce participant a'} déjà pické ce joueur au tour ${ailleurs.round}${
+        ailleurs.half ? ` (${ailleurs.half === 'top' ? 'haut' : 'bas'})` : ''
+      }. Chacun ne l'utilise qu'une fois par tournoi ; les autres participants peuvent toujours le prendre.`,
     };
   }
 
