@@ -65,6 +65,7 @@ pour les autres.
 \- Le barème du jeu est dans lib/scoring.ts, déjà validé : ne pas le réimplémenter ailleurs (voir README « Où corriger le barème des picks »). Ses règles datées sont dans lib/picksRegles.ts (pointsForfaitPour : forfait gagné à 10 pts dès le 2026-10-05 en bo3, miroir SQL tn_points_forfait, migration 0025) ; seuls tn_recompute_picks et le Score de référence l'utilisent, le Fantasy et le Bracket gardent le défaut 5.
 
 \- lib/ est LA référence : c'est tennis-picks (autre dossier) qui en a une copie dépassée, pas l'inverse.
+\- Région Vercel : dub1 (vercel.json), à côté de la base Supabase (eu-west-1, Irlande). En iad1 (défaut, États-Unis), chaque requête traversait l'Atlantique : 2 à 3,5 s par écran de tournoi. Ne pas changer sans déplacer la base. Écrans lents : lancer les lectures indépendantes en Promise.all, jamais en cascade.
 \- Onglet Procédures (/procedures) : mode d'emploi de tous les gestes, contenu dans app/procedures/procedures.ts. Quand un geste change ou qu'on en crée un (nouvel import, nouvelle variable, nouvelle commande...), mettre à jour la fiche dans la MÊME PR (et sa date `maj`). Jamais de valeur secrète dedans, seulement le nom des variables.
 
 
@@ -96,7 +97,8 @@ L'API `https://bowling-tracker-phi.vercel.app/api/v1/tennis/picks` permet de lir
 - Le POST remplace le pick du tour en entier : un côté non posé chez nous est renvoyé tel que Game Tracker l'a déjà, jamais vidé par accident.
 - Game Tracker peut rediriger un pick après coup (joueur « en attente » éliminé) : après chaque envoi on relit le pick RÉEL et on signale les écarts.
 - Pas d'appel à chaque affichage de page (la doc de l'API le déconseille) : seul le bouton « Lire Game Tracker » interroge.
-- Lien tournoi interne <-> tournoi Game Tracker : le même que celui du pont de Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers. Aucune migration. Posé depuis /import/thomas, OU depuis le panneau Game Tracker (action `lierGameTracker`, sur choix explicite parmi les tournois de l'API picks de même circuit/année/tableau) : nécessaire pour un tournoi présent côté picks mais absent de l'API bracket de Thomas (cas de Lyon). C'est la seule écriture en base de cette fonction (service role après sessionValide).
+- Lien tournoi interne <-> tournoi Game Tracker : le même que celui du pont de Thomas (tn_bracket_externe_tournois.tournament_id_interne), lu à l'envers. Aucune migration. Posé depuis /import/thomas, OU depuis le panneau Game Tracker (action `lierGameTracker`, sur choix explicite parmi les tournois de l'API picks de même circuit/année/tableau) : nécessaire pour un tournoi présent côté picks mais absent de l'API bracket de Thomas (cas de Lyon). Écritures en base : ce lien, et l'alignement ci-dessous (service role après sessionValide).
+- Tours verrouillés chez Game Tracker = LEUR jeu fait foi : chaque « Lire Game Tracker » (bouton manuel) recopie dans tn_picks les picks de Moi, Laki et Thomas (pseudo « moustiton ») pour tous les tours de `tours[]` sauf le tour ouvert (lib/gameTrackerAlignement.ts pur + db/gameTrackerAlignement.ts). Position -> joueur du premier tour, recoupée par le nom : un seul désaccord et rien n'est aligné. Un de nos picks d'un tour non aligné qui réutiliserait, dans le même stock, un joueur pris chez eux est retiré. Rappel de la règle : un joueur ne sert qu'une fois par tournoi ET PAR PARTICIPANT ; plusieurs participants peuvent prendre le même joueur.
 
 ## Vérifier la prod (point de contrôle /api/verif)
 

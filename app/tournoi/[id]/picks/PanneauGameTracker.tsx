@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { envoyerGameTracker, lierGameTracker, lireGameTracker, type EnvoiGameTracker, type LectureGameTracker } from './gameTrackerActions';
 import { boutonPrimaire, boutonSecondaire, carte, champTexte, Spinner } from '@/app/ui';
 import { useDefinirPoolGT } from './PoolGameTracker';
@@ -34,10 +35,14 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
   const [pending, startTransition] = useTransition();
   const definirPool = useDefinirPoolGT();
 
+  const router = useRouter();
+
   /** Affiche la lecture ET publie le pool pour la grille de picks (repères « hors pool »). */
   function appliquer(r: LectureGameTracker) {
     setLecture(r);
     definirPool(r.ok && r.lie ? r.pool : null);
+    // Nos picks ont été alignés sur Game Tracker : la grille et les points se rechargent.
+    if (r.ok && r.lie && r.alignement.ok && r.alignement.changements.length > 0) router.refresh();
   }
 
   function lire() {
@@ -77,7 +82,8 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         <p className="text-xs text-zinc-500">
           Lit ton état chez Game Tracker et y pose tes picks du tour ouvert, au nom de ton compte. Rien n&apos;est envoyé sans
           ton clic sur « Envoyer ». Un pick posé chez eux peut être redirigé automatiquement si un joueur « en attente »
-          perd : relis avant le verrou.
+          perd : relis avant le verrou. À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous
+          pour Moi, Laki et Thomas : c&apos;est leur jeu qui compte.
         </p>
 
         <button onClick={lire} disabled={pending} className={boutonSecondaire}>
@@ -115,6 +121,50 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
               </div>
             )}
             {erreurLien && <p className="text-red-700">{erreurLien}</p>}
+          </div>
+        )}
+
+        {lecture && lecture.ok && lecture.lie && (
+          <div
+            className={`rounded-xl px-2.5 py-2 text-xs ${
+              lecture.alignement.ok ? 'bg-sky-50 text-sky-950' : 'bg-red-50 text-red-900'
+            }`}
+          >
+            {!lecture.alignement.ok ? (
+              <>
+                <p className="font-medium">Tours terminés : alignement sur Game Tracker impossible, rien n&apos;a été modifié.</p>
+                <ul className="ml-4 list-disc">
+                  {lecture.alignement.raisons.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </>
+            ) : lecture.alignement.rounds.length === 0 ? (
+              <p>Aucun tour verrouillé chez Game Tracker : rien à aligner.</p>
+            ) : (
+              <>
+                <p className="font-medium">
+                  Tours verrouillés ({lecture.alignement.rounds.join(', ')}) : nos picks suivent ceux de Game Tracker.{' '}
+                  {lecture.alignement.changements.length === 0
+                    ? 'Déjà identiques.'
+                    : `${lecture.alignement.changements.length} changement(s) appliqué(s) :`}
+                </p>
+                {lecture.alignement.changements.length > 0 && (
+                  <ul className="ml-4 list-disc">
+                    {lecture.alignement.changements.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+            {lecture.alignement.ok && lecture.alignement.avertissements.length > 0 && (
+              <ul className="ml-4 mt-1 list-disc text-amber-800">
+                {lecture.alignement.avertissements.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

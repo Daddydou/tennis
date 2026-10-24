@@ -39,7 +39,7 @@ const candidat = (playerId: string, nom: string, ins: PlayerInsight | null): Can
   playerId,
   nom,
   rang: null,
-  adversaire: null,
+  adversaire: null, resultat: null,
   ePoints: 1,
   elo: 1500,
   sourceElo: 'ta',

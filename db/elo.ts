@@ -156,31 +156,13 @@ export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
   // ses probabilités. Activé par SOURCE_ELO=maison ; repli sur Tennis Abstract si la
   // table est absente ou vide. Les exceptions de noms visent des slugs TA : non reprises.
   if (sourceEloConfiguree() === 'maison') {
-    // ~5000 joueurs par circuit : PostgREST plafonne une réponse à 1000 lignes → pages.
-    const lignes: TaEloRow[] = [];
-    const PAGE = 1000;
-    let absente = false;
-    for (let debut = 0; ; debut += PAGE) {
-      const page = await sb
-        .from('tn_elo_maison')
-        .select(
-          'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at, n, dernier_jour',
-        )
-        .eq('tour', t)
-        .order('ta_slug')
-        .range(debut, debut + PAGE - 1);
-      if (page.error) {
-        if (tableAbsente(page.error.code)) {
-          absente = true;
-          break;
-        }
-        throw new Error(`tn_elo_maison : ${page.error.message}`);
-      }
-      lignes.push(...((page.data ?? []) as TaEloRow[]));
-      if ((page.data ?? []).length < PAGE) break;
-    }
-    if (!absente && lignes.length > 0) {
-      return { ...construireIndex(lignes, []), base: 'maison', eloDefaut: ELO_DEFAUT_MAISON[t] };
+    const avecCache = process.env.NODE_ENV !== 'test';
+    const enCache = avecCache ? CACHE_INDEX_MAISON.get(t) : undefined;
+    if (enCache && enCache.expire > Date.now()) return enCache.index;
+    const index = await chargerIndexMaison(sb, t);
+    if (index) {
+      if (avecCache) CACHE_INDEX_MAISON.set(t, { expire: Date.now() + DUREE_CACHE_INDEX_MS, index });
+      return index;
     }
   }
 
@@ -360,3 +342,58 @@ export function compterSources(elos: Record<string, ElosResolus>): {
 
 /** Clé de correspondance d'un nom ATP — à coller dans `ta_name_exceptions`. */
 export const cleDeNom = normaliserNom;
+
+/* -------------------------------------------------------------------------- */
+/*  Index Elo maison : chargement rapide + petit cache mémoire                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * L'index maison (~5 000 joueurs par circuit) était relu à CHAQUE affichage
+ * d'un écran de tournoi, page de 1 000 lignes après page de 1 000 lignes :
+ * la plus longue des lectures mesurées (≈ 0,5-0,8 s). Les notes ne changent
+ * qu'une fois par jour (passage du cron), donc :
+ *   - les pages sont lues EN PARALLÈLE (nombre de lignes demandé d'abord) ;
+ *   - l'index construit est gardé 10 min dans la mémoire de l'instance.
+ * Une mise à jour des notes est donc visible au plus 10 min plus tard.
+ */
+const DUREE_CACHE_INDEX_MS = 10 * 60 * 1000;
+const CACHE_INDEX_MAISON = new Map<'atp' | 'wta', { expire: number; index: IndexElo }>();
+
+/** Vide le cache (tests, ou après une réécriture complète des notes). */
+export function viderCacheIndexElo(): void {
+  CACHE_INDEX_MAISON.clear();
+}
+
+const COLONNES_MAISON =
+  'ta_name, ta_name_normalized, ta_slug, country, tour, elo_overall, elo_hard, elo_clay, elo_grass, atp_rank, updated_at, n, dernier_jour';
+
+/** null si la table est absente ou vide (repli Tennis Abstract). */
+async function chargerIndexMaison(sb: ReturnType<typeof supabaseAnon>, t: 'atp' | 'wta'): Promise<IndexElo | null> {
+  // PostgREST plafonne une réponse à 1000 lignes → pages, lues de front.
+  const PAGE = 1000;
+  const compte = await sb.from('tn_elo_maison').select('ta_slug', { count: 'exact', head: true }).eq('tour', t);
+  if (compte.error) {
+    if (tableAbsente(compte.error.code)) return null;
+    throw new Error(`tn_elo_maison : ${compte.error.message}`);
+  }
+  const total = compte.count ?? 0;
+  if (total === 0) return null;
+  const nbPages = Math.ceil(total / PAGE);
+  const pages = await Promise.all(
+    Array.from({ length: nbPages }, (_, i) =>
+      sb
+        .from('tn_elo_maison')
+        .select(COLONNES_MAISON)
+        .eq('tour', t)
+        .order('ta_slug')
+        .range(i * PAGE, i * PAGE + PAGE - 1),
+    ),
+  );
+  const lignes: TaEloRow[] = [];
+  for (const page of pages) {
+    if (page.error) throw new Error(`tn_elo_maison : ${page.error.message}`);
+    lignes.push(...((page.data ?? []) as unknown as TaEloRow[]));
+  }
+  if (lignes.length === 0) return null;
+  return { ...construireIndex(lignes, []), base: 'maison', eloDefaut: ELO_DEFAUT_MAISON[t] };
+}

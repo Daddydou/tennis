@@ -54,12 +54,28 @@ export interface TourOuvertGT {
   monPick: { haut: PickGT | null; bas: PickGT | null; etat: string };
 }
 
+/** Un tour déjà verrouillé ou terminé (`tours[]`) : les picks de TOUS les joueurs. */
+export interface TourJoueGT {
+  numero: number;
+  nom: string;
+  statut: string;
+  picks: {
+    pseudo: string;
+    moi: boolean;
+    haut: PickGT | null;
+    bas: PickGT | null;
+    points: number | null;
+  }[];
+}
+
 export interface EtatGT {
   maintenant: string;
   tournoi: { id: string; nom: string; drawSize: number; statut: string };
   tourOuvert: TourOuvertGT | null;
   dejaPickes: PickGT[];
   classement: { pseudo: string; moi: boolean; points: number }[];
+  /** Tours verrouillés ou terminés, avec les picks de chacun (vide si l'API n'en donne pas). */
+  tours: TourJoueGT[];
 }
 
 export interface TournoiPicksGT {
@@ -210,6 +226,26 @@ export function lireEtatGT(raw: unknown): EtatGT {
       const o = objet(c, `$.classement[${i}]`);
       return { pseudo: texte(o.pseudo, `$.classement[${i}].pseudo`), moi: o.moi === true, points: entier(o.points ?? 0, `$.classement[${i}].points`) };
     }),
+    tours: tableau(r.tours, '$.tours').map((t, i) => {
+      const c = `$.tours[${i}]`;
+      const o = objet(t, c);
+      return {
+        numero: entier(o.numero, `${c}.numero`),
+        nom: texte(o.nom, `${c}.nom`),
+        statut: typeof o.statut === 'string' ? o.statut : '',
+        picks: tableau(o.picks, `${c}.picks`).map((pk, j) => {
+          const cp = `${c}.picks[${j}]`;
+          const op = objet(pk, cp);
+          return {
+            pseudo: texte(op.pseudo, `${cp}.pseudo`),
+            moi: op.moi === true,
+            haut: lirePick(op.haut, `${cp}.haut`),
+            bas: lirePick(op.bas, `${cp}.bas`),
+            points: typeof op.points === 'number' ? op.points : null,
+          };
+        }),
+      };
+    }),
   };
 }
 
@@ -334,7 +370,15 @@ export function preparerEnvoi(p: ParametresEnvoi): PreparationEnvoi {
   const localHaut = unSeulPick ? locaux[0] : locaux.find((l) => l.half === 'top');
   const localBas = unSeulPick ? undefined : locaux.find((l) => l.half === 'bottom');
   if (!localHaut && !localBas) {
-    return { ok: false, raisons: [`Aucun pick posé chez nous pour ce tour (${roundLocal}) : rien à envoyer.`] };
+    const constitue = matchsPremierTour.some((m) => m.round === roundLocal && (m.player1Id || m.player2Id));
+    return {
+      ok: false,
+      raisons: [
+        constitue
+          ? `Aucun pick posé chez nous pour ce tour (${roundLocal}) : rien à envoyer.`
+          : `Notre tableau ne connaît pas encore les joueurs du tour ${roundLocal} : les résultats du tour précédent ne sont pas importés. Mets le tableau à jour (Importer), puis pose ton pick ici.`,
+      ],
+    };
   }
 
   /** Résout un de nos picks en ligne d'envoi, ou ajoute des raisons de refus. */

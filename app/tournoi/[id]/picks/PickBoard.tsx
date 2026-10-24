@@ -16,6 +16,11 @@ export interface Candidat {
   nom: string;
   rang: number | null;
   adversaire: string | null;
+  /**
+   * Issue du duel de CE tour pour ce joueur, s'il est déjà joué : il l'a
+   * gagné, ou perdu. null = pas encore joué (ou exemption).
+   */
+  resultat: 'gagne' | 'perdu' | null;
   ePoints: number;
   /** Elo effectif (pondéré surface) réellement utilisé par la simulation. */
   elo: number | null;
@@ -102,7 +107,7 @@ function ColonnePick({
   }
 
   return (
-    <div className="flex-1 space-y-2">
+    <div className="min-w-0 flex-1 space-y-2">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">{colonne.label}</h2>
         {colonne.pickActuel ? (
@@ -119,9 +124,9 @@ function ColonnePick({
       {colonne.impossible && (
         <p className="rounded-xl bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
           Tous les survivants de cette moitié ont déjà été pickés à un tour
-          précédent. Un joueur ne pouvant servir qu&apos;une fois par tournoi, ce
-          slot ne peut pas être rempli : il est neutralisé et ne bloque pas la
-          progression.
+          précédent (par ce participant). Un joueur ne pouvant servir
+          qu&apos;une fois par tournoi et par participant, ce slot ne peut pas
+          être rempli : il est neutralisé et ne bloque pas la progression.
         </p>
       )}
 
@@ -146,7 +151,7 @@ function ColonnePick({
           return (
             <div key={c.playerId}>
             <label
-              className={`flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-sm transition ${
+              className={`flex min-h-11 cursor-pointer items-start gap-2.5 px-2.5 py-2 text-sm transition ${
                 c.utilise
                   ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
                   : estPickActuel
@@ -163,104 +168,122 @@ function ColonnePick({
                 checked={selected}
                 disabled={!selectionnable}
                 onChange={() => setChoix(c.playerId)}
-                className="size-4 accent-blue-600"
+                className="mt-1 size-4 shrink-0 accent-blue-600"
               />
-              <span className="flex min-w-0 flex-1 items-center">
-                <span className="truncate">
-                  {c.nom}
-                  {c.rang ? (
-                    <span className="ml-1 text-xs text-zinc-400">#{c.rang}</span>
-                  ) : null}
-                  {estPickActuel && (
-                    <span className="ml-1 text-xs font-medium text-emerald-600">✓ validé</span>
+
+              {/* Ligne 1 : le joueur (en premier, nom ENTIER) ; ligne 2 : son
+                  adversaire, lui aussi en entier, puis les chiffres. Plus de
+                  colonnes fixes qui écrasaient le nom au téléphone. */}
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                  <span
+                    className={`font-semibold ${
+                      c.resultat === 'gagne'
+                        ? 'text-emerald-700'
+                        : c.resultat === 'perdu'
+                          ? 'text-zinc-400 line-through decoration-zinc-300'
+                          : ''
+                    }`}
+                  >
+                    {c.nom}
+                  </span>
+                  {c.rang ? <span className="text-xs text-zinc-400">#{c.rang}</span> : null}
+                  {c.resultat === 'gagne' && (
+                    <span className="rounded bg-emerald-100 px-1 text-[10px] font-medium text-emerald-800">gagné</span>
                   )}
-                  {c.utilise && (
-                    <span className="ml-1 text-xs italic">déjà pické</span>
+                  {c.resultat === 'perdu' && (
+                    <span className="rounded bg-zinc-200 px-1 text-[10px] font-medium text-zinc-600">perdu</span>
+                  )}
+                  {estPickActuel && (
+                    <span className="text-xs font-medium text-emerald-600">✓ validé</span>
+                  )}
+                  {c.utilise && <span className="text-xs italic">déjà pické</span>}
+                  <InsightBadge insight={c.insight} />
+                  {horsPool && (
+                    <span
+                      className="shrink-0 rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
+                      title="Pas dans ton pool Game Tracker pour ce tour : l'envoi serait refusé."
+                    >
+                      hors pool GT
+                    </span>
+                  )}
+                  {etatGT?.dejaPicke && (
+                    <span
+                      className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-800"
+                      title="Déjà pické chez Game Tracker à un autre tour : l'envoi serait refusé."
+                    >
+                      déjà pické GT
+                    </span>
+                  )}
+                  {etatGT?.enAttente && (
+                    <span
+                      className="shrink-0 rounded bg-sky-100 px-1 text-[10px] font-medium text-sky-800"
+                      title="Son match du tour précédent n'est pas joué : s'il le perd, Game Tracker redirigera le pick."
+                    >
+                      en attente
+                    </span>
+                  )}
+                  {aDetail && (
+                    // Un bouton dans un <label> n'active pas le radio : ouvrir le
+                    // détail ne change jamais le choix en cours.
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setDetailOuvert(ouvert ? null : c.playerId);
+                      }}
+                      aria-expanded={ouvert}
+                      aria-label={`Infos sur ${c.nom}`}
+                      title="Infos joueur"
+                      className="-my-2 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+                    >
+                      <span className="flex size-4 items-center justify-center rounded-full border border-current text-[10px] font-semibold leading-none">
+                        i
+                      </span>
+                    </button>
                   )}
                 </span>
-                {/* Hors de la zone tronquée : le badge reste visible sur mobile. */}
-                <InsightBadge insight={c.insight} />
-                {horsPool && (
-                  <span
-                    className="ml-1 shrink-0 rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
-                    title="Pas dans ton pool Game Tracker pour ce tour : l'envoi serait refusé."
-                  >
-                    hors pool GT
-                  </span>
-                )}
-                {etatGT?.dejaPicke && (
-                  <span
-                    className="ml-1 shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-800"
-                    title="Déjà pické chez Game Tracker à un autre tour : l'envoi serait refusé."
-                  >
-                    déjà pické GT
-                  </span>
-                )}
-                {etatGT?.enAttente && (
-                  <span
-                    className="ml-1 shrink-0 rounded bg-sky-100 px-1 text-[10px] font-medium text-sky-800"
-                    title="Son match du tour précédent n'est pas joué : s'il le perd, Game Tracker redirigera le pick."
-                  >
-                    en attente
-                  </span>
-                )}
-                {aDetail && (
-                  // Un bouton dans un <label> n'active pas le radio : ouvrir le
-                  // détail ne change jamais le choix en cours.
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setDetailOuvert(ouvert ? null : c.playerId);
-                    }}
-                    aria-expanded={ouvert}
-                    aria-label={`Infos sur ${c.nom}`}
-                    title="Infos joueur"
-                    className="-my-2 ml-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
-                  >
-                    <span className="flex size-4 items-center justify-center rounded-full border border-current text-[10px] font-semibold leading-none">
-                      i
+
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-zinc-500">
+                  {c.adversaire ? (
+                    <span>
+                      {c.resultat === 'gagne' ? 'a battu ' : c.resultat === 'perdu' ? 'battu par ' : 'vs '}
+                      <span
+                        className={
+                          c.resultat === 'perdu' ? 'font-semibold text-emerald-700' : 'text-zinc-700'
+                        }
+                      >
+                        {c.adversaire}
+                      </span>
                     </span>
-                  </button>
-                )}
+                  ) : (
+                    <span>adversaire à venir</span>
+                  )}
+                  <span aria-hidden className="text-zinc-300">·</span>
+                  <span
+                    className={`font-mono tabular-nums ${classeElo(c.sourceElo)}`}
+                    title="Elo effectif utilisé par la simulation (pondéré surface)"
+                  >
+                    Elo {c.elo ?? '—'}
+                  </span>
+                  <BadgeSourceElo source={c.sourceElo} taName={c.taName} candidats={c.candidats} />
+                  {c.ecartElo != null && (
+                    <span
+                      className={`font-mono tabular-nums ${
+                        c.ecartElo > 0 ? 'text-emerald-600' : c.ecartElo < 0 ? 'text-red-600' : 'text-zinc-400'
+                      }`}
+                      title="Écart d'Elo effectif (joueur − adversaire)"
+                    >
+                      {c.ecartElo > 0 ? '+' : ''}
+                      {c.ecartElo}
+                    </span>
+                  )}
+                </span>
               </span>
-              <span className="w-24 truncate text-right text-xs text-zinc-500">
-                {c.adversaire ? `vs ${c.adversaire}` : '—'}
-              </span>
-              <span
-                className={`w-11 text-right font-mono text-xs tabular-nums ${classeElo(
-                  c.sourceElo,
-                )}`}
-                title="Elo effectif utilisé par la simulation (pondéré surface)"
-              >
-                {c.elo ?? '—'}
-              </span>
-              <BadgeSourceElo
-                source={c.sourceElo}
-                taName={c.taName}
-                candidats={c.candidats}
-              />
-              <span
-                className={`w-14 text-right font-mono text-xs tabular-nums ${
-                  c.ecartElo == null
-                    ? 'text-zinc-400'
-                    : c.ecartElo > 0
-                      ? 'text-emerald-600'
-                      : c.ecartElo < 0
-                        ? 'text-red-600'
-                        : 'text-zinc-400'
-                }`}
-                title="Écart d'Elo effectif (joueur − adversaire)"
-              >
-                {c.ecartElo == null
-                  ? '—'
-                  : `${c.ecartElo > 0 ? '+' : ''}${c.ecartElo}`}
-              </span>
-              <span
-                className="w-12 text-right font-mono text-xs tabular-nums"
-                title="Espérance de points"
-              >
-                {c.ePoints.toFixed(1)}
+
+              <span className="shrink-0 text-right" title="Espérance de points">
+                <span className="block font-mono text-sm font-semibold tabular-nums">{c.ePoints.toFixed(1)}</span>
+                <span className="block text-[10px] text-zinc-400">pts esp.</span>
               </span>
             </label>
             {ouvert && c.insight && <InsightDetail insight={c.insight} />}
@@ -306,15 +329,15 @@ export default function PickBoard({
     <div className="space-y-1">
       <p className="text-xs text-zinc-500">
         Tour {round} — simulation Monte Carlo (20 000 runs) depuis les survivants
-        réels de ce tour. Colonnes : adversaire · Elo effectif · source ·
-        écart d&apos;Elo (joueur − adversaire) · E[pts]. Tri par E[pts]. Les
-        joueurs déjà utilisés dans ce tournoi sont grisés. Un Elo en{' '}
+        réels de ce tour, triée par points espérés. Sous chaque joueur : son
+        adversaire, son Elo effectif, la source de l&apos;Elo et l&apos;écart avec
+        l&apos;adversaire. Les joueurs déjà utilisés par CE participant sont
+        grisés (un autre participant peut toujours les prendre). Un Elo en{' '}
         <span className="text-amber-600">maison</span> ou en{' '}
         <span className="text-red-600">défaut</span> n&apos;a
-        pas trouvé sa correspondance Tennis Abstract ;{' '}
+        pas trouvé sa correspondance ;{' '}
         <span className="text-violet-600">ambigu</span>{' '}
-        signale plusieurs homonymes possibles, à trancher dans{' '}
-        <code>ta_name_exceptions</code>.
+        signale plusieurs homonymes possibles.
       </p>
       <div className="flex flex-col gap-6 sm:flex-row">
         {colonnes.map((c, i) => (

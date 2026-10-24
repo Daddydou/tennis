@@ -13,7 +13,6 @@ import { carte, pilleSelecteur } from '@/app/ui';
 import {
   etatsSlots,
   getParticipants,
-  getPicks,
   getTousLesPicks,
   joueursEnLice,
   loadEngineData,
@@ -44,12 +43,23 @@ export default async function PicksPage({
   const { id } = await params;
   const { round: roundParam, participant: participantParam } = await searchParams;
 
-  const engine = await loadEngineData(id);
+  // Toutes les lectures qui ne dépendent que de l'id partent DE FRONT : en
+  // cascade, chaque aller-retour vers la base s'ajoutait au temps d'affichage.
+  const [engine, participants, tousLesPicks, blend, insights] = await Promise.all([
+    loadEngineData(id),
+    getParticipants(),
+    getTousLesPicks(id),
+    // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : une lecture
+    // légère de tn_odds, jamais une resimulation.
+    chargerBlendProduction(id),
+    // Insights joueurs (forfait, blessure, charge…) : AFFICHAGE SEUL, ne
+    // touchent ni aux espérances, ni au tri, ni à `utilise`.
+    getInsights(id),
+  ]);
   if (!engine) notFound();
   const { tournament, matches, matchRows, players, playerRows, elos } = engine;
   const rounds = tournament.rounds ?? [];
-
-  const participants = await getParticipants();
+  const { coteUtilisables } = blend;
   // null = moi — comportement historique, strictement inchangé ; sinon un
   // participant configuré (cf. tn_participants). Un id inconnu dans l'URL
   // (participant retiré depuis /participants) retombe sur moi plutôt que
@@ -59,12 +69,15 @@ export default async function PicksPage({
       ? participantParam
       : null;
 
-  const picks = await getPicks(id, stockId);
+  // Les picks du stock affiché, tirés de la lecture commune (même filtre et
+  // même ordre que getPicks : participant_id, puis date de création).
+  const picks = tousLesPicks
+    .filter((p) => (p.participant_id ?? null) === stockId)
+    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
 
   // Résumé en tête d'écran : les points Picks déjà validés de chaque
   // participant — même calcul que le Dashboard (./pointsStock), jamais
   // réimplémenté ici.
-  const tousLesPicks = await getTousLesPicks(id);
   const stocksResume = stocksDuGroupe(participants);
   const picksParStock = pointsPicksParStock(tousLesPicks);
 
@@ -144,15 +157,6 @@ export default async function PicksPage({
     }
   }
 
-  // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : indépendante
-  // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
-  // jamais une resimulation.
-  const { coteUtilisables } = await chargerBlendProduction(id);
-
-  // Insights joueurs (forfait, blessure, charge…) : AFFICHAGE SEUL, ne
-  // touchent ni aux espérances, ni au tri, ni à `utilise`. Map vide si le
-  // tournoi n'en a pas → écran identique à avant.
-  const insights = await getInsights(id);
 
   // Elo effectif (pondéré surface, 0.6), exactement celui que la simulation
   // utilise. Sert à afficher la valeur elle-même, sa source, et l'écart
@@ -199,11 +203,23 @@ export default async function PicksPage({
         const elo = effElo(r.playerId);
         const eloAdv = advId ? effElo(advId) : null;
         const resolu = elos[r.playerId] as ElosResolus | undefined;
+        // Duel de CE tour déjà joué ? Le vainqueur est mis en avant à l'écran.
+        const duel = matchRows.find(
+          (m) =>
+            m.round === roundSelectionne &&
+            (m.player1_id === r.playerId || m.player2_id === r.playerId),
+        );
+        const resultat: Candidat['resultat'] = duel?.winner_id
+          ? duel.winner_id === r.playerId
+            ? 'gagne'
+            : 'perdu'
+          : null;
         return {
           playerId: r.playerId,
           nom: r.playerName,
           rang: p?.rank ?? null,
           adversaire: adv,
+          resultat,
           // Elo effectif utilisé par la simulation, et d'où il vient.
           elo: elo === null ? null : Math.round(elo),
           sourceElo: resolu?.source ?? 'defaut',
@@ -308,6 +324,20 @@ export default async function PicksPage({
               {p.name}
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pour QUI on pique : impossible à rater (le choix suit les changements
+          de tour, d'où des confusions « joueur déjà pické » sur le mauvais stock). */}
+      {stockId !== null && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-amber-100 px-3 py-2 text-sm text-amber-950">
+          <span>
+            Tu modifies les picks de{' '}
+            <strong>{participants.find((p) => p.id === stockId)?.name ?? 'ce participant'}</strong>, pas les tiens.
+          </span>
+          <Link href={lienParticipant(null)} className="font-medium underline underline-offset-2">
+            Revenir à mes picks
+          </Link>
         </div>
       )}
 

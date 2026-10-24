@@ -23,7 +23,19 @@ Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques s
 
 **Repères sur la grille de picks.** Après « Lire Game Tracker », chaque joueur du tour ouvert chez eux est marqué : **hors pool GT** (pas dans ton pool : l'envoi serait refusé), **déjà pické GT** (utilisé à un autre tour chez eux : refusé aussi), **en attente** (son match précédent n'est pas joué : le pick pourra être redirigé). Ces repères sont indicatifs, ils ne bloquent pas la sélection ; ils ne s'affichent que pour le tour que Game Tracker a ouvert, et jamais sur la vue d'un autre participant. Le recoupement par le nom se fait à l'envoi.
 
-## Vérifier l'API en direct (lecture seule)
+## Tours verrouillés : Game Tracker fait foi
+
+À chaque **Lire Game Tracker**, l’app lit aussi `tours[]` (les tours verrouillés ou terminés, avec les picks de **tous** les joueurs) et recopie ces picks dans les nôtres, pour Moi, Laki et Thomas (« moustiton » chez eux, même correspondance que `lib/bracketImport.ts`). Le panneau affiche la liste des changements appliqués.
+
+- Le tour ouvert n’est jamais réécrit.
+- Chaque position est traduite en notre joueur (premier tour du tableau) puis recoupée par le nom : un seul désaccord, rien n’est aligné (message dans le panneau).
+- Un côté vide chez eux vide le nôtre ; un pseudo inconnu est ignoré (avertissement).
+- Si un de nos picks d’un tour pas encore aligné réutilise, dans le même stock, un joueur pris chez eux, il est retiré (un joueur une fois par tournoi **et par participant** ; plusieurs participants peuvent prendre le même joueur).
+- Les points sont recalculés depuis nos résultats de matchs : si notre tableau est en retard, ils le sont aussi jusqu’à la mise à jour.
+
+Code : `lib/gameTrackerAlignement.ts` (plan, pur, testé) et `db/gameTrackerAlignement.ts` (lecture, puis écriture service role).
+
+## Vérifier l’API en direct (lecture seule)
 
 `npm run verify:game-tracker` liste les tournois jouables ; `npm run verify:game-tracker -- --tournoi=<id>` affiche en plus le tour ouvert, le pool, ton pick et le classement. Il passe par le même client et les mêmes lecteurs que l'app : si Game Tracker change la forme de ses réponses, il échoue ici avec le chemin fautif. Il n'envoie jamais de POST.
 
@@ -40,7 +52,7 @@ Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques s
 - Positions recalculées côté serveur depuis tes picks (position du joueur au premier tour), puis recoupées avec le **nom** du pool Game Tracker : un seul désaccord et rien n'est envoyé.
 - Refus avant envoi si : tour verrouillé, joueur hors pool, joueur déjà pické chez eux, mauvais côté du tableau.
 - Un côté que tu n'as pas posé ici est renvoyé tel que Game Tracker l'a déjà : l'envoi ne vide jamais un côté par accident. Aucun pick chez toi pour le tour = rien n'est envoyé.
-- Aucune écriture dans notre base : l'envoi ne modifie pas tes picks locaux.
+- L’envoi n’écrit rien dans notre base : il ne modifie pas tes picks locaux.
 
 ## Erreurs de l'API
 
