@@ -18,6 +18,7 @@
 import { supabaseAnon } from './anon';
 import { eloDepuisRang, eloEffectif } from '@/lib/elo';
 import { departagerHomonymes, ELO_DEFAUT_MAISON } from '@/lib/eloMaisonIdentites';
+import { completerRangsParNom } from '@/lib/eloMaisonRangs';
 import {
   chercherCorrespondance,
   construireIndex,
@@ -395,5 +396,31 @@ async function chargerIndexMaison(sb: ReturnType<typeof supabaseAnon>, t: 'atp' 
     lignes.push(...((page.data ?? []) as unknown as TaEloRow[]));
   }
   if (lignes.length === 0) return null;
+  await completerRangsDepuisTa(sb, t, lignes);
   return { ...construireIndex(lignes, []), base: 'maison', eloDefaut: ELO_DEFAUT_MAISON[t] };
+}
+
+/**
+ * `tn_elo_maison` ne stocke pas le classement ATP (colonne `atp_rank` vide) : sans lui, aucun
+ * joueur n'avait de rang et l'onglet Fantasy (paliers de classement) restait vide. On le
+ * complète depuis `ta_elo` (relevé Tennis Abstract), par nom — cf. lib/eloMaisonRangs.ts.
+ * Un échec de cette lecture ne bloque pas l'index : les joueurs restent simplement sans rang.
+ */
+async function completerRangsDepuisTa(
+  sb: ReturnType<typeof supabaseAnon>,
+  t: 'atp' | 'wta',
+  lignes: TaEloRow[],
+): Promise<void> {
+  if (!lignes.some((l) => l.atp_rank == null)) return;
+  const { data, error } = await sb
+    .from('ta_elo')
+    .select('ta_name_normalized, atp_rank')
+    .eq('tour', t)
+    .not('atp_rank', 'is', null)
+    .range(0, 4999);
+  if (error) {
+    console.error(`Rangs ATP (ta_elo ${t}) : ${error.message}`);
+    return;
+  }
+  completerRangsParNom(lignes, (data ?? []) as { ta_name_normalized: string; atp_rank: number | string | null }[]);
 }
