@@ -226,3 +226,25 @@ describe('enregistrerHistorique — équipe figée', () => {
     expect(affichee.termine).toBe(true);
   });
 });
+
+describe('équipe stockée vide (enregistrée avant que les joueurs aient un classement)', () => {
+  const equipeVide = [1, 2, 3].map((palier) => ({
+    palier, playerId: null, nom: null, rang: null, ePoints: 0, reel: 0,
+  }));
+
+  it("l'écran ignore une équipe sans aucun joueur et recompose", async () => {
+    table.set('t1', { tournament_id: 't1', e_predit: 0, score_reel: 0, termine: false, equipe: equipeVide });
+    const affichee = await equipeEvalueeFigee(engine1, fantasy1);
+    expect(ids(affichee.membres)).toEqual(ids(equipeEvaluee(engine1, fantasy1).membres));
+    expect(affichee.membres.some((m) => m.playerId)).toBe(true);
+  });
+
+  it("l'écriture suivante la remplace au lieu de la figer", async () => {
+    table.set('t1', { tournament_id: 't1', e_predit: 0, score_reel: 0, termine: false, equipe: equipeVide });
+    await enregistrerHistorique(engine1, equipeEvaluee(engine1, fantasy1));
+    const ligne = table.get('t1')!;
+    expect(ids(ligne.equipe)).toEqual(ids(equipeEvaluee(engine1, fantasy1).membres));
+    expect(ids(ligne.equipe).some((id) => id !== null)).toBe(true);
+    expect(ligne.e_predit).toBeGreaterThan(0);
+  });
+});
