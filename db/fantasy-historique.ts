@@ -149,6 +149,17 @@ export function figerEquipe(
   };
 }
 
+/**
+ * Une équipe stockée compte-t-elle vraiment ? Une équipe dont TOUS les postes sont vides
+ * (enregistrée à un moment où aucun joueur n'avait de classement) n'est pas une équipe figée :
+ * la garder afficherait quatre postes vides pour toute la durée du tournoi.
+ */
+export function equipeStockeeUtilisable(
+  equipe: { playerId: string | null }[] | null | undefined,
+): equipe is LigneHistorique['equipe'] {
+  return Boolean(equipe && equipe.some((m) => m.playerId));
+}
+
 /** Équipe stockée d'un tournoi, `null` s'il n'a pas encore de ligne (ou une ligne sans équipe). */
 export async function lireEquipeStockee(tournamentId: string): Promise<EquipeStockee | null> {
   const { data, error } = await supabaseAnon()
@@ -158,7 +169,7 @@ export async function lireEquipeStockee(tournamentId: string): Promise<EquipeSto
     .maybeSingle();
   if (error) throw new Error(error.message);
   const equipe = (data?.equipe ?? null) as LigneHistorique['equipe'] | null;
-  if (!equipe || equipe.length === 0) return null;
+  if (!equipeStockeeUtilisable(equipe)) return null;
   return {
     ePredit: data?.e_predit === null || data?.e_predit === undefined ? null : Number(data.e_predit),
     equipe,
@@ -281,7 +292,7 @@ export async function enregistrerHistorique(
     }
 
     const equipeStockee = (existante?.equipe ?? null) as LigneHistorique['equipe'] | null;
-    if (equipeStockee && equipeStockee.length > 0) {
+    if (equipeStockeeUtilisable(equipeStockee)) {
       // Nom, rang, espérance et `e_predit` restent ceux de la première
       // écriture ; `termine` ne dépend que des matchs.
       const r = reelsActualises(engine, equipeStockee, bareme);
