@@ -101,6 +101,11 @@ describe('pannes : exception, et la clé ne fuit jamais', () => {
     expect(m).toMatch(/ne permet pas de poser des picks tennis/);
   });
 
+  it('403 « pas inscrit » : la raison donnée par Game Tracker est reprise', async () => {
+    const m = await messageDErreur(etatPicksGT('t', repondre({ erreur: 'Tu n’es pas inscrit à ce tournoi' }, 403)));
+    expect(m).toMatch(/pas inscrit à ce tournoi/);
+  });
+
   it('429 : délai Retry-After conservé', async () => {
     try {
       await etatPicksGT('t', repondre({}, 429, { 'Retry-After': '12' }));

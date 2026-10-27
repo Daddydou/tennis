@@ -19,6 +19,8 @@ import {
   type PoolLocalGT,
   type PreparationEnvoi,
   poolParJoueur,
+  type TourOuvertGT,
+  tourPickable,
 } from '@/lib/gameTrackerPicks';
 
 /**
@@ -55,6 +57,8 @@ export type LectureGameTracker =
       lie: true;
       etat: EtatGT;
       preparation: PreparationEnvoi;
+      /** Tours à venir (picks à l'avance) : ce qui serait envoyé pour chacun. */
+      aVenir: { tour: TourOuvertGT; preparation: PreparationEnvoi }[];
       pool: PoolLocalGT | null;
       alignement: AlignementLu;
     }
@@ -81,7 +85,7 @@ export type EnvoiGameTracker =
 const MESSAGE_SANS_LIEN =
   'Ce tournoi n’est pas encore relié à un tournoi Game Tracker. Choisis-le dans la liste ci-dessous.';
 
-async function preparer(tournamentId: string, etatDeja?: EtatGT) {
+async function preparer(tournamentId: string, etatDeja?: EtatGT, tourCible?: number) {
   const ctx = await chargerContexteLocalGT(supabaseAnon(), tournamentId);
   if (!ctx.gtId) return { lie: false as const, interne: ctx.interne };
   const etat = etatDeja ?? (await etatPicksGT(ctx.gtId));
@@ -92,9 +96,23 @@ async function preparer(tournamentId: string, etatDeja?: EtatGT) {
     noms: ctx.noms,
     picksLocaux: ctx.picks,
     maintenant: new Date(),
+    tourCible,
   });
+  // Tours à venir : même calcul, un par tour (rien n'est envoyé, c'est un aperçu).
+  const aVenir = etat.toursAVenir.map((tour) => ({
+    tour,
+    preparation: preparerEnvoi({
+      etat,
+      rounds: ctx.rounds,
+      matchsPremierTour: ctx.matchs,
+      noms: ctx.noms,
+      picksLocaux: ctx.picks,
+      maintenant: new Date(),
+      tourCible: tour.numero,
+    }),
+  }));
   const pool = poolParJoueur(etat, ctx.rounds, ctx.matchs);
-  return { lie: true as const, gtId: ctx.gtId, etat, preparation, pool };
+  return { lie: true as const, gtId: ctx.gtId, etat, preparation, aVenir, pool };
 }
 
 export async function lireGameTracker(tournamentId: string): Promise<LectureGameTracker> {
@@ -124,9 +142,9 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
       revalidatePath(`/tournoi/${tournamentId}`, 'layout');
       // Nos picks ont changé : ce qui serait envoyé est recalculé (même état lu, pas de 2e appel).
       const r2 = await preparer(tournamentId, r.etat);
-      if (r2.lie) return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, pool: r2.pool, alignement };
+      if (r2.lie) return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, aVenir: r2.aVenir, pool: r2.pool, alignement };
     }
-    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, pool: r.pool, alignement };
+    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, aVenir: r.aVenir, pool: r.pool, alignement };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }
@@ -170,7 +188,7 @@ export async function envoyerGameTracker(tournamentId: string, attendu: Attendu)
   try {
     // Tout est relu et recalculé MAINTENANT : l'état affiché a pu vieillir
     // (verrou passé, pick redirigé, pick local modifié entre-temps).
-    const r = await preparer(tournamentId);
+    const r = await preparer(tournamentId, undefined, attendu.tour);
     if (!r.lie) return { ok: false, erreur: MESSAGE_SANS_LIEN };
     const prep = r.preparation;
     if (!prep.ok) return { ok: false, erreur: `Rien envoyé : ${prep.raisons.join(' ')}` };
@@ -183,7 +201,7 @@ export async function envoyerGameTracker(tournamentId: string, attendu: Attendu)
     }
 
     const envoye: Attendu = { tour: prep.tour, haut: prep.haut, bas: prep.bas };
-    const unSeulPick = r.etat.tourOuvert?.picksAttendus === 1;
+    const unSeulPick = tourPickable(r.etat, prep.tour)?.picksAttendus === 1;
 
     if (!prep.dejaAJour) {
       const rep = await poserPicksGT(r.gtId, prep.tour, prep.haut, prep.bas);
@@ -194,7 +212,7 @@ export async function envoyerGameTracker(tournamentId: string, attendu: Attendu)
 
     // Le serveur de Game Tracker peut modifier un pick après coup : on relit le RÉEL.
     const apres = await etatPicksGT(r.gtId);
-    const reel = apres.tourOuvert?.monPick ?? { haut: null, bas: null, etat: 'manquant' };
+    const reel = tourPickable(apres, prep.tour)?.monPick ?? { haut: null, bas: null, etat: 'manquant' };
     return {
       ok: true,
       dejaAJour: prep.dejaAJour,

@@ -16,8 +16,10 @@ Résumé de l'API « Picks tennis » de Game Tracker (l'app de Thomas) et de la 
 
 Écran **Picks** d'un tournoi, vue « Moi », panneau repliable **Game Tracker** :
 
-1. **Lire Game Tracker** : affiche le tour ouvert, l'heure de verrou, ton pick actuel chez eux, le classement, et ce qui serait envoyé.
-2. **Envoyer sur Game Tracker** : un seul POST pour le tour ouvert. Après l'envoi, l'app relit ton pick RÉEL et signale tout écart.
+1. **Lire Game Tracker** : affiche le tour ouvert, l'heure de verrou, ton pick actuel chez eux, le classement (rang, ex æquo compris) et ce qui serait envoyé. Les **tours à venir** (`toursAVenir`, picks à l'avance) sont listés dessous, chacun avec son verrou, ton pick actuel chez eux et son aperçu d'envoi.
+2. **Envoyer sur Game Tracker** : un seul POST, pour UN tour (le tour ouvert ou un tour à venir, un bouton par tour). Après l'envoi, l'app relit ton pick RÉEL de ce tour et signale tout écart.
+
+Pour un tour à venir, l'app envoie ce qui est posé chez nous pour ce tour (écran Picks : choisir le tour dans le sélecteur). Rien n'est posé = rien n'est envoyé.
 
 Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques sur « Lire ».
 
@@ -43,14 +45,20 @@ Code : `lib/gameTrackerAlignement.ts` (plan, pur, testé) et `db/gameTrackerAlig
 
 - Chaque tour : un joueur du haut du tableau et un du bas. En demi-finale et finale : un seul pick, dans `haut`.
 - On pique dans le pool du tour (8 candidats par moitié avant les huitièmes, tous les joueurs en lice ensuite). Un joueur ne se pique qu'une fois par tournoi.
+- **Picks à l'avance** : le POST accepte tout tour pas encore verrouillé, pas seulement le tour ouvert (plus d'erreur « pas encore ouvert »). Le GET donne `tourOuvert` et `toursAVenir` (même format : pool et ton pick).
 - Un tour s'ouvre dès le premier match du tour précédent : certains candidats sont `enAttente`. Si l'un d'eux perd, **Game Tracker redirige automatiquement le pick vers le vainqueur** (ou le vide s'il a déjà été pické). Il faut donc relire avant le verrou.
-- Le tour se verrouille au premier match (`lockAt`). Avant, le pick se remplace à volonté.
-- Le POST **remplace le pick du tour en entier** (`haut` et `bas` obligatoires, `null` vide un côté).
+- Le tour se verrouille au début de son premier match (`lockAt`). Avant, le pick se remplace à volonté.
+- Le POST **remplace le pick du tour en entier** (`haut` et `bas` obligatoires). `haut: null, bas: null` retire ton pick du tour ; un seul côté posé est un **pick partiel**, qui ne rapporte que sur le joueur posé. (L'app n'a pas de bouton « retirer » : elle ne vide jamais un côté, elle renvoie celui que Game Tracker a déjà.)
+- Seuls les inscrits au tournoi jouent : sinon 403 « Tu n'es pas inscrit à ce tournoi ».
+- Le GET ne modifie rien côté serveur : on peut le rappeler à volonté (l'app ne le fait quand même qu'au clic sur « Lire »).
+- Classement : `rang` (égalité = même rang : 1, 1, 3) et prix partagé.
+
+Côté bracket de Thomas : `verrouille` passe à vrai au début du 1er match du tournoi (plus 3 h avant), `lockAt` est cohérent, et seuls les participants inscrits apparaissent. L'app lit déjà ces champs tels quels.
 
 ## Ce que fait l'app pour rester sûre
 
 - Positions recalculées côté serveur depuis tes picks (position du joueur au premier tour), puis recoupées avec le **nom** du pool Game Tracker : un seul désaccord et rien n'est envoyé.
-- Refus avant envoi si : tour verrouillé, joueur hors pool, joueur déjà pické chez eux, mauvais côté du tableau.
+- Refus avant envoi si : tour verrouillé (ou plus ouvert aux picks), joueur hors pool, joueur déjà pické chez eux, mauvais côté du tableau.
 - Un côté que tu n'as pas posé ici est renvoyé tel que Game Tracker l'a déjà : l'envoi ne vide jamais un côté par accident. Aucun pick chez toi pour le tour = rien n'est envoyé.
 - L’envoi n’écrit rien dans notre base : il ne modifie pas tes picks locaux.
 
@@ -59,7 +67,7 @@ Code : `lib/gameTrackerAlignement.ts` (plan, pur, testé) et `db/gameTrackerAlig
 | Code | Sens |
 |---|---|
 | 401 | Clé absente, invalide, révoquée ou expirée |
-| 403 | La clé ne permet pas de poser des picks tennis, ou plus d'accès au tennis ; tour verrouillé ou pas encore ouvert |
+| 403 | La clé ne permet pas de poser des picks tennis, ou plus d'accès au tennis ; tour verrouillé ; « Tu n'es pas inscrit à ce tournoi » (la raison donnée par Game Tracker est affichée) |
 | 404 | Tournoi introuvable / jeu de picks fermé ; tour inexistant |
 | 422 | Un seul pick en demi/finale ; joueur hors pool ; joueur déjà pické ; position hors tableau |
 | 429 | Plus de 60 requêtes par minute (en-tête `Retry-After`) |
