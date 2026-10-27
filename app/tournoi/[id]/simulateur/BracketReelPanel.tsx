@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { ArbreResolu, EmplacementDuel } from '@/lib/bracketSim';
 import type { Joueur } from './types';
-import { pilleSelecteur } from '@/app/ui';
+import { filtreSecondaire } from '@/app/ui';
 
 /**
  * Le bracket réel/scénario — UNIQUE, partagé entre tous les participants
@@ -45,7 +45,7 @@ export default function BracketReelPanel({
 
       <div className="flex flex-wrap gap-1.5">
         {roundsAffiches.map((r) => (
-          <button key={r} onClick={() => setRoundAffiche(r)} className={pilleSelecteur(r === roundAffiche)}>
+          <button key={r} onClick={() => setRoundAffiche(r)} className={filtreSecondaire(r === roundAffiche)}>
             {r}
           </button>
         ))}
@@ -92,7 +92,7 @@ function Duel({
     const actif = duel.vainqueur !== null && duel.vainqueur === id;
     if (!n) {
       return (
-        <div className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-300 px-2.5 text-center text-xs text-zinc-400">
+        <div className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-300 px-2.5 text-center text-xs text-zinc-500">
           en attente
         </div>
       );
@@ -100,7 +100,7 @@ function Duel({
     const style = duel.verrouille
       ? actif
         ? 'border-emerald-400 bg-emerald-50 font-medium'
-        : 'border-zinc-200 text-zinc-400'
+        : 'border-zinc-200 text-zinc-500'
       : actif
         ? 'border-blue-600 bg-blue-600 font-medium text-white'
         : 'border-zinc-300 hover:border-zinc-500';
@@ -132,7 +132,7 @@ function Duel({
       {onEffacer && (
         <button
           onClick={onEffacer}
-          className="min-h-11 px-0.5 text-[11px] text-zinc-400 transition active:scale-[0.97] hover:text-red-600"
+          className="min-h-11 px-0.5 text-xs text-zinc-500 transition active:scale-[0.97] hover:text-red-600"
         >
           Retirer ce résultat
         </button>

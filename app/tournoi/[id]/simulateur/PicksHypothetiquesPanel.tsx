@@ -6,7 +6,7 @@ import { etatsSlots, type MatchRow } from '@/db/queries';
 import type { Half } from '@/lib/types';
 import { cleSlot, versPickRowsSimules } from './picksSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
-import { champTexte, pilleSelecteur } from '@/app/ui';
+import { champTexte, filtreSecondaire } from '@/app/ui';
 
 const HALF_LABEL: Record<string, string> = { top: 'Moitié haute', bottom: 'Moitié basse' };
 
@@ -64,7 +64,7 @@ export default function PicksHypothetiquesPanel({
 
       <div className="flex flex-wrap gap-1.5">
         {stocks.map((s) => (
-          <button key={s} onClick={() => setStockActif(s)} className={pilleSelecteur(s === stockActif)}>
+          <button key={s} onClick={() => setStockActif(s)} className={filtreSecondaire(s === stockActif)}>
             {nomStock(s, participants)}
           </button>
         ))}
@@ -72,7 +72,7 @@ export default function PicksHypothetiquesPanel({
 
       <div className="flex flex-wrap gap-1.5">
         {roundsRestants.map((r) => (
-          <button key={r} onClick={() => setRoundAffiche(r)} className={pilleSelecteur(r === roundAffiche)}>
+          <button key={r} onClick={() => setRoundAffiche(r)} className={filtreSecondaire(r === roundAffiche)}>
             {r}
           </button>
         ))}
@@ -93,7 +93,7 @@ export default function PicksHypothetiquesPanel({
               </h3>
 
               {etat.joueurs.length === 0 ? (
-                <p className="rounded border border-dashed border-zinc-200 px-2.5 py-2 text-xs text-zinc-400">
+                <p className="rounded border border-dashed border-zinc-200 px-2.5 py-2 text-xs text-zinc-500">
                   Pas encore constitué dans le tableau testé — avance le tour
                   précédent dans l&apos;onglet « Tableau testé ».
                 </p>

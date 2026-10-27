@@ -143,7 +143,7 @@ export default function TableauJoueurs({
       <div className={`${carte} overflow-x-auto`}>
         <table className="w-full min-w-[980px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-zinc-100 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            <tr className="border-b border-zinc-100 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
               <th className="sticky left-0 z-10 bg-white px-3 py-2">Joueur</th>
               <th className="px-2 py-2 text-right">Elo</th>
               <th className="px-2 py-2">Adversaire {tourCourant}</th>
@@ -182,19 +182,19 @@ export default function TableauJoueurs({
                           l.resultat === 'gagne'
                             ? 'text-emerald-700'
                             : l.resultat === 'perdu'
-                              ? 'text-zinc-400 line-through decoration-zinc-300'
+                              ? 'text-zinc-500 line-through decoration-zinc-300'
                               : l.utilise
-                                ? 'text-zinc-400'
+                                ? 'text-zinc-500'
                                 : ''
                         }`}
                       >
                         {l.nom}
                       </span>
-                      {l.rang ? <span className="text-xs text-zinc-400">#{l.rang}</span> : null}
+                      {l.rang ? <span className="text-xs text-zinc-500">#{l.rang}</span> : null}
                       <InsightBadge insight={l.insight} />
                       {horsPool && (
                         <span
-                          className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
+                          className="rounded bg-amber-100 px-1 text-xs font-medium text-amber-800"
                           title="Pas dans ton pool Game Tracker pour ce tour : l'envoi serait refusé."
                         >
                           hors pool GT
@@ -202,7 +202,7 @@ export default function TableauJoueurs({
                       )}
                       {etatGT?.dejaPicke && (
                         <span
-                          className="rounded bg-red-100 px-1 text-[10px] font-medium text-red-800"
+                          className="rounded bg-red-100 px-1 text-xs font-medium text-red-800"
                           title="Déjà pické chez Game Tracker à un autre tour : l'envoi serait refusé."
                         >
                           déjà pické GT
@@ -210,13 +210,13 @@ export default function TableauJoueurs({
                       )}
                       {etatGT?.enAttente && (
                         <span
-                          className="rounded bg-sky-100 px-1 text-[10px] font-medium text-sky-800"
+                          className="rounded-md bg-zinc-100 px-1.5 text-xs font-medium text-zinc-700"
                           title="Son match du tour précédent n'est pas joué : s'il le perd, Game Tracker redirigera le pick."
                         >
                           en attente
                         </span>
                       )}
-                      {l.utilise && <span className="text-[11px] italic text-zinc-400">déjà pické</span>}
+                      {l.utilise && <span className="text-xs italic text-zinc-500">déjà pické</span>}
                     </div>
                   </td>
 
@@ -228,7 +228,7 @@ export default function TableauJoueurs({
                       {Math.round(l.elo)}
                     </span>
                     <div className="flex justify-end">
-                      <BadgeSourceElo source={l.sourceElo} taName={l.taName} candidats={l.candidatsElo} />
+                      <BadgeSourceElo source={l.sourceElo} taName={l.taName} candidats={l.candidatsElo} nom={l.nom} />
                     </div>
                   </td>
 
@@ -239,19 +239,19 @@ export default function TableauJoueurs({
                           {l.resultat === 'gagne' ? 'a battu ' : l.resultat === 'perdu' ? 'battu par ' : 'vs '}
                           {l.adversaire.nom}
                         </span>
-                        <span className="ml-1 text-zinc-400">
+                        <span className="ml-1 text-zinc-500">
                           {l.adversaire.rang ? `#${l.adversaire.rang} · ` : ''}
                           <span className="font-mono tabular-nums">{Math.round(l.adversaire.elo)}</span>
                         </span>
                       </>
                     ) : (
-                      <span className="text-zinc-400">à venir</span>
+                      <span className="text-zinc-500">à venir</span>
                     )}
                   </td>
 
                   <td
                     className={`px-2 py-2 text-right align-top font-mono text-xs tabular-nums ${
-                      ecart === null ? 'text-zinc-300' : ecart > 0 ? 'text-emerald-600' : ecart < 0 ? 'text-red-600' : 'text-zinc-400'
+                      ecart === null ? 'text-zinc-300' : ecart > 0 ? 'text-emerald-700' : ecart < 0 ? 'text-red-600' : 'text-zinc-500'
                     }`}
                   >
                     {ecart === null ? '—' : `${ecart > 0 ? '+' : ''}${ecart}`}
@@ -263,7 +263,7 @@ export default function TableauJoueurs({
 
                   <td className="px-2 py-2 text-right align-top font-mono text-xs font-semibold tabular-nums">
                     {l.pointsMatch === null ? '—' : f1(l.pointsMatch)}
-                    {l.resultat && <span className="ml-0.5 text-[10px] font-normal text-zinc-400">réel</span>}
+                    {l.resultat && <span className="ml-0.5 text-xs font-normal text-zinc-500">réel</span>}
                   </td>
 
                   {rounds.map((r) => {
@@ -296,7 +296,7 @@ export default function TableauJoueurs({
                             className={`flex min-h-11 w-full min-w-14 flex-col items-center justify-center rounded-lg px-1 py-1 transition active:scale-[0.97] disabled:cursor-default ${classes}`}
                           >
                             <span className="font-mono text-sm font-semibold tabular-nums">{f1(c.e)}</span>
-                            <span className={`text-[10px] ${etat === 'choisi' ? 'text-blue-100' : 'text-zinc-400'}`}>
+                            <span className={`text-xs ${etat === 'choisi' ? 'text-blue-100' : 'text-zinc-500'}`}>
                               {pct(c.presence)} %
                             </span>
                           </button>
@@ -307,7 +307,7 @@ export default function TableauJoueurs({
                     );
                   })}
 
-                  <td className="border-l border-zinc-100 px-2 py-2 align-top text-[11px] text-zinc-500">
+                  <td className="border-l border-zinc-100 px-2 py-2 align-top text-xs text-zinc-500">
                     {l.prisPar.map((p) => `${p.nom} (${p.round})`).join(', ')}
                   </td>
                 </tr>
@@ -323,7 +323,7 @@ export default function TableauJoueurs({
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-zinc-500">
+      <p className="text-xs text-zinc-500">
         Chaque case de tour : points espérés si tu piques ce joueur à ce tour (en petit, sa chance d&apos;être encore en
         lice). Bleu foncé = ton choix, bleu clair = le plan, vert = validé.
       </p>

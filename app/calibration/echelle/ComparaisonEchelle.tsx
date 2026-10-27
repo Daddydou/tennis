@@ -48,7 +48,7 @@ function pct(x: number): string {
 /** Vert quand l'écart est faible, rouge au-delà de 15 %. */
 function classeEcart(ecart: number): string {
   const a = Math.abs(ecart);
-  if (a <= 0.05) return 'text-emerald-600';
+  if (a <= 0.05) return 'text-emerald-700';
   if (a <= 0.15) return 'text-zinc-700';
   return 'text-red-600';
 }
@@ -108,7 +108,7 @@ export default function ComparaisonEchelle() {
             , {data.simulations.toLocaleString('fr-FR')} simulations par tournoi
             et par échelle.
             {data.partiel && (
-              <span className="ml-1 font-medium text-amber-600">
+              <span className="ml-1 font-medium text-amber-700">
                 Budget de temps atteint : le comparatif ne porte que sur les
                 tournois traités, identiques pour toutes les échelles.
               </span>
@@ -134,7 +134,7 @@ export default function ComparaisonEchelle() {
                       <th key={g} className="py-2 pr-3 text-right font-medium">
                         {LIBELLE_GROUPE[g] ?? g}
                         {n !== undefined && (
-                          <span className="ml-1 font-normal normal-case text-zinc-400">
+                          <span className="ml-1 font-normal normal-case text-zinc-500">
                             (n={n})
                           </span>
                         )}
@@ -155,7 +155,7 @@ export default function ComparaisonEchelle() {
                     <td className="py-2 pr-3 font-mono tabular-nums">
                       {r.echelle}
                       {r.echelle === data.echelleProduction && (
-                        <span className="ml-2 font-sans text-xs text-zinc-400">
+                        <span className="ml-2 font-sans text-xs text-zinc-500">
                           production
                         </span>
                       )}
@@ -179,7 +179,7 @@ export default function ComparaisonEchelle() {
                         <td
                           key={g}
                           className={`py-2 pr-3 text-right font-mono tabular-nums ${
-                            e ? classeEcart(e.agregat.ecart) : 'text-zinc-400'
+                            e ? classeEcart(e.agregat.ecart) : 'text-zinc-500'
                           }`}
                           title={
                             e
@@ -276,7 +276,7 @@ export default function ComparaisonEchelle() {
                           <td
                             key={r.echelle}
                             className={`py-1 pr-3 text-right font-mono tabular-nums ${
-                              p > 0 ? classeEcart(t.reel / p - 1) : 'text-zinc-400'
+                              p > 0 ? classeEcart(t.reel / p - 1) : 'text-zinc-500'
                             }`}
                             title={`Espérance ${p.toFixed(1)}`}
                           >

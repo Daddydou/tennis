@@ -38,13 +38,13 @@ export default function InsightDetail({ insight }: { insight: PlayerInsight }) {
             const contenu = (
               <>
                 {f.date && (
-                  <span className="mr-1 tabular-nums text-zinc-400">{dateCourte(f.date)}</span>
+                  <span className="mr-1 tabular-nums text-zinc-500">{dateCourte(f.date)}</span>
                 )}
                 <span>{f.text}</span>
                 {f.confidence && f.confidence !== 'high' && (
-                  <span className="ml-1 italic text-zinc-400">({CONFIANCE[f.confidence]})</span>
+                  <span className="ml-1 italic text-zinc-500">({CONFIANCE[f.confidence]})</span>
                 )}
-                {url && <span className="ml-1 text-zinc-400">↗</span>}
+                {url && <span className="ml-1 text-zinc-500">↗</span>}
               </>
             );
             return (
@@ -66,7 +66,7 @@ export default function InsightDetail({ insight }: { insight: PlayerInsight }) {
           })}
         </ul>
       )}
-      <p className="text-[11px] text-zinc-400">
+      <p className="text-xs text-zinc-500">
         Info du {dateCourte(insight.asOf)} · {CONFIANCE[insight.confidence]} · affichage
         seul, n&apos;entre pas dans la simulation
       </p>

@@ -1,4 +1,5 @@
 import { STATUTS_DECIDES, STATUTS_INDECIS } from '@/lib/types';
+import { genererSlots } from '@/lib/optimizer';
 import type { Half, Surface } from '@/lib/types';
 import type { MatchRow, PickRow } from './types';
 
@@ -120,4 +121,50 @@ export function etatsSlots(
       impossible: joueurs.length > 0 && disponibles.length === 0,
     };
   });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Avancement des picks d'un stock                                            */
+/* -------------------------------------------------------------------------- */
+
+export interface AvancementTour {
+  round: string;
+  /** Picks posés sur ce tour. */
+  faits: number;
+  /** Slots réellement remplissables (les impossibles sont neutralisés). */
+  requis: number;
+  /** Slots sans pick possible : tous leurs survivants déjà utilisés. */
+  neutralises: number;
+}
+
+/**
+ * Avancement des picks d'UN stock (moi ou un participant), tour par tour, et
+ * son tour courant : le premier dont les picks remplissables ne sont pas tous
+ * posés (à défaut, le dernier). Partagé par l'onglet Picks et le Dashboard :
+ * le « tour à picker » ne doit jamais différer d'un écran à l'autre.
+ *
+ * Un slot impossible (tous ses survivants pickés ailleurs) sort du décompte,
+ * sinon le tour resterait éternellement incomplet et bloquerait la
+ * progression.
+ */
+export function avancementPicks(
+  rounds: string[],
+  matchRows: MatchRow[],
+  picks: PickRow[],
+): { parTour: AvancementTour[]; tourCourant: string | null } {
+  const slots = genererSlots(rounds);
+  const etats = etatsSlots(slots, matchRows, picks);
+  const parTour = rounds.map((round) => {
+    const duTour = etats.filter((e) => e.round === round);
+    const neutralises = duTour.filter((e) => e.impossible).length;
+    return {
+      round,
+      faits: picks.filter((p) => p.round === round).length,
+      requis: duTour.length - neutralises,
+      neutralises,
+    };
+  });
+  const tourCourant =
+    parTour.find((t) => t.faits < t.requis)?.round ?? rounds[rounds.length - 1] ?? null;
+  return { parTour, tourCourant };
 }

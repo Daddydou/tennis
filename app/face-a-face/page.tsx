@@ -1,5 +1,5 @@
 import SelecteurJoueurs from './SelecteurJoueurs';
-import { carte } from '@/app/ui';
+import { carte, noteInfo } from '@/app/ui';
 import { chargerFaceAFace, listerJoueursDuCircuit, type PointElo } from '@/db/face-a-face';
 import { classeElo } from '@/app/tournoi/[id]/BadgeSourceElo';
 import type { Surface, Tour } from '@/lib/types';
@@ -119,9 +119,19 @@ export default async function FaceAFacePage({
       <SelecteurJoueurs tour={tour} joueurs={joueurs} idA={idA} idB={idB} />
 
       {idA && idB && !donnees && (
-        <p className="text-sm text-red-600">
+        <p role="alert" className="text-sm font-medium text-red-700">
           Sélection invalide : choisis deux joueurs différents du même circuit.
         </p>
+      )}
+
+      {/* État vide : dire ce que la page va montrer, plutôt que deux listes
+          vides sur une page blanche. */}
+      {!(idA && idB) && (
+        <div className={`${noteInfo} text-sm`}>
+          Choisis deux joueurs du circuit {tour} ci-dessus. Tu verras leur bilan
+          dans les tournois importés ici, leur Elo par surface et la probabilité
+          de victoire de l&apos;un contre l&apos;autre.
+        </div>
       )}
 
       {donnees && (
@@ -144,7 +154,7 @@ export default async function FaceAFacePage({
                 ))}
               </div>
             )}
-            <p className="mt-2 text-center text-[11px] text-zinc-400">
+            <p className="mt-2 text-center text-xs text-zinc-500">
               Seulement les matchs des tournois importés dans l&apos;app — pas le
               face-à-face de carrière.
             </p>
@@ -179,7 +189,7 @@ export default async function FaceAFacePage({
                 ))}
               </tbody>
             </table>
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-xs text-zinc-500">
               Elo effectif (60 % surface, 40 % général), le même que celui de la
               simulation.
               {(donnees.elos.a.source !== 'ta' || donnees.elos.b.source !== 'ta') &&
@@ -192,7 +202,7 @@ export default async function FaceAFacePage({
             <div className={`space-y-2 p-3 ${carte}`}>
               <h2 className="text-sm font-semibold">Évolution de l&apos;Elo général</h2>
               <TableEvolution nomA={nomA} nomB={nomB} a={donnees.evolution.a} b={donnees.evolution.b} />
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-xs text-zinc-500">
                 Relevés Tennis Abstract archivés — l&apos;archive ne remonte qu&apos;à
                 sa mise en place (fin juillet 2026).
               </p>
@@ -220,16 +230,16 @@ export default async function FaceAFacePage({
                     <span className="flex items-baseline gap-2">
                       <span className="font-mono text-xs tabular-nums text-zinc-600">{r.score}</span>
                       {LIBELLE_STATUT[r.status] && (
-                        <span className="text-xs text-zinc-400">{LIBELLE_STATUT[r.status]}</span>
+                        <span className="text-xs text-zinc-500">{LIBELLE_STATUT[r.status]}</span>
                       )}
                       <span
                         className={`text-xs font-medium ${
-                          r.vainqueur === null ? 'text-zinc-400' : 'text-zinc-900'
+                          r.vainqueur === null ? 'text-zinc-500' : 'text-zinc-900'
                         }`}
                       >
                         {r.vainqueur === 'A' ? nomA : r.vainqueur === 'B' ? nomB : '—'}
                       </span>
-                      <span className="text-xs text-zinc-400">{formatDate(r.date)}</span>
+                      <span className="text-xs text-zinc-500">{formatDate(r.date)}</span>
                     </span>
                   </li>
                 ))}

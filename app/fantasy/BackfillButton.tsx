@@ -75,7 +75,7 @@ export default function BackfillButton() {
           )}
           {resume.definitifs > 0 && `, ${resume.definitifs} déjà définitif(s)`}
           {resume.restants > 0 && (
-            <span className="ml-1 font-medium text-amber-600">
+            <span className="ml-1 font-medium text-amber-700">
               — {resume.restants} restant(s), recliquer pour continuer
             </span>
           )}

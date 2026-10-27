@@ -30,7 +30,7 @@ export default function SnippetElo() {
         Copier le snippet
       </button>
       {etat === 'copie' && (
-        <span className="text-xs text-emerald-600">
+        <span className="text-xs text-emerald-700">
           Copié — à coller dans la console de la page Tennis Abstract.
         </span>
       )}

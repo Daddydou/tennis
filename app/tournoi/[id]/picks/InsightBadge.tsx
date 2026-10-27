@@ -27,7 +27,7 @@ export default function InsightBadge({
   const s = STYLE[niveau];
   return (
     <span
-      className={`ml-1.5 inline-block shrink-0 rounded-md px-1.5 py-px align-middle text-[10px] font-semibold uppercase tracking-wide ${s.classes}`}
+      className={`ml-1.5 inline-block shrink-0 rounded-md px-1.5 py-px align-middle text-xs font-semibold uppercase tracking-wide ${s.classes}`}
       title={insight?.summary ?? s.libelle}
     >
       {s.libelle}

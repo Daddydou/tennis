@@ -88,8 +88,9 @@ export default async function TournoisApi() {
       {tournois.length === 0 ? (
         <p className="text-sm text-zinc-500">Aucun tournoi ATP/WTA du circuit principal cette semaine ou la suivante.</p>
       ) : (
-        <ul className="space-y-3">
-          {tournois.map((t) => (
+        // À importer d'abord : c'est là qu'est l'action ; les déjà importés suivent.
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {[...tournois.filter((t) => !t.enBase), ...tournois.filter((t) => t.enBase)].map((t) => (
             <Carte key={`${t.type}-${t.seasonId}`} t={t} />
           ))}
         </ul>

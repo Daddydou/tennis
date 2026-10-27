@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
+import AttenteCalcul from '../AttenteCalcul';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import { loadEngineData, tourCourantMatches } from '@/db/queries';
 import { computeAndStoreProjections, projectionsEnCache, ROUND_TITRE } from '@/db/projections';
@@ -133,16 +134,13 @@ export default async function PredictionsPage({
             </>
           )}
         </p>
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-zinc-500">
           {lignes.length} {termine ? 'joueurs au départ' : 'joueurs encore en lice'}
         </p>
       </div>
 
       {projectionsEnCalcul ? (
-        <p className="text-sm text-zinc-500">
-          Simulation Monte Carlo pas encore en cache pour le tour {tourCourant}
-          — calcul lancé en arrière-plan, recharge la page dans un instant.
-        </p>
+        <AttenteCalcul quoi={`des probabilités du tour ${tourCourant}`} />
       ) : lignes.length === 0 ? (
         <p className="text-sm text-zinc-500">
           Aucune projection disponible pour ce tournoi.
@@ -171,7 +169,7 @@ export default async function PredictionsPage({
                   <td className="py-1.5 pr-3 font-medium">
                     {l.nom}
                     {l.pays && (
-                      <span className="ml-1.5 text-xs text-zinc-400">{l.pays}</span>
+                      <span className="ml-1.5 text-xs text-zinc-500">{l.pays}</span>
                     )}
                   </td>
                   <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">

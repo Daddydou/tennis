@@ -7,7 +7,7 @@ import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
 import InsightBadge from './InsightBadge';
 import InsightDetail from './InsightDetail';
 import { usePoolGT } from './PoolGameTracker';
-import { boutonPrimaire, boutonDanger, Spinner } from '@/app/ui';
+import { badge, badgeNeutre, boutonPrimaire, boutonDanger, Spinner } from '@/app/ui';
 import type { PlayerInsight } from '@/lib/insights';
 import type { Half } from '@/lib/types';
 
@@ -111,11 +111,11 @@ function ColonnePick({
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">{colonne.label}</h2>
         {colonne.pickActuel ? (
-          <span className="text-xs text-emerald-600">
+          <span className="text-xs text-emerald-700">
             pické
           </span>
         ) : colonne.impossible ? (
-          <span className="text-xs text-amber-600">
+          <span className="text-xs text-amber-700">
             sans pick possible
           </span>
         ) : null}
@@ -153,7 +153,7 @@ function ColonnePick({
             <label
               className={`flex min-h-11 cursor-pointer items-start gap-2.5 px-2.5 py-2 text-sm transition ${
                 c.utilise
-                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
+                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-500'
                   : estPickActuel
                     ? 'bg-emerald-50'
                     : selected
@@ -181,27 +181,27 @@ function ColonnePick({
                       c.resultat === 'gagne'
                         ? 'text-emerald-700'
                         : c.resultat === 'perdu'
-                          ? 'text-zinc-400 line-through decoration-zinc-300'
+                          ? 'text-zinc-500 line-through decoration-zinc-400'
                           : ''
                     }`}
                   >
                     {c.nom}
                   </span>
-                  {c.rang ? <span className="text-xs text-zinc-400">#{c.rang}</span> : null}
+                  {c.rang ? <span className="text-xs tabular-nums text-zinc-500">#{c.rang}</span> : null}
                   {c.resultat === 'gagne' && (
-                    <span className="rounded bg-emerald-100 px-1 text-[10px] font-medium text-emerald-800">gagné</span>
+                    <span className={`${badge} bg-emerald-100 text-emerald-800`}>gagné</span>
                   )}
                   {c.resultat === 'perdu' && (
-                    <span className="rounded bg-zinc-200 px-1 text-[10px] font-medium text-zinc-600">perdu</span>
+                    <span className={badgeNeutre}>perdu</span>
                   )}
                   {estPickActuel && (
-                    <span className="text-xs font-medium text-emerald-600">✓ validé</span>
+                    <span className="text-xs font-medium text-emerald-700">✓ validé</span>
                   )}
                   {c.utilise && <span className="text-xs italic">déjà pické</span>}
                   <InsightBadge insight={c.insight} />
                   {horsPool && (
                     <span
-                      className="shrink-0 rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-800"
+                      className={`${badge} bg-amber-100 text-amber-800`}
                       title="Pas dans ton pool Game Tracker pour ce tour : l'envoi serait refusé."
                     >
                       hors pool GT
@@ -209,7 +209,7 @@ function ColonnePick({
                   )}
                   {etatGT?.dejaPicke && (
                     <span
-                      className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-800"
+                      className={`${badge} bg-red-100 text-red-800`}
                       title="Déjà pické chez Game Tracker à un autre tour : l'envoi serait refusé."
                     >
                       déjà pické GT
@@ -217,7 +217,7 @@ function ColonnePick({
                   )}
                   {etatGT?.enAttente && (
                     <span
-                      className="shrink-0 rounded bg-sky-100 px-1 text-[10px] font-medium text-sky-800"
+                      className={badgeNeutre}
                       title="Son match du tour précédent n'est pas joué : s'il le perd, Game Tracker redirigera le pick."
                     >
                       en attente
@@ -235,9 +235,9 @@ function ColonnePick({
                       aria-expanded={ouvert}
                       aria-label={`Infos sur ${c.nom}`}
                       title="Infos joueur"
-                      className="-my-2 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+                      className="-my-2.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
                     >
-                      <span className="flex size-4 items-center justify-center rounded-full border border-current text-[10px] font-semibold leading-none">
+                      <span className="flex size-5 items-center justify-center rounded-full border border-current text-xs font-semibold leading-none">
                         i
                       </span>
                     </button>
@@ -266,11 +266,11 @@ function ColonnePick({
                   >
                     Elo {c.elo ?? '—'}
                   </span>
-                  <BadgeSourceElo source={c.sourceElo} taName={c.taName} candidats={c.candidats} />
+                  <BadgeSourceElo source={c.sourceElo} taName={c.taName} candidats={c.candidats} nom={c.nom} />
                   {c.ecartElo != null && (
                     <span
                       className={`font-mono tabular-nums ${
-                        c.ecartElo > 0 ? 'text-emerald-600' : c.ecartElo < 0 ? 'text-red-600' : 'text-zinc-400'
+                        c.ecartElo > 0 ? 'text-emerald-700' : c.ecartElo < 0 ? 'text-red-700' : 'text-zinc-500'
                       }`}
                       title="Écart d'Elo effectif (joueur − adversaire)"
                     >
@@ -283,7 +283,7 @@ function ColonnePick({
 
               <span className="shrink-0 text-right" title="Espérance de points">
                 <span className="block font-mono text-sm font-semibold tabular-nums">{c.ePoints.toFixed(1)}</span>
-                <span className="block text-[10px] text-zinc-400">pts esp.</span>
+                <span className="block text-xs text-zinc-500">pts esp.</span>
               </span>
             </label>
             {ouvert && c.insight && <InsightDetail insight={c.insight} />}
@@ -295,10 +295,17 @@ function ColonnePick({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Collée en bas de l'écran tant qu'on parcourt la liste de CETTE
+          colonne : au téléphone, les deux moitiés s'empilent et le bouton de
+          la seconde finissait une quinzaine de lignes sous le pouce. */}
+      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-3 bg-background/95 px-1 py-2 backdrop-blur-sm">
         <button onClick={valider} disabled={pending || !choix || !modifie || colonne.impossible} className={boutonPrimaire}>
           {pending && <Spinner />}
-          {pending ? 'Envoi…' : colonne.pickActuel ? 'Modifier' : 'Valider'}
+          {pending
+            ? 'Envoi…'
+            : `${colonne.pickActuel ? 'Modifier' : 'Valider'}${
+                colonne.half ? ` (${colonne.label.toLowerCase()})` : ''
+              }`}
         </button>
         {colonne.pickActuel && (
           <button onClick={retirer} disabled={pending} className={boutonDanger}>
@@ -306,7 +313,9 @@ function ColonnePick({
           </button>
         )}
         {erreur && (
-          <span className="text-xs text-red-600">{erreur}</span>
+          <span role="alert" className="text-sm font-medium text-red-700">
+            {erreur}
+          </span>
         )}
       </div>
     </div>
@@ -326,19 +335,9 @@ export default function PickBoard({
   participantId?: string | null;
 }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-zinc-500">
-        Tour {round} — simulation Monte Carlo (20 000 runs) depuis les survivants
-        réels de ce tour, triée par points espérés. Sous chaque joueur : son
-        adversaire, son Elo effectif, la source de l&apos;Elo et l&apos;écart avec
-        l&apos;adversaire. Les joueurs déjà utilisés par CE participant sont
-        grisés (un autre participant peut toujours les prendre). Un Elo en{' '}
-        <span className="text-amber-600">maison</span> ou en{' '}
-        <span className="text-red-600">défaut</span> n&apos;a
-        pas trouvé sa correspondance ;{' '}
-        <span className="text-violet-600">ambigu</span>{' '}
-        signale plusieurs homonymes possibles.
-      </p>
+    // Méthode et légende : « Comment lire ce tableau », sous la décision
+    // (picks/page.tsx). Ici, rien ne s'intercale entre le tour et les joueurs.
+    <div>
       <div className="flex flex-col gap-6 sm:flex-row">
         {colonnes.map((c, i) => (
           <ColonnePick

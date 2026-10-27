@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { seDeconnecter } from './login/actions';
 import { sessionValide } from '@/auth/garde';
+import NavGlobale from './NavGlobale';
 
 export const metadata: Metadata = {
   title: 'Picks Tennis',
@@ -27,52 +28,12 @@ export default async function RootLayout({
             >
               🎾 Picks Tennis
             </Link>
-            {/* Chaque lien a sa propre zone tactile de 44px, pas seulement le
-                texte qu'il contient — important au téléphone, où le header
-                reste la seule navigation globale. */}
-            <nav className="flex min-w-0 overflow-x-auto text-sm text-zinc-500 *:shrink-0 *:whitespace-nowrap">
-              <Link
-                href="/"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Tournois
-              </Link>
-              <Link
-                href="/import"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Importer
-              </Link>
-              <Link
-                href="/face-a-face"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Face-à-face
-              </Link>
-              <Link
-                href="/bilan"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Bilan
-              </Link>
-              <Link
-                href="/participants"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Participants
-              </Link>
-              <Link
-                href="/procedures"
-                className="flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Procédures
-              </Link>
-            </nav>
+            <NavGlobale />
             {connecte && (
               <form action={seDeconnecter} className="ml-auto">
                 <button
                   type="submit"
-                  className="flex min-h-11 items-center rounded-xl px-2.5 text-sm text-zinc-500 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
+                  className="flex min-h-11 items-center rounded-xl px-2.5 text-sm text-zinc-600 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
                 >
                   Déconnexion
                 </button>

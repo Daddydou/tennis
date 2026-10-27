@@ -53,7 +53,7 @@ export default function ProvenanceElo({
       <summary className="cursor-pointer text-zinc-600">
         <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
         joueur(s) sur {sources.total} avec {nomBase},{' '}
-        <span className={sources.maison > 0 ? 'font-medium text-amber-600' : ''}>
+        <span className={sources.maison > 0 ? 'font-medium text-amber-700' : ''}>
           {sources.maison}
         </span>{' '}
         en repli import,{' '}
@@ -62,7 +62,7 @@ export default function ProvenanceElo({
         <span className={sources.ambigu > 0 ? 'font-medium text-violet-600' : ''}>{sources.ambigu}</span>{' '}
         ambigu(s)
         {aCompleter.length > 0 && (
-          <span className="ml-1 text-zinc-400">— détail</span>
+          <span className="ml-1 text-zinc-500">— détail</span>
         )}
       </summary>
 
@@ -99,7 +99,7 @@ export default function ProvenanceElo({
                   ))}
                 </ul>
                 {j.sql && (
-                  <p className="text-[11px] text-violet-700">
+                  <p className="text-xs text-violet-700">
                     Trancher (remplacer le slug si besoin) :{' '}
                     <code className="rounded bg-white/60 px-1">{j.sql}</code>
                   </p>
@@ -112,11 +112,11 @@ export default function ProvenanceElo({
               .filter((j) => j.source !== 'ambigu')
               .map((j) => (
                 <li key={j.cle} className="flex items-baseline gap-2">
-                  <span className={j.source === 'defaut' ? 'text-red-600' : 'text-amber-600'}>
+                  <span className={j.source === 'defaut' ? 'text-red-600' : 'text-amber-700'}>
                     {j.source === 'defaut' ? 'défaut' : 'import'}
                   </span>
                   <span className="text-zinc-700">{j.nom}</span>
-                  <code className="text-zinc-400">{j.cle}</code>
+                  <code className="text-zinc-500">{j.cle}</code>
                 </li>
               ))}
           </ul>

@@ -9,7 +9,7 @@ import ImportBracketPanel from './ImportBracketPanel';
 import ParticipantsBracketPanel from './ParticipantsBracketPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
-import { champTexte, pilleSelecteur } from '@/app/ui';
+import { champTexte, filtreSecondaire } from '@/app/ui';
 
 type Onglet = 'reel' | 'participants' | 'classement' | 'import';
 
@@ -180,7 +180,7 @@ export default function SimulateurBracket({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-[11px] text-zinc-400">
+        <p className="mt-1 text-xs text-zinc-500">
           Seul ce tour est simulé (bloc 2 et bloc 3) — pas les tours suivants.
         </p>
       </div>
@@ -193,7 +193,7 @@ export default function SimulateurBracket({
               setOnglet(o.key);
               if (o.key === 'classement') setClassementOuvert(true);
             }}
-            className={pilleSelecteur(onglet === o.key)}
+            className={filtreSecondaire(onglet === o.key)}
           >
             {o.label}
           </button>

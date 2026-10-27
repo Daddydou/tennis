@@ -86,7 +86,7 @@ export default function ScenarioFantasy({
             Score final projeté de l&apos;équipe :{' '}
             <span className="tabular-nums">{totaux.base.toFixed(1)}</span> →{' '}
             <span className="tabular-nums">{totaux.scenario.toFixed(1)}</span>{' '}
-            <span className={totaux.scenario - totaux.base >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+            <span className={totaux.scenario - totaux.base >= 0 ? 'text-emerald-700' : 'text-red-600'}>
               ({signe(totaux.scenario - totaux.base)})
             </span>
           </h2>
@@ -108,13 +108,13 @@ export default function ScenarioFantasy({
                   return (
                     <tr key={m.palier} className="border-t border-zinc-100">
                       <td className="py-1 pr-3 text-xs text-zinc-500">{m.libellePalier}</td>
-                      <td className="py-1 pr-3">{m.nom ?? <span className="text-zinc-400">non pourvu</span>}</td>
+                      <td className="py-1 pr-3">{m.nom ?? <span className="text-zinc-500">non pourvu</span>}</td>
                       <td className="py-1 pr-3 text-right tabular-nums text-zinc-500">{m.base.acquis.toFixed(1)}</td>
                       <td className="py-1 pr-3 text-right tabular-nums">{m.base.total.toFixed(1)}</td>
                       <td className="py-1 pr-3 text-right tabular-nums">{m.scenario.total.toFixed(1)}</td>
                       <td
                         className={`py-1 text-right tabular-nums ${
-                          Math.abs(ecart) < 0.05 ? 'text-zinc-400' : ecart > 0 ? 'text-emerald-600' : 'text-red-600'
+                          Math.abs(ecart) < 0.05 ? 'text-zinc-500' : ecart > 0 ? 'text-emerald-700' : 'text-red-600'
                         }`}
                       >
                         {signe(ecart)}
@@ -125,7 +125,7 @@ export default function ScenarioFantasy({
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-zinc-400">
+          <p className="text-xs text-zinc-500">
             Points réels déjà marqués avant {round} + espérance simulée à partir de {round} (
             {resultat.simulations} tirages, même graine pour les deux colonnes : l&apos;écart
             vient des réglages, pas du hasard). La simulation rejoue tout depuis {round} :
@@ -163,7 +163,7 @@ export default function ScenarioFantasy({
                 className="w-full accent-lime-600"
                 aria-label={`Probabilité que ${d.nomPremier} batte ${d.nomSecond}`}
               />
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-xs text-zinc-500">
                 Modèle : {enPct(d.pBase)} %{change && ' · modifié'}
                 {d.equipe && ' · joueur de mon équipe'}
                 {d.vainqueurReel &&

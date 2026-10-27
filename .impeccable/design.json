@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T00:00:00Z",
+  "title": "Design System: Picks Tennis",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": { "role": "primary", "displayName": "Bleu d'action", "canonical": "#2563eb", "tonalRamp": ["#172554", "#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#60a5fa", "#bfdbfe", "#eff6ff"] },
+      "page-mist": { "role": "neutral", "displayName": "Brume de page", "canonical": "#f5f5f7", "tonalRamp": ["#1d1d1f", "#3f3f46", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f5f5f7"] },
+      "ink": { "role": "neutral", "displayName": "Encre", "canonical": "#1d1d1f" },
+      "ink-muted": { "role": "neutral", "displayName": "Encre atténuée", "canonical": "#71717a" },
+      "ink-faint": { "role": "neutral", "displayName": "Encre pâle", "canonical": "#a1a1aa" },
+      "well-grey": { "role": "neutral", "displayName": "Puits gris", "canonical": "#f4f4f5" },
+      "circuit-wta": { "role": "semantic", "displayName": "Circuit WTA", "canonical": "#c026d3" },
+      "surface-clay": { "role": "semantic", "displayName": "Terre battue", "canonical": "#f59e0b" },
+      "surface-hard": { "role": "semantic", "displayName": "Dur", "canonical": "#0ea5e9" },
+      "surface-grass": { "role": "semantic", "displayName": "Gazon", "canonical": "#10b981" },
+      "surface-carpet": { "role": "semantic", "displayName": "Moquette", "canonical": "#94a3b8" },
+      "status-win": { "role": "semantic", "displayName": "Victoire / en cours", "canonical": "#059669" },
+      "status-warning": { "role": "semantic", "displayName": "Avertissement / Elo maison", "canonical": "#b45309" },
+      "status-error": { "role": "semantic", "displayName": "Erreur / Elo par défaut", "canonical": "#dc2626" },
+      "elo-ambiguous": { "role": "semantic", "displayName": "Elo ambigu", "canonical": "#7c3aed" }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Nom du tournoi, titre de page." },
+      "title": { "displayName": "Title", "purpose": "Titres de cartes et de sections." },
+      "body": { "displayName": "Body", "purpose": "Texte courant, cellules, boutons." },
+      "label": { "displayName": "Label", "purpose": "Texte secondaire et détail de cellule ; taille la plus utilisée." },
+      "label-caps": { "displayName": "Label caps", "purpose": "En-têtes de colonnes et sur-titres." }
+    },
+    "shadows": [
+      { "name": "carte", "value": "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)", "purpose": "Toute carte de contenu." },
+      { "name": "bouton", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Bouton principal, pastille active, lien-bouton." },
+      { "name": "en-tete", "value": "0 1px 0 rgba(0,0,0,0.06)", "purpose": "Barre de navigation globale." }
+    ],
+    "motion": [
+      { "name": "pression", "value": "transform: scale(0.97); transition 150ms cubic-bezier(0.4,0,0.2,1)", "purpose": "Retour tactile à l'appui de tout élément interactif." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "container", "value": "1152px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "L'action la plus importante d'un écran ou d'un bloc.",
+      "html": "<button class=\"ds-btn-primary\">Valider mes picks</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:0 16px; border:none; border-radius:12px; background:#2563eb; color:#fff; font:600 14px/1.43 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; box-shadow:0 1px 2px rgba(0,0,0,0.05); cursor:pointer; transition:background 150ms, transform 150ms; } .ds-btn-primary:hover { background:#1d4ed8; } .ds-btn-primary:active { background:#1e40af; transform:scale(0.97); } .ds-btn-primary:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }"
+    },
+    {
+      "name": "Bouton secondaire",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Une action possible, jamais la priorité de l'écran.",
+      "html": "<button class=\"ds-btn-secondary\">Lire Game Tracker</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px; border:none; border-radius:12px; background:#f4f4f5; color:#18181b; font:500 14px/1.43 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:background 150ms, transform 150ms; } .ds-btn-secondary:hover { background:#e4e4e7; } .ds-btn-secondary:active { transform:scale(0.97); } .ds-btn-secondary:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }"
+    },
+    {
+      "name": "Bouton danger",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Action destructrice : texte rouge, jamais de fond agressif.",
+      "html": "<button class=\"ds-btn-danger\">Supprimer</button>",
+      "css": ".ds-btn-danger { display:inline-flex; align-items:center; min-height:44px; padding:0 12px; border:none; border-radius:12px; background:transparent; color:#dc2626; font:500 12px/1.33 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:background 150ms, transform 150ms; } .ds-btn-danger:hover { background:#fef2f2; } .ds-btn-danger:active { transform:scale(0.97); } .ds-btn-danger:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }"
+    },
+    {
+      "name": "Pastilles de sélection",
+      "kind": "chip",
+      "refersTo": "segment-pill",
+      "description": "Contrôle segmenté façon iOS : participant, tour, vue.",
+      "html": "<div class=\"ds-pills\"><button class=\"ds-pill ds-pill-on\">Moi</button><button class=\"ds-pill\">Laki</button><button class=\"ds-pill\">Thomas</button></div>",
+      "css": ".ds-pills { display:flex; gap:6px; } .ds-pill { display:inline-flex; align-items:center; min-height:44px; padding:0 12px; border:none; border-radius:12px; background:#f4f4f5; color:#52525b; font:500 14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:background 150ms, transform 150ms; } .ds-pill:hover { background:#e4e4e7; } .ds-pill:active { transform:scale(0.97); } .ds-pill-on, .ds-pill-on:hover { background:#2563eb; color:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); } .ds-pill:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }"
+    },
+    {
+      "name": "Filtre secondaire",
+      "kind": "chip",
+      "refersTo": "filtre-secondaire",
+      "description": "Choix imbriqué sous une rangée de pastilles : puce blanche, jamais le bleu plein.",
+      "html": "<div class=\"ds-filtres\"><a class=\"ds-filtre ds-filtre-on\">Tout</a><a class=\"ds-filtre\">Haute</a><a class=\"ds-filtre\">Basse</a></div>",
+      "css": ".ds-filtres { display:flex; gap:4px; padding:4px; background:#f5f5f7; } .ds-filtre { display:inline-flex; align-items:center; min-height:44px; padding:0 12px; border-radius:12px; color:#52525b; font:14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:background 150ms, transform 150ms; } .ds-filtre:hover { background:#f4f4f5; color:#18181b; } .ds-filtre:active { transform:scale(0.97); } .ds-filtre-on, .ds-filtre-on:hover { background:#fff; color:#18181b; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.05); }"
+    },
+    {
+      "name": "Note info",
+      "kind": "card",
+      "refersTo": "note-info",
+      "description": "Méthode, contexte ou état vide : gris neutre, jamais une teinte sémantique.",
+      "html": "<p class=\"ds-note\">Choisis deux joueurs du circuit ATP ci-dessus.</p>",
+      "css": ".ds-note { margin:0; padding:8px 12px; border-radius:12px; background:#f4f4f5; color:#3f3f46; font:12px/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }"
+    },
+    {
+      "name": "Champ texte",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Fond gris iOS qui blanchit et s'entoure de bleu au focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Rechercher un joueur\" />",
+      "css": ".ds-input { min-height:44px; padding:0 12px; border:1px solid transparent; border-radius:12px; background:#f4f4f5; color:#18181b; font:14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; outline:none; transition:background 150ms, box-shadow 150ms; } .ds-input::placeholder { color:#a1a1aa; } .ds-input:focus { background:#fff; box-shadow:0 0 0 2px #3b82f6; }"
+    },
+    {
+      "name": "Carte",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Carte blanche surélevée par l'ombre, jamais par une bordure.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Points du tour</h3><p class=\"ds-card-body\">Moi <b>42</b> · Laki <b>37</b> · Thomas <b>35</b></p></div>",
+      "css": ".ds-card { padding:12px; border-radius:16px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#1d1d1f; } .ds-card-title { margin:0 0 6px; font-size:14px; font-weight:600; } .ds-card-body { margin:0; font-size:14px; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Onglets de tournoi",
+      "kind": "nav",
+      "refersTo": "nav-tournoi",
+      "description": "Onglets soulignés, défilement horizontal au téléphone.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab\">Dashboard</a><a class=\"ds-tab ds-tab-on\">Picks</a><a class=\"ds-tab\">Fantasy</a><a class=\"ds-tab\">Bracket</a></nav>",
+      "css": ".ds-tabs { display:flex; gap:4px; overflow-x:auto; border-bottom:1px solid #e4e4e7; font:14px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; } .ds-tab { display:flex; align-items:center; min-height:44px; margin-bottom:-1px; padding:0 12px; border-bottom:2px solid transparent; color:#71717a; white-space:nowrap; cursor:pointer; transition:color 150ms; } .ds-tab:hover { color:#27272a; } .ds-tab-on, .ds-tab-on:hover { border-bottom-color:#2563eb; color:#2563eb; font-weight:600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le carnet du capitaine",
+    "overview": "Un outil de stratège, net et calme. L'interface sert la décision du moment, quand un tour ouvre et qu'il faut choisir vite. Elle s'efface derrière les chiffres : probabilités, points, Elo, cotes. Le registre visuel est celui d'iOS et de macOS : page gris brume, cartes blanches légèrement surélevées, un seul bleu d'action, la police système. Rien n'est là pour impressionner.",
+    "keyCharacteristics": [
+      "Thème clair forcé, pas de mode sombre (`dark:` neutralisé dans globals.css).",
+      "Profondeur par écart de luminance (page #f5f5f7, carte blanche) plus une ombre très douce, jamais une bordure dure autour d'une carte.",
+      "Un seul accent d'action, le bleu système ; toutes les autres teintes vives sont sémantiques.",
+      "Police système, corps de 14px, chiffres en `tabular-nums` dans les tableaux.",
+      "Chaque élément interactif fait au moins 44px de haut et s'enfonce légèrement à la pression (`scale 0.97`)."
+    ],
+    "rules": [
+      { "name": "La règle du bleu qui agit", "body": "Le bleu signale ce qu'on peut faire, jamais un état ni une catégorie, à la seule exception assumée de la puce ATP.", "section": "colors" },
+      { "name": "La règle des teintes prises", "body": "Ambre, émeraude, ciel, fuchsia, violet, rouge et ardoise ont chacun un sens fixé. On ne les réutilise jamais pour décorer ou pour « varier ».", "section": "colors" },
+      { "name": "La règle des chiffres alignés", "body": "Toute colonne de nombres est en tabular-nums.", "section": "typography" },
+      { "name": "La règle de l'ombre au lieu du trait", "body": "Une carte se détache par la lumière et l'ombre, jamais par une bordure.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do réutiliser les jetons de app/ui.tsx plutôt que de recomposer des classes.",
+      "Do donner au moins 44px de haut à toute cible tactile.",
+      "Do écrire les classes Tailwind en chaînes littérales complètes.",
+      "Do aligner les nombres avec tabular-nums.",
+      "Do garder un seul bouton principal bleu par bloc.",
+      "Do mettre la décision du moment en tête d'écran (tour ouvert, picks à poser), la méthode et les sources en dessous.",
+      "Do signaler le circuit par une barre de 4px au bord gauche et une puce écrite, sur des lignes blanches.",
+      "Do donner au moins 12px et zinc-500 (4,8:1) à tout texte qui porte une information ; ambre et émeraude en -700 pour le texte."
+    ],
+    "donts": [
+      "Don't utiliser le look « site de paris » : néons, couleurs criardes, compteurs clignotants.",
+      "Don't ajouter de fioritures décoratives : dégradés, illustrations, animations gratuites.",
+      "Don't réutiliser une teinte sémantique pour décorer.",
+      "Don't entourer une carte d'une bordure dure.",
+      "Don't réintroduire de mode sombre ou de variante dark:.",
+      "Don't porter une information utile en encre pâle (#a1a1aa)."
+    ]
+  }
+}

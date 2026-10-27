@@ -52,6 +52,18 @@ export function pilleSelecteur(actif: boolean): string {
 }
 
 /**
+ * Sélecteur de SECOND niveau (filtre, sous-vue sous une rangée de
+ * `pilleSelecteur`) : la sélection est une puce blanche sur le gris de la
+ * page, jamais le bleu plein — deux rangées bleues l'une sous l'autre ne
+ * disaient plus laquelle commandait l'autre.
+ */
+export function filtreSecondaire(actif: boolean): string {
+  return `inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm transition active:scale-[0.97] ${
+    actif ? 'bg-white font-semibold text-zinc-900 shadow-sm' : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+  }`;
+}
+
+/**
  * Carte de contenu : fond blanc pur sur le gris très clair de la page,
  * ombre douce (`shadow-card`, cf. globals.css) plutôt qu'une bordure —
  * c'est cet écart de luminance + l'ombre qui donne l'effet « surélevé ».
@@ -64,6 +76,21 @@ export const carte = 'rounded-2xl bg-white shadow-card';
  */
 export const champTexte =
   'min-h-11 rounded-xl border border-transparent bg-zinc-100 px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500';
+
+/**
+ * Note d'information neutre (méthode, contexte, mode d'emploi) : gris clair,
+ * JAMAIS une teinte sémantique — le ciel est réservé au dur, l'ambre aux
+ * avertissements (cf. DESIGN.md, « La règle des teintes prises »).
+ */
+export const noteInfo = 'rounded-xl bg-zinc-100 px-3 py-2 text-xs leading-relaxed text-zinc-700';
+
+/**
+ * Badge court dans une ligne (gagné, perdu, en attente…) : 12px minimum, la
+ * plus petite taille lisible au soleil. La couleur s'ajoute à côté
+ * (`badgeNeutre` ou une teinte sémantique -100/-800).
+ */
+export const badge = 'inline-flex shrink-0 items-center rounded-md px-1.5 text-xs font-medium';
+export const badgeNeutre = `${badge} bg-zinc-100 text-zinc-700`;
 
 /** Petit rond de chargement — remplace le texte « … » sur un bouton en attente. */
 export function Spinner({ className = '' }: { className?: string }) {

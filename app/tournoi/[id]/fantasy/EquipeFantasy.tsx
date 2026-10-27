@@ -50,12 +50,22 @@ function pourcent(p: number): string {
   return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)} %`;
 }
 
+/**
+ * Espérance des seuls tours DÉJÀ JOUÉS : c'est à elle qu'on compare le réel
+ * en cours de tournoi. Comparé à l'espérance du tournoi entier, un réel
+ * forcément partiel s'affichait en rouge dès le premier jour, avant même le
+ * moindre match.
+ */
+function attenduJoue(detail: LigneTourVue[]): number {
+  return detail.reduce((s, l) => s + (l.reel === null ? 0 : l.pondere), 0);
+}
+
 /** Vert au-dessus de l'espérance, rouge en dessous — au-delà d'un écart de 5 %. */
 function classeEcart(reel: number, attendu: number): string {
   if (attendu <= 0) return 'text-zinc-500';
   const r = reel / attendu;
-  if (r >= 1.05) return 'text-emerald-600';
-  if (r <= 0.95) return 'text-red-600';
+  if (r >= 1.05) return 'text-emerald-700';
+  if (r <= 0.95) return 'text-red-700';
   return 'text-zinc-700';
 }
 
@@ -95,7 +105,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
                 {l.round}
                 {l.bye && (
                   <span
-                    className="ml-1.5 rounded-md border border-sky-300 px-1 text-[10px] font-medium text-sky-700"
+                    className="ml-1.5 rounded-md border border-sky-300 px-1 text-xs font-medium text-sky-700"
                     title="Exempté : au Fantasy, un bye vaut une victoire 6/4 6/4, soit 15 points avant multiplicateur. Acquis dès le tirage, donc sans aléa."
                   >
                     bye
@@ -116,7 +126,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
               </td>
               <td
                 className={`py-1 pr-3 text-right font-mono font-medium tabular-nums ${
-                  l.reel === null ? 'text-zinc-400' : classeEcart(l.reel, l.pondere)
+                  l.reel === null ? 'text-zinc-500' : classeEcart(l.reel, l.pondere)
                 }`}
                 title={
                   l.reel === null
@@ -140,7 +150,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
             <td
               className={`py-1 pr-3 text-right font-mono font-semibold tabular-nums ${classeEcart(
                 totalReel,
-                totalAttendu,
+                attenduJoue(detail),
               )}`}
             >
               {totalReel.toFixed(2)}
@@ -167,22 +177,22 @@ function LignePalier({ m }: { m: MembreVue }) {
         }`}
       >
         <td className="py-2 pr-3 whitespace-nowrap">
-          <span className="text-zinc-400">{m.numero}.</span>{' '}
+          <span className="text-zinc-500">{m.numero}.</span>{' '}
           <span className="text-xs text-zinc-500">{m.libellePalier}</span>
         </td>
         <td className="py-2 pr-3">
           {m.playerId === null ? (
-            <span className="text-amber-600">
+            <span className="text-amber-700">
               Aucun joueur éligible
             </span>
           ) : (
             <span className="font-medium">
-              <span className="mr-1 inline-block w-3 text-zinc-400">
+              <span className="mr-1 inline-block w-3 text-zinc-500">
                 {ouvert ? '▾' : '▸'}
               </span>
               {m.nom}
               {m.pays && (
-                <span className="ml-1.5 text-xs text-zinc-400">{m.pays}</span>
+                <span className="ml-1.5 text-xs text-zinc-500">{m.pays}</span>
               )}
             </span>
           )}
@@ -205,6 +215,7 @@ function LignePalier({ m }: { m: MembreVue }) {
                 source={m.sourceElo}
                 taName={m.taName}
                 candidats={m.candidats}
+                nom={m.nom ?? undefined}
               />
             </span>
           )}
@@ -214,7 +225,7 @@ function LignePalier({ m }: { m: MembreVue }) {
         </td>
         <td
           className={`py-2 pr-3 text-right font-mono font-medium tabular-nums ${
-            m.playerId ? classeEcart(m.reel, m.eTotal) : 'text-zinc-400'
+            m.playerId ? classeEcart(m.reel, attenduJoue(m.detail)) : 'text-zinc-500'
           }`}
         >
           {m.playerId ? m.reel.toFixed(1) : '—'}
@@ -242,6 +253,8 @@ export default function EquipeFantasy({
 }) {
   const total = equipe.reduce((s, m) => s + (m.playerId ? m.eTotal : 0), 0);
   const totalReel = equipe.reduce((s, m) => s + (m.playerId ? m.reel : 0), 0);
+  // Comparaison couleur sur les seuls tours joués (cf. attenduJoue).
+  const totalAttenduJoue = equipe.reduce((s, m) => s + (m.playerId ? attenduJoue(m.detail) : 0), 0);
   const manquants = equipe.filter((m) => m.playerId === null);
   const ecart = total > 0 ? totalReel / total - 1 : 0;
 
@@ -270,7 +283,7 @@ export default function EquipeFantasy({
                 className="py-2 pr-3 text-right font-medium"
                 title="Espérance a priori, depuis le tirage. C'est elle qui a composé l'équipe."
               >
-                E[pts]
+                Espéré
               </th>
               <th
                 className="py-2 pr-3 text-right font-medium"
@@ -296,7 +309,7 @@ export default function EquipeFantasy({
               <td
                 className={`py-2 pr-3 text-right font-mono text-base font-semibold tabular-nums ${classeEcart(
                   totalReel,
-                  total,
+                  totalAttenduJoue,
                 )}`}
               >
                 {totalReel.toFixed(1)}
@@ -308,7 +321,7 @@ export default function EquipeFantasy({
 
       <p className="text-xs text-zinc-500">
         <span className="font-medium text-zinc-700">
-          E[pts]
+          Espéré
         </span>{' '}
         est l&apos;espérance a priori qui a composé l&apos;équipe ;{' '}
         <span className="font-medium text-zinc-700">

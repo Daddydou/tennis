@@ -40,11 +40,11 @@ export default function TableDetail({
             >
               <td className="py-1.5 pr-3">
                 <span className={v.apparie ? '' : 'text-amber-700'}>
-                  {v.nomA} <span className="text-zinc-400">vs</span> {v.nomB}
+                  {v.nomA} <span className="text-zinc-500">vs</span> {v.nomB}
                 </span>
                 {!v.apparie && (
                   <span
-                    className="ml-1.5 rounded-md border border-amber-300 px-1 text-[10px] text-amber-700"
+                    className="ml-1.5 rounded-md border border-amber-300 px-1 text-xs text-amber-700"
                     title="Au moins un des deux joueurs n’a pas été apparié au tableau : ce match est exclu du score."
                   >
                     non apparié
@@ -52,7 +52,7 @@ export default function TableDetail({
                 )}
                 {v.sansAnterieur !== null && (
                   <span
-                    className="ml-1.5 rounded-md border border-violet-300 px-1 text-[10px] text-violet-700"
+                    className="ml-1.5 rounded-md border border-violet-300 px-1 text-xs text-violet-700"
                     title={
                       v.sansAnterieur === 'instantane'
                         ? "Aucun relevé Elo n'est antérieur à ce match : il est exclu de l'évaluation propre."
@@ -65,13 +65,13 @@ export default function TableDetail({
                   </span>
                 )}
                 {v.bookmakers > 0 && (
-                  <span className="ml-1.5 text-[10px] text-zinc-400">
+                  <span className="ml-1.5 text-xs text-zinc-500">
                     {v.bookmakers} book{v.bookmakers > 1 ? 's' : ''}
                   </span>
                 )}
                 {v.releveLe && (
                   <span
-                    className="ml-1.5 text-[10px] text-zinc-400"
+                    className="ml-1.5 text-xs text-zinc-500"
                     title="Relevé Tennis Abstract le plus récent antérieur à ce match."
                   >
                     Elo du {v.releveLe}
@@ -95,17 +95,17 @@ export default function TableDetail({
               </td>
               <td className="py-1.5 pr-3">
                 {v.vainqueur === null ? (
-                  <span className="text-zinc-400">pas encore joué</span>
+                  <span className="text-zinc-500">pas encore joué</span>
                 ) : (
                   <span
                     className={
                       v.favoriGagne
-                        ? 'text-emerald-600'
+                        ? 'text-emerald-700'
                         : 'text-red-600'
                     }
                   >
                     {v.vainqueur}
-                    <span className="ml-1 text-[10px] text-zinc-400">
+                    <span className="ml-1 text-xs text-zinc-500">
                       {v.favoriGagne ? '(favori)' : '(surprise)'}
                     </span>
                   </span>

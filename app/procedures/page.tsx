@@ -34,7 +34,7 @@ function Fiche({ p }: { p: Procedure }) {
       <summary className="flex min-h-11 cursor-pointer list-none items-start gap-3 rounded-2xl px-4 py-3 [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden
-          className="mt-1 text-zinc-400 transition-transform group-open:rotate-90"
+          className="mt-1 text-zinc-500 transition-transform group-open:rotate-90"
         >
           ›
         </span>

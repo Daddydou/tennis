@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import TournoiNav from '../TournoiNav';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
+import AttenteCalcul from '../AttenteCalcul';
 import ProvenanceElo from './ProvenanceElo';
 import RecapParticipant from './RecapParticipant';
 import PickBoard, { type Colonne, type Candidat } from './PickBoard';
@@ -11,6 +12,7 @@ import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import { carte, pilleSelecteur } from '@/app/ui';
 import {
+  avancementPicks,
   etatsSlots,
   getParticipants,
   getTousLesPicks,
@@ -101,24 +103,14 @@ export default async function PicksPage({
   const estImpossible = (round: string, half: Half | null) =>
     etatDe.get(`${round}|${half ?? ''}`)?.impossible ?? false;
 
-  const picksFaitsParRound = new Map<string, number>();
-  for (const p of picks) {
-    picksFaitsParRound.set(p.round, (picksFaitsParRound.get(p.round) ?? 0) + 1);
-  }
-  /** Slots réellement remplissables : les impossibles sont neutralisés. */
-  const requis = (r: string) =>
-    (slotsParRound.get(r) ?? []).filter(
-      (s) => !estImpossible(s.round, s.half as Half | null),
-    ).length;
-  const faits = (r: string) => picksFaitsParRound.get(r) ?? 0;
-  const neutralises = (r: string) =>
-    (slotsParRound.get(r) ?? []).length - requis(r);
-
-  // Tour courant = premier tour dont les picks remplissables ne sont pas
-  // tous posés — calculé sur LE STOCK AFFICHÉ : Laki et Thomas avancent à
-  // leur propre rythme, indépendamment du mien.
-  const tourCourant =
-    rounds.find((r) => faits(r) < requis(r)) ?? rounds[rounds.length - 1] ?? null;
+  // Avancement et tour courant calculés sur LE STOCK AFFICHÉ : Laki et
+  // Thomas avancent à leur propre rythme, indépendamment du mien. Même
+  // fonction que le Dashboard (db/tableau.ts), pour qu'ils ne divergent jamais.
+  const { parTour, tourCourant } = avancementPicks(rounds, matchRows, picks);
+  const avancementDe = (r: string) => parTour.find((t) => t.round === r);
+  const requis = (r: string) => avancementDe(r)?.requis ?? 0;
+  const faits = (r: string) => avancementDe(r)?.faits ?? 0;
+  const neutralises = (r: string) => avancementDe(r)?.neutralises ?? 0;
 
   const roundSelectionne =
     roundParam && rounds.includes(roundParam) ? roundParam : tourCourant;
@@ -296,36 +288,31 @@ export default async function PicksPage({
     <FournisseurPoolGT>
     <div className="space-y-5">
       <TournoiNav id={id} nom={tournament.name} active="picks" />
-      <NoteCotesUtilisees n={coteUtilisables} />
 
-      {/* ── Résumé : points Picks déjà validés, tous participants confondus
-          (mêmes chiffres que le Dashboard) ── */}
-      <div className="flex flex-wrap gap-2">
-        {stocksResume.map((s) => (
-          <div
-            key={s.id ?? 'moi'}
-            className={`flex items-baseline gap-1.5 px-3 py-1.5 ${carte}`}
-          >
-            <span className="text-xs font-medium text-zinc-600">{s.nom}</span>
-            <span className="text-base font-bold tabular-nums">{picksParStock.get(s.id) ?? 0}</span>
-            <span className="text-[11px] text-zinc-400">pts</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Sélecteur de stock : moi, ou un participant configuré ── */}
-      {participants.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Link href={lienParticipant(null)} className={pilleSelecteur(stockId === null)}>
-            Moi
-          </Link>
-          {participants.map((p) => (
-            <Link key={p.id} href={lienParticipant(p.id)} className={pilleSelecteur(stockId === p.id)}>
-              {p.name}
+      {/* ── Sélecteur de stock, qui porte aussi les points Picks déjà validés
+          de chacun (mêmes chiffres que le Dashboard) : une seule rangée au
+          lieu de deux avant d'arriver à la décision. ── */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {stocksResume.map((s) => {
+          const actif = (s.id ?? null) === stockId;
+          const pts = picksParStock.get(s.id) ?? 0;
+          return participants.length > 0 ? (
+            <Link
+              key={s.id ?? 'moi'}
+              href={lienParticipant(s.id ?? null)}
+              className={`${pilleSelecteur(actif)} gap-1.5`}
+            >
+              {s.nom}
+              <span className={`tabular-nums ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>{pts} pts</span>
             </Link>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div key={s.id ?? 'moi'} className={`flex min-h-11 items-center gap-1.5 px-3 text-sm ${carte}`}>
+              <span className="font-medium">{s.nom}</span>
+              <span className="tabular-nums text-zinc-500">{pts} pts</span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Pour QUI on pique : impossible à rater (le choix suit les changements
           de tour, d'où des confusions « joueur déjà pické » sur le mauvais stock). */}
@@ -341,12 +328,28 @@ export default async function PicksPage({
         </div>
       )}
 
-      {/* Provenance des Elo du tableau. Un joueur fort en « maison » ou en
-          « défaut » signale une correspondance de nom à corriger. */}
-      <ProvenanceElo elos={elos} playerRows={playerRows} tour={tournament.tour} />
-
-      {/* Sélecteur de tour */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      {/* ── La décision : quel tour, combien de picks restent à poser ── */}
+      {roundSelectionne && (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 className="text-lg font-semibold">
+            Tour {roundSelectionne}
+            <span className="ml-2 text-sm font-normal text-zinc-600">
+              {faits(roundSelectionne) >= requis(roundSelectionne)
+                ? requis(roundSelectionne) === 0
+                  ? 'aucun pick possible'
+                  : 'complet ✓'
+                : `${requis(roundSelectionne) - faits(roundSelectionne)} pick${
+                    requis(roundSelectionne) - faits(roundSelectionne) > 1 ? 's' : ''
+                  } à poser`}
+            </span>
+          </h2>
+          <span className="text-xs text-zinc-600">
+            {totalFaits}/{totalPossibles} picks sur le tournoi
+            {totalNeutralises > 0 && ` (${totalNeutralises} sans pick possible)`}
+          </span>
+        </div>
+      )}
+      <nav aria-label="Tours" className="flex flex-wrap items-center gap-1.5">
         {rounds.map((r) => {
           // requis(r) === 0 : tous les slots du tour sont neutralisés — le tour
           // est complet, il n'y avait rien à y poser.
@@ -357,6 +360,7 @@ export default async function PicksPage({
             <Link
               key={r}
               href={lienRound(r)}
+              aria-current={actif ? 'page' : undefined}
               title={
                 nt > 0
                   ? `${nt} slot(s) sans pick possible : tous les survivants étaient déjà utilisés`
@@ -365,30 +369,18 @@ export default async function PicksPage({
               className={pilleSelecteur(actif)}
             >
               {r} {complet ? '✓' : `${faits(r)}/${requis(r)}`}
-              {nt > 0 && <span className="ml-0.5 opacity-60">·{nt}∅</span>}
+              {nt > 0 && <span className="ml-0.5 opacity-70">·{nt} neutralisé{nt > 1 ? 's' : ''}</span>}
             </Link>
           );
         })}
-        <span className="ml-auto text-xs text-zinc-500">
-          {totalFaits}/{totalPossibles} picks
-          {totalNeutralises > 0 && (
-            <span className="ml-1 text-zinc-400">
-              ({totalNeutralises} sans pick possible)
-            </span>
-          )}
-        </span>
-      </div>
+      </nav>
 
       {!roundSelectionne ? (
-        <p className="text-sm text-zinc-500">Aucun tour à picker.</p>
+        <p className="text-sm text-zinc-600">Aucun tour à picker.</p>
       ) : projectionsEnCalcul ? (
-        <p className="text-sm text-zinc-500">
-          Simulation Monte Carlo pas encore en cache pour ce tour — calcul lancé
-          en arrière-plan (quelques secondes sur un grand tableau), recharge la
-          page dans un instant.
-        </p>
+        <AttenteCalcul quoi={`des points espérés du tour ${roundSelectionne}`} />
       ) : colonnes.every((c) => c.candidats.length === 0 && !c.impossible) ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-600">
           Aucun joueur disponible pour ce tour (données de tableau manquantes ou
           tour non encore constitué).
         </p>
@@ -407,6 +399,41 @@ export default async function PicksPage({
 
       {/* ── Récapitulatif du participant sélectionné (jamais pour moi) ── */}
       {recap && <RecapParticipant recap={recap} nomJoueur={nomJoueur} />}
+
+      {/* ── Méthode et sources, sous la décision : utiles pour vérifier, jamais
+          sur le chemin du pick. Un Elo douteux reste signalé ligne par ligne. ── */}
+      <section className="space-y-2">
+        <details className={`${carte} px-4 py-2 text-xs`}>
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-zinc-700">
+            Comment lire ce tableau
+          </summary>
+          <div className="space-y-2 pb-2 leading-relaxed text-zinc-700">
+            <p>
+              Simulation Monte Carlo (20 000 tirages) depuis les survivants
+              réels du tour affiché, triée par points espérés. Sous chaque
+              joueur : son adversaire, son Elo effectif (pondéré surface),
+              l&apos;écart d&apos;Elo avec l&apos;adversaire.
+            </p>
+            <p>
+              Un joueur grisé est déjà utilisé par CE participant ; un autre
+              participant peut toujours le prendre.
+            </p>
+            <p>
+              Source de l&apos;Elo : sans marque = trouvé ;{' '}
+              <span className="font-medium text-amber-700">import</span> = calculé
+              sur nos seuls tournois ;{' '}
+              <span className="font-medium text-red-700">défaut</span> = valeur
+              par défaut, à vérifier ;{' '}
+              <span className="font-medium text-violet-700">ambigu</span> =
+              plusieurs homonymes possibles.
+            </p>
+          </div>
+        </details>
+        <NoteCotesUtilisees n={coteUtilisables} />
+        {/* Provenance des Elo du tableau. Un joueur fort en « maison » ou en
+            « défaut » signale une correspondance de nom à corriger. */}
+        <ProvenanceElo elos={elos} playerRows={playerRows} tour={tournament.tour} />
+      </section>
     </div>
     </FournisseurPoolGT>
   );

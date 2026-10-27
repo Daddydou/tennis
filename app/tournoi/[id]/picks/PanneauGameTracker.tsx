@@ -127,7 +127,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         {lecture && lecture.ok && lecture.lie && (
           <div
             className={`rounded-xl px-2.5 py-2 text-xs ${
-              lecture.alignement.ok ? 'bg-sky-50 text-sky-950' : 'bg-red-50 text-red-900'
+              lecture.alignement.ok ? 'bg-zinc-100 text-zinc-800' : 'bg-red-50 text-red-900'
             }`}
           >
             {!lecture.alignement.ok ? (
@@ -205,7 +205,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
                   {prep.lignes.map((l) => (
                     <li key={l.cote}>
                       {to.picksAttendus === 1 ? 'Pick' : l.cote === 'haut' ? 'Haut' : 'Bas'} : {l.nom ?? '—'}
-                      {l.position !== null && <span className="text-zinc-400"> (position {l.position})</span>} —{' '}
+                      {l.position !== null && <span className="text-zinc-500"> (position {l.position})</span>} —{' '}
                       <span className="text-zinc-500">{ORIGINE[l.origine]}</span>
                       {l.enAttente && <span className="text-amber-700"> · en attente</span>}
                     </li>

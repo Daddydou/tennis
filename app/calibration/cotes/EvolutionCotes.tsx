@@ -98,10 +98,10 @@ export default function EvolutionCotes({ series }: { series: SerieCote[] }) {
                   <div className="flex items-baseline justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate">
                       <span className="font-medium">{s.nomA}</span>{' '}
-                      <span className="text-zinc-400">vs</span> {s.nomB}
+                      <span className="text-zinc-500">vs</span> {s.nomB}
                     </span>
                     {s.commenceTime && (
-                      <span className="shrink-0 text-[11px] text-zinc-400">
+                      <span className="shrink-0 text-xs text-zinc-500">
                         {formatInstant(s.commenceTime)}
                       </span>
                     )}
@@ -111,15 +111,15 @@ export default function EvolutionCotes({ series }: { series: SerieCote[] }) {
                     {s.points.length > 1 ? (
                       <>
                         {pct(premier)} → {pct(dernier)}{' '}
-                        <span className={ecart === 0 ? 'text-zinc-400' : 'font-medium text-zinc-900'}>
+                        <span className={ecart === 0 ? 'text-zinc-500' : 'font-medium text-zinc-900'}>
                           ({ecart > 0 ? '+' : ''}
                           {ecart} pt{Math.abs(ecart) > 1 ? 's' : ''})
                         </span>{' '}
-                        <span className="text-zinc-400">· {s.points.length} captures</span>
+                        <span className="text-zinc-500">· {s.points.length} captures</span>
                       </>
                     ) : (
                       <>
-                        {pct(dernier)} <span className="text-zinc-400">· 1 capture</span>
+                        {pct(dernier)} <span className="text-zinc-500">· 1 capture</span>
                       </>
                     )}
                   </p>

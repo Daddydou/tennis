@@ -12,7 +12,7 @@ import {
   type CritereJoueur,
   type DuelBracket,
 } from '@/lib/bracket';
-import { carte, pilleSelecteur } from '@/app/ui';
+import { badge, badgeNeutre, carte, filtreSecondaire, pilleSelecteur } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +69,7 @@ function LigneJoueur({
     <div className="flex items-center gap-2 py-1">
       <span
         className={`w-4 shrink-0 text-center text-xs ${
-          gagnant ? 'text-emerald-600' : 'text-transparent'
+          gagnant ? 'text-emerald-700' : 'text-transparent'
         }`}
         aria-hidden
       >
@@ -86,17 +86,17 @@ function LigneJoueur({
         </span>
         {champion && (
           <span
-            className="shrink-0 rounded-md border border-amber-400 bg-amber-50 px-1 text-[10px] font-medium text-amber-700"
+            className={`${badge} bg-zinc-800 text-white`}
             title="Champion prédit"
           >
             titre
           </span>
         )}
         {j.rang !== null && (
-          <span className="shrink-0 text-[11px] text-zinc-400">n°{j.rang}</span>
+          <span className="shrink-0 text-xs tabular-nums text-zinc-500">n°{j.rang}</span>
         )}
         {bye && (
-          <span className="shrink-0 text-[11px] uppercase tracking-wide text-sky-600">
+          <span className={`${badge} bg-sky-50 text-sky-800`}>
             bye
           </span>
         )}
@@ -108,7 +108,7 @@ function LigneJoueur({
       >
         {j.elo === null ? '—' : Math.round(j.elo)}
       </span>
-      <BadgeSourceElo source={j.source} taName={j.taName} candidats={j.candidats} />
+      <BadgeSourceElo source={j.source} taName={j.taName} candidats={j.candidats} nom={j.nom} />
     </div>
   );
 }
@@ -144,10 +144,10 @@ function CarteDuel({
         bye={duel.bye && duel.b !== null}
       />
       {(ecart !== null || duel.coteUtilisee) && (
-        <div className="flex items-center justify-end gap-1.5 pt-0.5 text-right text-[10px] text-zinc-400">
+        <div className="flex items-center justify-end gap-1.5 pt-0.5 text-right text-xs text-zinc-500">
           {duel.coteUtilisee && (
             <span
-              className="rounded border border-sky-300 bg-sky-50 px-1 text-sky-700"
+              className={badgeNeutre}
               title="Le vainqueur prédit tient compte d'une cote du marché (30 % Elo / 70 % cotes), capturée avant le coup d'envoi."
             >
               cote
@@ -260,30 +260,14 @@ export default async function BracketPage({
   return (
     <div className="space-y-4">
       <TournoiNav id={id} nom={tournament.name} active="bracket" />
-      <NoteCotesUtilisees n={coteUtilisables} />
-
-      <p className="text-sm text-zinc-500">
-        Pronostic <span className="font-medium text-zinc-700">
-          depuis le tirage
-        </span>{' '}
-        : à chaque match, le plus haut Elo effectif sur{' '}
-        {SURFACE_LABEL[surfElo] ?? surfElo} l&apos;emporte — ou le favori du
-        marché quand une cote utilisable existe pour ce duel précis (badge{' '}
-        <span className="rounded border border-sky-300 bg-sky-50 px-1 text-[10px] text-sky-700">
-          cote
-        </span>
-        ). Aucun résultat réel n&apos;est lu — l&apos;arbre est le même avant,
-        pendant et après le tournoi.
-      </p>
-
-      {/* ── Champion prédit et son parcours ── */}
+      {/* ── Champion prédit et son parcours : carte blanche, comme les autres.
+          L'ambre est réservé aux avertissements (DESIGN.md). ── */}
       {vueChampion && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+        <section className={`${carte} p-4`}>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-[11px] uppercase tracking-wide text-amber-700">
-              Champion prédit
-            </span>
-            <span className="text-base font-semibold">{vueChampion.nom}</span>
+            <h2 className="text-base font-semibold">
+              Champion prédit : {vueChampion.nom}
+            </h2>
             {vueChampion.rang !== null && (
               <span className="text-xs text-zinc-500">n°{vueChampion.rang}</span>
             )}
@@ -308,14 +292,14 @@ export default async function BracketPage({
                   </Link>
                   <span className="min-w-0 flex-1 truncate">
                     {d.bye || !adv ? (
-                      <span className="text-sky-600">
+                      <span className="text-sky-800">
                         exempté
                       </span>
                     ) : (
                       <>
                         bat {adv.nom}
                         {adv.elo !== null && (
-                          <span className="ml-1 text-zinc-400 tabular-nums">
+                          <span className="ml-1 text-zinc-500 tabular-nums">
                             ({Math.round(adv.elo)})
                           </span>
                         )}
@@ -326,7 +310,7 @@ export default async function BracketPage({
               );
             })}
           </ul>
-        </div>
+        </section>
       )}
 
       {/* ── Sélecteur de tour : la navigation principale sur mobile ── */}
@@ -343,8 +327,8 @@ export default async function BracketPage({
 
       {/* ── Filtre par moitié de tableau, sur les tours larges ── */}
       {filtrable && (
-        <nav className="flex flex-wrap items-center gap-1 text-xs">
-          <span className="mr-1 text-zinc-400">Moitié :</span>
+        <nav aria-label="Moitié du tableau" className="flex flex-wrap items-center gap-1 text-sm">
+          <span className="mr-1 text-zinc-600">Moitié :</span>
           {(
             [
               [null, 'Tout'],
@@ -357,17 +341,14 @@ export default async function BracketPage({
               <Link
                 key={label}
                 href={lien(roundActif, m)}
-                className={`flex min-h-11 items-center rounded-md px-2.5 transition active:scale-[0.97] ${
-                  actif
-                    ? 'bg-zinc-200 font-medium text-zinc-900'
-                    : 'text-zinc-500 hover:text-zinc-800'
-                }`}
+                aria-current={actif ? 'true' : undefined}
+                className={filtreSecondaire(actif)}
               >
                 {label}
               </Link>
             );
           })}
-          <span className="ml-auto text-zinc-400">
+          <span className="ml-auto text-xs text-zinc-600">
             {duelsAffiches.length} sur {duels.length}
           </span>
         </nav>
@@ -385,12 +366,33 @@ export default async function BracketPage({
         ))}
       </div>
 
-      <p className="text-xs text-zinc-400">
-        Le rang affiché est le classement publié par Tennis Abstract : la tête de
-        série n&apos;est pas conservée par le schéma. Les Elo suivent le même
-        code couleur que l&apos;écran Picks — une valeur signalée «&nbsp;défaut&nbsp;»
-        ou «&nbsp;ambigu&nbsp;» rend le pronostic de ce match peu fiable.
-      </p>
+      {/* Méthode et sources, sous les duels (même place que sur Picks). */}
+      <section className="space-y-2">
+        <details className={`${carte} px-4 py-2 text-xs`}>
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-zinc-700">
+            Comment lire ce bracket
+          </summary>
+          <div className="space-y-2 pb-2 leading-relaxed text-zinc-700">
+            <p>
+              Pronostic <strong>depuis le tirage</strong> : à chaque match, le
+              plus haut Elo effectif sur {SURFACE_LABEL[surfElo] ?? surfElo}{' '}
+              l&apos;emporte, ou le favori du marché quand une cote utilisable
+              existe pour ce duel précis (badge{' '}
+              <span className={badgeNeutre}>cote</span>). Aucun résultat réel
+              n&apos;est lu : l&apos;arbre est le même avant, pendant et après le
+              tournoi.
+            </p>
+            <p>
+              Le rang affiché est le classement publié par Tennis Abstract : la
+              tête de série n&apos;est pas conservée. Les Elo suivent le même
+              code couleur que l&apos;écran Picks : une valeur signalée
+              «&nbsp;défaut&nbsp;» ou «&nbsp;ambigu&nbsp;» rend le pronostic de ce
+              match peu fiable.
+            </p>
+          </div>
+        </details>
+        <NoteCotesUtilisees n={coteUtilisables} />
+      </section>
     </div>
   );
 }
