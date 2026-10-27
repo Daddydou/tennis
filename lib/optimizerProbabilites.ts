@@ -76,7 +76,14 @@ export function esperancePoints(
   eloB: number,
   bestOf: 3 | 5 = 3
 ): EsperanceMatch {
-  const pm = pVictoire(eloA, eloB);
+  return esperancePointsDepuisP(pVictoire(eloA, eloB), bestOf);
+}
+
+/**
+ * Même espérance, quand P(A gagne le match) est DÉJÀ décidée par l'appelant
+ * (Elo seul, ou blend Elo/cotes pour ce duel précis).
+ */
+export function esperancePointsDepuisP(pm: number, bestOf: 3 | 5 = 3): EsperanceMatch {
   const ps = pSetDepuisMatch(pm, bestOf);
   const dist = distributionSets(ps, bestOf);
 

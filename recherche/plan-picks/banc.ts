@@ -19,140 +19,16 @@
  * que les survivants de ce tour (et les picks déjà posés).
  */
 
-import { pVictoire } from '../../lib/elo';
 import { creerRandom, simulerMatch } from '../../lib/montecarloTournoi';
-import { genererSlots } from '../../lib/optimizerAffectation';
-import { esperancePoints, type Esperances } from '../../lib/optimizerProbabilites';
+import type { Esperances } from '../../lib/optimizerProbabilites';
+import { propager, type Tableau } from '../../lib/planTableau';
 import { planifier } from '../../lib/planPicks';
 import { pointsAtRound } from '../../lib/scoring';
-import type { Half, Match, Player, Slot } from '../../lib/types';
+import type { Half, Match, Slot } from '../../lib/types';
 
-/* -------------------------------------------------------------------------- */
-/*  Tableau                                                                    */
-/* -------------------------------------------------------------------------- */
-
-export interface Tableau {
-  rounds: string[];
-  bestOf: 3 | 5;
-  ids: string[];
-  /** Elo effectif (pondéré surface) par indice de joueur. */
-  elo: number[];
-  moitie: Half[];
-  /** Positions du premier tour (indice de joueur, ou null pour un bye). */
-  grille: (number | null)[];
-  /** p[a*n+b] = P(a bat b). */
-  p: Float64Array;
-  /** ep[a*n+b] = E[points de a | a joue b]. */
-  ep: Float64Array;
-  slots: Slot[];
-  n: number;
-}
-
-export function construireTableau(
-  matches: Match[],
-  players: Record<string, Player>,
-  rounds: string[],
-  bestOf: 3 | 5,
-  surface: 'hard' | 'clay' | 'grass',
-  poidsSurface = 0.6,
-): Tableau {
-  const eloDe = (id: string): number => {
-    const pl = players[id];
-    if (!pl) return 1500;
-    const s = surface === 'clay' ? pl.eloClay : surface === 'grass' ? pl.eloGrass : pl.eloHard;
-    return poidsSurface * s + (1 - poidsSurface) * pl.eloOverall;
-  };
-
-  const premiers = matches.filter((m) => m.round === rounds[0]).sort((a, b) => a.position - b.position);
-  const ids: string[] = [];
-  const indice = new Map<string, number>();
-  const prendre = (id: string): number => {
-    let i = indice.get(id);
-    if (i === undefined) {
-      i = ids.length;
-      ids.push(id);
-      indice.set(id, i);
-    }
-    return i;
-  };
-
-  const grille: (number | null)[] = [];
-  for (const m of premiers) {
-    for (const j of m.players) grille.push(j.isBye || !j.id ? null : prendre(j.id));
-  }
-
-  const n = ids.length;
-  const elo = ids.map(eloDe);
-  const moitie: Half[] = new Array(n);
-  grille.forEach((g, pos) => {
-    if (g !== null) moitie[g] = pos < grille.length / 2 ? 'top' : 'bottom';
-  });
-
-  const p = new Float64Array(n * n);
-  const ep = new Float64Array(n * n);
-  for (let a = 0; a < n; a++) {
-    for (let b = 0; b < n; b++) {
-      if (a === b) continue;
-      p[a * n + b] = pVictoire(elo[a], elo[b]);
-      ep[a * n + b] = esperancePoints(elo[a], elo[b], bestOf).total;
-    }
-  }
-
-  return { rounds, bestOf, ids, elo, moitie, grille, p, ep, slots: genererSlots(rounds), n };
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Espérances exactes depuis un état du tableau                               */
-/* -------------------------------------------------------------------------- */
-
-/**
- * E[points | joueur pické au tour R], INCONDITIONNELLE, pour les tours
- * `depuis`…fin, en partant des survivants `actuels` de l'ouverture du tour
- * `depuis`. Calcul exact (pas de tirage) : deux joueurs de sous-arbres
- * disjoints sont indépendants, donc
- *   E[a, R] = Σ_b P(a présent) · P(b présent) · E(a contre b).
- */
-export function propager(t: Tableau, actuels: (number | null)[], depuis: number): Esperances {
-  const { n, p, ep, rounds, ids } = t;
-  const esp: Esperances = {};
-  type Noeud = { j: number[]; pr: number[] };
-  let niveau: Noeud[] = actuels.map((a) => (a === null ? { j: [], pr: [] } : { j: [a], pr: [1] }));
-
-  for (let r = depuis; r < rounds.length; r++) {
-    const round = rounds[r];
-    const suivant: Noeud[] = [];
-    for (let i = 0; i < niveau.length; i += 2) {
-      const A = niveau[i];
-      const B = niveau[i + 1] ?? { j: [], pr: [] };
-      if (A.j.length === 0) {
-        suivant.push(B); // bye : l'autre passe, sans point
-        continue;
-      }
-      if (B.j.length === 0) {
-        suivant.push(A);
-        continue;
-      }
-      const gagne = new Map<number, number>();
-      for (let x = 0; x < A.j.length; x++) {
-        for (let y = 0; y < B.j.length; y++) {
-          const a = A.j[x];
-          const b = B.j[y];
-          const w = A.pr[x] * B.pr[y];
-          const ra = (esp[ids[a]] ??= {});
-          const rb = (esp[ids[b]] ??= {});
-          ra[round] = (ra[round] ?? 0) + w * ep[a * n + b];
-          rb[round] = (rb[round] ?? 0) + w * ep[b * n + a];
-          const pa = p[a * n + b];
-          gagne.set(a, (gagne.get(a) ?? 0) + w * pa);
-          gagne.set(b, (gagne.get(b) ?? 0) + w * (1 - pa));
-        }
-      }
-      suivant.push({ j: [...gagne.keys()], pr: [...gagne.values()] });
-    }
-    niveau = suivant;
-  }
-  return esp;
-}
+// Le modèle de tournoi (tableau, espérances exactes) vit maintenant dans
+// lib/planTableau.ts, partagé avec l'écran Picks ; le banc le réutilise.
+export { creerTableau as construireTableau, propager, type Tableau } from '../../lib/planTableau';
 
 /* -------------------------------------------------------------------------- */
 /*  Scénarios                                                                  */
