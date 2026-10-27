@@ -197,7 +197,17 @@ export interface Proposition {
   bilan: Bilan;
 }
 
+export interface StatsRival {
+  nom: string;
+  /** Points totaux attendus (picks posés + meilleur survivant sur les slots libres). */
+  moyenne: number;
+  p10: number;
+  p90: number;
+}
+
 export interface ResultatRecherche {
+  /** Ce qu'on attend des rivaux, d'après leurs picks posés. */
+  rivaux: StatsRival[];
   /** Le plan « espérance » de référence. */
   reference: Proposition;
   /** Les meilleures propositions, la meilleure en premier. */
@@ -213,6 +223,8 @@ export interface OptionsRecherche {
   garder?: number;
   /** Écart de chance de victoire en dessous duquel on garde la référence (bruit de tirage). */
   seuilBruit?: number;
+  /** Picks déjà choisis à l'écran : gardés comme cibles, la recherche porte sur le reste. */
+  imposes?: { round: string; half: Half | null; joueur: number }[];
 }
 
 /**
@@ -232,12 +244,23 @@ export function chercherContreRivaux(
   const garder = options.garder ?? 5;
   const seuil = options.seuilBruit ?? 0.01;
   const rivTot = totauxRivaux(ctx, rivaux);
+  const statsRivaux: StatsRival[] = rivaux.map((r, k) => {
+    const tri = Float64Array.from(rivTot[k]).sort();
+    return {
+      nom: r.nom,
+      moyenne: rivTot[k].reduce((s, x) => s + x, 0) / Math.max(1, rivTot[k].length),
+      p10: quantile(tri, 0.1),
+      p90: quantile(tri, 0.9),
+    };
+  });
+  const imposes = options.imposes ?? [];
+  const estImpose = (s: Slot) => imposes.some((i) => i.round === s.round && i.half === s.half);
   const moitie: Record<string, Half> = {};
   t.ids.forEach((id, j) => (moitie[id] = t.moitie[j]));
-  const exclusIds = new Set([...moi.utilises].map((j) => t.ids[j]));
+  const exclusIds = new Set([...moi.utilises, ...imposes.map((i) => i.joueur)].map((j) => t.ids[j]));
 
   const planSans = (decides: { slot: Slot; joueur: number }[]) => {
-    const restants = moi.slotsLibres.filter((s) => !decides.some((d) => d.slot === s));
+    const restants = moi.slotsLibres.filter((s) => !estImpose(s) && !decides.some((d) => d.slot === s));
     const plan = planifier({
       slots: restants,
       esperances: esp,
@@ -245,6 +268,10 @@ export function chercherContreRivaux(
       exclus: new Set([...exclusIds, ...decides.map((d) => t.ids[d.joueur])]),
     });
     const cibles: (number | null)[] = moi.slotsLibres.map(() => null);
+    for (const i of imposes) {
+      const k = moi.slotsLibres.findIndex((s) => s.round === i.round && s.half === i.half);
+      if (k >= 0) cibles[k] = i.joueur;
+    }
     for (const d of decides) cibles[moi.slotsLibres.indexOf(d.slot)] = d.joueur;
     for (const p of plan.picks) {
       const i = moi.slotsLibres.findIndex((s) => s.round === p.round && s.half === p.half);
@@ -256,15 +283,17 @@ export function chercherContreRivaux(
   const reference: Proposition = { cibles: planSans([]), bilan: null as unknown as Bilan };
   reference.bilan = bilan(ctx, moi, reference.cibles, rivTot);
 
-  if (moi.slotsLibres.length === 0) {
-    return { reference, propositions: [reference], recommandee: reference };
+  const aDecider = moi.slotsLibres.filter((s) => !estImpose(s));
+  if (aDecider.length === 0) {
+    return { rivaux: statsRivaux, reference, propositions: [reference], recommandee: reference };
   }
 
-  const tourDecision = moi.slotsLibres[0].round;
-  const slotsDecision = moi.slotsLibres.filter((s) => s.round === tourDecision);
+  const tourDecision = aDecider[0].round;
+  const slotsDecision = aDecider.filter((s) => s.round === tourDecision);
+  const dejaImposes = new Set(imposes.map((i) => i.joueur));
   const candidatsPar = slotsDecision.map((slot) =>
     [...t.ids.keys()]
-      .filter((j) => !moi.utilises.has(j) && (!slot.half || t.moitie[j] === slot.half))
+      .filter((j) => !moi.utilises.has(j) && !dejaImposes.has(j) && (!slot.half || t.moitie[j] === slot.half))
       .map((j) => ({ j, e: esp[t.ids[j]]?.[tourDecision] ?? 0 }))
       .filter((x) => x.e > 0)
       .sort((a, b) => b.e - a.e)
@@ -295,5 +324,5 @@ export function chercherContreRivaux(
   const meilleure = triees[0] ?? reference;
   const recommandee =
     (meilleure.bilan.pPremier ?? 0) - (reference.bilan.pPremier ?? 0) < seuil ? reference : meilleure;
-  return { reference, propositions: triees.slice(0, garder), recommandee };
+  return { rivaux: statsRivaux, reference, propositions: triees.slice(0, garder), recommandee };
 }

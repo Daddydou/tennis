@@ -20,6 +20,7 @@ import {
   creerContexte,
   type Bilan,
   type Contexte,
+  totauxRivaux,
   type Participant,
   type ResultatRecherche,
 } from './planRivaux';
@@ -110,11 +111,7 @@ export function utilisesDe(p: ParticipantDonnees): Set<number> {
 }
 
 /** Les picks d'un participant tels que `planRivaux` les attend, choix de l'écran compris. */
-export function participantPourSimulation(
-  d: DonneesPlan,
-  p: ParticipantDonnees,
-  choix: Record<string, number> = {},
-): Participant {
+export function participantPourSimulation(d: DonneesPlan, p: ParticipantDonnees): Participant {
   const aJouer = slotsAJouer(d);
   const dejaPoses = new Set(p.picks.map(cleSlot));
   const base = p.picks
@@ -124,15 +121,7 @@ export function participantPourSimulation(
     .filter((k) => d.rounds.indexOf(k.round) >= d.r0)
     .map((k) => ({ round: k.round, half: k.half, joueur: k.joueur }));
   const utilises = utilisesDe(p);
-  const libres: Slot[] = [];
-  for (const s of aJouer) {
-    if (dejaPoses.has(cleSlot(s))) continue;
-    const c = choix[cleSlot(s)];
-    if (c !== undefined) {
-      places.push({ round: s.round, half: s.half, joueur: c });
-      utilises.add(c);
-    } else libres.push(s);
-  }
+  const libres: Slot[] = aJouer.filter((s) => !dejaPoses.has(cleSlot(s)));
   return { cle: p.id ?? 'moi', nom: p.nom, base, places, slotsLibres: libres, utilises };
 }
 
@@ -158,8 +147,21 @@ export function planDe(
   });
 }
 
-/** Moyenne, mauvais cas, bon cas du plan, par simulation (le joueur visé éliminé est remplacé au mieux). */
-export function statsDuPlan(m: Monde, p: ParticipantDonnees, plan: PlanDetaille): Bilan {
+/** Totaux simulés des rivaux (leur politique ne dépend pas de la mienne : à calculer une fois). */
+export function totauxDesRivaux(m: Monde, rivaux: ParticipantDonnees[]): Float64Array[] {
+  return rivaux.length ? totauxRivaux(m.contexte(), rivaux.map((r) => participantPourSimulation(m.d, r))) : [];
+}
+
+/**
+ * Moyenne, mauvais cas, bon cas du plan, par simulation (le joueur visé
+ * éliminé est remplacé au mieux). Avec `rivauxTot` : sa chance de finir devant eux.
+ */
+export function statsDuPlan(
+  m: Monde,
+  p: ParticipantDonnees,
+  plan: PlanDetaille,
+  rivauxTot: Float64Array[] = [],
+): Bilan {
   // Les picks choisis à l'écran font partie du plan : ce sont des CIBLES, pas
   // des picks posés (le joueur visé peut encore être éliminé).
   const sim = participantPourSimulation(m.d, p);
@@ -167,7 +169,7 @@ export function statsDuPlan(m: Monde, p: ParticipantDonnees, plan: PlanDetaille)
     const pk = plan.picks.find((q) => q.round === s.round && q.half === s.half);
     return pk ? m.d.joueurs.findIndex((j) => j.id === pk.playerId) : null;
   });
-  return bilan(m.contexte(), sim, cibles);
+  return bilan(m.contexte(), sim, cibles, rivauxTot);
 }
 
 /** Les picks du prochain tour qui maximisent la chance de finir devant les rivaux. */
@@ -178,10 +180,15 @@ export function rechercheRivaux(
   choix: Record<string, number> = {},
 ): ResultatRecherche {
   const { d } = m;
+  const imposes = Object.entries(choix).map(([cle, joueur]) => {
+    const [round, half] = cle.split('|');
+    return { round, half: (half || null) as Half | null, joueur };
+  });
   return chercherContreRivaux(
     m.contexte(),
-    participantPourSimulation(d, moi, choix),
+    participantPourSimulation(d, moi),
     rivaux.map((r) => participantPourSimulation(d, r)),
     m.moments.esp,
+    { imposes },
   );
 }

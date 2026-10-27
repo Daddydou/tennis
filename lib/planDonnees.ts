@@ -107,6 +107,8 @@ export interface EntreeDonnees {
   /** Pour l'affichage : d'où vient l'Elo de chaque joueur. */
   infoElo: Record<string, { source: SourceElo; taName: string | null; candidats: string[] }>;
   probabiliteMatch?: ProbabiliteMatch;
+  /** Poids de l'Elo de surface dans l'Elo effectif (celui du moteur de production). */
+  poidsSurface?: number;
   /** Moi d'abord (id null), puis les participants configurés. */
   participants: { id: string | null; nom: string }[];
   picks: LignePick[];
@@ -114,7 +116,7 @@ export interface EntreeDonnees {
 
 export function construireDonneesPlan(e: EntreeDonnees): DonneesPlan {
   const { rounds, matchRows } = e;
-  const spec = specDepuisMatches(e.matches, e.players, rounds, e.bestOf, e.surface);
+  const spec = specDepuisMatches(e.matches, e.players, rounds, e.bestOf, e.surface, e.poidsSurface);
   const t = creerTableauDepuisSpec(spec);
   const index = new Map(spec.ids.map((id, j) => [id, j]));
 
