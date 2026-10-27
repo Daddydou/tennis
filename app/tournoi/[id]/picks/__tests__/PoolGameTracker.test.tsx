@@ -1,32 +1,35 @@
 /**
- * Repères Game Tracker sur la grille de picks (Vitest + RTL, jsdom) : après
- * « Lire Game Tracker », les joueurs hors du pool du tour ouvert sont signalés ;
- * le repère ne touche ni à la sélection ni aux autres tours / participants.
+ * Repères Game Tracker sur le grand tableau de l'écran Picks (Vitest + RTL,
+ * jsdom) : après « Lire Game Tracker », les joueurs hors du pool du tour
+ * ouvert sont signalés ; le repère ne touche ni à la réservation ni aux
+ * autres tours / participants.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
-import PickBoard, { type Candidat } from '../PickBoard';
+import TableauJoueurs, { type LigneTableau } from '../../plan/TableauJoueurs';
 import { FournisseurPoolGT, useDefinirPoolGT } from '../PoolGameTracker';
 import type { PoolLocalGT } from '@/lib/gameTrackerPicks';
 
-vi.mock('../actions', () => ({ validerPick: vi.fn(), supprimerPick: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-
 afterEach(cleanup);
 
-const candidat = (playerId: string, nom: string): Candidat => ({
-  playerId,
+const ligne = (idx: number, id: string, nom: string): LigneTableau => ({
+  idx,
+  id,
   nom,
   rang: null,
-  adversaire: null, resultat: null,
-  ePoints: 1,
   elo: 1500,
   sourceElo: 'ta',
   taName: null,
-  candidats: [],
-  ecartElo: null,
+  candidatsElo: [],
+  moitie: 'top',
+  adversaire: null,
+  pVictoire: null,
+  pointsMatch: null,
+  resultat: null,
+  parTour: { R16: { e: 1, presence: 1, sigma: 0.5 }, QF: { e: 1, presence: 0.5, sigma: 0.5 } },
   utilise: false,
+  prisPar: [],
   insight: null,
 });
 
@@ -46,30 +49,26 @@ function Publie({ pool }: { pool: PoolLocalGT | null }) {
   return null;
 }
 
-function ecran(opts: { pool: PoolLocalGT | null; round?: string; participantId?: string | null; avecFournisseur?: boolean }) {
-  const board = (
+function ecran(opts: { pool: PoolLocalGT | null; tourLibre?: string; avecPoolGT?: boolean; avecFournisseur?: boolean }) {
+  const contenu = (
     <>
       <Publie pool={opts.pool} />
-      <PickBoard
-        tournamentId="t"
-        round={opts.round ?? 'R16'}
-        participantId={opts.participantId ?? null}
-        colonnes={[
-          {
-            half: null,
-            label: 'Un seul pick',
-            pickActuel: null,
-            impossible: false,
-            candidats: [candidat('p1', 'Alex Adams'), candidat('p2', 'Ben Baker'), candidat('p3', 'Carl Clark'), candidat('p4', 'Dan Davis')],
-          },
-        ]}
+      <TableauJoueurs
+        lignes={[ligne(0, 'p1', 'Alex Adams'), ligne(1, 'p2', 'Ben Baker'), ligne(2, 'p3', 'Carl Clark'), ligne(3, 'p4', 'Dan Davis')]}
+        rounds={['R16', 'QF']}
+        premierTourLibre={opts.tourLibre ?? 'R16'}
+        tourCourant="R16"
+        cleDeCellule={(_idx, round) => `${round}|top`}
+        infoSlots={new Map()}
+        onCellule={vi.fn()}
+        avecPoolGT={opts.avecPoolGT ?? true}
       />
     </>
   );
-  return render(opts.avecFournisseur === false ? board : <FournisseurPoolGT>{board}</FournisseurPoolGT>);
+  return render(opts.avecFournisseur === false ? contenu : <FournisseurPoolGT>{contenu}</FournisseurPoolGT>);
 }
 
-describe('repères Game Tracker sur la grille de picks', () => {
+describe('repères Game Tracker sur le grand tableau', () => {
   it('sans « Lire » (pas de pool) : aucun repère', () => {
     ecran({ pool: null });
     expect(screen.queryByText('hors pool GT')).toBeNull();
@@ -84,26 +83,26 @@ describe('repères Game Tracker sur la grille de picks', () => {
     expect(screen.getAllByText('déjà pické GT')).toHaveLength(1); // p3
   });
 
-  it('un joueur signalé reste sélectionnable (repère indicatif)', () => {
+  it('un joueur signalé reste réservable (repère indicatif)', () => {
     ecran({ pool: POOL });
-    const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(4);
-    for (const r of radios) expect(r).not.toBeDisabled();
+    const cases = screen.getAllByTitle(/^R16 :/);
+    expect(cases).toHaveLength(4);
+    for (const c of cases) expect(c).toBeEnabled();
   });
 
   it('autre tour que celui ouvert chez Game Tracker : aucun repère', () => {
-    ecran({ pool: POOL, round: 'QF' });
+    ecran({ pool: POOL, tourLibre: 'QF' });
     expect(screen.queryByText('hors pool GT')).toBeNull();
   });
 
   it('vue d’un autre participant : aucun repère (le pool est celui de mon compte)', () => {
-    ecran({ pool: POOL, participantId: 'laki' });
+    ecran({ pool: POOL, avecPoolGT: false });
     expect(screen.queryByText('hors pool GT')).toBeNull();
   });
 
-  it('sans fournisseur (hors page picks) : la grille s’affiche normalement', () => {
+  it('sans fournisseur (hors page picks) : le tableau s’affiche normalement', () => {
     ecran({ pool: POOL, avecFournisseur: false });
-    expect(screen.getAllByRole('radio')).toHaveLength(4);
+    expect(screen.getAllByTitle(/^R16 :/)).toHaveLength(4);
     expect(screen.queryByText('hors pool GT')).toBeNull();
   });
 });

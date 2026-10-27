@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import TournoiNav from './TournoiNav';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
 import { boutonPrimaire, boutonSecondaire, carte, zoneTactile } from '@/app/ui';
 import {
@@ -62,6 +61,10 @@ export default async function DashboardPage({
   });
   const moi = avancements[0];
   const resteMoi = moi ? Math.max(0, moi.requis - moi.faits) : 0;
+  // Le tour à picker peut être celui d'APRÈS les matchs en cours : ses joueurs
+  // ne sont connus (et ses picks validables) qu'à la fin du tour en jeu.
+  const enAttente =
+    resteMoi > 0 && !!moi?.tour && !!tourEnJeu && rounds.indexOf(moi.tour) > rounds.indexOf(tourEnJeu);
 
   // Le total combiné traite « à importer » (aucun pronostic de bracket pour
   // ce stock) comme 0 pour le classement — c'est le seul moyen de comparer
@@ -78,7 +81,6 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournoi.name} active="dashboard" />
 
       {/* ── La décision du moment : mes picks du tour ouvert, puis où en sont
           les autres. C'est ce qu'on vient chercher quand un tour s'ouvre. ── */}
@@ -92,15 +94,16 @@ export default async function DashboardPage({
                   : `Tour ${moi.tour} : mes picks sont posés ✓`}
               </h2>
               <p className="text-sm text-zinc-600">
-                {moi.faits}/{moi.requis} posé{moi.faits > 1 ? 's' : ''}
-                {tourEnJeu && ` · matchs en cours : ${tourEnJeu}`}
+                {enAttente
+                  ? `validation à la fin du ${tourEnJeu}, réservation possible dès maintenant`
+                  : `${moi.faits}/${moi.requis} posé${moi.faits > 1 ? 's' : ''}${tourEnJeu ? ` · matchs en cours : ${tourEnJeu}` : ''}`}
               </p>
             </div>
             <Link
               href={`/tournoi/${id}/picks`}
-              className={resteMoi > 0 ? boutonPrimaire : boutonSecondaire}
+              className={resteMoi > 0 && !enAttente ? boutonPrimaire : boutonSecondaire}
             >
-              {resteMoi > 0 ? 'Poser mes picks' : 'Voir mes picks'}
+              {resteMoi === 0 ? 'Voir mes picks' : enAttente ? 'Préparer mes picks' : 'Poser mes picks'}
             </Link>
           </div>
           {avancements.length > 1 && (
@@ -149,12 +152,7 @@ export default async function DashboardPage({
                     {l.aBracket ? (
                       <span className="font-semibold tabular-nums text-zinc-900">{l.bracket}</span>
                     ) : (
-                      <span
-                        className="font-medium text-amber-700"
-                        title="Aucun bracket de ce participant importé (onglet Simulateur → Bracket → Importer)"
-                      >
-                        à importer
-                      </span>
+                      <span className="font-medium text-zinc-500">—</span>
                     )}
                   </span>
 
@@ -170,6 +168,21 @@ export default async function DashboardPage({
               </div>
             );
           })}
+          {/* Un seul rappel pour tous les brackets manquants, avec le geste
+              qui le règle — plutôt qu'un « à importer » par ligne. */}
+          {lignes.some((l) => !l.aBracket) && (
+            <p className="flex flex-wrap items-center gap-x-2 text-sm text-amber-700">
+              Bracket pas encore importé pour{' '}
+              {lignes
+                .filter((l) => !l.aBracket)
+                .map((l) => l.nom)
+                .join(', ')}
+              .
+              <Link href={`/tournoi/${id}/simulateur?vue=import`} className={`${zoneTactile} font-medium underline underline-offset-2`}>
+                Importer les brackets
+              </Link>
+            </p>
+          )}
         </section>
       )}
     </div>

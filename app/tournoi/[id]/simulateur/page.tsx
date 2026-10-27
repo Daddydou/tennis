@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
-import TournoiNav from '../TournoiNav';
+import AttenteCalcul from '../AttenteCalcul';
 import SimulateurSections from './SimulateurSections';
 import { cleSlot } from './picksSim';
 import {
@@ -21,10 +21,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function SimulateurPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ section?: string; vue?: string }>;
 }) {
   const { id } = await params;
+  const { section, vue } = await searchParams;
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();
@@ -112,7 +115,6 @@ export default async function SimulateurPage({
   if (rounds.length === 0 || matches.length === 0) {
     return (
       <div className="space-y-5">
-        <TournoiNav id={id} nom={tournament.name} active="simulateur" />
         <p className="text-sm text-zinc-500">
           Aucun tirage exploitable pour simuler un bracket sur ce tournoi.
         </p>
@@ -145,15 +147,11 @@ export default async function SimulateurPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournament.name} active="simulateur" />
 
+      {/* Seul le Simulateur de picks a besoin des points espérés : le jeu
+          Bracket reste utilisable pendant le calcul. */}
       {projectionsEnCalcul && (
-        <p className="text-xs text-amber-700">
-          Simulation Monte Carlo pas encore en cache pour le tour {roundDepart} —
-          calcul lancé en arrière-plan, les espérances (E[pts], Picks
-          hypothétiques) reviendront à quelques secondes près, à la prochaine
-          visite.
-        </p>
+        <AttenteCalcul quoi={`des points espérés du ${roundDepart} (Simulateur de picks)`} />
       )}
 
       <SimulateurSections
@@ -170,6 +168,8 @@ export default async function SimulateurPage({
         dejaInscrits={dejaInscrits}
         picksSimulesInitiaux={picksSimulesInitiaux}
         roundParDefaut={roundDepart}
+        sectionInitiale={section === 'picks' ? 'picks' : 'bracket'}
+        vueInitiale={vue}
       />
     </div>
   );

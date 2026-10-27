@@ -50,7 +50,7 @@ export default function ProvenanceElo({
 
   return (
     <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
-      <summary className="cursor-pointer text-zinc-600">
+      <summary className="flex min-h-11 cursor-pointer items-center text-zinc-600">
         <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
         joueur(s) sur {sources.total} avec {nomBase},{' '}
         <span className={sources.maison > 0 ? 'font-medium text-amber-700' : ''}>

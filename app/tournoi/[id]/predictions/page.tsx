@@ -1,14 +1,40 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
-import TournoiNav from '../TournoiNav';
 import AttenteCalcul from '../AttenteCalcul';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
+import TableauPronostique from './TableauPronostique';
 import { loadEngineData, tourCourantMatches } from '@/db/queries';
 import { computeAndStoreProjections, projectionsEnCache, ROUND_TITRE } from '@/db/projections';
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { estIndecis } from '@/lib/types';
+import { filtreSecondaire } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
+
+type Vue = 'chances' | 'tableau';
+
+/**
+ * Deux lectures du même pronostic : les chances de chaque joueur tour par
+ * tour (Monte Carlo), ou l'arbre complet pronostiqué match par match (ancien
+ * onglet « Bracket », fusionné ici pour que ce mot ne désigne plus que le jeu).
+ */
+function SelecteurVue({ id, vue }: { id: string; vue: Vue }) {
+  return (
+    <nav aria-label="Vue des prédictions" className="flex flex-wrap gap-1">
+      {(
+        [
+          ['chances', 'Chances par tour', `/tournoi/${id}/predictions`],
+          ['tableau', 'Tableau pronostiqué', `/tournoi/${id}/predictions?vue=tableau`],
+        ] as const
+      ).map(([cle, label, href]) => (
+        <Link key={cle} href={href} aria-current={vue === cle ? 'page' : undefined} className={filtreSecondaire(vue === cle)}>
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
 
 /** Une probabilité se lit mieux en %, avec une décimale sous les 10 %. */
 function pourcent(p: number): string {
@@ -28,15 +54,29 @@ function intensite(p: number): string {
 
 export default async function PredictionsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ vue?: string; round?: string; moitie?: string }>;
 }) {
   const { id } = await params;
+  const { vue: vueParam, round, moitie } = await searchParams;
+  const vue: Vue = vueParam === 'tableau' ? 'tableau' : 'chances';
 
-  const engine = await loadEngineData(id);
+  // Lectures indépendantes, de front (le blend est une lecture légère de tn_odds).
+  const [engine, blend] = await Promise.all([loadEngineData(id), chargerBlendProduction(id)]);
   if (!engine) notFound();
   const { tournament, matchRows, players } = engine;
   const rounds = tournament.rounds ?? [];
+
+  if (vue === 'tableau') {
+    return (
+      <div className="space-y-4">
+        <SelecteurVue id={id} vue={vue} />
+        <TableauPronostique id={id} engine={engine} blend={blend} roundParam={round} moitieParam={moitie} />
+      </div>
+    );
+  }
 
   // On simule depuis le tour en cours : seuls les survivants réels y figurent,
   // ce qui donne exactement « les joueurs encore en lice ». Même cache que
@@ -53,7 +93,7 @@ export default async function PredictionsPage({
   if (!tourCourant) {
     return (
       <div className="space-y-5">
-        <TournoiNav id={id} nom={tournament.name} active="predictions" />
+        <SelecteurVue id={id} vue={vue} />
         <p className="text-sm text-zinc-500">Aucun tour à simuler.</p>
       </div>
     );
@@ -106,11 +146,11 @@ export default async function PredictionsPage({
   // Traçabilité du blend Elo/cotes (cf. db/cotesBlend.ts) : indépendante
   // du cache tn_projections, toujours à jour — une lecture légère de tn_odds,
   // jamais une resimulation.
-  const { coteUtilisables } = await chargerBlendProduction(id);
+  const { coteUtilisables } = blend;
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournament.name} active="predictions" />
+      <SelecteurVue id={id} vue={vue} />
       <NoteCotesUtilisees n={coteUtilisables} />
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">

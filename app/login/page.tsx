@@ -27,10 +27,15 @@ export default async function LoginPage({
 
       <form action={seConnecter} className="space-y-3">
         <input type="hidden" name="next" value={next ?? ''} />
+        <label htmlFor="mot-de-passe" className="block text-sm font-medium text-zinc-700">
+          Mot de passe
+        </label>
         <input
+          id="mot-de-passe"
           type="password"
           name="motDePasse"
-          placeholder="Mot de passe"
+          aria-invalid={erreur ? true : undefined}
+          aria-describedby={erreur ? 'erreur-connexion' : undefined}
           autoFocus
           autoComplete="current-password"
           className={`w-full ${champTexte}`}
@@ -41,8 +46,8 @@ export default async function LoginPage({
       </form>
 
       {erreur && (
-        <p className="rounded-xl bg-red-50 p-2 text-sm text-red-900">
-          Mot de passe incorrect.
+        <p id="erreur-connexion" role="alert" className="rounded-xl bg-red-50 p-2 text-sm text-red-900">
+          Mot de passe incorrect. Vérifie les majuscules et réessaie.
         </p>
       )}
     </div>

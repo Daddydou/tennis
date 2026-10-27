@@ -95,6 +95,19 @@ export interface BracketRoundPickRow {
   player_id: string;
 }
 
+/**
+ * Une réservation de l'écran Picks (tn_plan_reservations) : un joueur gardé
+ * pour un tour à venir. Pas un pick — rien n'est compté ni envoyé.
+ */
+export interface PlanReservationRow {
+  id: string;
+  tournament_id: string;
+  participant_id: string | null;
+  round: string;
+  half: Half | null;
+  player_id: string;
+}
+
 /** Un pick hypothétique du bac à sable de picks du simulateur (tn_simulated_picks). */
 export interface SimulatedPickRow {
   id: string;

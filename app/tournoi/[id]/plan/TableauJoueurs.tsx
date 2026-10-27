@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import BadgeSourceElo, { classeElo } from '../BadgeSourceElo';
 import InsightBadge from '../picks/InsightBadge';
+import InsightDetail from '../picks/InsightDetail';
 import { usePoolGT } from '../picks/PoolGameTracker';
 import { carte, pilleSelecteur } from '@/app/ui';
 import type { SourceElo } from '@/db/elo';
@@ -69,6 +70,7 @@ export default function TableauJoueurs({
   cleDeCellule,
   infoSlots,
   onCellule,
+  avecPoolGT = true,
 }: {
   lignes: LigneTableau[];
   /** Tours affichés (du tour courant à la finale). */
@@ -80,12 +82,19 @@ export default function TableauJoueurs({
   cleDeCellule: (idx: number, round: string) => string | null;
   infoSlots: Map<string, InfoSlot>;
   onCellule: (idx: number, round: string) => void;
+  /**
+   * Repères Game Tracker (hors pool, déjà pické…) : ils décrivent MON compte
+   * Game Tracker, donc jamais sur la vue d'un autre participant.
+   */
+  avecPoolGT?: boolean;
 }) {
   const [tri, setTri] = useState<Tri>('tour');
+  // Détail des insights (résumé + faits sourcés) d'un joueur, ouvert à la demande.
+  const [infoOuverte, setInfoOuverte] = useState<string | null>(null);
   const [moitie, setMoitie] = useState<'tous' | 'top' | 'bottom'>('tous');
   const [masquerUtilises, setMasquerUtilises] = useState(false);
   const pool = usePoolGT();
-  const poolActif = pool && premierTourLibre && pool.roundLocal === premierTourLibre ? pool : null;
+  const poolActif = avecPoolGT && pool && premierTourLibre && pool.roundLocal === premierTourLibre ? pool : null;
   const tourTri = premierTourLibre ?? rounds[0];
 
   const affichees = useMemo(() => {
@@ -159,7 +168,7 @@ export default function TableauJoueurs({
               {rounds.map((r) => (
                 <th
                   key={r}
-                  className={`border-l border-zinc-100 px-2 py-2 text-center ${r === premierTourLibre ? 'bg-blue-50 text-blue-700' : ''}`}
+                  className={`border-l border-zinc-100 px-2 py-2 text-center ${r === premierTourLibre ? 'bg-zinc-100 font-semibold text-zinc-900' : ''}`}
                   title="Points espérés si pické à ce tour (et chance d'être encore en lice)"
                 >
                   {r}
@@ -192,6 +201,20 @@ export default function TableauJoueurs({
                       </span>
                       {l.rang ? <span className="text-xs text-zinc-500">#{l.rang}</span> : null}
                       <InsightBadge insight={l.insight} />
+                      {l.insight && (
+                        <button
+                          type="button"
+                          onClick={() => setInfoOuverte((o) => (o === l.id ? null : l.id))}
+                          aria-expanded={infoOuverte === l.id}
+                          aria-label={`Infos sur ${l.nom}`}
+                          title="Infos joueur"
+                          className="-my-2.5 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
+                        >
+                          <span className="flex size-5 items-center justify-center rounded-full border border-current text-xs font-semibold leading-none">
+                            i
+                          </span>
+                        </button>
+                      )}
                       {horsPool && (
                         <span
                           className="rounded bg-amber-100 px-1 text-xs font-medium text-amber-800"
@@ -218,6 +241,11 @@ export default function TableauJoueurs({
                       )}
                       {l.utilise && <span className="text-xs italic text-zinc-500">déjà pické</span>}
                     </div>
+                    {infoOuverte === l.id && l.insight && (
+                      <div className="mt-1.5 max-w-xs overflow-hidden rounded-lg">
+                        <InsightDetail insight={l.insight} />
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-2 py-2 text-right align-top">
@@ -277,9 +305,9 @@ export default function TableauJoueurs({
                       etat === 'valide'
                         ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-400'
                         : etat === 'choisi'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-zinc-900 text-white'
                           : etat === 'plan'
-                            ? 'bg-blue-50 text-blue-900 ring-1 ring-blue-300'
+                            ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-400'
                             : cliquable
                               ? 'hover:bg-zinc-100'
                               : 'text-zinc-300';
@@ -296,7 +324,7 @@ export default function TableauJoueurs({
                             className={`flex min-h-11 w-full min-w-14 flex-col items-center justify-center rounded-lg px-1 py-1 transition active:scale-[0.97] disabled:cursor-default ${classes}`}
                           >
                             <span className="font-mono text-sm font-semibold tabular-nums">{f1(c.e)}</span>
-                            <span className={`text-xs ${etat === 'choisi' ? 'text-blue-100' : 'text-zinc-500'}`}>
+                            <span className={`text-xs ${etat === 'choisi' ? 'text-zinc-300' : 'text-zinc-500'}`}>
                               {pct(c.presence)} %
                             </span>
                           </button>

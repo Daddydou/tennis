@@ -237,7 +237,7 @@ export default function ComparaisonEchelle() {
           </div>
 
           <details className="text-xs">
-            <summary className="cursor-pointer text-zinc-500">
+            <summary className="flex min-h-11 cursor-pointer items-center text-zinc-500">
               Détail par tournoi
             </summary>
             <div className="mt-2 overflow-x-auto">

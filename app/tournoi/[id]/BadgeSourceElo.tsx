@@ -51,13 +51,29 @@ export function classeElo(source: SourceElo): string {
         : 'text-zinc-900';
 }
 
-/** Comparaison de noms insensible aux accents, à la casse et à la ponctuation. */
-function memeNom(a: string, b: string): boolean {
-  const n = (s: string) =>
-    // Après NFD, les accents sont des caractères séparés ; [^a-z] les retire
-    // avec la ponctuation et les espaces.
-    s.normalize('NFD').toLowerCase().replace(/[^a-z]/g, '');
-  return n(a) === n(b);
+/**
+ * Comparaison de noms insensible aux accents, à la casse et à la ponctuation,
+ * qui accepte aussi un prénom réduit à son initiale (« C. Ruud » = « Casper
+ * Ruud ») : seul un nom VRAIMENT différent mérite d'être affiché.
+ */
+export function memeNom(a: string, b: string): boolean {
+  // Après NFD, les accents sont des caractères séparés, retirés ici avec la
+  // ponctuation ; on garde les séparateurs pour découper prénom / nom.
+  const mots = (s: string) =>
+    s
+      .normalize('NFD')
+      .toLowerCase()
+      .replace(/[^a-z\s.-]/g, '')
+      .split(/[\s.-]+/)
+      .filter(Boolean);
+  const ma = mots(a);
+  const mb = mots(b);
+  if (ma.join('') === mb.join('')) return true;
+  const [pa, ...ra] = ma;
+  const [pb, ...rb] = mb;
+  return (
+    !!pa && !!pb && ra.length > 0 && ra.join('') === rb.join('') && (pa.length === 1 || pb.length === 1) && pa[0] === pb[0]
+  );
 }
 
 export default function BadgeSourceElo({

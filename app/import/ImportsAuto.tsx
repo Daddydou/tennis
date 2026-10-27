@@ -98,7 +98,7 @@ export function SectionImportsAuto({ lignes }: { lignes: VueSurveillance[] }) {
               </dl>
               {s.journal.length > 0 && (
                 <details>
-                  <summary className="cursor-pointer text-zinc-500">
+                  <summary className="flex min-h-11 cursor-pointer items-center text-zinc-500">
                     {s.journal.length} derniers passages
                   </summary>
                   <ul className="mt-1 space-y-0.5 font-mono text-xs">

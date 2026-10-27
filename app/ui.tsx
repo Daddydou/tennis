@@ -17,17 +17,21 @@
  *     principalement au téléphone.
  */
 
-/** Bouton principal : l'action la plus importante d'un écran ou d'un bloc. */
+/**
+ * Bouton principal : l'action la plus importante d'un écran ou d'un bloc.
+ * Désactivé, il passe en gris plein plutôt qu'en transparence : un texte
+ * blanc sur bleu à 40 % devenait illisible au soleil.
+ */
 export const boutonPrimaire =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97] active:bg-blue-800 hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97] active:bg-blue-800 hover:bg-blue-700 disabled:pointer-events-none disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none';
 
 /** Bouton secondaire : une action possible, jamais LA priorité de l'écran. */
 export const boutonSecondaire =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-zinc-100 px-4 text-sm font-medium text-zinc-900 transition active:scale-[0.97] hover:bg-zinc-200 disabled:pointer-events-none disabled:opacity-40';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-zinc-100 px-4 text-sm font-medium text-zinc-900 transition active:scale-[0.97] hover:bg-zinc-200 disabled:pointer-events-none disabled:text-zinc-500';
 
 /** Bouton d'action destructrice — même geste, texte rouge, jamais de fond agressif. */
 export const boutonDanger =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-red-600 transition active:scale-[0.97] hover:bg-red-50 disabled:pointer-events-none disabled:opacity-40';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-medium text-red-700 transition active:scale-[0.97] hover:bg-red-50 disabled:pointer-events-none disabled:text-zinc-500';
 
 /** Lien discret habillé en action (mêmes zones tactiles) — pour naviguer, pas pour valider. */
 export const lienBouton =

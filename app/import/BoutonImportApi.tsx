@@ -60,7 +60,7 @@ export default function BoutonImportApi({ cible, libelle, principal = true }: { 
           )}
           {resultat.avertissements.length > 0 && (
             <details className="mt-1">
-              <summary className="cursor-pointer text-amber-800">{resultat.avertissements.length} remarque(s)</summary>
+              <summary className="flex min-h-11 cursor-pointer items-center text-amber-800">{resultat.avertissements.length} remarque(s)</summary>
               <ul className="ml-4 mt-1 list-disc text-amber-800">
                 {resultat.avertissements.map((a, i) => (
                   <li key={i}>{a}</li>

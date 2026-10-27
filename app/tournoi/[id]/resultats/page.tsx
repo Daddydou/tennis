@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import TournoiNav from '../TournoiNav';
 import RecomputeButton from './RecomputeButton';
 import {
   DetailReference,
@@ -87,7 +86,6 @@ export default async function ResultatsPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournoi.name} active="resultats" />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
@@ -140,7 +138,7 @@ export default async function ResultatsPage({
               <th className="py-2 pr-3 text-right font-medium">Net sets</th>
               <th className="py-2 pr-3 text-right font-medium">Net games</th>
               <th className="py-2 pr-3 text-right font-medium">Total</th>
-              <th className="py-2 pr-3 text-right font-medium">E[pts]</th>
+              <th className="py-2 pr-3 text-right font-medium">Espéré</th>
             </tr>
           </thead>
           <tbody>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supprimerPick, validerPick } from '../picks/actions';
+import { enregistrerReservations, type Reservation } from '../picks/reservationsActions';
 import TableauJoueurs, { type EtatSlot, type InfoSlot, type LigneTableau } from './TableauJoueurs';
 import PanneauRivaux from './PanneauRivaux';
 import { boutonDanger, boutonPrimaire, boutonSecondaire, carte, Spinner } from '@/app/ui';
@@ -61,19 +62,24 @@ export default function PlanPicks({
   donnees: d,
   stockId,
   insights,
+  reservationsInitiales,
 }: {
   donnees: DonneesPlan;
   /** null = moi ; sinon un participant dont on pose les picks. */
   stockId: string | null;
   insights: Record<string, PlayerInsight | null>;
+  /** Réservations enregistrées en base pour ce stock : cleSlot -> indice du joueur. */
+  reservationsInitiales: Record<string, number>;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('equilibre');
-  const [choix, setChoix] = useState<Record<string, number>>({});
+  const [choix, setChoixLocal] = useState<Record<string, number>>(reservationsInitiales);
   const [mondePret, setMondePret] = useState<ReturnType<typeof construireMonde> | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [valideRecemment, setValideRecemment] = useState(false);
+  // Retrait d'un pick validé : en deux temps, jamais sur un seul appui.
+  const [aConfirmer, setAConfirmer] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const monde = useMemo(() => construireMonde(d), [d]);
@@ -86,30 +92,32 @@ export default function PlanPicks({
   // On ne peut valider que le tour dont les joueurs sont connus.
   const validable = premierTourLibre !== null && d.rounds.indexOf(premierTourLibre) === d.r0;
 
-  /* ---- Choix gardés dans le navigateur (par tournoi et par participant) ---- */
-  const cleStockage = `plan-choix:${d.tournoiId}:${stockId ?? 'moi'}`;
-  const [charge, setCharge] = useState(false);
+  /* ---- Réservations : l'app fait foi, pas le navigateur ----
+     Lues en base au rendu (tn_plan_reservations), réécrites en base après
+     chaque geste de l'utilisateur — jamais à l'ouverture de la page. Les
+     envois sont mis en file : le dernier geste arrive toujours en dernier. */
+  const [modifications, setModifications] = useState(0);
+  const [sauvegarde, setSauvegarde] = useState<'ok' | 'envoi' | 'erreur'>('ok');
+  const file = useRef<Promise<unknown>>(Promise.resolve());
+  function setChoix(maj: (prev: Record<string, number>) => Record<string, number>) {
+    setChoixLocal(maj);
+    setModifications((n) => n + 1);
+  }
   useEffect(() => {
-    // Lecture différée : le premier rendu (serveur et client) reste identique.
+    if (modifications === 0) return;
     const h = setTimeout(() => {
-      try {
-        const brut = window.localStorage.getItem(cleStockage);
-        setChoix(brut ? (JSON.parse(brut) as Record<string, number>) : {});
-      } catch {
-        /* stockage indisponible : on continue sans */
-      }
-      setCharge(true);
-    }, 0);
+      const lignes: Reservation[] = Object.entries(choix).map(([cle, j]) => {
+        const [round, half] = cle.split('|');
+        return { round, half: half === 'top' || half === 'bottom' ? half : null, playerId: d.joueurs[j].id };
+      });
+      setSauvegarde('envoi');
+      file.current = file.current.then(async () => {
+        const r = await enregistrerReservations(d.tournoiId, stockId, lignes).catch(() => ({ ok: false }));
+        setSauvegarde(r.ok ? 'ok' : 'erreur');
+      });
+    }, 400);
     return () => clearTimeout(h);
-  }, [cleStockage]);
-  useEffect(() => {
-    if (!charge) return;
-    try {
-      window.localStorage.setItem(cleStockage, JSON.stringify(choix));
-    } catch {
-      /* idem */
-    }
-  }, [choix, charge, cleStockage]);
+  }, [modifications, choix, d.joueurs, d.tournoiId, stockId]);
 
   /* ---- Tirages : calculés juste après l'affichage, pour ne pas bloquer la page ---- */
   useEffect(() => {
@@ -321,7 +329,7 @@ export default function PlanPicks({
         if (l.joueur === null) continue;
         const r = await validerPick(d.tournoiId, l.slot.round, l.slot.half, d.joueurs[l.joueur].id, l.e, stockId);
         if (!r.ok) {
-          setErreur(r.error ?? 'Erreur');
+          setErreur(r.error ?? `Le pick de ${d.joueurs[l.joueur].nom} n’a pas pu être validé. Réessaie ; s’il est refusé, le tour est peut-être verrouillé.`);
           setEnCours(null);
           return;
         }
@@ -339,11 +347,12 @@ export default function PlanPicks({
 
   function retirer(l: LignePlan) {
     setErreur(null);
+    setAConfirmer(null);
     setEnCours(l.cle);
     startTransition(async () => {
       const r = await supprimerPick(d.tournoiId, l.slot.round, l.slot.half, stockId);
       setEnCours(null);
-      if (!r.ok) setErreur(r.error ?? 'Erreur');
+      if (!r.ok) setErreur(r.error ?? 'Le pick n’a pas pu être retiré. Réessaie dans un instant.');
       else router.refresh();
     });
   }
@@ -395,17 +404,17 @@ export default function PlanPicks({
                 type="button"
                 onClick={() => setMode(m.id)}
                 aria-pressed={actif}
-                className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${
-                  actif ? 'bg-blue-600 text-white shadow-sm' : `${carte} hover:bg-zinc-50`
+                className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
+                  actif ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="text-sm font-semibold">{m.titre}</span>
-                  <span className={`font-mono text-lg font-semibold tabular-nums ${actif ? 'text-white' : 'text-zinc-900'}`}>
+                  <span className="font-mono text-lg font-semibold tabular-nums text-zinc-900">
                     {s ? f1(s.moyenne) : f1(plans[m.id].total)}
                   </span>
                 </span>
-                <span className={`mt-0.5 block text-xs ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>
+                <span className="mt-0.5 block text-xs text-zinc-600">
                   {s ? (
                     <>
                       entre {Math.round(s.p10)} et {Math.round(s.p90)} pts dans 80 % des cas
@@ -423,8 +432,8 @@ export default function PlanPicks({
               type="button"
               onClick={() => setMode('rivaux')}
               aria-pressed={mode === 'rivaux'}
-              className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${
-                mode === 'rivaux' ? 'bg-blue-600 text-white shadow-sm' : `${carte} hover:bg-zinc-50`
+              className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
+                mode === 'rivaux' ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
               }`}
             >
               <span className="flex items-baseline justify-between gap-2">
@@ -433,7 +442,7 @@ export default function PlanPicks({
                   {stats ? pct(stats.equilibre.pPremier ?? 0) : '…'}
                 </span>
               </span>
-              <span className={`mt-0.5 block text-xs ${mode === 'rivaux' ? 'text-blue-100' : 'text-zinc-500'}`}>
+              <span className="mt-0.5 block text-xs text-zinc-600">
                 chance de finir devant eux (plan équilibré) — cherche mieux d’après leurs picks
               </span>
             </button>
@@ -467,14 +476,28 @@ export default function PlanPicks({
           <h2 className="text-sm font-semibold">
             {stockId === null ? 'Mon plan' : `Plan de ${stock.nom}`}
             <span className="ml-2 text-xs font-normal text-zinc-500">
-              {nbChoix > 0 ? `${nbChoix} choix à toi, le reste s’adapte` : 'recalculé à chaque choix et à chaque résultat'}
+              {nbChoix > 0
+                ? `${nbChoix} réservation${nbChoix > 1 ? 's' : ''}, le reste s’adapte`
+                : 'recalculé à chaque choix et à chaque résultat'}
             </span>
           </h2>
-          {nbChoix > 0 && (
-            <button type="button" onClick={() => setChoix({})} className={boutonSecondaire}>
-              Effacer mes choix
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Où en est l'enregistrement des réservations (partagées entre appareils). */}
+            <span role="status" className={`text-xs ${sauvegarde === 'erreur' ? 'text-red-700' : 'text-zinc-500'}`}>
+              {sauvegarde === 'envoi'
+                ? 'Enregistrement…'
+                : sauvegarde === 'erreur'
+                  ? 'Réservations non enregistrées : refais ton dernier choix'
+                  : modifications > 0
+                    ? 'Réservations enregistrées'
+                    : ''}
+            </span>
+            {nbChoix > 0 && (
+              <button type="button" onClick={() => setChoix(() => ({}))} className={boutonSecondaire}>
+                Effacer mes réservations
+              </button>
+            )}
+          </div>
         </div>
 
         <div className={`${carte} divide-y divide-zinc-100 overflow-hidden`}>
@@ -492,7 +515,9 @@ export default function PlanPicks({
                       {l.slot.round === premierTourLibre && validable ? ' · à poser maintenant' : ''}
                     </span>
                     {l.slot.round === premierTourLibre && !validable && (
-                      <span className="font-normal normal-case tracking-normal">les joueurs de ce tour ne sont pas encore connus</span>
+                      <span className="font-normal normal-case tracking-normal">
+                        validation à la fin du {tourCourant} · tu peux réserver
+                      </span>
                     )}
                   </div>
                 )}
@@ -508,8 +533,8 @@ export default function PlanPicks({
                             l.etat === 'valide'
                               ? 'bg-emerald-100 text-emerald-800'
                               : l.etat === 'choisi'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-blue-50 text-blue-700'
+                                ? 'bg-zinc-900 text-white'
+                                : 'bg-zinc-100 text-zinc-700'
                           }`}
                         >
                           {l.etat === 'valide' ? 'validé' : l.etat === 'choisi' ? 'ton choix' : 'plan'}
@@ -537,7 +562,7 @@ export default function PlanPicks({
                         {l.etat === 'valide' && l.points !== null ? f1(l.points) : f1(l.e)}
                       </span>
                       <span className="block text-xs text-zinc-500">
-                        {l.etat === 'valide' && l.points !== null ? 'pts réels' : l.sigma !== null ? `± ${f1(l.sigma)}` : 'pts esp.'}
+                        {l.etat === 'valide' && l.points !== null ? 'pts réels' : l.sigma !== null ? `± ${f1(l.sigma)}` : 'pts espérés'}
                       </span>
                     </span>
                   )}
@@ -563,11 +588,21 @@ export default function PlanPicks({
                         Annuler
                       </button>
                     )}
-                    {l.etat === 'valide' && l.slot.round === tourCourant && (
-                      <button type="button" onClick={() => retirer(l)} disabled={pending} className={boutonDanger}>
+                    {l.etat === 'valide' && l.slot.round === tourCourant && aConfirmer !== l.cle && (
+                      <button type="button" onClick={() => setAConfirmer(l.cle)} disabled={pending} className={boutonDanger}>
                         {occupe && <Spinner />}
                         Retirer
                       </button>
+                    )}
+                    {l.etat === 'valide' && aConfirmer === l.cle && (
+                      <>
+                        <button type="button" onClick={() => retirer(l)} disabled={pending} className={boutonDanger}>
+                          Oui, retirer
+                        </button>
+                        <button type="button" onClick={() => setAConfirmer(null)} className={boutonSecondaire}>
+                          Garder
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -584,9 +619,16 @@ export default function PlanPicks({
             </button>
           )}
           {dejaVides > 0 && validable && (
-            <span className="text-xs text-amber-700">{dejaVides} slot(s) du tour sans joueur disponible.</span>
+            <span className="text-sm text-amber-700">
+              {dejaVides} pick{dejaVides > 1 ? 's' : ''} du tour sans joueur disponible : tous les survivants de cette
+              moitié sont déjà pris par {stock.nom === 'Moi' ? 'toi' : stock.nom}.
+            </span>
           )}
-          {erreur && <span className="text-xs text-red-600">{erreur}</span>}
+          {erreur && (
+            <span role="alert" className="text-sm text-red-700">
+              {erreur}
+            </span>
+          )}
         </div>
 
         {valideRecemment && (
@@ -598,10 +640,6 @@ export default function PlanPicks({
             .
           </div>
         )}
-        <p className="text-xs text-zinc-500">
-          « Réserver » garde un joueur pour un tour à venir (rien n’est envoyé nulle part) : le plan se réorganise autour
-          de lui. Seuls les picks du tour dont on connaît les joueurs se valident.
-        </p>
       </section>
 
       {/* ── Le grand tableau ── */}
@@ -613,6 +651,7 @@ export default function PlanPicks({
         cleDeCellule={cleDeCellule}
         infoSlots={infoSlots}
         onCellule={onCellule}
+        avecPoolGT={stockId === null}
       />
     </div>
   );

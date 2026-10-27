@@ -1,20 +1,18 @@
 /**
- * Tests de COMPOSANTS des insights joueurs (Vitest + RTL, jsdom).
+ * Tests de COMPOSANTS des insights joueurs (Vitest + RTL, jsdom), sur le grand
+ * tableau de l'écran Picks (plan/TableauJoueurs).
  *
  * Invariants couverts : un seul badge par priorité (Forfait > Blessure >
- * Charge), un joueur flaggé reste sélectionnable (affichage seul), ouvrir le
- * détail ne change pas le choix, seules les sources http(s) deviennent des
+ * Charge), un joueur flaggé reste réservable (affichage seul), ouvrir le
+ * détail ne réserve pas le joueur, seules les sources http(s) deviennent des
  * liens, et sans insight l'écran n'a ni badge ni bouton de détail.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PickBoard, { type Candidat } from '../PickBoard';
+import TableauJoueurs, { type LigneTableau } from '../../plan/TableauJoueurs';
 import InsightBadge from '../InsightBadge';
 import { plusRecentParJoueur, type PlayerInsight } from '@/lib/insights';
-
-vi.mock('../actions', () => ({ validerPick: vi.fn(), supprimerPick: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 afterEach(cleanup);
 
@@ -35,29 +33,43 @@ const insight = (o: Partial<PlayerInsight> = {}): PlayerInsight => ({
   ...o,
 });
 
-const candidat = (playerId: string, nom: string, ins: PlayerInsight | null): Candidat => ({
-  playerId,
+const ligne = (idx: number, id: string, nom: string, ins: PlayerInsight | null = null): LigneTableau => ({
+  idx,
+  id,
   nom,
   rang: null,
-  adversaire: null, resultat: null,
-  ePoints: 1,
   elo: 1500,
   sourceElo: 'ta',
   taName: null,
-  candidats: [],
-  ecartElo: null,
+  candidatsElo: [],
+  moitie: 'top',
+  adversaire: null,
+  pVictoire: null,
+  pointsMatch: null,
+  resultat: null,
+  parTour: { R16: { e: 1, presence: 1, sigma: 0.5 } },
   utilise: false,
+  prisPar: [],
   insight: ins,
 });
 
-const board = (candidats: Candidat[]) =>
+function tableau(lignes: LigneTableau[], onCellule = vi.fn()) {
   render(
-    <PickBoard
-      tournamentId="t"
-      round="R16"
-      colonnes={[{ half: null, label: 'Un seul pick', pickActuel: null, impossible: false, candidats }]}
+    <TableauJoueurs
+      lignes={lignes}
+      rounds={['R16']}
+      premierTourLibre="R16"
+      tourCourant="R16"
+      cleDeCellule={(_idx, round) => `${round}|top`}
+      infoSlots={new Map()}
+      onCellule={onCellule}
     />,
   );
+  return onCellule;
+}
+
+/** La case « R16 » d'un joueur : le bouton qui le réserve pour ce tour. */
+const caseDe = () => screen.getAllByTitle(/^R16 :/);
 
 describe('InsightBadge', () => {
   it('suit la priorité Forfait > Blessure > Charge, un seul badge', () => {
@@ -78,18 +90,19 @@ describe('InsightBadge', () => {
   });
 });
 
-describe('PickBoard + insights', () => {
-  it('un joueur en forfait reste sélectionnable', async () => {
-    board([candidat('p1', 'Krejcikova', insight({ withdrawn: true }))]);
-    const radio = screen.getByRole('radio');
-    expect(radio).toBeEnabled();
-    await userEvent.click(radio);
-    expect(radio).toBeChecked();
+describe('grand tableau + insights', () => {
+  it('un joueur en forfait reste réservable', async () => {
+    const onCellule = tableau([ligne(0, 'p1', 'Krejcikova', insight({ withdrawn: true }))]);
+    const [c] = caseDe();
+    expect(c).toBeEnabled();
+    await userEvent.click(c);
+    expect(onCellule).toHaveBeenCalledWith(0, 'R16');
   });
 
-  it('ouvrir le détail ne sélectionne pas le joueur, et seules les URL http(s) sont des liens', async () => {
-    board([
-      candidat(
+  it('ouvrir le détail ne réserve pas le joueur, et seules les URL http(s) sont des liens', async () => {
+    const onCellule = tableau([
+      ligne(
+        0,
         'p1',
         'Prozorova',
         insight({
@@ -102,7 +115,7 @@ describe('PickBoard + insights', () => {
       ),
     ]);
     await userEvent.click(screen.getByRole('button', { name: 'Infos sur Prozorova' }));
-    expect(screen.getByRole('radio')).not.toBeChecked();
+    expect(onCellule).not.toHaveBeenCalled();
     expect(screen.getByText('Résumé')).toBeInTheDocument();
     const lien = screen.getByRole('link');
     expect(lien).toHaveAttribute('href', 'https://exemple.org/a');
@@ -113,7 +126,7 @@ describe('PickBoard + insights', () => {
   });
 
   it("sans insight : ni badge ni bouton d'infos", () => {
-    board([candidat('p1', 'Sakkari', null)]);
+    tableau([ligne(0, 'p1', 'Sakkari')]);
     expect(screen.queryByRole('button', { name: /Infos/ })).toBeNull();
     expect(screen.queryByText(/Forfait|Blessure|Charge/)).toBeNull();
   });

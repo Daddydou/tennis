@@ -138,7 +138,9 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   Vercel, mais fonctionnel en local, et prêt à resservir si le filtre tombe. Le
   bouton « Tenter le fetch serveur » est en bas de l'écran.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
-- `/tournoi/[id]/bracket` — **arbre pronostiqué depuis le tirage**, du premier
+- `/tournoi/[id]/predictions?vue=tableau` (onglet Prédictions → « Tableau
+  pronostiqué » ; l'ancienne URL `/tournoi/[id]/bracket` y redirige, l'onglet
+  « Bracket » désignant désormais le jeu, route `/simulateur`) — **arbre pronostiqué depuis le tirage**, du premier
   tour au champion. Pronostic *déterministe* : à chaque match, le plus haut
   **Elo effectif** sur la surface du tournoi (mélange 60/40, le même que
   l'écran Picks et que la simulation) l'emporte et avance ; un exempté passe
@@ -155,9 +157,11 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   duels en liste verticale, filtre par moitié de tableau au-delà de 4 duels, et
   la carte du champion prédit avec son parcours tour par tour en tête d'écran.
   La logique vit dans `lib/bracket.ts`, module pur sans I/O.
-- `/tournoi/[id]/picks` — écran principal : par tour, deux colonnes (moitié haute /
-  basse), joueurs triés par espérance de points, adversaire du tour, joueurs déjà
-  pickés grisés. Validation → `tn_picks`.
+- `/tournoi/[id]/picks` — écran principal : le plan de picks réactif (ex-onglet
+  « Plan », `/tournoi/[id]/plan` y redirige ; lib/planEcran.ts, calcul dans le
+  navigateur) — un joueur proposé par pick restant, modes Prudent / Équilibré /
+  Audacieux / Contre les rivaux, grand tableau joueurs × tours. Validation →
+  `tn_picks`. (L'ancien écran par colonnes, `PickBoard.tsx`, n'est plus affiché.)
 - `/tournoi/[id]/fantasy` — **second jeu**, à côté des picks et sans interaction
   avec eux : une équipe composée **une seule fois avant le coup d'envoi**, puis
   figée — un joueur par palier de classement (5 en Grand Chelem, 4 ailleurs).
