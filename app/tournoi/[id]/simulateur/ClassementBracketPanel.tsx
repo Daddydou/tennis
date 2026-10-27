@@ -246,7 +246,7 @@ export default function ClassementBracketPanel({
               + <span className="tabular-nums">{c.simules}</span> simulés =
             </span>
             <span className="w-14 shrink-0 text-right text-xl font-bold tabular-nums">{c.total}</span>
-            <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-blue-800">
+            <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium tabular-nums text-zinc-800">
               {Math.round((probabilites[c.id] ?? 0) * 100)}% de victoire
             </span>
             <span

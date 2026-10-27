@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import TournoiNav from '../../TournoiNav';
 import ScenarioFantasy, { type DuelReglable } from './ScenarioFantasy';
 import { pilleSelecteur } from '@/app/ui';
 import { loadEngineData, surfacePourElo, tourCourantMatches } from '@/db/queries';
@@ -91,7 +90,6 @@ export default async function ScenarioFantasyPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournament.name} active="fantasy" />
       <div className="space-y-1">
         <h1 className="text-lg font-semibold">Et si… — simulateur Fantasy</h1>
         <p className="text-sm text-zinc-500">

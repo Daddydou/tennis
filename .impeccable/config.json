@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-10-27T09:49:55.404Z",
         "reason": "Barre de circuit ATP/WTA de 4px, documentée comme marqueur sémantique dans DESIGN.md (Do : signaler le circuit par une barre de 4px + puce écrite)"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "app/ui.tsx"
+        ],
+        "createdAt": "2026-10-27T17:01:36.233Z",
+        "reason": "État désactivé de boutonPrimaire : disabled:text-zinc-500 va avec disabled:bg-zinc-200 (le bleu est remplacé), jamais du gris sur bleu"
       }
     ]
   }

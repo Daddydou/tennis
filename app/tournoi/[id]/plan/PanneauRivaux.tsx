@@ -89,13 +89,13 @@ export default function PanneauRivaux({
         <p className="text-xs text-zinc-500">Calcul des scénarios en cours…</p>
       ) : (
         <>
-          <div className="rounded-xl bg-blue-50 p-3">
-            <p className="text-xs font-medium text-blue-900">
+          <div className="rounded-xl bg-zinc-100 p-3">
+            <p className="text-xs font-medium text-zinc-700">
               Recommandé pour le tour {tour}
               {choixActifs > 0 && ' (tes choix déjà faits sont gardés)'}
             </p>
-            <p className="mt-1 text-sm font-semibold text-blue-950">{resume(d, moi, recherche.recommandee) || 'aucun pick utile'}</p>
-            <p className="mt-1 text-xs text-blue-900">
+            <p className="mt-1 text-sm font-semibold text-zinc-900">{resume(d, moi, recherche.recommandee) || 'aucun pick utile'}</p>
+            <p className="mt-1 text-xs text-zinc-700">
               {pct(recherche.recommandee.bilan.pPremier ?? 0)} de finir 1er
               {!refEstReco && ` (+${Math.round(gain * 100)} points de chance face au plan « points attendus »)`}
               {refEstReco && ' — identique au plan qui maximise les points : rien de mieux à tenter'}

@@ -147,7 +147,7 @@ function CompteRendu({ r }: { r: ResultatSynchroThomas }) {
             )}
             {pont.ecarts.length > 0 && (
               <details>
-                <summary className="cursor-pointer text-amber-800">
+                <summary className="flex min-h-11 cursor-pointer items-center text-amber-800">
                   {pont.ecarts.length} écart(s) {pont.ecrit && pont.modifies ? 'remplacé(s)' : 'laissé(s) tel(s) quel(s)'}
                 </summary>
                 <ul className="mt-1 space-y-0.5 text-xs">

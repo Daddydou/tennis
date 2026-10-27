@@ -29,7 +29,7 @@ export default async function ImportPage() {
       )}
 
       <details>
-        <summary className="cursor-pointer text-sm font-medium text-zinc-700">
+        <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-zinc-700">
           Import manuel par collage (secours : bookmarklet ATP ou WTA)
         </summary>
         <div className="mt-3 space-y-3">

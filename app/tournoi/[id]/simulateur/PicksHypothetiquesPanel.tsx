@@ -111,7 +111,7 @@ export default function PicksHypothetiquesPanel({
                   {options.map((id) => (
                     <option key={id} value={id}>
                       {nom(id)}
-                      {rang(id) ? ` #${rang(id)}` : ''} — E[pts] {ePoints(id, etat.round).toFixed(1)}
+                      {rang(id) ? ` #${rang(id)}` : ''} — {ePoints(id, etat.round).toFixed(1)} pts espérés
                     </option>
                   ))}
                 </select>

@@ -70,6 +70,8 @@ const TABLES = [
   // 0028 — Elo maison (notes et suivi de la mise à jour quotidienne)
   'tn_elo_maison',
   'tn_elo_maison_suivi',
+  // 0029 — réservations du plan de l'écran Picks
+  'tn_plan_reservations',
 ];
 
 /**

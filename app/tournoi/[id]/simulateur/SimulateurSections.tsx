@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { majParametreUrl } from './urlEtat';
 import type { MatchReel } from '@/lib/bracketSim';
 import type { MatchRow } from '@/db/queries';
 import type { Player } from '@/lib/types';
@@ -31,6 +32,8 @@ export default function SimulateurSections({
   dejaInscrits,
   picksSimulesInitiaux,
   roundParDefaut,
+  sectionInitiale = 'bracket',
+  vueInitiale,
 }: {
   tournamentId: string;
   rounds: string[];
@@ -46,17 +49,24 @@ export default function SimulateurSections({
   dejaInscrits: Record<string, number>;
   picksSimulesInitiaux: Record<string, Record<string, string>>;
   roundParDefaut: string;
+  /** Lus dans l'URL (?section=…&vue=…) : retour arrière et lien partagé retrouvent la même vue. */
+  sectionInitiale?: Section;
+  vueInitiale?: string;
 }) {
-  const [section, setSection] = useState<Section>('bracket');
+  const [section, setSectionEtat] = useState<Section>(sectionInitiale);
+  const setSection = (s: Section) => {
+    setSectionEtat(s);
+    majParametreUrl('section', s === 'bracket' ? null : s);
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1.5">
-        <button onClick={() => setSection('bracket')} className={pilleSelecteur(section === 'bracket')}>
-          Bracket
+        <button type="button" aria-pressed={section === 'bracket'} onClick={() => setSection('bracket')} className={pilleSelecteur(section === 'bracket')}>
+          Jeu Bracket
         </button>
-        <button onClick={() => setSection('picks')} className={pilleSelecteur(section === 'picks')}>
-          Picks
+        <button type="button" aria-pressed={section === 'picks'} onClick={() => setSection('picks')} className={pilleSelecteur(section === 'picks')}>
+          Simulateur de picks
         </button>
       </div>
 
@@ -71,6 +81,7 @@ export default function SimulateurSections({
           participants={participants}
           picksBracketInitiaux={picksBracketInitiaux}
           roundParDefaut={roundParDefaut}
+          ongletInitial={vueInitiale}
         />
       ) : (
         <SimulateurPicks

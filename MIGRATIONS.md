@@ -1,11 +1,11 @@
 # Migrations Supabase
 
-Les 28 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
+Les 29 fichiers de `supabase/migrations/`, à jouer **dans l'ordre**, une seule
 fois chacun (éditeur SQL Supabase, ou `scripts/appliquer-migration.mjs`).
 
 Aucune table de suivi n'enregistre ce qui a été appliqué : la colonne
 « appliquée le » se remplit à la main. Pour la remplir, lancer dans l'éditeur
-SQL la [requête de contrôle globale](#contrôle-global--les-27-en-une-requête),
+SQL la [requête de contrôle globale](#contrôle-global--les-29-en-une-requête),
 ou la requête de la migration concernée ([détail](#une-requête-par-migration)).
 
 « Créée le » est la date d'ajout du fichier dans Git : une migration n'a pas pu
@@ -41,6 +41,7 @@ ou la requête de la migration concernée ([détail](#une-requête-par-migration
 | 0026 | `0026_import_auto.sql`                  | Tables privées `tn_import_auto` et `tn_import_log` (import auto) | 2026-10-15 |              |
 | 0027 | `0027_import_api.sql`                   | Mode `api`, table privée `tn_player_source_ids`, cotes réelles   | 2026-10-22 | 2026-10-22   |
 | 0028 | `0028_elo_maison.sql`                   | Tables `tn_elo_maison` et `tn_elo_maison_suivi` (Elo maison)     | 2026-10-22 | 2026-10-23   |
+| 0029 | `0029_plan_reservations.sql`            | Table `tn_plan_reservations` (réservations de l'écran Picks)     | 2026-10-27 | 2026-10-27   |
 
 (¹) Après 0003, repeupler `ta_elo` depuis `/import/elo` : la migration la vide
 et seul un import la remplit.
@@ -60,7 +61,7 @@ change). Le Fantasy n'est pas concerné : pas de backfill à rejouer.
 
 ---
 
-## Contrôle global : les 27 en une requête
+## Contrôle global : les 29 en une requête
 
 À coller tel quel dans l'éditeur SQL. Lecture seule : ne modifie rien.
 Une ligne par migration, colonne `etat` = `appliquée`, `remplacée`,
@@ -169,6 +170,14 @@ with c(num, ok, note) as (values
                where table_schema = 'public' and table_name = 'tn_odds_historique' and column_name = 'cote_a')
    and coalesce((select pg_get_constraintdef(oid) like '%''api''%' from pg_constraint
                  where conname = 'tn_import_auto_mode_check'), false),
+   null),
+  ('0028',
+   to_regclass('public.tn_elo_maison') is not null
+   and to_regclass('public.tn_elo_maison_suivi') is not null,
+   null),
+  ('0029',
+   to_regclass('public.tn_plan_reservations') is not null
+   and not has_table_privilege('anon', 'public.tn_plan_reservations', 'insert'),
    null)
 )
 select num,
@@ -442,3 +451,15 @@ droits, avec en plus des `if not exists`). L'état final est identique ; rejouer
 fichier est sans danger. Les colonnes d'état du moteur (`note_*`, `n_*`, `dernier_jour`,
 `matchstat_id`) et l'index unique sur (`tour`, `matchstat_id`) sont décrits dans
 `docs/elo-maison.md`.
+
+### 0029 — Réservations du plan (écran Picks)
+Table `tn_plan_reservations` : les joueurs réservés pour un tour à venir sur l'écran
+Picks (plus de localStorage : l'app fait foi sur tous les appareils). Ce ne sont pas
+des picks. Lecture publique, écriture service role seulement (Server Action
+`enregistrerReservations`, après `sessionValide()`).
+```sql
+select to_regclass('public.tn_plan_reservations') is not null
+   and has_table_privilege('anon', 'public.tn_plan_reservations', 'select')
+   and not has_table_privilege('anon', 'public.tn_plan_reservations', 'insert')
+   as appliquee;
+```

@@ -10,6 +10,7 @@ import ParticipantsBracketPanel from './ParticipantsBracketPanel';
 import { MOI, type Joueur, type Participant } from './types';
 import type { Player } from '@/lib/types';
 import { champTexte, filtreSecondaire } from '@/app/ui';
+import { majParametreUrl } from './urlEtat';
 
 type Onglet = 'reel' | 'participants' | 'classement' | 'import';
 
@@ -43,6 +44,7 @@ export default function SimulateurBracket({
   participants,
   picksBracketInitiaux,
   roundParDefaut,
+  ongletInitial,
 }: {
   tournamentId: string;
   rounds: string[];
@@ -55,17 +57,21 @@ export default function SimulateurBracket({
   /** stock -> { cleDuel -> playerId }, pronostics déjà enregistrés, tous tours confondus. */
   picksBracketInitiaux: Record<string, Record<string, string>>;
   roundParDefaut: string;
+  /** Sous-vue lue dans l'URL (?vue=classement|reel|participants|import). */
+  ongletInitial?: string;
 }) {
   const stocks = useMemo(() => [MOI, ...participants.map((p) => p.id)], [participants]);
 
   const [roundChoisi, setRoundChoisi] = useState(roundParDefaut);
-  const [onglet, setOnglet] = useState<Onglet>('reel');
+  const [onglet, setOnglet] = useState<Onglet>(
+    ONGLETS.some((o) => o.key === ongletInitial) ? (ongletInitial as Onglet) : 'reel',
+  );
   // Une fois l'onglet Classement ouvert, il reste monté (masqué en CSS) même
   // en le quittant : sa simulation Monte Carlo (useMemo, ~150-300 ms mesurés)
   // ne doit pas être relancée à chaque aller-retour d'onglet. Avant sa
   // première ouverture, en revanche, il ne calcule rien pour rien — un
   // visiteur qui ne l'ouvre jamais ne paie donc jamais ce coût.
-  const [classementOuvert, setClassementOuvert] = useState(false);
+  const [classementOuvert, setClassementOuvert] = useState(onglet === 'classement');
   // Bloc 2 : vainqueurs cliqués dans le bracket réel — remis à zéro à chaque
   // changement de tour (bloc 1), puisque seul le tour affiché est simulé.
   const [scenario, setScenario] = useState<Map<string, string>>(new Map());
@@ -181,16 +187,19 @@ export default function SimulateurBracket({
           ))}
         </select>
         <p className="mt-1 text-xs text-zinc-500">
-          Seul ce tour est simulé (bloc 2 et bloc 3) — pas les tours suivants.
+          Le bracket réel et les pronostics des participants portent sur ce tour seulement, pas sur les suivants.
         </p>
       </div>
 
-      <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2">
+      <nav aria-label="Vue du jeu Bracket" className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2">
         {ONGLETS.map((o) => (
           <button
             key={o.key}
+            type="button"
+            aria-pressed={onglet === o.key}
             onClick={() => {
               setOnglet(o.key);
+              majParametreUrl('vue', o.key === 'reel' ? null : o.key);
               if (o.key === 'classement') setClassementOuvert(true);
             }}
             className={filtreSecondaire(onglet === o.key)}

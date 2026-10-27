@@ -79,7 +79,7 @@ export async function DetailReference({
 
   return (
     <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
-      <summary className="cursor-pointer text-zinc-600">
+      <summary className="flex min-h-11 cursor-pointer items-center text-zinc-600">
         Score de référence :{' '}
         <span className="font-medium text-zinc-900">
           {ref.total} pts
@@ -107,7 +107,7 @@ export async function DetailReference({
               <th className="py-1.5 pr-3 font-medium">Tour</th>
               <th className="py-1.5 pr-3 font-medium">Moitié</th>
               <th className="py-1.5 pr-3 font-medium">Référence</th>
-              <th className="py-1.5 pr-3 text-right font-medium">E[pts]</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Espéré</th>
               <th className="py-1.5 pr-3 text-right font-medium">Pts</th>
               <th className="py-1.5 pr-3 font-medium">Ton pick</th>
               <th className="py-1.5 pr-3 text-right font-medium">Pts</th>

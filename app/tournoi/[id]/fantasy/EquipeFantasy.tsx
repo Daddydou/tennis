@@ -105,7 +105,7 @@ function DetailJoueur({ detail }: { detail: LigneTourVue[] }) {
                 {l.round}
                 {l.bye && (
                   <span
-                    className="ml-1.5 rounded-md border border-sky-300 px-1 text-xs font-medium text-sky-700"
+                    className="ml-1.5 rounded-md bg-zinc-100 px-1.5 text-xs font-medium text-zinc-700"
                     title="Exempté : au Fantasy, un bye vaut une victoire 6/4 6/4, soit 15 points avant multiplicateur. Acquis dès le tirage, donc sans aléa."
                   >
                     bye
@@ -223,13 +223,19 @@ function LignePalier({ m }: { m: MembreVue }) {
         <td className="py-2 pr-3 text-right font-mono font-medium tabular-nums">
           {m.playerId ? m.eTotal.toFixed(1) : '—'}
         </td>
-        <td
-          className={`py-2 pr-3 text-right font-mono font-medium tabular-nums ${
-            m.playerId ? classeEcart(m.reel, attenduJoue(m.detail)) : 'text-zinc-500'
-          }`}
-        >
-          {m.playerId ? m.reel.toFixed(1) : '—'}
-        </td>
+        {/* Aucun match joué : « à jouer », pas un 0.0 qu'on confondrait avec
+            une élimination sans point. */}
+        {m.playerId && m.detail.every((l) => l.reel === null) ? (
+          <td className="py-2 pr-3 text-right text-xs text-zinc-500">à jouer</td>
+        ) : (
+          <td
+            className={`py-2 pr-3 text-right font-mono font-medium tabular-nums ${
+              m.playerId ? classeEcart(m.reel, attenduJoue(m.detail)) : 'text-zinc-500'
+            }`}
+          >
+            {m.playerId ? m.reel.toFixed(1) : '—'}
+          </td>
+        )}
       </tr>
 
       {ouvert && m.playerId && (

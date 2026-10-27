@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
-import TournoiNav from '../TournoiNav';
+import AttenteCalcul from '../AttenteCalcul';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import EquipeFantasy, { type MembreVue } from './EquipeFantasy';
 import { loadEngineData, surfacePourElo } from '@/db/queries';
@@ -15,7 +15,7 @@ import {
 import { chargerBlendProduction } from '@/db/cotesBlend';
 import { eloEffectifResolu, type ElosResolus } from '@/db/elo';
 import { compositionPour, LIBELLE_FAMILLE } from '@/lib/fantasy';
-import { lienBouton } from '@/app/ui';
+import { carte, lienBouton } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,6 @@ export default async function FantasyPage({
   if (rounds.length === 0) {
     return (
       <div className="space-y-5">
-        <TournoiNav id={id} nom={tournament.name} active="fantasy" />
         <p className="text-sm text-zinc-500">
           Aucun tour connu pour ce tournoi : rien à composer.
         </p>
@@ -140,57 +139,8 @@ export default async function FantasyPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournament.name} active="fantasy" />
-      <NoteCotesUtilisees n={coteUtilisables} />
-
-      <div className="space-y-1 text-sm text-zinc-500">
-        <p>
-          Équipe de{' '}
-          <span className="font-medium text-zinc-700">
-            {paliers.length} joueurs
-          </span>{' '}
-          ({LIBELLE_FAMILLE[fantasy.famille]}), un par palier de classement, sans
-          doublon. Chaque joueur marque sur{' '}
-          <span className="font-medium text-zinc-700">
-            tous ses matchs du tournoi
-          </span>
-          , au barème habituel, pondéré par le multiplicateur du tour.
-        </p>
-        <p className="text-xs">
-          Multiplicateurs :{' '}
-          {rounds.map((r, i) => (
-            <span key={r}>
-              {i > 0 && ' · '}
-              {r} ×{fantasy.bareme[i] ?? 1}
-            </span>
-          ))}
-        </p>
-        <p className="text-xs">
-          Espérance{' '}
-          <span className="font-medium text-zinc-700">
-            a priori
-          </span>{' '}
-          : simulation Monte Carlo depuis le tirage ({fantasy.tirage || rounds[0]}
-          ), tableau complet. L&apos;équipe se composant une seule fois avant le
-          coup d&apos;envoi, aucun résultat réel n&apos;entre dans ce calcul — il
-          est identique que le tournoi soit à venir, en cours ou terminé.
-          {sansClassement > 0 && (
-            <>
-              {' '}
-              {sansClassement} joueur(s) du tableau sans classement connu, donc
-              inéligibles à tout palier.
-            </>
-          )}
-        </p>
-      </div>
-
-      {fantasyCalculEnCours && (
-        <p className="text-xs text-amber-700">
-          Simulation Monte Carlo pas encore en cache pour ce tournoi — calcul
-          lancé en arrière-plan, l&apos;équipe (espérances a priori) reviendra
-          à quelques secondes près, à la prochaine visite.
-        </p>
-      )}
+      {/* Cache froid : la page se complète d'elle-même (même composant que Picks). */}
+      {fantasyCalculEnCours && <AttenteCalcul quoi="de l’équipe Fantasy" />}
 
       <EquipeFantasy equipe={vue} termine={evaluation.termine} />
 
@@ -199,6 +149,56 @@ export default async function FantasyPage({
           Et si… ajuster les probabilités d&apos;un tour
         </Link>
       )}
+
+      {/* Méthode sous la décision (DESIGN.md) : utile pour vérifier, jamais sur le chemin. */}
+      <section className="space-y-2">
+        <details className={`${carte} px-4 py-1`}>
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-zinc-700">
+            Comment se compose l&apos;équipe
+          </summary>
+          <div className="space-y-2 pb-2 text-sm leading-relaxed text-zinc-700">
+            <p>
+              Équipe de{' '}
+              <span className="font-medium text-zinc-700">
+                {paliers.length} joueurs
+              </span>{' '}
+              ({LIBELLE_FAMILLE[fantasy.famille]}), un par palier de classement, sans
+              doublon. Chaque joueur marque sur{' '}
+              <span className="font-medium text-zinc-700">
+                tous ses matchs du tournoi
+              </span>
+              , au barème habituel, pondéré par le multiplicateur du tour.
+            </p>
+            <p>
+              Multiplicateurs :{' '}
+              {rounds.map((r, i) => (
+                <span key={r}>
+                  {i > 0 && ' · '}
+                  {r} ×{fantasy.bareme[i] ?? 1}
+                </span>
+              ))}
+            </p>
+            <p>
+              Espérance{' '}
+              <span className="font-medium text-zinc-700">
+                a priori
+              </span>{' '}
+              : simulation Monte Carlo depuis le tirage ({fantasy.tirage || rounds[0]}
+              ), tableau complet. L&apos;équipe se composant une seule fois avant le
+              coup d&apos;envoi, aucun résultat réel n&apos;entre dans ce calcul — il
+              est identique que le tournoi soit à venir, en cours ou terminé.
+              {sansClassement > 0 && (
+                <>
+                  {' '}
+                  {sansClassement} joueur(s) du tableau sans classement connu, donc
+                  inéligibles à tout palier.
+                </>
+              )}
+            </p>
+          </div>
+        </details>
+        <NoteCotesUtilisees n={coteUtilisables} />
+      </section>
     </div>
   );
 }

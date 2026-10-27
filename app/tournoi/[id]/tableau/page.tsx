@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import TournoiNav from '../TournoiNav';
 import { carte } from '@/app/ui';
 import {
   getTournament,
@@ -24,7 +23,7 @@ const STATUT_BADGE: Record<string, { label: string; classes: string }> = {
   live: { label: 'En cours', classes: 'text-emerald-700' },
   walkover: { label: 'W.O.', classes: 'text-amber-700' },
   retired: { label: 'Abandon', classes: 'text-amber-700' },
-  bye: { label: 'Bye', classes: 'text-sky-800' },
+  bye: { label: 'Bye', classes: 'text-zinc-600' },
 };
 
 function nomJoueur(id: string | null, byId: Map<string, PlayerRow>): string {
@@ -148,7 +147,6 @@ export default async function TableauPage({
 
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournoi.name} active="tableau" />
 
       {matchRows.length === 0 ? (
         <p className="text-sm text-zinc-500">Aucun match importé.</p>

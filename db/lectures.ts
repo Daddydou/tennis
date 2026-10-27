@@ -6,6 +6,7 @@ import type {
   PickRow,
   PlayerRow,
   SimulatedPickRow,
+  PlanReservationRow,
   TournamentRow,
 } from './types';
 
@@ -145,6 +146,17 @@ export async function getBracketRoundPicks(tournamentId: string): Promise<Bracke
     .eq('tournament_id', tournamentId);
   if (error) throw new Error(error.message);
   return (data ?? []) as BracketRoundPickRow[];
+}
+
+/** Réservations de l'écran Picks, tous stocks confondus (tn_plan_reservations). */
+export async function getReservationsPlan(tournamentId: string): Promise<PlanReservationRow[]> {
+  const sb = supabaseAnon();
+  const { data, error } = await sb
+    .from('tn_plan_reservations')
+    .select('*')
+    .eq('tournament_id', tournamentId);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PlanReservationRow[];
 }
 
 /** Picks hypothétiques du bac à sable de picks du simulateur, tous stocks confondus. */
