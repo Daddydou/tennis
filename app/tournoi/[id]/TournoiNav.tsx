@@ -5,6 +5,7 @@ type Onglet =
   | 'tableau'
   | 'bracket'
   | 'picks'
+  | 'plan'
   | 'simulateur'
   | 'fantasy'
   | 'predictions'
@@ -19,6 +20,8 @@ const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = 
   // Picks intègre aussi la saisie/consultation des participants (sélecteur
   // Moi / Laki / Thomas en haut de l'écran) — plus d'onglet dédié ici.
   { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks` },
+  // Nouveau : plan de picks réactif (remplace Picks quand il sera validé).
+  { key: 'plan', label: 'Plan', href: (id) => `/tournoi/${id}/plan` },
   {
     key: 'simulateur',
     label: 'Simulateur',

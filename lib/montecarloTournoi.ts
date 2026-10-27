@@ -85,7 +85,7 @@ export function simulerMatch(
  * Distribution empirique ATP : 6-4 et 6-3 sont les plus frequents,
  * 6-0 et 7-6 plus rares. On decale selon la domination attendue.
  */
-function tirerNetGames(pSet: number, rnd: () => number): number {
+export function tirerNetGames(pSet: number, rnd: () => number): number {
   const moyenne = eNetGamesParSetGagne(pSet);
   // Distribution discrete sur {1,2,3,4,5,6} centree sur la moyenne
   const poids = [1, 2, 3, 4, 5, 6].map((d) =>
