@@ -49,7 +49,8 @@ type Fetch = typeof fetch;
 /** Sens des codes d'erreur communs, d'après la doc de l'API. */
 function messageStatut(statut: number): string {
   if (statut === 401) return 'clé absente, invalide, révoquée ou expirée.';
-  if (statut === 403) return 'la clé ne permet pas de poser des picks tennis, ou tu n’as plus accès au tennis.';
+  if (statut === 403)
+    return 'accès refusé : la clé ne permet pas de poser des picks tennis, ou tu n’es pas inscrit à ce tournoi.';
   if (statut === 429) return 'trop de requêtes (60 par minute).';
   if (statut >= 500) return 'erreur côté Game Tracker, réessaie plus tard.';
   return `HTTP ${statut}.`;
@@ -116,9 +117,15 @@ async function appeler(
       (json as Record<string, unknown>).enregistre === false;
     if (estRefusDeRegle) return { statut: res.status, json };
 
+    // Le texte donné par Game Tracker (ex. « Tu n'es pas inscrit à ce tournoi »,
+    // 403) est plus précis que notre message générique : on l'ajoute.
+    const o = typeof json === 'object' && json !== null ? (json as Record<string, unknown>) : {};
+    const detail = typeof o.erreur === 'string' ? o.erreur : typeof o.error === 'string' ? o.error : '';
+    const precision = detail ? ` « ${texteSur(detail, cle)} »` : '';
+
     const retry = Number(res.headers.get('Retry-After'));
     throw new ErreurApiGT(
-      `${ou} : ${messageStatut(res.status)}`,
+      `${ou} : ${messageStatut(res.status)}${precision}`,
       res.status,
       res.status === 429 && Number.isFinite(retry) && retry > 0 ? retry : null,
     );
@@ -138,7 +145,8 @@ export async function etatPicksGT(tournoiId: string, faireFetch: Fetch = fetch):
 }
 
 /**
- * POST /picks : pose, remplace ou vide le pick du tour ouvert.
+ * POST /picks : pose, remplace ou vide le pick d'un tour pas encore verrouillé
+ * (le tour ouvert, ou un tour à venir : picks à l'avance).
  * `haut` et `bas` sont OBLIGATOIRES (position, ou null pour vider ce côté) :
  * l'envoi remplace le pick du tour en entier.
  *

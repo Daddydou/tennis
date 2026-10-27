@@ -72,8 +72,14 @@ export interface EtatGT {
   maintenant: string;
   tournoi: { id: string; nom: string; drawSize: number; statut: string };
   tourOuvert: TourOuvertGT | null;
+  /**
+   * Les tours suivants qu'on peut déjà piquer (picks à l'avance), au même
+   * format que `tourOuvert`. Vide si l'API n'en donne pas (ancienne version).
+   */
+  toursAVenir: TourOuvertGT[];
   dejaPickes: PickGT[];
-  classement: { pseudo: string; moi: boolean; points: number }[];
+  /** `rang` : égalité = même rang (1, 1, 3). null si l'API ne le donne pas. */
+  classement: { pseudo: string; moi: boolean; points: number; rang: number | null }[];
   /** Tours verrouillés ou terminés, avec les picks de chacun (vide si l'API n'en donne pas). */
   tours: TourJoueGT[];
 }
@@ -183,31 +189,41 @@ export function lireTournoisPicksGT(raw: unknown): TournoiPicksGT[] {
   });
 }
 
+/** Un tour pickable (`tourOuvert`, ou une entrée de `toursAVenir`, même format). */
+function lireTourPickable(to: Objet, c: string): TourOuvertGT {
+  const pool = to.pool === undefined || to.pool === null ? {} : objet(to.pool, `${c}.pool`);
+  const mp = to.monPick === undefined || to.monPick === null ? {} : objet(to.monPick, `${c}.monPick`);
+  return {
+    numero: entier(to.numero, `${c}.numero`),
+    nom: texte(to.nom, `${c}.nom`),
+    lockAt: texteOuNull(to.lockAt, `${c}.lockAt`),
+    picksAttendus: entier(to.picksAttendus ?? 2, `${c}.picksAttendus`),
+    pool: {
+      haut: lirePool(pool.haut, `${c}.pool.haut`),
+      bas: lirePool(pool.bas, `${c}.pool.bas`),
+    },
+    monPick: {
+      haut: lirePick(mp.haut, `${c}.monPick.haut`),
+      bas: lirePick(mp.bas, `${c}.monPick.bas`),
+      etat: typeof mp.etat === 'string' ? mp.etat : 'manquant',
+    },
+  };
+}
+
+/** Le tour de numéro `numero` parmi le tour ouvert et les tours à venir. */
+export function tourPickable(etat: EtatGT, numero: number): TourOuvertGT | null {
+  return [etat.tourOuvert, ...etat.toursAVenir].find((t): t is TourOuvertGT => t !== null && t.numero === numero) ?? null;
+}
+
 /** GET /picks?tournoi=<id>. */
 export function lireEtatGT(raw: unknown): EtatGT {
   const r = objet(raw, '$');
   const t = objet(r.tournoi, '$.tournoi');
   const to = r.tourOuvert === undefined || r.tourOuvert === null ? null : objet(r.tourOuvert, '$.tourOuvert');
-  let tourOuvert: TourOuvertGT | null = null;
-  if (to) {
-    const pool = to.pool === undefined || to.pool === null ? {} : objet(to.pool, '$.tourOuvert.pool');
-    const mp = to.monPick === undefined || to.monPick === null ? {} : objet(to.monPick, '$.tourOuvert.monPick');
-    tourOuvert = {
-      numero: entier(to.numero, '$.tourOuvert.numero'),
-      nom: texte(to.nom, '$.tourOuvert.nom'),
-      lockAt: texteOuNull(to.lockAt, '$.tourOuvert.lockAt'),
-      picksAttendus: entier(to.picksAttendus ?? 2, '$.tourOuvert.picksAttendus'),
-      pool: {
-        haut: lirePool(pool.haut, '$.tourOuvert.pool.haut'),
-        bas: lirePool(pool.bas, '$.tourOuvert.pool.bas'),
-      },
-      monPick: {
-        haut: lirePick(mp.haut, '$.tourOuvert.monPick.haut'),
-        bas: lirePick(mp.bas, '$.tourOuvert.monPick.bas'),
-        etat: typeof mp.etat === 'string' ? mp.etat : 'manquant',
-      },
-    };
-  }
+  const tourOuvert: TourOuvertGT | null = to ? lireTourPickable(to, '$.tourOuvert') : null;
+  const toursAVenir = tableau(r.toursAVenir, '$.toursAVenir').map((x, i) =>
+    lireTourPickable(objet(x, `$.toursAVenir[${i}]`), `$.toursAVenir[${i}]`),
+  );
   return {
     maintenant: texte(r.maintenant, '$.maintenant'),
     tournoi: {
@@ -217,6 +233,7 @@ export function lireEtatGT(raw: unknown): EtatGT {
       statut: texte(t.statut, '$.tournoi.statut'),
     },
     tourOuvert,
+    toursAVenir,
     dejaPickes: tableau(r.dejaPickes, '$.dejaPickes').map((p, i) => {
       const pick = lirePick(p, `$.dejaPickes[${i}]`);
       if (!pick) throw new ErreurFormatGT(`$.dejaPickes[${i}]`, 'un joueur');
@@ -224,7 +241,12 @@ export function lireEtatGT(raw: unknown): EtatGT {
     }),
     classement: tableau(r.classement, '$.classement').map((c, i) => {
       const o = objet(c, `$.classement[${i}]`);
-      return { pseudo: texte(o.pseudo, `$.classement[${i}].pseudo`), moi: o.moi === true, points: entier(o.points ?? 0, `$.classement[${i}].points`) };
+      return {
+        pseudo: texte(o.pseudo, `$.classement[${i}].pseudo`),
+        moi: o.moi === true,
+        points: entier(o.points ?? 0, `$.classement[${i}].points`),
+        rang: entierOuNull(o.rang, `$.classement[${i}].rang`),
+      };
     }),
     tours: tableau(r.tours, '$.tours').map((t, i) => {
       const c = `$.tours[${i}]`;
@@ -329,6 +351,12 @@ export interface ParametresEnvoi {
   /** Nos picks (stock « moi ») de ce tournoi, tous tours confondus. */
   picksLocaux: PickLocal[];
   maintenant: Date;
+  /**
+   * Numéro du tour visé (parmi le tour ouvert et `toursAVenir`). Par défaut :
+   * le tour ouvert. Depuis l'API « picks à l'avance », tout tour pas encore
+   * verrouillé accepte un POST.
+   */
+  tourCible?: number;
 }
 
 const nomAffiche = (prenom: string | null, nom: string | null): string =>
@@ -341,8 +369,17 @@ const nomAffiche = (prenom: string | null, nom: string | null): string =>
  */
 export function preparerEnvoi(p: ParametresEnvoi): PreparationEnvoi {
   const { etat, rounds, matchsPremierTour, noms, picksLocaux, maintenant } = p;
-  const to = etat.tourOuvert;
-  if (!to) return { ok: false, raisons: ['Aucun tour n’est ouvert aux picks chez Game Tracker.'] };
+  const to = p.tourCible === undefined ? etat.tourOuvert : tourPickable(etat, p.tourCible);
+  if (!to) {
+    return {
+      ok: false,
+      raisons: [
+        p.tourCible === undefined
+          ? 'Aucun tour n’est ouvert aux picks chez Game Tracker.'
+          : `Le tour ${p.tourCible} n’est pas (ou plus) ouvert aux picks chez Game Tracker.`,
+      ],
+    };
+  }
 
   if (to.lockAt) {
     const verrou = Date.parse(to.lockAt);
@@ -370,7 +407,9 @@ export function preparerEnvoi(p: ParametresEnvoi): PreparationEnvoi {
   const localHaut = unSeulPick ? locaux[0] : locaux.find((l) => l.half === 'top');
   const localBas = unSeulPick ? undefined : locaux.find((l) => l.half === 'bottom');
   if (!localHaut && !localBas) {
-    const constitue = matchsPremierTour.some((m) => m.round === roundLocal && (m.player1Id || m.player2Id));
+    // Tour à venir : notre tableau ne le connaît pas encore, c'est normal — il suffit de poser un pick.
+    const constitue =
+      to !== etat.tourOuvert || matchsPremierTour.some((m) => m.round === roundLocal && (m.player1Id || m.player2Id));
     return {
       ok: false,
       raisons: [

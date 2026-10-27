@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { envoyerGameTracker, lierGameTracker, lireGameTracker, type EnvoiGameTracker, type LectureGameTracker } from './gameTrackerActions';
 import { boutonPrimaire, boutonSecondaire, carte, champTexte, Spinner } from '@/app/ui';
 import { useDefinirPoolGT } from './PoolGameTracker';
-import type { LigneEnvoi, PickGT } from '@/lib/gameTrackerPicks';
+import type { LigneEnvoi, PickGT, PreparationEnvoi, TourOuvertGT } from '@/lib/gameTrackerPicks';
 
 /**
  * Picks -> Game Tracker : lecture, puis envoi MANUEL. Rien ne part tout seul,
@@ -80,7 +80,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
       <summary className="min-h-11 cursor-pointer select-none py-2 text-sm font-semibold">Game Tracker</summary>
       <div className="space-y-3 pb-2 text-sm">
         <p className="text-xs text-zinc-500">
-          Lit ton état chez Game Tracker et y pose tes picks du tour ouvert, au nom de ton compte. Rien n&apos;est envoyé sans
+          Lit ton état chez Game Tracker et y pose tes picks (tour ouvert ou tours à venir), au nom de ton compte. Rien n&apos;est envoyé sans
           ton clic sur « Envoyer ». Un pick posé chez eux peut être redirigé automatiquement si un joueur « en attente »
           perd : relis avant le verrou. À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous
           pour Moi, Laki et Thomas : c&apos;est leur jeu qui compte.
@@ -170,71 +170,35 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
 
         {etat && !to && <p className="text-xs text-zinc-600">Aucun tour ouvert aux picks chez Game Tracker pour l&apos;instant.</p>}
 
-        {etat && to && (
-          <div className="space-y-2">
-            <p className="text-xs text-zinc-600">
-              {etat.tournoi.nom} — tour ouvert : <strong>{to.nom}</strong> (n°{to.numero}) · verrou : {heureParis(to.lockAt)}
-            </p>
-            <p className="text-xs text-zinc-600">
-              Chez Game Tracker aujourd&apos;hui —{' '}
-              {to.picksAttendus === 1 ? (
-                <>pick : {nomPick(to.monPick.haut)}</>
-              ) : (
-                <>
-                  haut : {nomPick(to.monPick.haut)} · bas : {nomPick(to.monPick.bas)}
-                </>
-              )}{' '}
-              ({to.monPick.etat})
-            </p>
-
-            {prep && !prep.ok && (
-              <div className="rounded-xl bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
-                <p className="font-medium">Rien à envoyer pour l&apos;instant :</p>
-                <ul className="ml-4 list-disc">
-                  {prep.raisons.map((r) => (
-                    <li key={r}>{r}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {prep && prep.ok && (
-              <div className="space-y-2 rounded-xl bg-zinc-50 px-2.5 py-2 text-xs">
-                <p className="font-medium">Ce qui serait envoyé (tour {prep.tour} = {prep.roundLocal}) :</p>
-                <ul className="ml-4 list-disc">
-                  {prep.lignes.map((l) => (
-                    <li key={l.cote}>
-                      {to.picksAttendus === 1 ? 'Pick' : l.cote === 'haut' ? 'Haut' : 'Bas'} : {l.nom ?? '—'}
-                      {l.position !== null && <span className="text-zinc-500"> (position {l.position})</span>} —{' '}
-                      <span className="text-zinc-500">{ORIGINE[l.origine]}</span>
-                      {l.enAttente && <span className="text-amber-700"> · en attente</span>}
-                    </li>
-                  ))}
-                </ul>
-                {prep.avertissements.length > 0 && (
-                  <ul className="ml-4 list-disc text-amber-800">
-                    {prep.avertissements.map((a) => (
-                      <li key={a}>{a}</li>
-                    ))}
-                  </ul>
-                )}
-                {prep.dejaAJour ? (
-                  <p className="text-emerald-700">Game Tracker a déjà exactement ces picks : rien à envoyer.</p>
-                ) : (
-                  <button
-                    onClick={() => envoyer({ tour: prep.tour, haut: prep.haut, bas: prep.bas })}
-                    disabled={pending}
-                    className={boutonPrimaire}
-                  >
-                    {pending && <Spinner />}
-                    Envoyer sur Game Tracker
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+        {etat && to && prep && (
+          <BlocTour
+            titre="tour ouvert"
+            nomTournoi={etat.tournoi.nom}
+            to={to}
+            prep={prep}
+            pending={pending}
+            onEnvoyer={envoyer}
+          />
         )}
 
+        {lecture && lecture.ok && lecture.lie && lecture.aVenir.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-zinc-700">
+              Picks à l&apos;avance : ces tours acceptent déjà tes picks (jusqu&apos;à leur verrou).
+            </p>
+            {lecture.aVenir.map((a) => (
+              <BlocTour
+                key={a.tour.numero}
+                titre="à venir"
+                nomTournoi={etat?.tournoi.nom ?? ''}
+                to={a.tour}
+                prep={a.preparation}
+                pending={pending}
+                onEnvoyer={envoyer}
+              />
+            ))}
+          </div>
+        )}
         {envoi && !envoi.ok && <p className="text-xs text-red-600">{envoi.erreur}</p>}
         {envoi && envoi.ok && (
           <div className="rounded-xl bg-emerald-50 px-2.5 py-2 text-xs text-emerald-900">
@@ -254,10 +218,11 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         {etat && etat.classement.length > 0 && (
           <div className="text-xs text-zinc-600">
             <p className="font-medium">Classement Game Tracker</p>
-            <ol className="ml-4 list-decimal">
-              {etat.classement.map((c) => (
+            <ol className="ml-1 list-none">
+              {etat.classement.map((c, i) => (
                 <li key={c.pseudo} className={c.moi ? 'font-semibold' : undefined}>
-                  {c.pseudo} — {c.points} pts
+                  {c.rang ?? i + 1}. {c.pseudo} — {c.points} pts
+                  {c.rang !== null && etat.classement.some((o) => o !== c && o.rang === c.rang) ? ' (ex æquo)' : ''}
                 </li>
               ))}
             </ol>
@@ -265,5 +230,89 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
         )}
       </div>
     </details>
+  );
+}
+
+/** Un tour pickable (ouvert ou à venir) : état chez Game Tracker, aperçu de l'envoi, bouton. */
+function BlocTour({
+  titre,
+  nomTournoi,
+  to,
+  prep,
+  pending,
+  onEnvoyer,
+}: {
+  titre: string;
+  nomTournoi: string;
+  to: TourOuvertGT;
+  prep: PreparationEnvoi;
+  pending: boolean;
+  onEnvoyer: (a: { tour: number; haut: number | null; bas: number | null }) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-zinc-600">
+        {nomTournoi} — {titre} : <strong>{to.nom}</strong> (n°{to.numero}) · verrou : {heureParis(to.lockAt)}
+      </p>
+      <p className="text-xs text-zinc-600">
+        Chez Game Tracker aujourd&apos;hui —{' '}
+        {to.picksAttendus === 1 ? (
+          <>pick : {nomPick(to.monPick.haut)}</>
+        ) : (
+          <>
+            haut : {nomPick(to.monPick.haut)} · bas : {nomPick(to.monPick.bas)}
+          </>
+        )}{' '}
+        ({to.monPick.etat})
+      </p>
+
+      {!prep.ok && (
+        <div className="rounded-xl bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+          <p className="font-medium">Rien à envoyer pour l&apos;instant :</p>
+          <ul className="ml-4 list-disc">
+            {prep.raisons.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {prep.ok && (
+        <div className="space-y-2 rounded-xl bg-zinc-50 px-2.5 py-2 text-xs">
+          <p className="font-medium">
+            Ce qui serait envoyé (tour {prep.tour} = {prep.roundLocal}) :
+          </p>
+          <ul className="ml-4 list-disc">
+            {prep.lignes.map((l) => (
+              <li key={l.cote}>
+                {to.picksAttendus === 1 ? 'Pick' : l.cote === 'haut' ? 'Haut' : 'Bas'} : {l.nom ?? '—'}
+                {l.position !== null && <span className="text-zinc-500"> (position {l.position})</span>} —{' '}
+                <span className="text-zinc-500">{ORIGINE[l.origine]}</span>
+                {l.enAttente && <span className="text-amber-700"> · en attente</span>}
+              </li>
+            ))}
+          </ul>
+          {prep.avertissements.length > 0 && (
+            <ul className="ml-4 list-disc text-amber-800">
+              {prep.avertissements.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          )}
+          {prep.dejaAJour ? (
+            <p className="text-emerald-700">Game Tracker a déjà exactement ces picks : rien à envoyer.</p>
+          ) : (
+            <button
+              onClick={() => onEnvoyer({ tour: prep.tour, haut: prep.haut, bas: prep.bas })}
+              disabled={pending}
+              className={boutonPrimaire}
+            >
+              {pending && <Spinner />}
+              Envoyer sur Game Tracker
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

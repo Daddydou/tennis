@@ -62,12 +62,17 @@ function etat(to: TourOuvertGT | null, extra: Partial<EtatGT> = {}): EtatGT {
     maintenant: '2026-10-23T12:00:00.000Z',
     tournoi: { id: 'gt1', nom: 'Test Open', drawSize: 16, statut: 'ONGOING' },
     tourOuvert: to,
+    toursAVenir: [],
     dejaPickes: [],
     classement: [],
     tours: [],
     ...extra,
   };
 }
+
+/** Un tour à venir (QF, numéro 2) : tous les joueurs de nos picks QF sont pickables. */
+const tourAVenir = (extra: Partial<TourOuvertGT> = {}): TourOuvertGT =>
+  tourOuvert({ numero: 2, nom: 'Quart de finale', lockAt: '2026-10-25T09:00:00.000Z', ...extra });
 
 function params(e: EtatGT, picksLocaux: PickLocal[], extra: Partial<ParametresEnvoi> = {}): ParametresEnvoi {
   return { etat: e, rounds: ROUNDS, matchsPremierTour: matchs, noms, picksLocaux, maintenant: new Date('2026-10-23T12:00:00.000Z'), ...extra };
@@ -216,6 +221,89 @@ describe('preparerEnvoi — demi-finale et finale (un seul pick, dans « haut »
   });
 });
 
+describe('picks à l’avance (tours à venir)', () => {
+  const qf = (half: 'top' | 'bottom', pos: number): PickLocal => ({ round: 'QF', half, playerId: id(pos) });
+  const avecAVenir = (extra: Partial<TourOuvertGT> = {}) => etat(tourOuvert(), { toursAVenir: [tourAVenir(extra)] });
+
+  it('par défaut on vise toujours le tour ouvert', () => {
+    const r = preparerEnvoi(params(avecAVenir(), [top(3), bottom(12), qf('top', 5)]));
+    expect(r).toMatchObject({ ok: true, tour: 1, roundLocal: 'R16', haut: 3, bas: 12 });
+  });
+
+  it('tourCible : prépare l’envoi d’un tour à venir avec NOS picks de ce tour', () => {
+    const r = preparerEnvoi(params(avecAVenir(), [top(3), qf('top', 5), qf('bottom', 14)], { tourCible: 2 }));
+    expect(r).toMatchObject({ ok: true, tour: 2, roundLocal: 'QF', haut: 5, bas: 14, dejaAJour: false });
+  });
+
+  it('pick partiel sur un tour à venir : un seul côté, l’autre reste tel que chez Game Tracker', () => {
+    const mp = { haut: null, bas: { position: 14, prenom: 'Ned', nom: 'NASH' }, etat: 'partiel' };
+    const r = preparerEnvoi(params(avecAVenir({ monPick: mp }), [qf('top', 5)], { tourCible: 2 }));
+    expect(r).toMatchObject({ ok: true, haut: 5, bas: 14 });
+  });
+
+  it('aucun pick local pour ce tour à venir : message simple, pas « tableau pas importé »', () => {
+    const r = preparerEnvoi(params(avecAVenir(), [top(3)], { tourCible: 2 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.raisons.join(' ')).toMatch(/Aucun pick posé chez nous pour ce tour \(QF\)/);
+  });
+
+  it('tour à venir verrouillé : refus', () => {
+    const e = avecAVenir({ lockAt: '2026-10-23T11:00:00.000Z' });
+    const r = preparerEnvoi(params(e, [qf('top', 5)], { tourCible: 2 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.raisons.join(' ')).toMatch(/verrouillé/);
+  });
+
+  it('tour inconnu de Game Tracker : refus clair', () => {
+    const r = preparerEnvoi(params(avecAVenir(), [qf('top', 5)], { tourCible: 3 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.raisons.join(' ')).toMatch(/Le tour 3 n’est pas/);
+  });
+
+  it('un joueur déjà pické à un autre tour reste refusé sur un tour à venir', () => {
+    const to = tourAVenir();
+    to.pool.haut[4] = joueur(5, { dejaPicke: true });
+    const r = preparerEnvoi(params(etat(tourOuvert(), { toursAVenir: [to] }), [qf('top', 5)], { tourCible: 2 }));
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe('lecture : toursAVenir et rang du classement', () => {
+  const base = { maintenant: 'x', tournoi: { id: 'a', nom: 'b', drawSize: 16, statut: 'ONGOING' } };
+  const brut = (n: number) => ({
+    numero: n,
+    nom: 'Tour ' + n,
+    lockAt: '2026-10-25T09:00:00.000Z',
+    picksAttendus: 2,
+    pool: { haut: [{ position: 1, prenom: 'Alex', nom: 'ADAMS' }], bas: [] },
+    monPick: { haut: { joueur: { position: 1, prenom: 'Alex', nom: 'ADAMS' } }, bas: null, etat: 'partiel' },
+  });
+
+  it('lit toursAVenir au même format que tourOuvert', () => {
+    const e = lireEtatGT({ ...base, tourOuvert: brut(1), toursAVenir: [brut(2), brut(3)] });
+    expect(e.toursAVenir.map((t) => t.numero)).toEqual([2, 3]);
+    expect(e.toursAVenir[0].monPick.haut?.position).toBe(1);
+    expect(e.toursAVenir[0].monPick.etat).toBe('partiel');
+  });
+
+  it('sans toursAVenir (ancienne réponse) : liste vide', () => {
+    expect(lireEtatGT({ ...base, tourOuvert: null }).toursAVenir).toEqual([]);
+  });
+
+  it('classement : rang repris (ex æquo 1, 1, 3), null s’il manque', () => {
+    const e = lireEtatGT({
+      ...base,
+      classement: [
+        { pseudo: 'a', moi: true, points: 10, rang: 1 },
+        { pseudo: 'b', moi: false, points: 10, rang: 1 },
+        { pseudo: 'c', moi: false, points: 4, rang: 3 },
+        { pseudo: 'd', moi: false, points: 1 },
+      ],
+    });
+    expect(e.classement.map((c) => c.rang)).toEqual([1, 1, 3, null]);
+  });
+});
+
 describe('ecartsApresEnvoi', () => {
   const pick = (position: number) => ({ position, prenom: null, nom: null });
   it('identique : aucun écart', () => {
@@ -256,7 +344,7 @@ describe('lecture des réponses', () => {
     expect(e.tourOuvert?.numero).toBe(3);
     expect(e.tourOuvert?.pool.haut[0]).toMatchObject({ position: 1, enAttente: true, dejaPicke: false });
     expect(e.dejaPickes[0].position).toBe(16);
-    expect(e.classement[0]).toEqual({ pseudo: 'Laki', moi: false, points: 43 });
+    expect(e.classement[0]).toEqual({ pseudo: 'Laki', moi: false, points: 43, rang: null });
   });
 
   it('tourOuvert null accepté', () => {
