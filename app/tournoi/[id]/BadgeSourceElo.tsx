@@ -47,38 +47,53 @@ export function classeElo(source: SourceElo): string {
     : source === 'ambigu'
       ? 'text-violet-600'
       : source === 'maison'
-        ? 'text-amber-600'
+        ? 'text-amber-700'
         : 'text-zinc-900';
+}
+
+/** Comparaison de noms insensible aux accents, à la casse et à la ponctuation. */
+function memeNom(a: string, b: string): boolean {
+  const n = (s: string) =>
+    // Après NFD, les accents sont des caractères séparés ; [^a-z] les retire
+    // avec la ponctuation et les espaces.
+    s.normalize('NFD').toLowerCase().replace(/[^a-z]/g, '');
+  return n(a) === n(b);
 }
 
 export default function BadgeSourceElo({
   source,
   taName,
   candidats,
+  nom,
 }: {
   source: SourceElo;
   taName: string | null;
   /** Homonymes non départagés (source `ambigu`) : « Nom (slug) ». */
   candidats: string[];
+  /**
+   * Nom du joueur chez nous. Fourni, le nom Tennis Abstract ne s'affiche que
+   * s'il DIFFÈRE — c'est le seul cas où il révèle quelque chose (un
+   * rapprochement douteux) ; identique, il n'était que du bruit illisible.
+   */
+  nom?: string;
 }) {
   if (source === 'ta') {
-    return taName ? (
+    if (!taName || (nom && memeNom(nom, taName))) return null;
+    return (
       <span
-        className="w-14 truncate text-right text-[10px] text-zinc-300"
-        title={`Tennis Abstract : ${taName}`}
+        className="max-w-32 truncate text-xs text-zinc-500"
+        title={`Elo trouvé sous le nom Tennis Abstract : ${taName}`}
       >
-        {taName}
+        TA : {taName}
       </span>
-    ) : (
-      <span className="w-14" />
     );
   }
 
   const s = STYLE_BADGE[source];
   return (
-    <span className="w-14 text-right">
+    <span className="shrink-0">
       <span
-        className={`rounded-md border px-1 py-px text-[10px] font-medium ${s.classes}`}
+        className={`rounded-md border px-1.5 text-xs font-medium ${s.classes}`}
         title={
           candidats.length
             ? `${s.titre} Candidats : ${candidats.join(', ')}. Déclarer le bon ta_slug dans ta_name_exceptions.`

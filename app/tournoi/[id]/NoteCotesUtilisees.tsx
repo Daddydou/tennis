@@ -12,10 +12,12 @@
  * le calcul reste alors l'Elo seul, et rien ne s'affiche, plutôt qu'un badge
  * qui dirait « 0 cote » sans le rendre visuellement différent d'un vrai 0.
  */
+import { noteInfo } from '@/app/ui';
+
 export default function NoteCotesUtilisees({ n }: { n: number }) {
   if (n <= 0) return null;
   return (
-    <p className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs text-sky-800">
+    <p className={noteInfo}>
       Cotes du marché prises en compte : Elo mélangé aux cotes (30&nbsp;% Elo /
       70&nbsp;% cotes) sur {n} match{n > 1 ? 's' : ''} de ce tournoi — les autres
       restent sur l&apos;Elo seul, faute de cote utilisable.

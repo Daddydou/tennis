@@ -9,7 +9,7 @@ import PicksHypothetiquesPanel from './PicksHypothetiquesPanel';
 import { effacerPickSimule, validerPickSimule } from './picksActions';
 import { cleSlot, pointsPossiblesPick, versMatchRowsTestees } from './picksSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
-import { carte, pilleSelecteur } from '@/app/ui';
+import { carte, filtreSecondaire } from '@/app/ui';
 
 type Onglet = 'tableau' | 'picks';
 
@@ -150,10 +150,10 @@ export default function SimulateurPicks({
       </div>
 
       <nav className="flex flex-wrap gap-1.5 border-b border-zinc-200 pb-2">
-        <button onClick={() => setOnglet('picks')} className={pilleSelecteur(onglet === 'picks')}>
+        <button onClick={() => setOnglet('picks')} className={filtreSecondaire(onglet === 'picks')}>
           Picks hypothétiques
         </button>
-        <button onClick={() => setOnglet('tableau')} className={pilleSelecteur(onglet === 'tableau')}>
+        <button onClick={() => setOnglet('tableau')} className={filtreSecondaire(onglet === 'tableau')}>
           Tableau testé
         </button>
       </nav>

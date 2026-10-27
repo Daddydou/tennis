@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/page.tsx"
+        ],
+        "createdAt": "2026-10-27T09:49:55.404Z",
+        "reason": "Barre de circuit ATP/WTA de 4px, documentée comme marqueur sémantique dans DESIGN.md (Do : signaler le circuit par une barre de 4px + puce écrite)"
+      }
+    ]
+  }
+}

@@ -185,7 +185,7 @@ export default async function FantasyPage({
       </div>
 
       {fantasyCalculEnCours && (
-        <p className="text-xs text-amber-600">
+        <p className="text-xs text-amber-700">
           Simulation Monte Carlo pas encore en cache pour ce tournoi — calcul
           lancé en arrière-plan, l&apos;équipe (espérances a priori) reviendra
           à quelques secondes près, à la prochaine visite.

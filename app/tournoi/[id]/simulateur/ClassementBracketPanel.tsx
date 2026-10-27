@@ -222,7 +222,7 @@ export default function ClassementBracketPanel({
             data-max-possible={c.maxPossible}
             className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${carte}`}
           >
-            <span className="w-5 shrink-0 text-xs text-zinc-400">{i + 1}.</span>
+            <span className="w-5 shrink-0 text-xs text-zinc-500">{i + 1}.</span>
             <span className="flex-1 truncate text-sm font-medium">
               {i === 0 && c.total > 0 && '🏆 '}
               {c.nom}
@@ -234,7 +234,7 @@ export default function ClassementBracketPanel({
                 <span className="font-medium tabular-nums text-zinc-700">{c.deja}</span>
               ) : (
                 <span
-                  className="font-medium text-amber-600"
+                  className="font-medium text-amber-700"
                   title="Aucun pronostic de bracket importé ou saisi pour ce participant (onglet Importer)"
                 >
                   à importer
@@ -250,7 +250,7 @@ export default function ClassementBracketPanel({
               {Math.round((probabilites[c.id] ?? 0) * 100)}% de victoire
             </span>
             <span
-              className="shrink-0 text-xs text-zinc-400"
+              className="shrink-0 text-xs text-zinc-500"
               title="Déjà gagné + simulés + tout ce qui reste atteignable sur les tours suivants (aucun ajout à la finale)"
             >
               max possible {c.maxPossible}
@@ -259,7 +259,7 @@ export default function ClassementBracketPanel({
         ))}
       </div>
 
-      <p className="text-[11px] text-zinc-400">
+      <p className="text-xs text-zinc-500">
         Probabilité de victoire : {SIMULATIONS.toLocaleString('fr-FR')} fins de tournoi tirées au sort depuis l&apos;état
         courant du bracket réel (Elo effectif), à partir des pronostics du tour {roundChoisi} et de ceux déjà
         enregistrés au-delà. Égalité partagée à parts égales entre les stocks à égalité sur un même tirage.

@@ -7,9 +7,9 @@ function CelluleEcart({ valeur }: { valeur: number | null }) {
     <td
       className={`py-1.5 pr-3 text-right font-mono tabular-nums ${
         valeur === null || Math.abs(valeur) < 0.05
-          ? 'text-zinc-400'
+          ? 'text-zinc-500'
           : valeur < 0
-            ? 'text-emerald-600'
+            ? 'text-emerald-700'
             : 'text-red-600'
       }`}
     >
@@ -64,7 +64,7 @@ export default function TableScores({
                 <td className="py-1.5 pr-3 font-medium">
                   {s.methode}
                   {gagnant && (
-                    <span className="ml-1.5 text-[10px] uppercase text-emerald-700">
+                    <span className="ml-1.5 text-xs uppercase text-emerald-700">
                       meilleur
                     </span>
                   )}

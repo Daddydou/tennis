@@ -148,7 +148,7 @@ export default async function SimulateurPage({
       <TournoiNav id={id} nom={tournament.name} active="simulateur" />
 
       {projectionsEnCalcul && (
-        <p className="text-xs text-amber-600">
+        <p className="text-xs text-amber-700">
           Simulation Monte Carlo pas encore en cache pour le tour {roundDepart} —
           calcul lancé en arrière-plan, les espérances (E[pts], Picks
           hypothétiques) reviendront à quelques secondes près, à la prochaine

@@ -45,13 +45,13 @@ export default function RecapParticipant({
           {recap.disponibles.length} encore en lice et disponible(s)
         </summary>
         {recap.disponibles.length === 0 ? (
-          <p className="mt-1 text-zinc-400">Aucun.</p>
+          <p className="mt-1 text-zinc-500">Aucun.</p>
         ) : (
           <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 sm:grid-cols-3">
             {recap.disponibles.map((d) => (
               <li key={d.playerId} className="truncate">
                 {d.nom}
-                {d.rang ? <span className="text-zinc-400"> #{d.rang}</span> : null}
+                {d.rang ? <span className="text-zinc-500"> #{d.rang}</span> : null}
               </li>
             ))}
           </ul>

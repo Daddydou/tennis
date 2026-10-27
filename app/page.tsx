@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
-import { boutonPrimaire, zoneTactile } from './ui';
+import type { TournamentRow } from '@/db/queries';
+import { boutonPrimaire, carte, lienBouton, zoneTactile } from './ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,32 +15,24 @@ const SURFACE_LABEL: Record<string, string> = {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- *  DEUX INFORMATIONS, DEUX SUPPORTS VISUELS — LE SEUL ENDROIT À MODIFIER
+ *  CIRCUIT ET SURFACE — LE SEUL ENDROIT À MODIFIER
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Le CIRCUIT porte le fond de la ligne (ou de la carte) : c'est ce qu'on lit
- * de plus loin, et c'est la question qu'on se pose en premier devant la liste
- * — tournoi masculin ou féminin ?
+ * Le CIRCUIT se lit à deux endroits : une barre de 4px au bord gauche de la
+ * ligne (ou de la carte), et une puce écrite en toutes lettres (« ATP » /
+ * « WTA »). Les lignes elles-mêmes restent BLANCHES : teintées en bleu, elles
+ * faisaient du bleu d'action le fond de 80 % de la liste (DESIGN.md, « La
+ * règle du bleu qui agit »). Barre + puce suffisent à répondre à « tournoi
+ * masculin ou féminin ? » au premier coup d'œil.
  *
- * La SURFACE, elle, tient dans une pastille : un point de couleur + son nom.
- * Les deux ne peuvent pas partager le même canal, sinon un tournoi ATP sur dur
- * (bleu sur bleu) effacerait l'un des deux.
- *
- * Le fond reste PÂLE — teinte -100, un aplat qui court sous du texte, pas un
- * aplat de badge. Mesuré sur les pixels rendus (fond de page #f5f5f7), le nom
- * d'un tournoi y est à 13:1 au pire, le texte secondaire à 6,3:1, la puce de
- * circuit à 4,7:1 — tous au-dessus du seuil AA (4,5:1). La pastille de
- * surface, saturée et cerclée, ressort dessus sans lutter avec eux.
+ * La SURFACE tient dans une pastille : un point de couleur + son nom.
  *
  * ACCESSIBILITÉ. La couleur ne porte JAMAIS seule l'information : le circuit
- * est aussi écrit en toutes lettres dans une puce (« ATP » / « WTA »), et la
- * surface est écrite à côté de son point. Bleu et magenta se confondent chez
- * une partie des daltoniens — le texte, lui, ne se confond pas.
+ * est écrit dans sa puce, la surface à côté de son point. Bleu et magenta se
+ * confondent chez une partie des daltoniens — le texte, lui, ne se confond pas.
  */
 interface JeuCircuit {
-  /** Aplat de fond de la ligne / carte. */
-  fond: string;
-  /** Barre d'accent de la carte (mobile) — un aplat. */
+  /** Barre d'accent de la carte — un aplat. */
   barre: string;
   /** Barre d'accent de la ligne (tableau) — une bordure gauche. */
   barreBordure: string;
@@ -48,26 +41,22 @@ interface JeuCircuit {
 }
 
 // Les classes sont écrites EN TOUTES LETTRES : Tailwind lit les sources en
-// texte, une classe recomposée à l'exécution (`bg-${x}-500`) n'existerait
-// jamais dans le CSS produit.
+// texte, une classe recomposée à l'exécution n'existerait jamais dans le CSS.
 const CIRCUIT: Record<string, JeuCircuit> = {
   ATP: {
-    fond: 'bg-blue-100',
-    barre: 'bg-blue-500',
-    barreBordure: 'border-l-blue-500',
+    barre: 'bg-blue-600',
+    barreBordure: 'border-l-blue-600',
     puce: 'bg-blue-600 text-white',
   },
   WTA: {
-    fond: 'bg-fuchsia-100',
-    barre: 'bg-fuchsia-500',
-    barreBordure: 'border-l-fuchsia-500',
+    barre: 'bg-fuchsia-600',
+    barreBordure: 'border-l-fuchsia-600',
     puce: 'bg-fuchsia-600 text-white',
   },
 };
 
 /** Circuit inconnu : un gris neutre, jamais la couleur d'un autre circuit. */
 const CIRCUIT_INCONNU: JeuCircuit = {
-  fond: 'bg-zinc-100',
   barre: 'bg-zinc-400',
   barreBordure: 'border-l-zinc-400',
   puce: 'bg-zinc-600 text-white',
@@ -76,7 +65,7 @@ const CIRCUIT_INCONNU: JeuCircuit = {
 const circuitDe = (tour: string | null) =>
   (tour && CIRCUIT[tour]) || CIRCUIT_INCONNU;
 
-/** Ocre pour la terre, bleu pour le dur, vert pour le gazon. */
+/** Ocre pour la terre, ciel pour le dur, vert pour le gazon. */
 const SURFACE_POINT: Record<string, string> = {
   clay: 'bg-amber-500',
   hard: 'bg-sky-500',
@@ -92,23 +81,49 @@ const STATUT_LABEL: Record<string, string> = {
   completed: 'Terminé',
 };
 
-/** Texte secondaire, assez foncé pour rester lisible SUR un fond teinté. */
-const TEXTE_SECONDAIRE = 'text-zinc-600';
-
 /**
- * Surface : un point coloré et son nom, dans une pastille neutre.
- *
- * La pastille est volontairement incolore (bordure grise, fond translucide) :
- * posée sur un fond bleu comme sur un fond magenta, elle se lit pareil.
+ * Un tournoi dure au plus deux semaines (Grand Chelem). Toujours « En cours »
+ * trois semaines après son début, c'est que son statut n'a pas été remis à
+ * jour (dernier import manqué) : on le signale au lieu de le mêler aux vrais.
  */
+const JOURS_AVANT_PERIME = 21;
+
+function joursDepuis(iso: string | null, aujourdHui: string): number | null {
+  if (!iso) return null;
+  const ms = Date.parse(`${aujourdHui}T00:00:00Z`) - Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(ms) ? null : Math.floor(ms / 86_400_000);
+}
+
+type Fraicheur = 'en-cours' | 'perime' | 'autre';
+
+function fraicheur(t: TournamentRow, aujourdHui: string): Fraicheur {
+  if (t.status !== 'running') return 'autre';
+  const j = joursDepuis(t.start_date, aujourdHui);
+  return j !== null && j > JOURS_AVANT_PERIME ? 'perime' : 'en-cours';
+}
+
+/** Statut lisible ; un « En cours » périmé est signalé en ambre (avertissement). */
+function Statut({ t, f }: { t: TournamentRow; f: Fraicheur }) {
+  if (f === 'perime') {
+    return (
+      <span
+        className="font-medium text-amber-700"
+        title={`Marqué « En cours » depuis plus de ${JOURS_AVANT_PERIME} jours : un import a sans doute été manqué.`}
+      >
+        En cours ?
+      </span>
+    );
+  }
+  return <>{STATUT_LABEL[t.status] ?? t.status}</>;
+}
+
+/** Surface : un point coloré et son nom, dans une pastille neutre. */
 function BadgeSurface({ surface }: { surface: string | null }) {
   if (!surface) return <span className="text-zinc-500">—</span>;
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-zinc-400/40 bg-white/60 px-2 py-0.5 text-xs font-medium text-zinc-700">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
       <span
-        className={`size-2 shrink-0 rounded-full ${
-          SURFACE_POINT[surface] ?? 'bg-zinc-400'
-        }`}
+        className={`size-2 shrink-0 rounded-full ${SURFACE_POINT[surface] ?? 'bg-zinc-400'}`}
         aria-hidden="true"
       />
       {SURFACE_LABEL[surface] ?? surface}
@@ -116,7 +131,7 @@ function BadgeSurface({ surface }: { surface: string | null }) {
   );
 }
 
-/** Circuit écrit en toutes lettres — le fond seul ne suffit pas. */
+/** Circuit écrit en toutes lettres — la barre seule ne suffit pas. */
 function PuceCircuit({ tour }: { tour: string | null }) {
   return (
     <span
@@ -142,175 +157,180 @@ function formatDate(iso: string | null): string {
   return mois ? `${Number(j)} ${mois} ${a}` : iso;
 }
 
+function categorie(t: TournamentRow): string {
+  return t.category ? LIBELLE_CATEGORIE_COURT[t.category] ?? t.category : '—';
+}
+
+/** Liens d'un tournoi : vraies zones tactiles de 44px, au bureau comme au téléphone. */
+function LiensTournoi({ id }: { id: string }) {
+  const lien = `${zoneTactile} rounded-xl px-2 text-sm text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900`;
+  return (
+    <div className="-ml-2 flex flex-wrap">
+      <Link href={`/tournoi/${id}/tableau`} className={lien}>Tableau</Link>
+      <Link href={`/tournoi/${id}/picks`} className={lien}>Picks</Link>
+      <Link href={`/tournoi/${id}/resultats`} className={lien}>Résultats</Link>
+    </div>
+  );
+}
+
 export default async function Home() {
   const tournois = await listTournaments();
+  const aujourdHui = new Date().toISOString().slice(0, 10);
+  const enCours = tournois.filter((t) => fraicheur(t, aujourdHui) === 'en-cours');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Tournois</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link href="/fantasy" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
-            Fantasy — prédit vs réalisé
-          </Link>
-          <Link href="/calibration" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
-            Calibration Elo
-          </Link>
-          <Link href="/import/elo" className={`${zoneTactile} text-sm text-zinc-600 hover:underline`}>
-            Elo Tennis Abstract
-          </Link>
-          <Link href="/import" className={boutonPrimaire}>
-            Importer un tableau
-          </Link>
-        </div>
+        <Link href="/import" className={boutonPrimaire}>
+          Importer un tableau
+        </Link>
       </div>
 
       {tournois.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-600">
           Aucun tournoi. Commence par{' '}
-          <Link href="/import" className="underline">
+          <Link href="/import" className="font-medium text-blue-600 underline underline-offset-2">
             importer un tableau
           </Link>
           .
         </p>
       ) : (
         <>
-          {/* Téléphone : une carte par tournoi. Les huit colonnes du tableau
-              débordaient de l'écran — surface tronquée, statut et actions hors
-              champ, noms coupés sur trois lignes. */}
-          <ul className="space-y-2 sm:hidden">
-            {tournois.map((t) => {
-              const c = circuitDe(t.tour);
-              return (
-                <li key={t.id} className={`relative overflow-hidden rounded-2xl shadow-card pl-4 ${c.fond}`}>
-                  {/* Barre d'accent : un aplat, pas une bordure — une bordure
-                      de côté se ferait écraser par la couleur des autres. */}
-                  <span
-                    className={`absolute inset-y-0 left-0 w-1.5 ${c.barre}`}
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-1.5 p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        href={`/tournoi/${t.id}`}
-                        className="font-semibold hover:underline"
-                      >
-                        {t.name}
-                      </Link>
-                      <PuceCircuit tour={t.tour} />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <BadgeSurface surface={t.surface} />
-                      <span className={`text-xs ${TEXTE_SECONDAIRE}`}>
-                        {t.category
-                          ? LIBELLE_CATEGORIE_COURT[t.category] ?? t.category
-                          : '—'}
-                        {t.best_of ? ` · ${t.best_of} sets` : ''}
-                      </span>
-                    </div>
-
-                    <div className={`text-xs ${TEXTE_SECONDAIRE}`}>
-                      {formatDate(t.start_date)} ·{' '}
-                      {STATUT_LABEL[t.status] ?? t.status}
-                    </div>
-
-                    <div className="-ml-2 flex flex-wrap text-xs">
-                      <Link
-                        href={`/tournoi/${t.id}/tableau`}
-                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
-                      >
-                        Tableau
-                      </Link>
-                      <Link
-                        href={`/tournoi/${t.id}/picks`}
-                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
-                      >
-                        Picks
-                      </Link>
-                      <Link
-                        href={`/tournoi/${t.id}/resultats`}
-                        className={`${zoneTactile} px-2 underline-offset-2 hover:underline`}
-                      >
-                        Résultats
-                      </Link>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* Écran large : le tableau dense, inchangé dans ses colonnes. */}
-          <table className="hidden w-full text-sm sm:table">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
-                <th className="py-2 pl-3 pr-3 font-medium">Début</th>
-                <th className="py-2 pr-3 font-medium">Tournoi</th>
-                <th className="py-2 pr-3 font-medium">Circuit</th>
-                <th className="py-2 pr-3 font-medium">Catégorie</th>
-                <th className="py-2 pr-3 font-medium">Surface</th>
-                <th className="py-2 pr-3 font-medium">Format</th>
-                <th className="py-2 pr-3 font-medium">Statut</th>
-                <th className="py-2 pr-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tournois.map((t) => {
-                const c = circuitDe(t.tour);
-                return (
-                  <tr
-                    key={t.id}
-                    className={`border-b border-zinc-200/70 ${c.fond}`}
-                  >
-                    <td
-                      className={`border-l-4 py-2 pl-3 pr-3 whitespace-nowrap tabular-nums ${TEXTE_SECONDAIRE} ${c.barreBordure}`}
-                    >
-                      {formatDate(t.start_date)}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Link
-                        href={`/tournoi/${t.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {t.name}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <PuceCircuit tour={t.tour} />
-                    </td>
-                    <td className={`py-2 pr-3 whitespace-nowrap ${TEXTE_SECONDAIRE}`}>
-                      {t.category
-                        ? LIBELLE_CATEGORIE_COURT[t.category] ?? t.category
-                        : '—'}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <BadgeSurface surface={t.surface} />
-                    </td>
-                    <td className={`py-2 pr-3 whitespace-nowrap ${TEXTE_SECONDAIRE}`}>
-                      {t.best_of ? `${t.best_of} sets` : '—'}
-                    </td>
-                    <td className={`py-2 pr-3 ${TEXTE_SECONDAIRE}`}>
-                      {STATUT_LABEL[t.status] ?? t.status}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-3 text-xs">
-                        <Link href={`/tournoi/${t.id}/tableau`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>
-                          Tableau
+          {/* ── En cours : le point de départ. Un tournoi = une carte, avec
+              l'accès direct à ses picks, sans chercher dans la liste. ── */}
+          {enCours.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-sm font-semibold">En cours</h2>
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {enCours.map((t) => (
+                  <li key={t.id} className={`relative overflow-hidden pl-1 ${carte}`}>
+                    <span
+                      className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`}
+                      aria-hidden="true"
+                    />
+                    <div className="space-y-2 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link href={`/tournoi/${t.id}`} className="text-base font-semibold hover:underline">
+                          {t.name}
                         </Link>
-                        <Link href={`/tournoi/${t.id}/picks`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>
-                          Picks
+                        <PuceCircuit tour={t.tour} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
+                        <BadgeSurface surface={t.surface} />
+                        <span>
+                          {categorie(t)}
+                          {t.best_of ? ` · ${t.best_of} sets` : ''} · depuis le {formatDate(t.start_date)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Link href={`/tournoi/${t.id}`} className={lienBouton}>
+                          Ouvrir
                         </Link>
-                        <Link href={`/tournoi/${t.id}/resultats`} className={`hover:underline ${TEXTE_SECONDAIRE}`}>
-                          Résultats
+                        <Link href={`/tournoi/${t.id}/picks`} className={lienBouton}>
+                          Mes picks
                         </Link>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="space-y-2.5">
+            <h2 className="text-sm font-semibold">Tous les tournois</h2>
+
+            {/* Téléphone : une carte par tournoi. Les huit colonnes du tableau
+                débordaient de l'écran. */}
+            <ul className="space-y-2 sm:hidden">
+              {tournois.map((t) => {
+                const f = fraicheur(t, aujourdHui);
+                return (
+                  <li key={t.id} className={`relative overflow-hidden pl-1 ${carte}`}>
+                    <span
+                      className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`}
+                      aria-hidden="true"
+                    />
+                    <div className="space-y-1.5 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link href={`/tournoi/${t.id}`} className="font-semibold hover:underline">
+                          {t.name}
+                        </Link>
+                        <PuceCircuit tour={t.tour} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
+                        <BadgeSurface surface={t.surface} />
+                        <span>
+                          {categorie(t)}
+                          {t.best_of ? ` · ${t.best_of} sets` : ''}
+                        </span>
+                      </div>
+                      <div className="text-xs text-zinc-600">
+                        {formatDate(t.start_date)} · <Statut t={t} f={f} />
+                      </div>
+                      <LiensTournoi id={t.id} />
+                    </div>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
+            </ul>
+
+            {/* Écran large : le tableau dense, dans une carte, lignes blanches. */}
+            <div className={`hidden overflow-hidden sm:block ${carte}`}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600">
+                    <th className="py-2.5 pl-4 pr-3 font-medium">Début</th>
+                    <th className="py-2.5 pr-3 font-medium">Tournoi</th>
+                    <th className="py-2.5 pr-3 font-medium">Circuit</th>
+                    <th className="py-2.5 pr-3 font-medium">Catégorie</th>
+                    <th className="py-2.5 pr-3 font-medium">Surface</th>
+                    <th className="py-2.5 pr-3 font-medium">Format</th>
+                    <th className="py-2.5 pr-3 font-medium">Statut</th>
+                    <th className="py-2.5 pr-3 font-medium">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {tournois.map((t) => {
+                    const f = fraicheur(t, aujourdHui);
+                    return (
+                      <tr key={t.id} className="hover:bg-zinc-50">
+                        <td
+                          className={`border-l-4 py-1 pl-3 pr-3 whitespace-nowrap tabular-nums text-zinc-600 ${circuitDe(t.tour).barreBordure}`}
+                        >
+                          {formatDate(t.start_date)}
+                        </td>
+                        <td className="py-1 pr-3">
+                          <Link href={`/tournoi/${t.id}`} className="font-medium hover:underline">
+                            {t.name}
+                          </Link>
+                        </td>
+                        <td className="py-1 pr-3">
+                          <PuceCircuit tour={t.tour} />
+                        </td>
+                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">{categorie(t)}</td>
+                        <td className="py-1 pr-3">
+                          <BadgeSurface surface={t.surface} />
+                        </td>
+                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">
+                          {t.best_of ? `${t.best_of} sets` : '—'}
+                        </td>
+                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">
+                          <Statut t={t} f={f} />
+                        </td>
+                        <td className="py-1 pr-3">
+                          <LiensTournoi id={t.id} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </>
       )}
     </div>

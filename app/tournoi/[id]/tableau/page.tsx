@@ -20,11 +20,11 @@ export const dynamic = 'force-dynamic';
  * pour un match qui n'a pas encore commencé.
  */
 const STATUT_BADGE: Record<string, { label: string; classes: string }> = {
-  scheduled: { label: 'À jouer', classes: 'text-zinc-400' },
-  live: { label: 'En cours', classes: 'text-emerald-600' },
-  walkover: { label: 'W.O.', classes: 'text-amber-600' },
-  retired: { label: 'Abandon', classes: 'text-amber-600' },
-  bye: { label: 'Bye', classes: 'text-sky-600' },
+  scheduled: { label: 'À jouer', classes: 'text-zinc-500' },
+  live: { label: 'En cours', classes: 'text-emerald-700' },
+  walkover: { label: 'W.O.', classes: 'text-amber-700' },
+  retired: { label: 'Abandon', classes: 'text-amber-700' },
+  bye: { label: 'Bye', classes: 'text-sky-800' },
 };
 
 function nomJoueur(id: string | null, byId: Map<string, PlayerRow>): string {
@@ -65,7 +65,7 @@ function LigneJoueur({
           gagnant
             ? 'font-semibold text-zinc-900'
             : bye || perdant
-              ? 'text-zinc-400'
+              ? 'text-zinc-500'
               : ''
         }`}
       >
@@ -112,7 +112,7 @@ function CarteMatch({
         sets={p2sets}
       />
       {badge && (
-        <div className={`mt-1.5 text-[10px] font-medium uppercase tracking-wide ${badge.classes}`}>
+        <div className={`mt-1.5 text-xs font-medium uppercase tracking-wide ${badge.classes}`}>
           {badge.label}
         </div>
       )}

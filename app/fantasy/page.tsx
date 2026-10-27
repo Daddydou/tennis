@@ -45,7 +45,7 @@ function formatDate(iso: string | null): string {
 
 /** Vert au-dessus de l'espérance, rouge en dessous — au-delà de 5 % d'écart. */
 function classeEcart(ratio: number): string {
-  if (ratio >= 1.05) return 'text-emerald-600';
+  if (ratio >= 1.05) return 'text-emerald-700';
   if (ratio <= 0.95) return 'text-red-600';
   return 'text-zinc-700';
 }
@@ -171,7 +171,7 @@ export default async function HistoriqueFantasyPage() {
                       </Link>
                       {!l.termine && (
                         <span
-                          className="ml-2 text-xs text-amber-600"
+                          className="ml-2 text-xs text-amber-700"
                           title="Tournoi non terminé : le score réel est partiel, la ligne n'entre pas dans la synthèse."
                         >
                           en cours
@@ -192,7 +192,7 @@ export default async function HistoriqueFantasyPage() {
                     </td>
                     <td
                       className={`py-2 pr-3 text-right font-mono tabular-nums ${
-                        l.termine ? classeEcart(l.ratio) : 'text-zinc-400'
+                        l.termine ? classeEcart(l.ratio) : 'text-zinc-500'
                       }`}
                     >
                       {l.predit > 0
@@ -211,7 +211,7 @@ export default async function HistoriqueFantasyPage() {
                       }
                     >
                       {l.preditPropre === null ? (
-                        <span className="text-zinc-400">—</span>
+                        <span className="text-zinc-500">—</span>
                       ) : (
                         l.preditPropre.toFixed(1)
                       )}
@@ -220,7 +220,7 @@ export default async function HistoriqueFantasyPage() {
                       className={`py-2 pr-3 text-right font-mono tabular-nums ${
                         l.ratioPropre !== null && l.termine
                           ? classeEcart(l.ratioPropre)
-                          : 'text-zinc-400'
+                          : 'text-zinc-500'
                       }`}
                     >
                       {l.ratioPropre === null

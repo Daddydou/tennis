@@ -405,7 +405,7 @@ export default function PlanPicks({
                     {s ? f1(s.moyenne) : f1(plans[m.id].total)}
                   </span>
                 </span>
-                <span className={`mt-0.5 block text-[11px] ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>
+                <span className={`mt-0.5 block text-xs ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>
                   {s ? (
                     <>
                       entre {Math.round(s.p10)} et {Math.round(s.p90)} pts dans 80 % des cas
@@ -433,7 +433,7 @@ export default function PlanPicks({
                   {stats ? pct(stats.equilibre.pPremier ?? 0) : '…'}
                 </span>
               </span>
-              <span className={`mt-0.5 block text-[11px] ${mode === 'rivaux' ? 'text-blue-100' : 'text-zinc-500'}`}>
+              <span className={`mt-0.5 block text-xs ${mode === 'rivaux' ? 'text-blue-100' : 'text-zinc-500'}`}>
                 chance de finir devant eux (plan équilibré) — cherche mieux d’après leurs picks
               </span>
             </button>
@@ -486,7 +486,7 @@ export default function PlanPicks({
             return (
               <div key={l.cle}>
                 {nouveauTour && (
-                  <div className="flex items-center justify-between bg-zinc-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  <div className="flex items-center justify-between bg-zinc-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     <span>
                       {l.slot.round}
                       {l.slot.round === premierTourLibre && validable ? ' · à poser maintenant' : ''}
@@ -502,9 +502,9 @@ export default function PlanPicks({
                     {joueur ? (
                       <>
                         <span className="font-semibold">{joueur.nom}</span>
-                        {joueur.rang ? <span className="ml-1 text-xs text-zinc-400">#{joueur.rang}</span> : null}
+                        {joueur.rang ? <span className="ml-1 text-xs text-zinc-500">#{joueur.rang}</span> : null}
                         <span
-                          className={`ml-2 rounded px-1.5 py-px text-[10px] font-medium ${
+                          className={`ml-2 rounded px-1.5 py-px text-xs font-medium ${
                             l.etat === 'valide'
                               ? 'bg-emerald-100 text-emerald-800'
                               : l.etat === 'choisi'
@@ -515,7 +515,7 @@ export default function PlanPicks({
                           {l.etat === 'valide' ? 'validé' : l.etat === 'choisi' ? 'ton choix' : 'plan'}
                         </span>
                         {l.etat === 'plan' && l.planB && (
-                          <span className="mt-0.5 block text-[11px] text-zinc-500">
+                          <span className="mt-0.5 block text-xs text-zinc-500">
                             plan B : {d.joueurs[l.planB.joueur].nom} ({f1(l.planB.e)} pts, −{f1(l.planB.perte)} sur le plan)
                             <button
                               type="button"
@@ -528,7 +528,7 @@ export default function PlanPicks({
                         )}
                       </>
                     ) : (
-                      <span className="text-sm text-zinc-400">aucun joueur utile</span>
+                      <span className="text-sm text-zinc-500">aucun joueur utile</span>
                     )}
                   </div>
                   {joueur && (
@@ -536,7 +536,7 @@ export default function PlanPicks({
                       <span className="block font-mono text-sm font-semibold tabular-nums">
                         {l.etat === 'valide' && l.points !== null ? f1(l.points) : f1(l.e)}
                       </span>
-                      <span className="block text-[10px] text-zinc-400">
+                      <span className="block text-xs text-zinc-500">
                         {l.etat === 'valide' && l.points !== null ? 'pts réels' : l.sigma !== null ? `± ${f1(l.sigma)}` : 'pts esp.'}
                       </span>
                     </span>
@@ -590,7 +590,7 @@ export default function PlanPicks({
         </div>
 
         {valideRecemment && (
-          <div className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-950">
+          <div className="rounded-xl bg-zinc-100 px-3 py-2 text-xs text-zinc-800">
             Pick validé chez nous. Pour qu’il compte chez Thomas, envoie-le sur Game Tracker :{' '}
             <a href="#game-tracker" className="font-medium underline underline-offset-2">
               ouvrir le panneau Game Tracker
@@ -598,7 +598,7 @@ export default function PlanPicks({
             .
           </div>
         )}
-        <p className="text-[11px] text-zinc-500">
+        <p className="text-xs text-zinc-500">
           « Réserver » garde un joueur pour un tour à venir (rien n’est envoyé nulle part) : le plan se réorganise autour
           de lui. Seuls les picks du tour dont on connaît les joueurs se valident.
         </p>

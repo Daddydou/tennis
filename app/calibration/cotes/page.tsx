@@ -168,7 +168,7 @@ export default async function CotesPage({
             {propre.scores[0].n > 0 ? (
               <>
                 <TableScores {...propre} />
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-500">
                   {propre.scores[0].n} match(s) jugé(s) sur l&apos;Elo publié{' '}
                   <strong>avant</strong> la rencontre
                   {relevesUtilises.length > 0 &&
@@ -219,7 +219,7 @@ export default async function CotesPage({
               <span className="font-normal">(biais de look-ahead)</span>
             </h2>
             <TableScores {...courant} />
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-zinc-500">
               {courant.scores[0].n} match(s), jugés sur l&apos;Elo{' '}
               <strong>d&apos;aujourd&apos;hui</strong>, qui a déjà intégré leur
               résultat : le vainqueur en est ressorti relevé, le perdant
@@ -254,7 +254,7 @@ export default async function CotesPage({
         <TableDetail vues={vues} nonApparies={nonApparies} />
       )}
 
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-zinc-500">
         Probabilités dévigorisées (1/cote, puis normalisation à somme 1) et agrégées
         par la médiane des bookmakers. Les deux mélanges appliquent{' '}
         <code>blendAvecCotes</code> (<code>lib/elo.ts</code>) aux mêmes entrées, à{' '}

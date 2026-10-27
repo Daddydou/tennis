@@ -102,7 +102,7 @@ export default async function ResultatsPage({
               </span>
             )}
             {sansPickPossible > 0 && (
-              <span className="ml-2 text-xs text-amber-600">
+              <span className="ml-2 text-xs text-amber-700">
                 ({sansPickPossible} slot{sansPickPossible > 1 ? 's' : ''} sans
                 pick possible)
               </span>
@@ -119,7 +119,7 @@ export default async function ResultatsPage({
         <RecomputeButton tournamentId={id} />
       </div>
 
-      <Suspense fallback={<p className="text-xs text-zinc-400">Détail de la référence : calcul en cours…</p>}>
+      <Suspense fallback={<p className="text-xs text-zinc-500">Détail de la référence : calcul en cours…</p>}>
         <DetailReference id={id} picks={miens} />
       </Suspense>
 
@@ -159,7 +159,7 @@ export default async function ResultatsPage({
                   <td className="py-1.5 pr-3">
                     {nomDe.get(p.player_id) ?? p.player_id}
                     {enAttente && (
-                      <span className="ml-1 text-xs text-zinc-400">
+                      <span className="ml-1 text-xs text-zinc-500">
                         ({estEnCours(st) ? 'en cours' : 'à jouer'})
                       </span>
                     )}
@@ -176,7 +176,7 @@ export default async function ResultatsPage({
                   <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
                     {num(p.points)}
                   </td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-400">
+                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
                     {p.e_points != null ? Number(p.e_points).toFixed(1) : '—'}
                   </td>
                 </tr>

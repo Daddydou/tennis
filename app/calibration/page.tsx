@@ -17,9 +17,9 @@ function pourcent(p: number, decimales = 1): string {
 
 /** Vert si le modèle colle, rouge s'il s'écarte de plus de 5 points. */
 function classeEcart(ecart: number, significatif: boolean): string {
-  if (!significatif) return 'text-zinc-400';
+  if (!significatif) return 'text-zinc-500';
   const a = Math.abs(ecart);
-  if (a <= 0.02) return 'text-emerald-600';
+  if (a <= 0.02) return 'text-emerald-700';
   if (a <= 0.05) return 'text-zinc-700';
   return 'text-red-600';
 }
@@ -114,7 +114,7 @@ export default async function CalibrationPage() {
                   {t.libelle}
                   {!t.significatif && (
                     <span
-                      className="ml-2 text-xs font-sans text-amber-600"
+                      className="ml-2 text-xs font-sans text-amber-700"
                       title={`Moins de ${c.seuilSignificatif} matchs : la fréquence observée n'est que du bruit. Tranche exclue de l'ajustement.`}
                     >
                       non significatif
@@ -131,7 +131,7 @@ export default async function CalibrationPage() {
                   {t.matchs > 0 ? (
                     <>
                       {pourcent(t.pReelle)}
-                      <span className="ml-1 text-xs text-zinc-400">
+                      <span className="ml-1 text-xs text-zinc-500">
                         ±{(t.erreurType * 100).toFixed(1)}
                       </span>
                     </>
@@ -206,12 +206,12 @@ export default async function CalibrationPage() {
                       <td className="py-1.5 pr-3 font-mono tabular-nums">
                         {k.constante}
                         {k.constante === c.constanteMoteur && (
-                          <span className="ml-2 font-sans text-xs text-zinc-400">
+                          <span className="ml-2 font-sans text-xs text-zinc-500">
                             moteur actuel
                           </span>
                         )}
                         {k.constante === c.meilleure && (
-                          <span className="ml-2 font-sans text-xs text-emerald-600">
+                          <span className="ml-2 font-sans text-xs text-emerald-700">
                             meilleure
                           </span>
                         )}

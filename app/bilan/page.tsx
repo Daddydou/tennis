@@ -28,7 +28,7 @@ function ListeProgressions({ lignes }: { lignes: ProgressionElo[] }) {
           <span className="truncate">{p.nom}</span>
           <span className="shrink-0 tabular-nums text-zinc-500">
             {Math.round(p.depart)} → {Math.round(p.arrivee)}{' '}
-            <span className={p.delta >= 0 ? 'font-medium text-emerald-600' : 'font-medium text-red-600'}>
+            <span className={p.delta >= 0 ? 'font-medium text-emerald-700' : 'font-medium text-red-600'}>
               {signe(p.delta)}
             </span>
           </span>
@@ -61,7 +61,7 @@ function BlocElo({ tour, elo }: { tour: string; elo: BilanElo }) {
           <ListeProgressions lignes={baisses} />
         </div>
       </div>
-      <p className="text-[11px] text-zinc-400">
+      <p className="text-xs text-zinc-500">
         {elo.progressions.length} joueurs de nos tournois mesurés sur {elo.nbReleves} relevés, du{' '}
         {formatDate(elo.du)} au {formatDate(elo.au)}.
       </p>
@@ -142,7 +142,7 @@ export default async function BilanPage({
             </tbody>
           </table>
         </div>
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-xs text-zinc-500">
           Mêmes points que le Dashboard de chaque tournoi (picks validés + Bracket sur
           les matchs déjà joués).
         </p>
@@ -186,7 +186,7 @@ export default async function BilanPage({
                   {Math.round(bilan.fantasy.meilleur.reel)} pts)
                 </p>
               )}
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-xs text-zinc-500">
                 Équipe optimale figée au tirage — détail dans{' '}
                 <Link href="/fantasy" className="underline">
                   l&apos;historique Fantasy
@@ -203,7 +203,7 @@ export default async function BilanPage({
         <h2 className="text-sm font-semibold">Progression Elo</h2>
         <BlocElo tour="ATP" elo={bilan.elo.ATP} />
         <BlocElo tour="WTA" elo={bilan.elo.WTA} />
-        <p className="text-[11px] text-amber-700">
+        <p className="text-xs text-amber-700">
           L&apos;archive des Elo ne remonte qu&apos;à sa mise en place (fin juillet
           2026) : la « progression » ne couvre que la période indiquée, pas toute la
           saison.
@@ -220,14 +220,14 @@ export default async function BilanPage({
             {bilan.victorieux.map((j, i) => (
               <li key={j.nom} className="flex justify-between gap-2">
                 <span className="truncate">
-                  <span className="text-zinc-400">{i + 1}.</span> {j.nom}
+                  <span className="text-zinc-500">{i + 1}.</span> {j.nom}
                 </span>
                 <span className="shrink-0 tabular-nums text-zinc-500">{j.victoires} v.</span>
               </li>
             ))}
           </ol>
         )}
-        <p className="text-[11px] text-zinc-400">Byes exclus ; w.o. et abandons comptés.</p>
+        <p className="text-xs text-zinc-500">Byes exclus ; w.o. et abandons comptés.</p>
       </div>
     </div>
   );

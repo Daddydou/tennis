@@ -68,20 +68,32 @@ export default function ParticipantsForm({
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && ajouter()}
-          placeholder="Nom du participant"
-          className={champTexte}
-        />
-        <button onClick={ajouter} disabled={pending || !nom.trim()} className={boutonPrimaire}>
-          {pending && <Spinner />}
-          {pending ? '…' : 'Ajouter'}
-        </button>
-        {erreur && <span className="text-xs text-red-600">{erreur}</span>}
+      {/* Le formulaire d'ajout vit dans sa carte, comme la liste : posé à nu
+          sur le gris de la page, il semblait inachevé. */}
+      <div className={`space-y-2 p-3 ${carte}`}>
+        <label htmlFor="nouveau-participant" className="block text-sm font-semibold">
+          Ajouter un participant
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            id="nouveau-participant"
+            type="text"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && ajouter()}
+            placeholder="Nom du participant"
+            className={`min-w-0 flex-1 ${champTexte}`}
+          />
+          <button onClick={ajouter} disabled={pending || !nom.trim()} className={boutonPrimaire}>
+            {pending && <Spinner />}
+            {pending ? 'Ajout…' : 'Ajouter'}
+          </button>
+        </div>
+        {erreur && (
+          <p role="alert" className="text-sm font-medium text-red-700">
+            {erreur}
+          </p>
+        )}
       </div>
     </div>
   );

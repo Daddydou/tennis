@@ -95,7 +95,7 @@ export default async function PlanPage({
             <div key={s.id ?? 'moi'} className={`flex items-baseline gap-1.5 px-3 py-1.5 ${carte}`}>
               <span className="text-xs font-medium text-zinc-600">{s.nom}</span>
               <span className="text-base font-bold tabular-nums">{picksParStock.get(s.id) ?? 0}</span>
-              <span className="text-[11px] text-zinc-400">pts</span>
+              <span className="text-xs text-zinc-500">pts</span>
             </div>
           ))}
         </div>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { cleDuel, ensemblesAtteignables, type MatchReel } from '@/lib/bracketSim';
 import { MOI, nomStock, type Joueur, type Participant } from './types';
-import { boutonPrimaire, champTexte, pilleSelecteur } from '@/app/ui';
+import { boutonPrimaire, champTexte, filtreSecondaire } from '@/app/ui';
 
 /**
  * Bloc 3 — Bracket des participants : pour le tour choisi (bloc 1), un
@@ -100,7 +100,7 @@ export default function ParticipantsBracketPanel({
             key={s}
             data-testid={`participants-stock-tab-${s}`}
             onClick={() => setStockActif(s)}
-            className={pilleSelecteur(s === stockActif)}
+            className={filtreSecondaire(s === stockActif)}
           >
             {nomStock(s, participants)}
             {modifie(s) && <span className="ml-1 text-amber-500">●</span>}
@@ -128,7 +128,7 @@ export default function ParticipantsBracketPanel({
               key={cle}
               className="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-2 text-sm shadow-card"
             >
-              <span className="w-36 shrink-0 truncate text-xs text-zinc-400" title={caption}>
+              <span className="w-36 shrink-0 truncate text-xs text-zinc-500" title={caption}>
                 {caption}
               </span>
               <select
@@ -160,7 +160,7 @@ export default function ParticipantsBracketPanel({
         <button onClick={valider} disabled={pending || matchsDuTour.length === 0} className={boutonPrimaire}>
           Valider les pronostics de {nomStock(stockActif, participants)} pour {roundChoisi}
         </button>
-        {!modifie(stockActif) && <span className="text-[11px] text-zinc-400">déjà à jour</span>}
+        {!modifie(stockActif) && <span className="text-xs text-zinc-500">déjà à jour</span>}
       </div>
     </div>
   );

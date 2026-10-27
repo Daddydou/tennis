@@ -59,7 +59,7 @@ export default function PanneauRivaux({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[11px] uppercase tracking-wide text-zinc-500">
+            <tr className="text-left text-xs uppercase tracking-wide text-zinc-500">
               <th className="py-1 pr-3 font-medium">Joueur</th>
               <th className="py-1 pr-3 text-right font-medium">Points validés</th>
               <th className="py-1 pr-3 text-right font-medium">Picks posés</th>
@@ -128,7 +128,7 @@ export default function PanneauRivaux({
             </ul>
           </div>
 
-          <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-zinc-500">
+          <ul className="list-disc space-y-0.5 pl-4 text-xs text-zinc-500">
             <li>Les picks déjà posés par {rivaux.map((r) => r.nom).join(' et ')} sont pris tels quels.</li>
             <li>Pour leurs picks pas encore posés, on suppose qu’ils prennent le meilleur joueur encore en lice (et pas déjà utilisé).</li>
             <li>Les tours suivants sont complétés au mieux en points attendus ; ils se recalculent à chaque résultat.</li>

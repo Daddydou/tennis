@@ -42,9 +42,9 @@ export async function TotalReference({
       <span
         className={`ml-2 text-xs font-medium tabular-nums ${
           ecart > 0
-            ? 'text-emerald-600'
+            ? 'text-emerald-700'
             : ecart < 0
-              ? 'text-amber-600'
+              ? 'text-amber-700'
               : 'text-zinc-500'
         }`}
       >
@@ -52,7 +52,7 @@ export async function TotalReference({
       </span>
       {ref.roundsManquants.length > 0 && (
         <span
-          className="ml-2 text-xs text-amber-600"
+          className="ml-2 text-xs text-amber-700"
           title="Simulation Monte Carlo pas encore en cache pour ces tours — calcul lancé en arrière-plan, revenir dans un instant."
         >
           (partiel — {ref.roundsManquants.join(', ')} en cours de calcul)
@@ -85,9 +85,9 @@ export async function DetailReference({
           {ref.total} pts
         </span>{' '}
         — les recommandations de l&apos;app, tour par tour
-        <span className="ml-1 text-zinc-400">— détail</span>
+        <span className="ml-1 text-zinc-500">— détail</span>
         {ref.roundsManquants.length > 0 && (
-          <span className="ml-1 text-amber-600">
+          <span className="ml-1 text-amber-700">
             ({ref.roundsManquants.join(', ')} en cours de calcul, absent du total)
           </span>
         )}
@@ -128,22 +128,22 @@ export async function DetailReference({
                   </td>
                   <td className="py-1.5 pr-3">
                     {p.playerName ?? (
-                      <span className="text-zinc-400">aucun pick possible</span>
+                      <span className="text-zinc-500">aucun pick possible</span>
                     )}
                     {attente && (
-                      <span className="ml-1 text-zinc-400">
+                      <span className="ml-1 text-zinc-500">
                         ({estEnCours(p.statut) ? 'en cours' : 'à jouer'})
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-400">
+                  <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
                     {p.ePoints != null ? p.ePoints.toFixed(1) : '—'}
                   </td>
                   <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
                     {p.score ? p.score.total : '—'}
                   </td>
                   <td className="py-1.5 pr-3 text-zinc-600">
-                    {moi ? moi.nom : <span className="text-zinc-400">—</span>}
+                    {moi ? moi.nom : <span className="text-zinc-500">—</span>}
                   </td>
                   <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-600">
                     {moi?.points ?? '—'}
@@ -173,7 +173,7 @@ export async function DetailReference({
 /** Réservé pendant le calcul : les projections manquantes coûtent plusieurs secondes. */
 export function ReferenceEnCours() {
   return (
-    <div className="text-sm text-zinc-400">
+    <div className="text-sm text-zinc-500">
       Si tu avais suivi l&apos;app : calcul en cours…
     </div>
   );
