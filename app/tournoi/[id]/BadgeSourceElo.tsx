@@ -98,9 +98,9 @@ export default function BadgeSourceElo({
     return (
       <span
         className="max-w-32 truncate text-xs text-zinc-500"
-        title={`Elo trouvé sous le nom Tennis Abstract : ${taName}`}
+        title={`Elo trouvé sous le nom : ${taName} (table d’Elo)`}
       >
-        TA : {taName}
+        Elo : {taName}
       </span>
     );
   }
