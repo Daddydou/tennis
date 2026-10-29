@@ -463,3 +463,13 @@ select to_regclass('public.tn_plan_reservations') is not null
    and not has_table_privilege('anon', 'public.tn_plan_reservations', 'insert')
    as appliquee;
 ```
+
+## 0030 — alias d'identité de l'Elo maison (tn_elo_maison_alias)
+
+Pour un joueur de l'app (`tn_players.id`), la ligne de `tn_elo_maison` qui est la sienne : elle passe avant le rapprochement par le nom, et lève les homonymes « ambigus » (graphies différentes d'un même joueur dans l'archive). Non destructif. Lecture publique, écriture service role seulement. Amorcée avec trois joueuses WTA (X. Wang ×2, Y. Ma). Ajout à la main : voir `docs/elo-maison.md`.
+```sql
+select to_regclass('public.tn_elo_maison_alias') is not null
+   and has_table_privilege('anon', 'public.tn_elo_maison_alias', 'select')
+   and not has_table_privilege('anon', 'public.tn_elo_maison_alias', 'insert')
+   as appliquee;
+```

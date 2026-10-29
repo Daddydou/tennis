@@ -17,6 +17,7 @@
 
 import { supabaseAnon } from './anon';
 import { eloDepuisRang, eloEffectif } from '@/lib/elo';
+import { indexerAlias, type LigneAlias } from '@/lib/eloMaisonAlias';
 import { departagerHomonymes, ELO_DEFAUT_MAISON } from '@/lib/eloMaisonIdentites';
 import { completerRangsParNom } from '@/lib/eloMaisonRangs';
 import {
@@ -115,6 +116,11 @@ export type IndexElo = IndexTa<TaEloRow> & {
   base?: BaseElo;
   /** Elo d'un joueur inconnu de cet index ; absent = `ELO_DEFAUT_RESOLU` (échelle TA). */
   eloDefaut?: number;
+  /**
+   * Alias d'identité (Elo maison, table tn_elo_maison_alias) : id du joueur de l'app -> sa
+   * ligne d'Elo. Passe AVANT le rapprochement par le nom (cf. lib/eloMaisonAlias.ts).
+   */
+  parIdJoueur?: Map<string, TaEloRow>;
 };
 
 /** Index vide : aucun Elo TA disponible (table non encore peuplée). */
@@ -204,6 +210,10 @@ export function resoudreElos(
 ): ElosResolus {
   const base: BaseElo = index.base ?? 'ta';
   let corr = chercherCorrespondance(index, joueur.name);
+
+  // Alias d'identité déclaré pour ce joueur : sa ligne d'Elo est connue, pas de devinette par le nom.
+  const alias = index.parIdJoueur?.get(joueur.id);
+  if (alias) corr = { statut: 'trouve', ligne: alias, via: 'alias', exception: true };
 
   // Homonymes que le pays ou le poids des lignes (matchs joues, dernier match) departagent
   // sans equivoque (Elo maison) : cf. lib/eloMaisonIdentites.ts. Les cas douteux restent ambigus.
@@ -397,7 +407,26 @@ async function chargerIndexMaison(sb: ReturnType<typeof supabaseAnon>, t: 'atp' 
   }
   if (lignes.length === 0) return null;
   await completerRangsDepuisTa(sb, t, lignes);
-  return { ...construireIndex(lignes, []), base: 'maison', eloDefaut: ELO_DEFAUT_MAISON[t] };
+  const alias = await chargerAlias(sb, t);
+  return {
+    ...construireIndex(lignes, []),
+    base: 'maison',
+    eloDefaut: ELO_DEFAUT_MAISON[t],
+    parIdJoueur: indexerAlias(lignes, alias),
+  };
+}
+
+/**
+ * Alias d'identité d'un circuit (tn_elo_maison_alias, migration 0030). Table absente (migration
+ * pas encore jouée) ou illisible : aucun alias, le rapprochement par le nom fait tout, comme avant.
+ */
+async function chargerAlias(sb: ReturnType<typeof supabaseAnon>, t: 'atp' | 'wta'): Promise<LigneAlias[]> {
+  const { data, error } = await sb.from('tn_elo_maison_alias').select('player_id, ta_slug').eq('tour', t).range(0, 4999);
+  if (error) {
+    if (!tableAbsente(error.code)) console.error(`Alias d'Elo maison (${t}) : ${error.message}`);
+    return [];
+  }
+  return (data ?? []) as LigneAlias[];
 }
 
 /**

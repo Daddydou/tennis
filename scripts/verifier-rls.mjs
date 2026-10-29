@@ -72,6 +72,8 @@ const TABLES = [
   'tn_elo_maison_suivi',
   // 0029 — réservations du plan de l'écran Picks
   'tn_plan_reservations',
+  // 0030 - alias d'identité de l'Elo maison
+  'tn_elo_maison_alias',
 ];
 
 /**

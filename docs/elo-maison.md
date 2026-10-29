@@ -75,6 +75,26 @@ partagé. Règles (détail et seuils dans `lib/eloMaisonSuivi.ts`) :
 - `optimiser.mts`, `evaluer.mts`, `ablation.mts` : réglage et évaluation du modèle (voir
   `RESULTATS.md`).
 
+## Joueur sans Elo, ou « ambigu » : trouver le problème, puis poser un alias (migration 0030)
+
+`npm run verify:elo-inconnus` (lecture seule) rejoue la résolution de l'Elo avec le vrai code pour les joueurs des tournois des 45 derniers jours (`-- --jours=120` pour plus). Il liste ceux qui retombent sur le défaut du circuit (ATP 2000 / WTA 2100) ou sur un homonyme ambigu, avec les lignes candidates de la table d'Elo (`ta_slug`).
+
+Mesure du 29/10/2026 : 236 joueurs sur 245 trouvés (96 %) ; 4 inconnus, 5 ambigus (presque tous des noms chinois ou hongkongais).
+
+Cause fréquente : **doublons d'identité dans `tn_elo_maison`**. L'archive écrit un même joueur de plusieurs façons (« Xin Yu Wang » / « Xinyu Wang », « Ye Xin Ma » / « Yexin Ma », « Coleman Wong » / « Chak Lam Coleman Wong ») ; quand le passage quotidien ne retrouve pas le joueur, il crée une ligne neuve (`TOUR:m<id>`, repartie de 1500) à côté de la ligne historique. Aucune ligne n'est supprimée : on dit à l'app laquelle est la bonne avec la table `tn_elo_maison_alias` (id du joueur de l'app → `ta_slug`), lue avant le rapprochement par le nom.
+
+Poser un alias (service role, par exemple depuis l'éditeur SQL de Supabase) :
+
+```sql
+insert into tn_elo_maison_alias (player_id, tour, ta_slug, note)
+values ('326376', 'wta', 'WTA:s216133', 'Xinyu Wang — ligne historique')
+on conflict (player_id) do update set ta_slug = excluded.ta_slug, note = excluded.note;
+```
+
+Choisir la ligne : celle de la **bonne personne** (même pays, même prénom écrit autrement) ; entre une ligne historique figée (`dernier_jour` ancien) et une ligne récente née à 1500, préférer la ligne historique tant que la récente a peu de matchs (sa note est encore très basse), sinon la ligne récente (mise à jour chaque jour). Un alias vers une ligne absente est ignoré : le nom reprend la main. Cache de l'index : quelques minutes.
+
+Piste de fond (non faite) : au moment de créer une ligne `TOUR:m<id>` (db/eloMaison.ts), tenter d'abord un rapprochement tolérant (noms collés, même pays, joueur actif) avec une ligne historique sans `matchstat_id`, au lieu de repartir de 1500.
+
 ## Pièges connus
 
 - Doublons : un joueur peut exister côté archive (`s<id>`) et côté API (`m<id>`) ; les règles de
