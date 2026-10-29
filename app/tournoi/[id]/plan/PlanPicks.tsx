@@ -9,6 +9,7 @@ import PanneauRivaux from './PanneauRivaux';
 import { boutonDanger, boutonPrimaire, boutonSecondaire, carte, Spinner } from '@/app/ui';
 import type { PlayerInsight } from '@/lib/insights';
 import type { DonneesPlan } from '@/lib/planDonnees';
+import { adversairesPossibles } from '@/lib/planAdversaires';
 import {
   cleSlot,
   construireMonde,
@@ -235,27 +236,41 @@ export default function PlanPicks({
     };
   }, [d.joueurs, aJouer]);
 
-  const roundsAffiches = useMemo(() => d.rounds.slice(d.r0), [d.rounds, d.r0]);
   const tourCourant = d.rounds[d.r0] ?? d.rounds[d.rounds.length - 1];
+  // Le grand tableau porte sur le tour qu'on va PICKER (ex. QF quand le R16 est
+  // verrouillé et en cours), pas sur le tour en cours : ses colonnes partent de là.
+  const tourTableau = premierTourLibre ?? tourCourant;
+  const roundsAffiches = useMemo(() => {
+    const i = d.rounds.indexOf(tourTableau);
+    return d.rounds.slice(i < 0 ? d.r0 : Math.max(i, d.r0));
+  }, [d.rounds, d.r0, tourTableau]);
 
   const lignesTableau = useMemo<LigneTableau[]>(() => {
     if (termine) return [];
-    const partenaire = new Map<number, number>();
-    for (let i = 0; i + 1 < d.ouverture.length; i += 2) {
-      const a = d.ouverture[i];
-      const b = d.ouverture[i + 1];
-      if (a !== null && b !== null) {
-        partenaire.set(a, b);
-        partenaire.set(b, a);
-      }
-    }
     const utilises = utilisesDe(stock);
     const { esp, ecart, presence } = monde.moments;
+    // Nombre de tours entre le tour en cours (r0) et le tour du pick.
+    const ecartTours = Math.max(0, d.rounds.indexOf(tourTableau) - d.r0);
+    const vivant = (j: number) => ecartTours === 0 || (presence[d.joueurs[j].id]?.[tourTableau] ?? 0) > 0;
     const out: LigneTableau[] = [];
     d.joueurs.forEach((j, idx) => {
       if (!presence[j.id]) return;
-      const adv = partenaire.get(idx);
-      const fixe = adv !== undefined ? monde.t.fixe(idx, adv) : undefined;
+      // Plus loin que le tour en cours : seuls restent ceux qui peuvent encore y arriver.
+      if (ecartTours > 0 && !((presence[j.id]?.[tourTableau] ?? 0) > 0)) return;
+      // Adversaire(s) au tour du pick : connu, ou les possibles tant que le duel voisin n'est pas joué.
+      const adversaires = adversairesPossibles(d.ouverture, idx, ecartTours, vivant).map((a) => {
+        const f = ecartTours === 0 ? monde.t.fixe(idx, a) : undefined;
+        return {
+          nom: d.joueurs[a].nom,
+          rang: d.joueurs[a].rang,
+          elo: d.joueurs[a].elo,
+          pVictoire: f ? (f.gagnantEstA ? 1 : 0) : monde.t.p(idx, a),
+          points: monde.t.ep(idx, a),
+        };
+      });
+      const partenaire = adversairesPossibles(d.ouverture, idx, 0, () => true)[0];
+      const fixe = partenaire !== undefined ? monde.t.fixe(idx, partenaire) : undefined;
+      const resultatEnCours = fixe ? (fixe.gagnantEstA ? 'gagne' : 'perdu') : null;
       const parTour: LigneTableau['parTour'] = {};
       for (const r of roundsAffiches) {
         const pres = presence[j.id]?.[r];
@@ -272,10 +287,16 @@ export default function PlanPicks({
         taName: j.taName,
         candidatsElo: j.candidatsElo,
         moitie: j.moitie,
-        adversaire: adv !== undefined ? { nom: d.joueurs[adv].nom, rang: d.joueurs[adv].rang, elo: d.joueurs[adv].elo } : null,
-        pVictoire: adv !== undefined ? monde.t.p(idx, adv) : null,
-        pointsMatch: adv !== undefined ? monde.t.ep(idx, adv) : null,
-        resultat: fixe ? (fixe.gagnantEstA ? 'gagne' : 'perdu') : null,
+        adversaires,
+        resultat: ecartTours === 0 ? resultatEnCours : null,
+        enCours:
+          ecartTours > 0
+            ? {
+                round: tourCourant,
+                contre: partenaire !== undefined ? d.joueurs[partenaire].nom : null,
+                resultat: resultatEnCours,
+              }
+            : null,
         parTour,
         utilise: utilises.has(idx),
         prisPar: d.participants
@@ -285,7 +306,7 @@ export default function PlanPicks({
       });
     });
     return out;
-  }, [termine, d, monde, stock, roundsAffiches, insights]);
+  }, [termine, d, monde, stock, roundsAffiches, tourTableau, tourCourant, insights]);
 
   /* ---- Actions ---- */
   function onCellule(idx: number, round: string) {
@@ -647,7 +668,7 @@ export default function PlanPicks({
         lignes={lignesTableau}
         rounds={roundsAffiches}
         premierTourLibre={premierTourLibre}
-        tourCourant={tourCourant}
+        tourCourant={tourTableau}
         cleDeCellule={cleDeCellule}
         infoSlots={infoSlots}
         onCellule={onCellule}
