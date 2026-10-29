@@ -24,6 +24,14 @@ export default defineConfig({
     },
   },
   test: {
+    // Sur le PC de Daddy, NODE_ENV=production est défini globalement : React
+    // charge alors son build de production, sans `React.act`, et tous les
+    // tests de composants échouent. On force donc `test` ici, pour que
+    // `npm run test:components` (ou `npx vitest run`) marche sans manipulation.
+    env: { NODE_ENV: 'test' },
+    // Quelques tests sont lourds (propagation du tableau, bundle userscript : 5 à 15 s
+    // quand le PC est chargé). Le délai par défaut de 5 s les faisait échouer au hasard.
+    testTimeout: 30_000,
     environment: 'jsdom',
     include: ['**/*.test.tsx', '**/*.test.ts'],
     exclude: ['node_modules/**', '.next/**'],

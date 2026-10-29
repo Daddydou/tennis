@@ -25,6 +25,7 @@
     "test:fantasy-scenario": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-fantasy-scenario.mts",
     "test:fantasy-paliers": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-fantasy-paliers.mts",
     "test:elo-format": "node --experimental-loader ./scripts/test-loader.mjs scripts/test-elo-format.mts",
+    "test": "vitest run",
     "test:components": "vitest run",
     "build:userscript": "node tools/userscript/build.mjs"
   },

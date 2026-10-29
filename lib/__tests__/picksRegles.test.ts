@@ -1,3 +1,6 @@
+// @vitest-environment node
+// Ce fichier lit une migration SQL sur le disque : il n'a pas besoin de jsdom,
+// et sous jsdom `node:path` n'exposait pas `resolve` (« resolve is not a function »).
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
