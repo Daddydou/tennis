@@ -10,9 +10,10 @@ import type { SourceElo } from '@/db/elo';
 import type { PlayerInsight } from '@/lib/insights';
 
 /**
- * LE GRAND TABLEAU — tous les joueurs encore en lice, avec ce qu'il faut pour
- * décider : Elo, adversaire, chance de gagner, points projetés du match, puis
- * les points espérés à CHAQUE tour restant. Une case de tour se clique : elle
+ * LE GRAND TABLEAU — les joueurs encore en course pour le TOUR QU'ON VA PICKER,
+ * avec ce qu'il faut pour décider : Elo, adversaire à ce tour (connu, ou les
+ * deux adversaires possibles tant que le duel voisin n'est pas joué), puis les
+ * points espérés à CE tour et aux suivants. Une case de tour se clique : elle
  * pose (ou retire) ce joueur sur le pick correspondant, et le plan se recalcule
  * tout de suite.
  */
@@ -26,6 +27,16 @@ export interface CelluleTour {
   sigma: number;
 }
 
+export interface AdversaireTour {
+  nom: string;
+  rang: number | null;
+  elo: number;
+  /** P(le joueur de la ligne bat cet adversaire). */
+  pVictoire: number;
+  /** Points projetés de ce duel pour le joueur de la ligne (réels s'il est joué). */
+  points: number;
+}
+
 export interface LigneTableau {
   idx: number;
   id: string;
@@ -36,12 +47,19 @@ export interface LigneTableau {
   taName: string | null;
   candidatsElo: string[];
   moitie: 'top' | 'bottom';
-  adversaire: { nom: string; rang: number | null; elo: number } | null;
-  /** Chance de gagner le duel du tour courant (1/0 s'il est joué). */
-  pVictoire: number | null;
-  /** Points projetés du duel (réels s'il est joué). */
-  pointsMatch: number | null;
+  /**
+   * Adversaire(s) au tour du pick : UN seul s'il est connu (duel voisin joué,
+   * ou tour en cours), PLUSIEURS tant que le duel voisin n'est pas joué.
+   * Vide : pas encore d'adversaire (exemption…).
+   */
+  adversaires: AdversaireTour[];
+  /** Résultat du duel de CE tour s'il est déjà joué (tour en cours seulement). */
   resultat: 'gagne' | 'perdu' | null;
+  /**
+   * Le duel du tour en cours, quand le pick vise un tour plus loin (ex. R16
+   * en cours, pick pour les QF) : à jouer contre qui, ou son résultat.
+   */
+  enCours: { round: string; contre: string | null; resultat: 'gagne' | 'perdu' | null } | null;
   parTour: Record<string, CelluleTour>;
   /** Déjà pické par ce participant à un autre tour. */
   utilise: boolean;
@@ -77,7 +95,7 @@ export default function TableauJoueurs({
   rounds: string[];
   /** Tour du prochain pick à poser (sert au tri par défaut et aux repères Game Tracker). */
   premierTourLibre: string | null;
-  /** Tour dont les duels sont connus (affiché dans les colonnes de gauche). */
+  /** Tour du pick (colonnes adversaire, écart, victoire et points du match). */
   tourCourant: string;
   cleDeCellule: (idx: number, round: string) => string | null;
   infoSlots: Map<string, InfoSlot>;
@@ -155,15 +173,17 @@ export default function TableauJoueurs({
             <tr className="border-b border-zinc-100 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
               <th className="sticky left-0 z-10 bg-white px-3 py-2">Joueur</th>
               <th className="px-2 py-2 text-right">Elo</th>
-              <th className="px-2 py-2">Adversaire {tourCourant}</th>
-              <th className="px-2 py-2 text-right" title="Écart d'Elo, joueur − adversaire">
+              <th className="px-2 py-2" title="Adversaire à ce tour : connu, ou les adversaires possibles tant que le duel voisin n'est pas joué">
+                Adversaire {tourCourant}
+              </th>
+              <th className="px-2 py-2 text-right" title="Écart d'Elo, joueur − adversaire (seulement si l'adversaire est connu)">
                 Écart
               </th>
-              <th className="px-2 py-2 text-right" title="Chance de gagner le duel">
+              <th className="px-2 py-2 text-right" title="Chance de gagner le duel (seulement si l'adversaire est connu)">
                 Victoire
               </th>
-              <th className="px-2 py-2 text-right" title="Points projetés du duel (réels s'il est joué)">
-                Pts du match
+              <th className="px-2 py-2 text-right" title="Points projetés du duel, pour chaque adversaire possible (réels s'il est joué)">
+                Pts du match {tourCourant}
               </th>
               {rounds.map((r) => (
                 <th
@@ -181,7 +201,9 @@ export default function TableauJoueurs({
             {affichees.map((l) => {
               const etatGT = poolActif?.parJoueur[l.id];
               const horsPool = !!poolActif && !etatGT;
-              const ecart = l.adversaire ? Math.round(l.elo - l.adversaire.elo) : null;
+              // Adversaire connu = un seul candidat ; sinon on liste les possibles, sans écart ni %.
+              const connu = l.adversaires.length === 1 ? l.adversaires[0] : null;
+              const ecart = connu ? Math.round(l.elo - connu.elo) : null;
               return (
                 <tr key={l.idx} className={`border-b border-zinc-50 last:border-0 ${l.utilise ? 'bg-zinc-50' : 'bg-white'}`}>
                   <td className="sticky left-0 z-10 bg-inherit px-3 py-2 align-top">
@@ -241,6 +263,18 @@ export default function TableauJoueurs({
                       )}
                       {l.utilise && <span className="text-xs italic text-zinc-500">déjà pické</span>}
                     </div>
+                    {l.enCours && (
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {l.enCours.round} :{' '}
+                        {l.enCours.resultat === 'gagne'
+                          ? 'gagné'
+                          : l.enCours.resultat === 'perdu'
+                            ? 'perdu'
+                            : l.enCours.contre
+                              ? `à jouer contre ${l.enCours.contre}`
+                              : 'à jouer'}
+                      </p>
+                    )}
                     {infoOuverte === l.id && l.insight && (
                       <div className="mt-1.5 max-w-xs overflow-hidden rounded-lg">
                         <InsightDetail insight={l.insight} />
@@ -261,19 +295,30 @@ export default function TableauJoueurs({
                   </td>
 
                   <td className="px-2 py-2 align-top text-xs">
-                    {l.adversaire ? (
-                      <>
-                        <span className={l.resultat === 'perdu' ? 'font-semibold text-emerald-700' : 'text-zinc-700'}>
-                          {l.resultat === 'gagne' ? 'a battu ' : l.resultat === 'perdu' ? 'battu par ' : 'vs '}
-                          {l.adversaire.nom}
-                        </span>
-                        <span className="ml-1 text-zinc-500">
-                          {l.adversaire.rang ? `#${l.adversaire.rang} · ` : ''}
-                          <span className="font-mono tabular-nums">{Math.round(l.adversaire.elo)}</span>
-                        </span>
-                      </>
-                    ) : (
+                    {l.adversaires.length === 0 ? (
                       <span className="text-zinc-500">à venir</span>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {l.adversaires.map((a) => (
+                          <li key={a.nom}>
+                            <span className={connu && l.resultat === 'perdu' ? 'font-semibold text-emerald-700' : 'text-zinc-700'}>
+                              {connu
+                                ? l.resultat === 'gagne'
+                                  ? 'a battu '
+                                  : l.resultat === 'perdu'
+                                    ? 'battu par '
+                                    : 'vs '
+                                : ''}
+                              {a.nom}
+                            </span>
+                            <span className="ml-1 text-zinc-500">
+                              {a.rang ? `#${a.rang} · ` : ''}
+                              <span className="font-mono tabular-nums">{Math.round(a.elo)}</span>
+                            </span>
+                          </li>
+                        ))}
+                        {!connu && <li className="text-zinc-500">selon le vainqueur du duel voisin</li>}
+                      </ul>
                     )}
                   </td>
 
@@ -286,12 +331,22 @@ export default function TableauJoueurs({
                   </td>
 
                   <td className="px-2 py-2 text-right align-top font-mono text-xs tabular-nums">
-                    {l.pVictoire === null ? '—' : l.resultat ? (l.resultat === 'gagne' ? '✓' : '✗') : `${pct(l.pVictoire)} %`}
+                    {!connu ? '—' : l.resultat ? (l.resultat === 'gagne' ? '✓' : '✗') : `${pct(connu.pVictoire)} %`}
                   </td>
 
                   <td className="px-2 py-2 text-right align-top font-mono text-xs font-semibold tabular-nums">
-                    {l.pointsMatch === null ? '—' : f1(l.pointsMatch)}
-                    {l.resultat && <span className="ml-0.5 text-xs font-normal text-zinc-500">réel</span>}
+                    {l.adversaires.length === 0 ? (
+                      '—'
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {l.adversaires.map((a) => (
+                          <li key={a.nom} title={connu ? undefined : `si adversaire : ${a.nom}`}>
+                            {f1(a.points)}
+                            {connu && l.resultat && <span className="ml-0.5 text-xs font-normal text-zinc-500">réel</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
 
                   {rounds.map((r) => {
@@ -353,7 +408,9 @@ export default function TableauJoueurs({
       </div>
       <p className="text-xs text-zinc-500">
         Chaque case de tour : points espérés si tu piques ce joueur à ce tour (en petit, sa chance d&apos;être encore en
-        lice). Bleu foncé = ton choix, bleu clair = le plan, vert = validé.
+        lice). Noir = ton choix, contour = le plan, vert = validé. Tant que le duel voisin n&apos;est pas joué, les
+        deux adversaires possibles sont listés (sans écart ni % de victoire), avec les points du match pour chacun, dans le
+        même ordre.
       </p>
     </section>
   );
