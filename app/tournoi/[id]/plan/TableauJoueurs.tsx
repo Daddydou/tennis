@@ -6,8 +6,7 @@ import InsightBadge from '../picks/InsightBadge';
 import InsightDetail from '../picks/InsightDetail';
 import { usePoolGT } from '../picks/PoolGameTracker';
 import { carte, pilleSelecteur } from '@/app/ui';
-import type { SourceElo } from '@/db/elo';
-import type { PlayerInsight } from '@/lib/insights';
+import type { AdversaireTour, CelluleTour, LigneTableau } from '@/lib/planGrandTableau';
 
 /**
  * LE GRAND TABLEAU — les joueurs encore en course pour le TOUR QU'ON VA PICKER,
@@ -18,55 +17,8 @@ import type { PlayerInsight } from '@/lib/insights';
  * tout de suite.
  */
 
-export interface CelluleTour {
-  /** E[points | pické à ce tour] — inconditionnelle. */
-  e: number;
-  /** P(être encore en lice à ce tour). */
-  presence: number;
-  /** Écart-type des points. */
-  sigma: number;
-}
-
-export interface AdversaireTour {
-  nom: string;
-  rang: number | null;
-  elo: number;
-  /** P(le joueur de la ligne bat cet adversaire). */
-  pVictoire: number;
-  /** Points projetés de ce duel pour le joueur de la ligne (réels s'il est joué). */
-  points: number;
-}
-
-export interface LigneTableau {
-  idx: number;
-  id: string;
-  nom: string;
-  rang: number | null;
-  elo: number;
-  sourceElo: SourceElo;
-  taName: string | null;
-  candidatsElo: string[];
-  moitie: 'top' | 'bottom';
-  /**
-   * Adversaire(s) au tour du pick : UN seul s'il est connu (duel voisin joué,
-   * ou tour en cours), PLUSIEURS tant que le duel voisin n'est pas joué.
-   * Vide : pas encore d'adversaire (exemption…).
-   */
-  adversaires: AdversaireTour[];
-  /** Résultat du duel de CE tour s'il est déjà joué (tour en cours seulement). */
-  resultat: 'gagne' | 'perdu' | null;
-  /**
-   * Le duel du tour en cours, quand le pick vise un tour plus loin (ex. R16
-   * en cours, pick pour les QF) : à jouer contre qui, ou son résultat.
-   */
-  enCours: { round: string; contre: string | null; resultat: 'gagne' | 'perdu' | null } | null;
-  parTour: Record<string, CelluleTour>;
-  /** Déjà pické par ce participant à un autre tour. */
-  utilise: boolean;
-  /** Les autres participants qui l'ont déjà pické. */
-  prisPar: { nom: string; round: string }[];
-  insight: PlayerInsight | null;
-}
+// Les types de lignes vivent avec la logique, dans lib/planGrandTableau.ts.
+export type { AdversaireTour, CelluleTour, LigneTableau };
 
 export type EtatSlot = 'valide' | 'choisi' | 'plan' | 'vide';
 

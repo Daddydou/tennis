@@ -4,12 +4,11 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supprimerPick, validerPick } from '../picks/actions';
 import { enregistrerReservations, type Reservation } from '../picks/reservationsActions';
-import TableauJoueurs, { type EtatSlot, type InfoSlot, type LigneTableau } from './TableauJoueurs';
+import TableauJoueurs, { type EtatSlot, type InfoSlot } from './TableauJoueurs';
 import PanneauRivaux from './PanneauRivaux';
 import { boutonDanger, boutonPrimaire, boutonSecondaire, carte, Spinner } from '@/app/ui';
 import type { PlayerInsight } from '@/lib/insights';
 import type { DonneesPlan } from '@/lib/planDonnees';
-import { adversairesPossibles } from '@/lib/planAdversaires';
 import {
   cleSlot,
   construireMonde,
@@ -22,6 +21,7 @@ import {
   utilisesDe,
   type ModeAgressivite,
 } from '@/lib/planEcran';
+import { construireLignesTableau, tourDuTableau } from '@/lib/planGrandTableau';
 import type { Slot } from '@/lib/types';
 
 type Mode = ModeAgressivite | 'rivaux';
@@ -236,77 +236,15 @@ export default function PlanPicks({
     };
   }, [d.joueurs, aJouer]);
 
-  const tourCourant = d.rounds[d.r0] ?? d.rounds[d.rounds.length - 1];
   // Le grand tableau porte sur le tour qu'on va PICKER (ex. QF quand le R16 est
   // verrouillé et en cours), pas sur le tour en cours : ses colonnes partent de là.
-  const tourTableau = premierTourLibre ?? tourCourant;
-  const roundsAffiches = useMemo(() => {
-    const i = d.rounds.indexOf(tourTableau);
-    return d.rounds.slice(i < 0 ? d.r0 : Math.max(i, d.r0));
-  }, [d.rounds, d.r0, tourTableau]);
-
-  const lignesTableau = useMemo<LigneTableau[]>(() => {
-    if (termine) return [];
-    const utilises = utilisesDe(stock);
-    const { esp, ecart, presence } = monde.moments;
-    // Nombre de tours entre le tour en cours (r0) et le tour du pick.
-    const ecartTours = Math.max(0, d.rounds.indexOf(tourTableau) - d.r0);
-    const vivant = (j: number) => ecartTours === 0 || (presence[d.joueurs[j].id]?.[tourTableau] ?? 0) > 0;
-    const out: LigneTableau[] = [];
-    d.joueurs.forEach((j, idx) => {
-      if (!presence[j.id]) return;
-      // Plus loin que le tour en cours : seuls restent ceux qui peuvent encore y arriver.
-      if (ecartTours > 0 && !((presence[j.id]?.[tourTableau] ?? 0) > 0)) return;
-      // Adversaire(s) au tour du pick : connu, ou les possibles tant que le duel voisin n'est pas joué.
-      const adversaires = adversairesPossibles(d.ouverture, idx, ecartTours, vivant).map((a) => {
-        const f = ecartTours === 0 ? monde.t.fixe(idx, a) : undefined;
-        return {
-          nom: d.joueurs[a].nom,
-          rang: d.joueurs[a].rang,
-          elo: d.joueurs[a].elo,
-          pVictoire: f ? (f.gagnantEstA ? 1 : 0) : monde.t.p(idx, a),
-          points: monde.t.ep(idx, a),
-        };
-      });
-      const partenaire = adversairesPossibles(d.ouverture, idx, 0, () => true)[0];
-      const fixe = partenaire !== undefined ? monde.t.fixe(idx, partenaire) : undefined;
-      const resultatEnCours = fixe ? (fixe.gagnantEstA ? 'gagne' : 'perdu') : null;
-      const parTour: LigneTableau['parTour'] = {};
-      for (const r of roundsAffiches) {
-        const pres = presence[j.id]?.[r];
-        if (pres === undefined) continue;
-        parTour[r] = { e: esp[j.id]?.[r] ?? 0, presence: pres, sigma: ecart[j.id]?.[r] ?? 0 };
-      }
-      out.push({
-        idx,
-        id: j.id,
-        nom: j.nom,
-        rang: j.rang,
-        elo: j.elo,
-        sourceElo: j.sourceElo,
-        taName: j.taName,
-        candidatsElo: j.candidatsElo,
-        moitie: j.moitie,
-        adversaires,
-        resultat: ecartTours === 0 ? resultatEnCours : null,
-        enCours:
-          ecartTours > 0
-            ? {
-                round: tourCourant,
-                contre: partenaire !== undefined ? d.joueurs[partenaire].nom : null,
-                resultat: resultatEnCours,
-              }
-            : null,
-        parTour,
-        utilise: utilises.has(idx),
-        prisPar: d.participants
-          .filter((p) => p !== stock)
-          .flatMap((p) => p.picks.filter((k) => k.joueur === idx).map((k) => ({ nom: p.nom, round: k.round }))),
-        insight: insights[j.id] ?? null,
-      });
-    });
-    return out;
-  }, [termine, d, monde, stock, roundsAffiches, tourTableau, tourCourant, insights]);
+  // Toute la logique est dans lib/planGrandTableau.ts (pure, testée).
+  const tour = useMemo(() => tourDuTableau(d.rounds, d.r0, premierTourLibre), [d.rounds, d.r0, premierTourLibre]);
+  const { tourCourant, tourTableau, roundsAffiches } = tour;
+  const lignesTableau = useMemo(
+    () => construireLignesTableau({ d, monde, stock, insights, tour }),
+    [d, monde, stock, insights, tour],
+  );
 
   /* ---- Actions ---- */
   function onCellule(idx: number, round: string) {
