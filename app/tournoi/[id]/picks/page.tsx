@@ -246,7 +246,7 @@ export default async function PicksPage({
                 Thomas » cherche ce qui maximise ta chance de finir devant eux.
               </p>
               <p>
-                « Réserver » garde un joueur pour un tour à venir : la réservation est enregistrée dans l&apos;app (la même sur téléphone et ordinateur) mais ce n&apos;est pas un pick, rien n&apos;est compté ni envoyé. Seul
+                « Réserver » garde un joueur pour un tour à venir : la réservation est enregistrée dans l&apos;app (la même sur téléphone et ordinateur) mais ce n&apos;est pas un pick : rien n&apos;est compté, et rien ne part chez Game Tracker tant que tu ne cliques pas sur « Envoyer » dans le panneau Game Tracker (qui envoie alors tes réservations pour les tours à venir). Seul
                 le tour dont les joueurs sont connus se valide. Le grand tableau donne, par joueur et par tour,
                 les points espérés : un clic sur une case réserve ce joueur pour ce tour.
               </p>

@@ -292,6 +292,31 @@ export interface PickLocal {
   round: string;
   half: 'top' | 'bottom' | null;
   playerId: string;
+  /**
+   * Vrai si ce « pick » est une RÉSERVATION de l'écran Picks (tn_plan_reservations)
+   * et non un pick validé (tn_picks). Sert à l'affichage : l'envoi traite les deux pareil.
+   */
+  reserve?: boolean;
+}
+
+/**
+ * Nos picks tels que l'envoi les voit : les picks VALIDÉS, plus les RÉSERVATIONS
+ * pour les tours où rien n'est validé encore. C'est ce qui permet d'envoyer à
+ * Game Tracker un pick pour un tour que l'app ne peut pas encore valider (ex. les
+ * QF pendant les huitièmes : l'app ne propose que « Réserver », alors que Game
+ * Tracker accepte déjà le pick).
+ *
+ * Une réservation est écartée si :
+ *   - son tour (même tour, même moitié) a déjà un pick validé : le validé gagne ;
+ *   - son joueur est déjà validé à un autre tour : un joueur ne se pique qu'une fois.
+ */
+export function fusionnerReservations(valides: PickLocal[], reservations: PickLocal[]): PickLocal[] {
+  const slots = new Set(valides.map((p) => `${p.round}|${p.half ?? ''}`));
+  const joueursPris = new Set(valides.map((p) => p.playerId));
+  const gardees = reservations
+    .filter((r) => !slots.has(`${r.round}|${r.half ?? ''}`) && !joueursPris.has(r.playerId))
+    .map((r) => ({ ...r, reserve: true }));
+  return [...valides, ...gardees];
 }
 
 /**
@@ -322,6 +347,8 @@ export interface LigneEnvoi {
   nom: string | null;
   /** Son match du tour précédent n'est pas joué : le pick pourra être redirigé. */
   enAttente: boolean;
+  /** Le pick vient d'une réservation de l'écran Picks (pas encore un pick validé chez nous). */
+  reserve?: boolean;
 }
 
 export type PreparationEnvoi =
@@ -414,7 +441,7 @@ export function preparerEnvoi(p: ParametresEnvoi): PreparationEnvoi {
       ok: false,
       raisons: [
         constitue
-          ? `Aucun pick posé chez nous pour ce tour (${roundLocal}) : rien à envoyer.`
+          ? `Aucun pick posé ni réservé chez nous pour ce tour (${roundLocal}) : rien à envoyer.`
           : `Notre tableau ne connaît pas encore les joueurs du tour ${roundLocal} : les résultats du tour précédent ne sont pas importés. Mets le tableau à jour (Importer), puis pose ton pick ici.`,
       ],
     };
@@ -462,7 +489,7 @@ export function preparerEnvoi(p: ParametresEnvoi): PreparationEnvoi {
         `${nomInterne} n’a pas encore joué son match du tour précédent : s’il le perd, Game Tracker redirigera ton pick vers le vainqueur (ou le videra).`,
       );
     }
-    return { cote, origine: 'local', position, nom: nomInterne, enAttente: entree.enAttente };
+    return { cote, origine: 'local', position, nom: nomInterne, enAttente: entree.enAttente, reserve: l.reserve === true };
   }
 
   const resoluHaut = localHaut ? resoudre('haut', localHaut) : null;

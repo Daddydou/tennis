@@ -19,7 +19,7 @@ Résumé de l'API « Picks tennis » de Game Tracker (l'app de Thomas) et de la 
 1. **Lire Game Tracker** : affiche le tour ouvert, l'heure de verrou, ton pick actuel chez eux, le classement (rang, ex æquo compris) et ce qui serait envoyé. Les **tours à venir** (`toursAVenir`, picks à l'avance) sont listés dessous, chacun avec son verrou, ton pick actuel chez eux et son aperçu d'envoi.
 2. **Envoyer sur Game Tracker** : un seul POST, pour UN tour (le tour ouvert ou un tour à venir, un bouton par tour). Après l'envoi, l'app relit ton pick RÉEL de ce tour et signale tout écart.
 
-Pour un tour à venir, l'app envoie ce qui est posé chez nous pour ce tour (écran Picks : choisir le tour dans le sélecteur). Rien n'est posé = rien n'est envoyé.
+Pour un tour à venir, l'app envoie ce qui est posé chez nous pour ce tour : les picks validés, et, quand rien n'est validé pour ce tour, **tes réservations** de l'écran Picks (vue « Moi » seulement : la clé agit en ton nom). C'est ce qui permet de poser chez Game Tracker les QF pendant les huitièmes, alors que l'app ne propose encore que « Réserver ». La ligne d'aperçu indique « ta réservation ». Un pick validé pour le même tour l'emporte sur la réservation ; un joueur déjà validé à un autre tour n'est pas renvoyé. Ni pick ni réservation = rien n'est envoyé.
 
 Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques sur « Lire ».
 

@@ -21,6 +21,8 @@ const heureParis = (iso: string | null) =>
 
 const nomPick = (p: PickGT | null) => (p ? [p.prenom, p.nom].filter(Boolean).join(' ') || `position ${p.position}` : '—');
 
+const ORIGINE_RESERVE = 'ta réservation (pas encore un pick validé dans l’app)';
+
 const ORIGINE: Record<LigneEnvoi['origine'], string> = {
   local: 'ton pick',
   conserve: 'déjà chez Game Tracker, conservé',
@@ -287,7 +289,7 @@ function BlocTour({
               <li key={l.cote}>
                 {to.picksAttendus === 1 ? 'Pick' : l.cote === 'haut' ? 'Haut' : 'Bas'} : {l.nom ?? '—'}
                 {l.position !== null && <span className="text-zinc-500"> (position {l.position})</span>} —{' '}
-                <span className="text-zinc-500">{ORIGINE[l.origine]}</span>
+                <span className="text-zinc-500">{l.reserve ? ORIGINE_RESERVE : ORIGINE[l.origine]}</span>
                 {l.enAttente && <span className="text-amber-700"> · en attente</span>}
               </li>
             ))}

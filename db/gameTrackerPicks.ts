@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { MatchInterne } from '@/lib/bracketExternePont';
-import type { PickLocal, TournoiInterneGT, TournoiPicksGT } from '@/lib/gameTrackerPicks';
+import { fusionnerReservations, type PickLocal, type TournoiInterneGT, type TournoiPicksGT } from '@/lib/gameTrackerPicks';
 
 /**
  * Ce qu'il faut savoir chez nous pour parler à l'API picks de Game Tracker
@@ -25,7 +25,10 @@ export interface ContexteLocalGT {
   rounds: string[];
   matchs: MatchInterne[];
   noms: Map<string, string>;
-  /** Mes picks (stock « moi », participant_id null). */
+  /**
+   * Mes picks (stock « moi », participant_id null) : les picks validés, plus mes
+   * réservations pour les tours pas encore validés (cf. fusionnerReservations).
+   */
   picks: PickLocal[];
 }
 
@@ -36,7 +39,7 @@ async function lire<T>(q: PromiseLike<{ data: T | null; error: { message: string
 }
 
 export async function chargerContexteLocalGT(lecture: SupabaseClient, tournamentId: string): Promise<ContexteLocalGT> {
-  const [lien, tournoi, matchs, picks] = await Promise.all([
+  const [lien, tournoi, matchs, picks, reservations] = await Promise.all([
     lire<{ id: string }[]>(
       lecture.from('tn_bracket_externe_tournois').select('id').eq('tournament_id_interne', tournamentId).limit(1),
       'tn_bracket_externe_tournois',
@@ -53,10 +56,18 @@ export async function chargerContexteLocalGT(lecture: SupabaseClient, tournament
       lecture.from('tn_picks').select('round, half, player_id').eq('tournament_id', tournamentId).is('participant_id', null),
       'tn_picks',
     ),
+    lire<{ round: string; half: 'top' | 'bottom' | null; player_id: string }[]>(
+      lecture
+        .from('tn_plan_reservations')
+        .select('round, half, player_id')
+        .eq('tournament_id', tournamentId)
+        .is('participant_id', null),
+      'tn_plan_reservations',
+    ),
   ]);
   if (!tournoi) throw new Error(`Tournoi ${tournamentId} introuvable.`);
 
-  const ids = [...new Set(picks.map((p) => p.player_id))];
+  const ids = [...new Set([...picks, ...reservations].map((p) => p.player_id))];
   const joueurs = ids.length
     ? await lire<{ id: string; name: string }[]>(lecture.from('tn_players').select('id, name').in('id', ids), 'tn_players')
     : [];
@@ -69,7 +80,10 @@ export async function chargerContexteLocalGT(lecture: SupabaseClient, tournament
       .filter((m) => m.position !== null)
       .map((m) => ({ round: m.round, position: m.position as number, player1Id: m.player1_id, player2Id: m.player2_id, status: m.status })),
     noms: new Map(joueurs.map((j) => [j.id, j.name])),
-    picks: picks.map((p) => ({ round: p.round, half: p.half, playerId: p.player_id })),
+    picks: fusionnerReservations(
+      picks.map((p) => ({ round: p.round, half: p.half, playerId: p.player_id })),
+      reservations.map((r) => ({ round: r.round, half: r.half, playerId: r.player_id })),
+    ),
   };
 }
 

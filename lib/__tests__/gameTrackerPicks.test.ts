@@ -9,6 +9,7 @@ import type { MatchInterne } from '../bracketExternePont';
 import {
   candidatsLienGT,
   ecartsApresEnvoi,
+  fusionnerReservations,
   lireEtatGT,
   lireReponsePostGT,
   lireTournoisPicksGT,
@@ -221,6 +222,37 @@ describe('preparerEnvoi — demi-finale et finale (un seul pick, dans « haut »
   });
 });
 
+describe('fusionnerReservations — les réservations de l’écran Picks comptent pour l’envoi', () => {
+  const valide = (round: string, half: 'top' | 'bottom' | null, pos: number): PickLocal => ({ round, half, playerId: id(pos) });
+  const reserve = (round: string, half: 'top' | 'bottom' | null, pos: number): PickLocal => ({ round, half, playerId: id(pos) });
+
+  it('ajoute les réservations des tours où rien n’est validé, marquées « reserve »', () => {
+    const r = fusionnerReservations([valide('R16', 'top', 3)], [reserve('QF', 'top', 5), reserve('SF', null, 12)]);
+    expect(r).toHaveLength(3);
+    expect(r.filter((p) => p.reserve).map((p) => p.round)).toEqual(['QF', 'SF']);
+    expect(r[0].reserve).toBeUndefined();
+  });
+
+  it('un pick validé pour le même tour (même moitié) l’emporte sur la réservation', () => {
+    const r = fusionnerReservations([valide('QF', 'top', 5)], [reserve('QF', 'top', 6), reserve('QF', 'bottom', 14)]);
+    expect(r.map((p) => [p.round, p.half, p.playerId, p.reserve ?? false])).toEqual([
+      ['QF', 'top', id(5), false],
+      ['QF', 'bottom', id(14), true],
+    ]);
+  });
+
+  it('une réservation d’un joueur déjà validé à un autre tour est écartée (un joueur une seule fois)', () => {
+    const r = fusionnerReservations([valide('R16', 'top', 3)], [reserve('QF', 'top', 3)]);
+    expect(r).toHaveLength(1);
+    expect(r[0].round).toBe('R16');
+  });
+
+  it('sans réservation : les picks validés, tels quels', () => {
+    const v = [valide('R16', 'top', 3), valide('R16', 'bottom', 12)];
+    expect(fusionnerReservations(v, [])).toEqual(v);
+  });
+});
+
 describe('picks à l’avance (tours à venir)', () => {
   const qf = (half: 'top' | 'bottom', pos: number): PickLocal => ({ round: 'QF', half, playerId: id(pos) });
   const avecAVenir = (extra: Partial<TourOuvertGT> = {}) => etat(tourOuvert(), { toursAVenir: [tourAVenir(extra)] });
@@ -235,6 +267,19 @@ describe('picks à l’avance (tours à venir)', () => {
     expect(r).toMatchObject({ ok: true, tour: 2, roundLocal: 'QF', haut: 5, bas: 14, dejaAJour: false });
   });
 
+  it('un tour seulement RÉSERVÉ s’envoie comme un pick, et la ligne d’envoi le signale', () => {
+    const picks = fusionnerReservations([top(3), bottom(12)], [qf('top', 5), qf('bottom', 14)]);
+    const r = preparerEnvoi(params(avecAVenir(), picks, { tourCible: 2 }));
+    expect(r).toMatchObject({ ok: true, tour: 2, roundLocal: 'QF', haut: 5, bas: 14, dejaAJour: false });
+    if (r.ok) expect(r.lignes.map((l) => l.reserve)).toEqual([true, true]);
+  });
+
+  it('un tour validé n’est pas marqué « réservé »', () => {
+    const r = preparerEnvoi(params(avecAVenir(), fusionnerReservations([top(3), bottom(12)], []), { tourCible: 1 }));
+    expect(r).toMatchObject({ ok: true, haut: 3, bas: 12 });
+    if (r.ok) expect(r.lignes.map((l) => l.reserve)).toEqual([false, false]);
+  });
+
   it('pick partiel sur un tour à venir : un seul côté, l’autre reste tel que chez Game Tracker', () => {
     const mp = { haut: null, bas: { position: 14, prenom: 'Ned', nom: 'NASH' }, etat: 'partiel' };
     const r = preparerEnvoi(params(avecAVenir({ monPick: mp }), [qf('top', 5)], { tourCible: 2 }));
@@ -244,7 +289,7 @@ describe('picks à l’avance (tours à venir)', () => {
   it('aucun pick local pour ce tour à venir : message simple, pas « tableau pas importé »', () => {
     const r = preparerEnvoi(params(avecAVenir(), [top(3)], { tourCible: 2 }));
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.raisons.join(' ')).toMatch(/Aucun pick posé chez nous pour ce tour \(QF\)/);
+    if (!r.ok) expect(r.raisons.join(' ')).toMatch(/Aucun pick posé ni réservé chez nous pour ce tour \(QF\)/);
   });
 
   it('tour à venir verrouillé : refus', () => {
