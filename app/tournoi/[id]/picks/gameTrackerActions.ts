@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/db/server';
 import { supabaseAnon } from '@/db/anon';
 import { chargerContexteLocalGT, ecrireLienGT } from '@/db/gameTrackerPicks';
 import { alignerSurGameTracker } from '@/db/gameTrackerAlignement';
+import { recalculerPoints } from '@/db/points';
 import { reprendreResultatsThomas } from '@/db/resultatsSecoursThomas';
 import { bracketThomas } from '@/externe/thomasClient';
 import { decrireChangement } from '@/lib/gameTrackerAlignement';
@@ -131,6 +132,9 @@ async function reprendreDepuisThomas(tournamentId: string, thomasId: string): Pr
   try {
     const res = await reprendreResultatsThomas(supabaseAdmin(), tournamentId, await bracketThomas(thomasId));
     if ('erreurs' in res || res.repris.length === 0) return [];
+    // Les points des picks sont ENREGISTRÉS (tn_picks.points) : sans ce recalcul, un pick dont le
+    // match vient d'être complété garderait ses anciens points (Fritz : 0 au lieu de 16).
+    await recalculerPoints(tournamentId);
     revalidatePath(`/tournoi/${tournamentId}`, 'layout');
     return res.repris.map((x) => `${x.vainqueur}${x.perdant ? ` bat ${x.perdant}` : ''} (${x.round})`);
   } catch {
