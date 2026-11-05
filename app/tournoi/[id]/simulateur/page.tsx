@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import AttenteCalcul from '../AttenteCalcul';
+import PossibilitesBracket from './PossibilitesBracket';
 import SimulateurSections from './SimulateurSections';
 import { cleSlot } from './picksSim';
 import {
@@ -12,6 +13,8 @@ import {
   surfacePourElo,
   tourCourantMatches,
 } from '@/db/queries';
+import { supabaseAnon } from '@/db/anon';
+import { chargerDonneesPossibilites, type DonneesPossibilites } from '@/db/bracketPossibilites';
 import { computeAndStoreProjections, projectionsEnCache } from '@/db/projections';
 import { synchroniserPickSimuleDepuisReel } from '@/db/picksSimulesSync';
 import { cleDuel, type MatchReel } from '@/lib/bracketSim';
@@ -24,10 +27,18 @@ export default async function SimulateurPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ section?: string; vue?: string }>;
+  // `max_<pseudo>` : « max » affiché chez Thomas, saisi dans le panneau des possibilités.
+  searchParams: Promise<{ section?: string; vue?: string } & Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
-  const { section, vue } = await searchParams;
+  const sp = await searchParams;
+  const section = typeof sp.section === 'string' ? sp.section : undefined;
+  const vue = typeof sp.vue === 'string' ? sp.vue : undefined;
+  const maxSaisis: Record<string, number> = {};
+  for (const [cle, v] of Object.entries(sp)) {
+    const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+    if (cle.startsWith('max_') && Number.isFinite(n) && n >= 0) maxSaisis[cle.slice(4)] = Math.round(n);
+  }
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();
@@ -71,6 +82,15 @@ export default async function SimulateurPage({
   }
 
   const roundParDefaut = tourCourantMatches(matchRows, rounds);
+
+  // Possibilités des participants (bracket de Thomas) : jamais bloquant, absent si le tournoi n'est
+  // pas relié au bracket de Thomas.
+  let possibilites: DonneesPossibilites | null = null;
+  try {
+    possibilites = await chargerDonneesPossibilites(supabaseAnon(), id);
+  } catch (e) {
+    console.error('Possibilités du bracket :', (e as Error).message);
+  }
 
   // Picks hypothétiques déjà persistés (tn_simulated_picks), au format
   // { stock -> { cleSlot -> playerId } } consommé par SimulateurPicks.
@@ -152,6 +172,17 @@ export default async function SimulateurPage({
           Bracket reste utilisable pendant le calcul. */}
       {projectionsEnCalcul && (
         <AttenteCalcul quoi={`des points espérés du ${roundDepart} (Simulateur de picks)`} />
+      )}
+
+      {possibilites && (
+        <PossibilitesBracket
+          donnees={possibilites}
+          max={maxSaisis}
+          rounds={rounds}
+          participants={participants.map((p) => ({ id: p.id, name: p.name }))}
+          section={section}
+          vue={vue}
+        />
       )}
 
       <SimulateurSections
