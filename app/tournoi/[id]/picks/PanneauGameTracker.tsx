@@ -44,7 +44,7 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
     setLecture(r);
     definirPool(r.ok && r.lie ? r.pool : null);
     // Nos picks ont été alignés sur Game Tracker : la grille et les points se rechargent.
-    if (r.ok && r.lie && r.alignement.ok && r.alignement.changements.length > 0) router.refresh();
+    if (r.ok && r.lie && ((r.alignement.ok && r.alignement.changements.length > 0) || r.resultatsRepris.length > 0)) router.refresh();
   }
 
   function lire() {
@@ -167,6 +167,15 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
                 ))}
               </ul>
             )}
+          </div>
+        )}
+
+        {lecture && lecture.ok && lecture.lie && lecture.resultatsRepris.length > 0 && (
+          <div className="rounded-xl bg-zinc-100 px-2.5 py-2 text-xs text-zinc-800">
+            <p className="font-medium">
+              Résultat(s) repris de l&apos;app de Thomas, que notre source n&apos;avait pas encore : {lecture.resultatsRepris.join(', ')}.
+            </p>
+            <p className="text-zinc-600">Le prochain import automatique les remplacera par la version officielle.</p>
           </div>
         )}
 
