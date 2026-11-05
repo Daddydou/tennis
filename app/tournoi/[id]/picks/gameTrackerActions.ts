@@ -6,6 +6,9 @@ import { supabaseAdmin } from '@/db/server';
 import { supabaseAnon } from '@/db/anon';
 import { chargerContexteLocalGT, ecrireLienGT } from '@/db/gameTrackerPicks';
 import { alignerSurGameTracker } from '@/db/gameTrackerAlignement';
+import { recalculerPoints } from '@/db/points';
+import { reprendreResultatsThomas } from '@/db/resultatsSecoursThomas';
+import { bracketThomas } from '@/externe/thomasClient';
 import { decrireChangement } from '@/lib/gameTrackerAlignement';
 import { etatPicksGT, listerTournoisPicks, poserPicksGT } from '@/externe/gameTrackerPicksClient';
 import {
@@ -61,6 +64,11 @@ export type LectureGameTracker =
       aVenir: { tour: TourOuvertGT; preparation: PreparationEnvoi }[];
       pool: PoolLocalGT | null;
       alignement: AlignementLu;
+      /**
+       * Résultats que l'app de Thomas avait et que notre source (import espacé) n'avait pas
+       * encore, repris à la lecture (« Fritz bat Fils (R16) »). Vide la plupart du temps.
+       */
+      resultatsRepris: string[];
     }
   | { ok: false; erreur: string };
 
@@ -115,6 +123,25 @@ async function preparer(tournamentId: string, etatDeja?: EtatGT, tourCible?: num
   return { lie: true as const, gtId: ctx.gtId, etat, preparation, aVenir, pool };
 }
 
+/**
+ * Filet de sécurité : reprend chez Thomas (même identifiant de tournoi que Game Tracker) les
+ * résultats que notre source n'a pas encore (lib/resultatsSecours.ts). Au mieux : une panne de
+ * l'API de Thomas ne doit jamais empêcher de lire Game Tracker.
+ */
+async function reprendreDepuisThomas(tournamentId: string, thomasId: string): Promise<string[]> {
+  try {
+    const res = await reprendreResultatsThomas(supabaseAdmin(), tournamentId, await bracketThomas(thomasId));
+    if ('erreurs' in res || res.repris.length === 0) return [];
+    // Les points des picks sont ENREGISTRÉS (tn_picks.points) : sans ce recalcul, un pick dont le
+    // match vient d'être complété garderait ses anciens points (Fritz : 0 au lieu de 16).
+    await recalculerPoints(tournamentId);
+    revalidatePath(`/tournoi/${tournamentId}`, 'layout');
+    return res.repris.map((x) => `${x.vainqueur}${x.perdant ? ` bat ${x.perdant}` : ''} (${x.round})`);
+  } catch {
+    return [];
+  }
+}
+
 export async function lireGameTracker(tournamentId: string): Promise<LectureGameTracker> {
   if (!(await sessionValide())) return REFUS;
   if (!UUID.test(tournamentId)) return { ok: false, erreur: 'Tournoi invalide.' };
@@ -138,13 +165,16 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
     } catch (e) {
       alignement = { ok: false, raisons: [(e as Error).message] };
     }
+    const resultatsRepris = await reprendreDepuisThomas(tournamentId, r.gtId);
     if (alignement.ok && alignement.changements.length > 0) {
       revalidatePath(`/tournoi/${tournamentId}`, 'layout');
       // Nos picks ont changé : ce qui serait envoyé est recalculé (même état lu, pas de 2e appel).
       const r2 = await preparer(tournamentId, r.etat);
-      if (r2.lie) return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, aVenir: r2.aVenir, pool: r2.pool, alignement };
+      if (r2.lie) {
+        return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, aVenir: r2.aVenir, pool: r2.pool, alignement, resultatsRepris };
+      }
     }
-    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, aVenir: r.aVenir, pool: r.pool, alignement };
+    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, aVenir: r.aVenir, pool: r.pool, alignement, resultatsRepris };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }
