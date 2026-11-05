@@ -167,12 +167,18 @@ describe('verifierJoueurs', () => {
     expect(verifierJoueurs(thomas8(), new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([]);
   });
 
-  it('deux joueurs inversés chez nous : les deux positions sont signalées', () => {
+  it('deux joueurs inversés DANS LE MÊME MATCH chez nous (Paris 2026) : même match, aucune erreur', () => {
     const { matchs, noms } = interne8();
     matchs[0] = { ...matchs[0], player1Id: 'j2', player2Id: 'j1' };
+    expect(verifierJoueurs(thomas8(), new Map(matchs.map((m) => [m.position, m])), noms)).toEqual([]);
+  });
+
+  it('un joueur qui n\'est pas dans le même match reste un désaccord, même voisin d\'un autre match', () => {
+    const { matchs, noms } = interne8();
+    // Le match 0 de Thomas (Alpha/Bravo) devient Alpha/Charlie chez nous : Bravo introuvable.
+    matchs[0] = { ...matchs[0], player2Id: 'j3' };
     const erreurs = verifierJoueurs(thomas8(), new Map(matchs.map((m) => [m.position, m])), noms);
-    expect(erreurs).toHaveLength(2);
-    expect(erreurs[0]).toContain('Position 1');
+    expect(erreurs.some((e) => e.startsWith('Position 2'))).toBe(true);
   });
 
   it('prénom et nom inversés chez Thomas (nom chinois) : même joueur', () => {
@@ -208,6 +214,19 @@ describe('deriverPronostics', () => {
     expect(de(THOMAS)).toEqual(['SF|0=j1', 'SF|1=j5', 'F|0=j1']);
     expect(d.sansPronostic).toBe(4);
     expect(d.pseudosInconnus).toEqual([]);
+  });
+
+  it('ordre inversé dans un match : le pronostic suit le JOUEUR, pas la place (Vallejo/Tien, Paris 2026)', () => {
+    const { matchs, noms } = interne8();
+    // Chez Thomas : position 1 = Alpha, position 2 = Bravo. Chez nous : Bravo puis Alpha.
+    matchs[0] = { ...matchs[0], player1Id: 'j2', player2Id: 'j1' };
+    const d = deriverPronostics(thomas8(), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
+    if (!d.ok) throw new Error(d.erreurs.join('\n'));
+    const de = (stock: string | null) =>
+      d.pronostics.filter((p) => p.participantId === stock).map((p) => `${p.round}|${p.position}=${p.playerId}`);
+    // Daddy pronostique la position 1 de Thomas (Alpha = j1), Laki la position 2 (Bravo = j2) : jamais l'inverse.
+    expect(de(null)[0]).toBe('QF|0=j1');
+    expect(de(LAKI)[0]).toBe('QF|0=j2');
   });
 
   it('pseudo inconnu : ses pronostics sont ignorés et signalés, les autres passent', () => {
@@ -300,7 +319,8 @@ describe('deriverPronostics', () => {
 
   it('tableaux non superposables : refus en bloc, aucun pronostic', () => {
     const { matchs, noms } = interne8();
-    matchs[1] = { ...matchs[1], player1Id: 'j4', player2Id: 'j3' };
+    // j4 (Delta) remplacé par j5 (Echo, d'un autre match) : un vrai désaccord.
+    matchs[1] = { ...matchs[1], player1Id: 'j5', player2Id: 'j3' };
     const d = deriverPronostics(thomas8(), ['QF', 'SF', 'F'], matchs, noms, PARTICIPANTS);
     expect(d.ok).toBe(false);
     expect(deriverPronostics(thomas8(), ['SF', 'F'], matchs, noms, PARTICIPANTS).ok).toBe(false);
