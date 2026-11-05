@@ -18,7 +18,7 @@
  *     règle « un joueur une fois par tournoi ET PAR PARTICIPANT » serait violée.
  *     Un joueur peut toujours être pris par plusieurs participants.
  */
-import { correspondanceTours, memeNom, type MatchInterne } from './bracketExternePont';
+import { correspondanceTours, memeNom, positionVoisine, type MatchInterne } from './bracketExternePont';
 import { resoudreParticipant } from './bracketImport';
 import type { PickGT, TourJoueGT } from './gameTrackerPicks';
 
@@ -98,6 +98,9 @@ export function planAlignementGT(p: ParametresAlignement): PlanAlignement {
       return null;
     }
     if (pick.nom && !memeNom(pick.prenom, pick.nom, nom(id))) {
+      // Ordre inversé dans le même match de premier tour : le joueur est à la place voisine.
+      const voisin = idDePosition.get(positionVoisine(pick.position));
+      if (voisin && memeNom(pick.prenom, pick.nom, nom(voisin))) return voisin;
       raisons.push(
         `${contexte} : position ${pick.position} = ${[pick.prenom, pick.nom].filter(Boolean).join(' ')} chez Game Tracker, ${nom(id)} chez nous.`,
       );

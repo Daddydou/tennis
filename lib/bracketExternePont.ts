@@ -85,6 +85,15 @@ export function joueurDePosition(p: number, premierTour: Map<number, MatchIntern
 }
 
 /**
+ * L'autre place du même match de premier tour (1 <-> 2, 3 <-> 4...). Deux sources
+ * peuvent ranger les deux joueurs d'un même match dans l'ordre inverse (Paris 2026 :
+ * Vallejo/Tien) : c'est le même match, seule la place change.
+ */
+export function positionVoisine(p: number): number {
+  return p % 2 === 1 ? p + 1 : p - 1;
+}
+
+/**
  * Le même joueur ? Au moins une clé de nom commune (« Xinyu WANG » / « X. Wang »),
  * prénom et nom de Thomas pris dans les DEUX ordres : pour un nom chinois,
  * l'ordre varie d'une source à l'autre (« Bu YUNCHAOKETE » chez Thomas,
@@ -96,7 +105,26 @@ export function memeNom(prenom: string | null, nom: string | null, nomInterne: s
 }
 
 /**
- * Recoupe chaque joueur de Thomas avec le joueur interne à la même position.
+ * Le joueur interne qui est le joueur `j` de Thomas, retrouvé par le NOM : à sa position,
+ * ou — ordre inversé dans le même match — à la place voisine. Jamais plus loin : un nom qui
+ * ne correspond à aucun des deux joueurs du match reste un désaccord. Null si introuvable.
+ */
+export function joueurDeThomas(
+  j: BracketThomas['joueurs'][number],
+  premierTour: Map<number, MatchInterne>,
+  nomsInternes: Map<string, string>,
+): string | null {
+  for (const position of [j.position, positionVoisine(j.position)]) {
+    const id = joueurDePosition(position, premierTour);
+    const nomInterne = id ? nomsInternes.get(id) : undefined;
+    if (id && nomInterne && memeNom(j.prenom, j.nom, nomInterne)) return id;
+  }
+  return null;
+}
+
+/**
+ * Recoupe chaque joueur de Thomas avec le joueur interne à la même position
+ * (ou à la place voisine du même match si l'ordre est inversé).
  * Une place sans nom chez Thomas (exemption, ou lucky loser pas encore
  * désignée) doit être une place VIDE chez nous.
  * Renvoie la liste des désaccords (vide = tableaux superposables).
@@ -120,7 +148,7 @@ export function verifierJoueurs(
       continue;
     }
     const nomInterne = nomsInternes.get(id);
-    if (!nomInterne || !memeNom(j.prenom, j.nom, nomInterne)) {
+    if ((!nomInterne || !memeNom(j.prenom, j.nom, nomInterne)) && joueurDeThomas(j, premierTour, nomsInternes) === null) {
       erreurs.push(`Position ${j.position} : ${nomThomas} chez Thomas, ${nomInterne ?? id} chez nous.`);
     }
   }
@@ -195,6 +223,12 @@ export function deriverPronostics(
     else pseudosInconnus.push(p.pseudo);
   }
 
+  // Joueur interne de chaque position de Thomas, retrouvé par le nom (ordre inversé toléré).
+  const idParPosition = new Map<number, string | null>();
+  for (const j of b.joueurs) {
+    if (!estPlaceSansNom(j)) idParPosition.set(j.position, joueurDeThomas(j, premierTour, nomsInternes));
+  }
+
   const exemptions = new Set(b.joueurs.filter(estExemption).map((j) => j.position));
   const nonDesignees = new Set(b.joueurs.filter(estNonDesignee).map((j) => j.position));
   const duelsBye = new Set(matchsPremierTour.filter((m) => m.status === 'bye').map((m) => `${m.round}|${m.position}`));
@@ -236,7 +270,9 @@ export function deriverPronostics(
         // Une exemption n'est jamais un « joueur » à proposer : déjà refusé
         // par validerBracket, revérifié ici car une place vide chez nous
         // donnerait un pronostic sans joueur.
-        const playerId = exemptions.has(p.position) ? null : joueurDePosition(p.position, premierTour);
+        const playerId = exemptions.has(p.position)
+          ? null
+          : (idParPosition.get(p.position) ?? joueurDePosition(p.position, premierTour));
         if (playerId === null) {
           erreurs.push(`Tour ${t.tour}, match ${m.index} : pronostic en position ${p.position}, sans joueur (exemption).`);
           continue;

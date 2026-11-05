@@ -59,6 +59,21 @@ const pk = (pseudo: string, haut: string | null, bas: string | null, moi = false
 });
 
 describe('planAlignementGT', () => {
+  it('ordre inversé dans un même match chez nous : le joueur est retrouvé par le nom (pas refusé)', () => {
+    const matchs = [0, 1, 2, 3].map((m) => ({
+      round: 'QF',
+      position: m,
+      // Match 0 : Nakashima puis Cobolli chez nous, Cobolli puis Nakashima chez Game Tracker.
+      player1Id: JOUEURS[m === 0 ? 1 : 2 * m][0],
+      player2Id: JOUEURS[m === 0 ? 0 : 2 * m + 1][0],
+    }));
+    const plan = planAlignementGT(base([qf([pk('Daddy', 'cob', 'mou', true), pk('Laki', 'nak', 'fri')])], { matchs }));
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return;
+    expect(plan.changements.filter((c) => c.stockId === null).map((c) => c.apres?.playerId)).toEqual(['cob', 'mou']);
+    expect(plan.changements.filter((c) => c.stockId === 'laki-id').map((c) => c.apres?.playerId)).toEqual(['nak', 'fri']);
+  });
+
   it('recopie les picks de chacun (moi, Laki, moustiton = Thomas) sur un tour verrouillé', () => {
     const plan = planAlignementGT(
       base([qf([pk('Daddy', 'nak', 'mou', true), pk('Laki', 'cob', 'fri'), pk('moustiton', 'mus', 'pau')])], {

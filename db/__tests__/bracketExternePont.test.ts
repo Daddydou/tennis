@@ -227,9 +227,17 @@ describe('pontVersRoundPicks', () => {
 
   it('tableaux non superposables : refus, rien d’écrit', async () => {
     const { sb, tables, ecritures } = base();
-    tables.tn_matches[0] = { ...tables.tn_matches[0], player1_id: 'j2', player2_id: 'j1' };
+    // j1 remplacé par j3 (d'un autre match) : un vrai désaccord, pas une simple inversion.
+    tables.tn_matches[0] = { ...tables.tn_matches[0], player1_id: 'j3', player2_id: 'j2' };
     const r = await pontVersRoundPicks(sb, sb, bracket());
     expect(r.statut).toBe('refuse');
     expect(ecritures).toEqual([]);
+  });
+
+  it('deux joueurs inversés dans le même match (Paris 2026) : accepté, le pronostic suit le joueur', async () => {
+    const { sb, tables } = base();
+    tables.tn_matches[0] = { ...tables.tn_matches[0], player1_id: 'j2', player2_id: 'j1' };
+    const r = await pontVersRoundPicks(sb, sb, bracket());
+    expect(r.statut).not.toBe('refuse');
   });
 });
