@@ -141,9 +141,9 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
     console.error('Propositions Masters :', (e as Error).message);
   }
 
-  const joueurOuEtiquette = (jId: string | null, etiquette: string, deduit: boolean) =>
+  const joueurOuEtiquette = (jId: string | null, etiquette: string) =>
     jId ? (
-      <span className={deduit ? 'text-zinc-900' : 'text-zinc-900'}>{noms.get(jId) ?? jId}</span>
+      <span className="text-zinc-900">{noms.get(jId) ?? jId}</span>
     ) : (
       <span className="text-zinc-500">{etiquette}</span>
     );
@@ -187,8 +187,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
                 <LigneMatch key={d.position} m={{ ...d.match, player1Id: d.player1Id, player2Id: d.player2Id }} noms={noms} />
               ) : (
                 <li key={d.position} className="py-1 text-sm">
-                  {joueurOuEtiquette(d.player1Id, d.etiquettes[0], d.deduit)} <span className="text-zinc-400">–</span>{' '}
-                  {joueurOuEtiquette(d.player2Id, d.etiquettes[1], d.deduit)}
+                  {joueurOuEtiquette(d.player1Id, d.etiquettes[0])} <span className="text-zinc-400">–</span>{' '}
+                  {joueurOuEtiquette(d.player2Id, d.etiquettes[1])}
                 </li>
               ),
             )}
@@ -202,8 +202,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
             </ul>
           ) : (
             <p className="py-1 text-sm">
-              {joueurOuEtiquette(vue.finale.player1Id, vue.finale.etiquettes[0], false)} <span className="text-zinc-400">–</span>{' '}
-              {joueurOuEtiquette(vue.finale.player2Id, vue.finale.etiquettes[1], false)}
+              {joueurOuEtiquette(vue.finale.player1Id, vue.finale.etiquettes[0])} <span className="text-zinc-400">–</span>{' '}
+              {joueurOuEtiquette(vue.finale.player2Id, vue.finale.etiquettes[1])}
             </p>
           )}
         </div>
@@ -211,7 +211,7 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       </section>
 
       <p className={noteInfo}>
-        Les picks se posent chez Game Tracker depuis le panneau ci-dessus ; le pronostic se saisit chez Thomas (pas encore dans l&apos;app). Le
+        Les picks se posent chez Game Tracker depuis le panneau ci-dessus ; le pronostic se saisit dans le bloc « Pronostics et classement » ci-dessus, jusqu&apos;au premier match. Le
         tableau à élimination directe, le plan et le Fantasy ne s&apos;appliquent pas à ce format.
       </p>
     </div>
