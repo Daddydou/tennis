@@ -45,7 +45,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Charger un nouveau tournoi ATP ou WTA dans l’app.',
         quand: 'Dès que le tirage au sort est publié.',
         etapes: [
-          'Ouvrir `Importer` et regarder la section `Tournois de la semaine`.',
+          'Ouvrir `Outils` puis `Importer` et regarder la section `Tournois de la semaine`.',
           'Appuyer sur `Importer le tableau` en face du tournoi (1 requête API).',
           'Le tournoi est alors surveillé : l’app le remet à jour toute seule toutes les 6 h jusqu’à la finale.',
           'Vérifier dans `Tournois` que le tableau s’affiche et que les cotes sont là.',
@@ -55,7 +55,7 @@ export const GROUPES: Groupe[] = [
           'Un tournoi déjà importé avec le bookmarklet n’est pas réimporté depuis l’API (volontaire).',
         ],
         doc: 'docs/import-auto.md',
-        maj: '2026-10-23',
+        maj: '2026-11-06',
       },
       {
         id: 'poser-picks',
@@ -135,14 +135,14 @@ export const GROUPES: Groupe[] = [
         quand: 'Si un tournoi n’apparaît pas dans `Tournois de la semaine`, ou si l’API est en panne.',
         etapes: [
           'Ouvrir la page du tableau sur le site ATP ou WTA, lancer le bookmarklet et copier le JSON obtenu.',
-          'Ouvrir `Importer`, coller le JSON, valider.',
+          'Ouvrir `Outils` puis `Importer`, coller le JSON, valider.',
           'Le tournoi est ensuite surveillé automatiquement (toutes les ~12 h).',
         ],
         attention: [
           'ATP : le site refuse les requêtes serveur (403) ; seul le navigateur peut lire la page, d’où le userscript Tampermonkey.',
         ],
         doc: 'docs/import-auto.md',
-        maj: '2026-10-23',
+        maj: '2026-11-06',
       },
       {
         id: 'surveillance',
@@ -150,7 +150,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Contrôler les imports automatiques.',
         quand: 'Si un tournoi ne se met plus à jour, ou pour couper un tournoi fini.',
         etapes: [
-          'Ouvrir `Importer`, section `Imports automatiques` : mode, dernier succès, prochain passage, erreurs, 10 derniers passages.',
+          'Ouvrir `Outils` puis `Importer`, section `Imports automatiques` : mode, dernier succès, prochain passage, erreurs, 10 derniers passages.',
           'Bandeau rouge = au moins 2 échecs de suite sur un tournoi actif : lire la dernière erreur affichée.',
           '`Arrêter la surveillance` coupe un tournoi ; `Reprendre` la relance (compteur de 21 jours remis à zéro).',
         ],
@@ -159,7 +159,7 @@ export const GROUPES: Groupe[] = [
           'Un e-mail de GitHub arrive si le passage automatique échoue : c’est l’alerte.',
         ],
         doc: 'docs/import-auto.md',
-        maj: '2026-10-23',
+        maj: '2026-11-06',
       },
       {
         id: 'elo-ta',
@@ -167,7 +167,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Rafraîchir les notes Elo de la source Tennis Abstract.',
         quand: 'Environ une fois par semaine si la source est `ta`, ou en secours si l’Elo maison est indisponible.',
         etapes: [
-          'Ouvrir `Importer` puis la page `Elo`.',
+          'Ouvrir `Outils` puis `Importer` puis la page `Elo`.',
           'Suivre les étapes de l’écran : copier le snippet, l’exécuter sur la page Tennis Abstract dans le navigateur, coller le résultat.',
           'Un circuit à la fois, ou les deux ensemble.',
         ],
@@ -176,7 +176,7 @@ export const GROUPES: Groupe[] = [
           'Avec la source `maison` (actuelle), ce geste n’est pas nécessaire au quotidien : l’Elo maison se met à jour tout seul.',
         ],
         doc: 'README.md (écran `/import/elo`)',
-        maj: '2026-10-23',
+        maj: '2026-11-06',
       },
       {
         id: 'elo-maison',
@@ -202,7 +202,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Reporter les pronostics de Thomas, Laki et les miens.',
         quand: 'À la demande, pour un tournoi présent dans l’API bracket de Thomas.',
         etapes: [
-          'Ouvrir `Importer` puis `Synchroniser le bracket de Thomas`.',
+          'Ouvrir `Outils` puis `Importer` puis `Synchroniser le bracket de Thomas`.',
           'Choisir le tournoi ; faire d’abord un aperçu.',
           'Lancer la synchro (jamais de suppression ; les écarts sont signalés sans écraser).',
         ],
@@ -211,7 +211,7 @@ export const GROUPES: Groupe[] = [
           'Ligne de commande équivalente : `npm run sync:bracket-thomas -- --liste` (ou `--tournoi=<id> --apercu`).',
         ],
         doc: 'CLAUDE.md (section externe/)',
-        maj: '2026-10-23',
+        maj: '2026-11-06',
       },
     ],
   },

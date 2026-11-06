@@ -1,47 +1,73 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { GROUPES, groupeActif, lienActif } from './navigation';
 
 /**
- * Navigation globale. Chaque lien a sa propre zone tactile de 44px (pas
- * seulement son texte) — au téléphone, le header reste la seule navigation
- * globale. La page en cours est marquée (aria-current + texte foncé et
- * gras) : sans ça, rien ne disait où l'on se trouvait.
+ * Navigation globale en 4 entrées (Accueil, Tournois, Saison, Outils), plus
+ * une sous-barre quand on est dans Saison ou Outils. Chaque lien a sa propre
+ * zone tactile de 44px. La page en cours est marquée (aria-current + texte
+ * foncé et gras) : sans ça, rien ne disait où l'on se trouvait.
+ *
+ * `deconnexion` est le formulaire de déconnexion (Server Action) fourni par le
+ * layout, seulement si la session est valide : on l'affiche dans la sous-barre
+ * Outils.
  */
-const LIENS: { href: string; label: string; actifSi: (p: string) => boolean }[] = [
-  { href: '/tournois', label: 'Tournois', actifSi: (p) => p.startsWith('/tournoi') },
-  { href: '/import', label: 'Importer', actifSi: (p) => p.startsWith('/import') },
-  { href: '/face-a-face', label: 'Face-à-face', actifSi: (p) => p.startsWith('/face-a-face') },
-  { href: '/bilan', label: 'Bilan', actifSi: (p) => p.startsWith('/bilan') },
-  { href: '/fantasy', label: 'Fantasy saison', actifSi: (p) => p.startsWith('/fantasy') },
-  { href: '/calibration', label: 'Calibration', actifSi: (p) => p.startsWith('/calibration') },
-  { href: '/participants', label: 'Participants', actifSi: (p) => p.startsWith('/participants') },
-  { href: '/procedures', label: 'Procédures', actifSi: (p) => p.startsWith('/procedures') },
-];
+const LIEN =
+  'flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900';
 
-export default function NavGlobale() {
+export default function NavGlobale({ deconnexion }: { deconnexion?: ReactNode }) {
   const pathname = usePathname() ?? '/';
+  const groupe = groupeActif(pathname);
+  const sousLien = groupe ? lienActif(groupe, pathname) : null;
+
   return (
-    <nav
-      aria-label="Navigation principale"
-      className="flex min-w-0 overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
-    >
-      {LIENS.map((l) => {
-        const actif = l.actifSi(pathname);
-        return (
-          <Link
-            key={l.href}
-            href={l.href}
-            aria-current={actif ? 'page' : undefined}
-            className={`flex min-h-11 items-center rounded-xl px-2.5 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900 ${
-              actif ? 'font-semibold text-zinc-900' : 'text-zinc-600'
-            }`}
+    <>
+      <nav
+        aria-label="Navigation principale"
+        className="flex min-w-0 overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
+      >
+        {GROUPES.map((g) => {
+          const actif = groupe?.cle === g.cle;
+          return (
+            <Link
+              key={g.cle}
+              href={g.href}
+              aria-current={actif ? 'page' : undefined}
+              className={`${LIEN} ${actif ? 'font-semibold text-zinc-900' : 'text-zinc-600'}`}
+            >
+              {g.label}
+            </Link>
+          );
+        })}
+      </nav>
+      {groupe && groupe.liens.length > 0 && (
+        <div className="basis-full border-t border-zinc-100">
+          <nav
+            aria-label={groupe.label}
+            className="flex min-w-0 items-center overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
           >
-            {l.label}
-          </Link>
-        );
-      })}
-    </nav>
+            {groupe.liens.map((l) => {
+              const actif = sousLien === l.href;
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  aria-current={actif ? 'page' : undefined}
+                  className={`${LIEN} ${actif ? 'font-semibold text-zinc-900' : 'text-zinc-600'}`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+            {groupe.cle === 'outils' && deconnexion ? (
+              <div className="ml-auto pl-2">{deconnexion}</div>
+            ) : null}
+          </nav>
+        </div>
+      )}
+    </>
   );
 }
