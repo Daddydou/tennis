@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 /**
- * POST /api/import-auto/run — appelé par le workflow GitHub (06:00 et 18:00 UTC).
+ * POST /api/import-auto/run — appelé par le workflow GitHub (toutes les 6 h : 00:00, 06:00, 12:00 et 18:00 UTC,
+ * voir .github/workflows/import-auto.yml).
  *
  *   ?dry=1                    récupération + extraction + comparaison, ZÉRO écriture ;
  *   ?dry=1&source_url=<url>   idem sur une page wtatennis.com précise (diagnostic).
