@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   // Anciens onglets du tournoi (liens et favoris) : redirigés AVANT le rendu,
-  // paramètres d'URL conservés (participant, round, moitie). Les pages
-  // plan/ et bracket/ redirigent aussi, en filet de sécurité.
+  // paramètres d'URL conservés (participant, round, moitie). Ces deux
+  // redirections sont la seule source : plan/ et bracket/ n'ont plus de page.
   async redirects() {
     return [
       { source: '/tournoi/:id/plan', destination: '/tournoi/:id/picks', permanent: false },
