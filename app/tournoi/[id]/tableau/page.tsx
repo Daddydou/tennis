@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import { notFound } from 'next/navigation';
 import { carte } from '@/app/ui';
 import {
@@ -125,6 +126,7 @@ export default async function TableauPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const tournoi = await getTournament(id);
   if (!tournoi) notFound();
 

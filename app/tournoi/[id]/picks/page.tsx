@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
@@ -39,6 +40,7 @@ export default async function PicksPage({
   searchParams: Promise<{ participant?: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const { participant: participantParam } = await searchParams;
 
   // Toutes les lectures partent de front : en cascade, chaque aller-retour

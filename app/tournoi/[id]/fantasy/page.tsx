@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
@@ -25,6 +26,7 @@ export default async function FantasyPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
 
   const engine = await loadEngineData(id);
   if (!engine) notFound();

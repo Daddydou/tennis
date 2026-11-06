@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../../garde';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ScenarioFantasy, { type DuelReglable } from './ScenarioFantasy';
@@ -25,6 +26,7 @@ export default async function ScenarioFantasyPage({
   searchParams: Promise<{ round?: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const { round: roundParam } = await searchParams;
 
   const engine = await loadEngineData(id);

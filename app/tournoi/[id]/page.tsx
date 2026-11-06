@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import MastersDashboard from './MastersDashboard';
+import { estMasters } from '@/lib/masters';
 import { notFound } from 'next/navigation';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
 import { boutonPrimaire, boutonSecondaire, carte, zoneTactile } from '@/app/ui';
@@ -29,6 +31,7 @@ export default async function DashboardPage({
   const { id } = await params;
   const tournoi = await getTournament(id);
   if (!tournoi) notFound();
+  if (estMasters(tournoi.rounds)) return <MastersDashboard id={id} tournoi={tournoi} />;
 
   const [matchRows, participants, bracketRoundPicks, tousLesPicks] = await Promise.all([
     getMatchRows(id),

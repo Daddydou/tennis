@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
@@ -60,6 +61,7 @@ export default async function PredictionsPage({
   searchParams: Promise<{ vue?: string; round?: string; moitie?: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const { vue: vueParam, round, moitie } = await searchParams;
   const vue: Vue = vueParam === 'tableau' ? 'tableau' : 'chances';
 

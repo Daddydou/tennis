@@ -42,7 +42,7 @@ const PAR_SEGMENT: Record<string, Onglet> = {
  * ils restent affichés pendant qu'un onglet se charge (seul le contenu passe
  * au squelette de ./loading.tsx). L'onglet actif se déduit de l'URL.
  */
-export default function TournoiNav({ id, nom }: { id: string; nom: string }) {
+export default function TournoiNav({ id, nom, masters = false }: { id: string; nom: string; masters?: boolean }) {
   const segment = usePathname().split('/')[3] ?? '';
   const active: Onglet = PAR_SEGMENT[segment] ?? 'dashboard';
   return (
@@ -52,7 +52,7 @@ export default function TournoiNav({ id, nom }: { id: string; nom: string }) {
           défile horizontalement plutôt que de passer à la ligne, ce qui garde
           l'onglet actif et ses voisins à portée de pouce. */}
       <nav aria-label="Onglets du tournoi" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 text-sm">
-        {ONGLETS.map((o) => (
+        {ONGLETS.filter((o) => !masters || o.key === 'dashboard').map((o) => (
           <Link
             key={o.key}
             href={o.href(id)}
