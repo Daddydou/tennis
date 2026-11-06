@@ -473,3 +473,12 @@ select to_regclass('public.tn_elo_maison_alias') is not null
    and not has_table_privilege('anon', 'public.tn_elo_maison_alias', 'insert')
    as appliquee;
 ```
+
+## 0031 — une phase par pick (format Masters)
+
+`tn_picks.phase` (`tournoi` par défaut, `poules` ou `finale` pour un Masters) : les index d'unicité par joueur deviennent « un joueur une fois par tournoi **et par phase** ». Aucun changement pour les tournois à tableau (phase `tournoi`). Permet de piquer une joueuse en poules puis de nouveau en demie ou en finale.
+```sql
+select exists (select 1 from information_schema.columns where table_name = 'tn_picks' and column_name = 'phase')
+   and exists (select 1 from pg_indexes where indexname = 'idx_tn_picks_moi_joueur' and indexdef like '%phase%')
+   as appliquee;
+```
