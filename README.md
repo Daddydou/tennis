@@ -139,7 +139,7 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   bouton « Tenter le fetch serveur » est en bas de l'écran.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
 - `/tournoi/[id]/predictions?vue=tableau` (onglet Prédictions → « Tableau
-  pronostiqué » ; l'ancienne URL `/tournoi/[id]/bracket` a été retirée, l'onglet
+  pronostiqué » ; l'ancienne URL `/tournoi/[id]/bracket` y redirige (next.config.ts), l'onglet
   « Bracket » désignant désormais le jeu, route `/simulateur`) — **arbre pronostiqué depuis le tirage**, du premier
   tour au champion. Pronostic *déterministe* : à chaque match, le plus haut
   **Elo effectif** sur la surface du tournoi (mélange 60/40, le même que
@@ -158,7 +158,7 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   la carte du champion prédit avec son parcours tour par tour en tête d'écran.
   La logique vit dans `lib/bracket.ts`, module pur sans I/O.
 - `/tournoi/[id]/picks` — écran principal : le plan de picks réactif (ex-onglet
-  « Plan », l'ancienne URL `/tournoi/[id]/plan` a été retirée ; lib/planEcran.ts, calcul dans le
+  « Plan », `/tournoi/[id]/plan` y redirige (next.config.ts) ; lib/planEcran.ts, calcul dans le
   navigateur) — un joueur proposé par pick restant, modes Prudent / Équilibré /
   Audacieux / Contre les rivaux, grand tableau joueurs × tours. Validation →
   `tn_picks`. (L'ancien écran par colonnes, `PickBoard.tsx`, n'est plus affiché.)
