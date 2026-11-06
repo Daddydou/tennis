@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from './TournoiNav';
 import { getTournament } from '@/db/queries';
+import { estMasters } from '@/lib/masters';
 
 /**
  * Cadre commun des écrans d'un tournoi : le nom et les onglets. Un layout
@@ -20,7 +21,7 @@ export default async function TournoiLayout({
   if (!tournoi) notFound();
   return (
     <div className="space-y-5">
-      <TournoiNav id={id} nom={tournoi.name} />
+      <TournoiNav id={id} nom={tournoi.name} masters={estMasters(tournoi.rounds)} />
       {children}
     </div>
   );

@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import RecomputeButton from './RecomputeButton';
@@ -31,6 +32,7 @@ export default async function ResultatsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const tournoi = await getTournament(id);
   if (!tournoi) notFound();
 

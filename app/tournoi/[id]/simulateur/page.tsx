@@ -1,3 +1,4 @@
+import { redirigerSiMasters } from '../garde';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
 import AttenteCalcul from '../AttenteCalcul';
@@ -31,6 +32,7 @@ export default async function SimulateurPage({
   searchParams: Promise<{ section?: string; vue?: string } & Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  await redirigerSiMasters(id);
   const sp = await searchParams;
   const section = typeof sp.section === 'string' ? sp.section : undefined;
   const vue = typeof sp.vue === 'string' ? sp.vue : undefined;
