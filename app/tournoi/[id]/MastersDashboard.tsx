@@ -39,6 +39,8 @@ function LigneMatch({ m, noms }: { m: MatchVue; noms: Noms }) {
 
 function CartePoule({ p, noms }: { p: PouleVue; noms: Noms }) {
   const qualifies = new Set(p.qualifies ?? []);
+  // Avant le premier match, tout le monde est à égalité : pas de rang à afficher.
+  const commence = p.classement.some((l) => l.joues > 0);
   return (
     <section className={`${carte} space-y-3 p-4`}>
       <header className="flex items-baseline justify-between">
@@ -59,7 +61,7 @@ function CartePoule({ p, noms }: { p: PouleVue; noms: Noms }) {
         <tbody>
           {p.classement.map((l) => (
             <tr key={l.playerId} className="border-t border-zinc-100">
-              <td className="py-1.5 text-zinc-500">{l.egalite ? '=' : ''}{l.rang}</td>
+              <td className="py-1.5 text-zinc-500">{commence ? `${l.egalite ? '=' : ''}${l.rang}` : '–'}</td>
               <td className="py-1.5">
                 <span className={qualifies.has(l.playerId) ? 'font-semibold text-zinc-900' : 'text-zinc-800'}>{noms.get(l.playerId) ?? l.playerId}</span>
                 {qualifies.has(l.playerId) && <span className={`${badgeNeutre} ml-1.5`}>demi</span>}
@@ -71,8 +73,10 @@ function CartePoule({ p, noms }: { p: PouleVue; noms: Noms }) {
           ))}
         </tbody>
       </table>
-      {p.classement.some((l) => l.egalite) && (
-        <p className={noteInfo}>Égalité que les règles ne départagent pas (victoires, confrontation directe, puis sets et jeux) : rang partagé (=).</p>
+      {commence && p.classement.some((l) => l.egalite) && (
+        <p className={noteInfo}>
+          Rang partagé (=) : égalité à ce stade, pas (encore) départagée par les règles (victoires, confrontation directe, puis sets et jeux).
+        </p>
       )}
 
       {p.journees.map((j) => (
