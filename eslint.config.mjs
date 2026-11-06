@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "lib/extract/__tests__/fixtures/**",
     // Bundle généré du userscript (npm run build:userscript).
     "tools/userscript/import-auto.user.js",
+    // Skills d'agents (Claude Code) : scripts tiers, hors du code du projet.
+    ".claude/skills/**",
+    ".github/skills/**",
   ]),
   // Scripts de recherche (hors app, lecture de JSON/CSV bruts) : 'any' toléré.
   {
