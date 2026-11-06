@@ -97,7 +97,9 @@ describe('NavGlobale', () => {
   it('la Déconnexion apparaît dans la sous-barre Outils seulement, et seulement si on la fournit', () => {
     sur('/procedures', <button type="submit">Déconnexion</button>);
     const sous = screen.getByRole('navigation', { name: 'Outils' });
-    expect(within(sous).getByRole('button', { name: 'Déconnexion' })).toBeTruthy();
+    // Le bouton est à côté de la zone qui défile (toujours visible), dans le même bandeau.
+    expect(within(sous).queryByRole('button', { name: 'Déconnexion' })).toBeNull();
+    expect(within(sous.parentElement as HTMLElement).getByRole('button', { name: 'Déconnexion' })).toBeTruthy();
     cleanup();
 
     sur('/procedures');
