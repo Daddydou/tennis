@@ -1,7 +1,9 @@
 import { badgeNeutre, carte, noteInfo } from '@/app/ui';
+import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConseils';
 import { getMatchRows, getPlayerRows, type TournamentRow } from '@/db/queries';
 import { libelleTourMasters } from '@/lib/masters';
 import { vueMasters, type MatchVue, type PouleVue } from '@/lib/mastersVue';
+import ConseilsMastersCarte from './ConseilsMasters';
 
 /**
  * Écran d'un tournoi au format Masters (ATP Finals, WTA Finals) : deux poules de 4 sur trois journées,
@@ -110,6 +112,14 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
   const ids = [...new Set(rows.flatMap((r) => [r.player1_id, r.player2_id]).filter((x): x is string => x !== null))];
   const noms: Noms = new Map((ids.length ? await getPlayerRows(ids) : []).map((p) => [p.id, p.name]));
 
+  // Propositions de picks et de pronostic : jamais bloquantes (sans elles, l'écran reste complet).
+  let conseils: ConseilsMasters | null = null;
+  try {
+    conseils = await calculerConseilsMasters(tournoi, rows);
+  } catch (e) {
+    console.error('Propositions Masters :', (e as Error).message);
+  }
+
   const joueurOuEtiquette = (jId: string | null, etiquette: string, deduit: boolean) =>
     jId ? (
       <span className={deduit ? 'text-zinc-900' : 'text-zinc-900'}>{noms.get(jId) ?? jId}</span>
@@ -122,6 +132,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       <p className="text-sm text-zinc-600">
         {tournoi.name} : deux poules de 4 (trois journées), les deux premières de chaque poule jouent des demies croisées, puis la finale.
       </p>
+
+      {conseils && <ConseilsMastersCarte conseils={conseils} noms={noms} />}
 
       <div className="grid gap-4 md:grid-cols-2">
         <CartePoule p={vue.poules.A} noms={noms} />
@@ -162,8 +174,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       </section>
 
       <p className={noteInfo}>
-        Les picks et le pronostic des Masters (classer les poules, vainqueurs des demies, championne) ne sont pas encore disponibles dans l&apos;app :
-        le tableau à élimination directe, le plan et le Fantasy ne s&apos;appliquent pas à ce format.
+        Propositions seulement : la saisie des picks et du pronostic se fait chez Game Tracker et chez Thomas (pas encore dans l&apos;app). Le
+        tableau à élimination directe, le plan et le Fantasy ne s&apos;appliquent pas à ce format.
       </p>
     </div>
   );
