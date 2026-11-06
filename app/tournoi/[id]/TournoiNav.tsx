@@ -25,15 +25,13 @@ const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = 
   { key: 'resultats', label: 'Résultats', href: (id) => `/tournoi/${id}/resultats` },
 ];
 
-/** Segment d'URL -> onglet actif (les anciennes routes pointent vers leur nouvel onglet). */
+/** Segment d'URL -> onglet actif. */
 const PAR_SEGMENT: Record<string, Onglet> = {
   tableau: 'tableau',
   picks: 'picks',
-  plan: 'picks',
   simulateur: 'simulateur',
   fantasy: 'fantasy',
   predictions: 'predictions',
-  bracket: 'predictions',
   resultats: 'resultats',
 };
 
