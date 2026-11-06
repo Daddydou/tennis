@@ -44,10 +44,10 @@ export default function NavGlobale({ deconnexion }: { deconnexion?: ReactNode })
         })}
       </nav>
       {groupe && groupe.liens.length > 0 && (
-        <div className="min-w-0 basis-full border-t border-zinc-100">
+        <div className="flex min-w-0 basis-full items-center border-t border-zinc-100">
           <nav
             aria-label={groupe.label}
-            className="flex min-w-0 items-center overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
+            className="flex min-w-0 flex-1 items-center overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
           >
             {groupe.liens.map((l) => {
               const actif = sousLien === l.href;
@@ -62,10 +62,9 @@ export default function NavGlobale({ deconnexion }: { deconnexion?: ReactNode })
                 </Link>
               );
             })}
-            {groupe.cle === 'outils' && deconnexion ? (
-              <div className="ml-auto pl-2">{deconnexion}</div>
-            ) : null}
           </nav>
+          {/* Hors de la zone qui défile : toujours visible à droite, sans glisser. */}
+          {groupe.cle === 'outils' && deconnexion ? <div className="shrink-0 pl-2">{deconnexion}</div> : null}
         </div>
       )}
     </>
