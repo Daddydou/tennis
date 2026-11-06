@@ -276,7 +276,7 @@ export default async function Home() {
                     >
                       <Link
                         href={`/tournoi/${t.id}`}
-                        className="order-1 min-w-0 flex-1 font-semibold hover:underline sm:order-2 sm:flex-none sm:font-medium"
+                        className="order-1 min-w-0 basis-[calc(100%-3.5rem)] font-semibold hover:underline sm:order-2 sm:basis-auto sm:font-medium"
                       >
                         {t.name}
                       </Link>
