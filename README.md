@@ -138,7 +138,7 @@ lectures se font avec la clé publique, que la RLS filtre à 0 ligne.
   Vercel, mais fonctionnel en local, et prêt à resservir si le filtre tombe. Le
   bouton « Tenter le fetch serveur » est en bas de l'écran.
 - `/tournoi/[id]` — vue du tableau tour par tour (lecture seule).
-- `/tournoi/[id]/predictions?vue=tableau` (onglet Prédictions → « Tableau
+- `/tournoi/[id]/predictions?vue=tableau` (vue Prédictions de l'onglet Bracket → « Tableau
   pronostiqué » ; l'ancienne URL `/tournoi/[id]/bracket` y redirige (next.config.ts), l'onglet
   « Bracket » désignant désormais le jeu, route `/simulateur`) — **arbre pronostiqué depuis le tirage**, du premier
   tour au champion. Pronostic *déterministe* : à chaque match, le plus haut
@@ -614,7 +614,7 @@ pour un tournoi en 3 sets gagnants (`pointsForfaitPour`). Abandons, perdant du
 forfait et Grands Chelems masculins en 5 sets inchangés.
 
 Périmètre : `tn_recompute_picks` (donc `tn_picks.points`) et le Score de
-référence de l'onglet Résultats. Le Fantasy, le Bracket et les équipes figées
+référence de la vue Résultats (onglet Tableau). Le Fantasy, le Bracket et les équipes figées
 gardent le défaut de `scoreMatch` (5 pts). Après un changement de règle,
 rejouer `tn_recompute_picks` sur les seuls tournois concernés.
 

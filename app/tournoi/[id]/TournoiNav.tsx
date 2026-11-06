@@ -2,53 +2,29 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-type Onglet = 'dashboard' | 'tableau' | 'picks' | 'simulateur' | 'fantasy' | 'predictions' | 'resultats';
-
-/**
- * Un onglet par JEU (Picks, Bracket, Fantasy), encadrés par le tableau réel
- * et les outils de lecture. « Bracket » ne désigne que le jeu : l'arbre
- * pronostiqué à l'Elo vit dans Prédictions → Tableau pronostiqué, et l'ancien
- * onglet Plan est devenu l'écran Picks (anciennes URL redirigées).
- */
-const ONGLETS: { key: Onglet; label: string; href: (id: string) => string }[] = [
-  // Page d'atterrissage du tournoi : synthèse Bracket + Picks, avant le détail.
-  { key: 'dashboard', label: 'Dashboard', href: (id) => `/tournoi/${id}` },
-  { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}/tableau` },
-  // Picks intègre la saisie des participants (sélecteur Moi / Laki / Thomas).
-  { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks` },
-  // Le jeu Bracket (route historique /simulateur, qui garde aussi le
-  // simulateur de picks).
-  { key: 'simulateur', label: 'Bracket', href: (id) => `/tournoi/${id}/simulateur` },
-  { key: 'fantasy', label: 'Fantasy', href: (id) => `/tournoi/${id}/fantasy` },
-  { key: 'predictions', label: 'Prédictions', href: (id) => `/tournoi/${id}/predictions` },
-  { key: 'resultats', label: 'Résultats', href: (id) => `/tournoi/${id}/resultats` },
-];
-
-/** Segment d'URL -> onglet actif. */
-const PAR_SEGMENT: Record<string, Onglet> = {
-  tableau: 'tableau',
-  picks: 'picks',
-  simulateur: 'simulateur',
-  fantasy: 'fantasy',
-  predictions: 'predictions',
-  resultats: 'resultats',
-};
+import { filtreSecondaire } from '@/app/ui';
+import { ONGLETS, ongletDe, vueDe } from './onglets';
 
 /**
  * Titre et onglets du tournoi, rendus UNE fois par le layout du tournoi :
  * ils restent affichés pendant qu'un onglet se charge (seul le contenu passe
  * au squelette de ./loading.tsx). L'onglet actif se déduit de l'URL.
+ *
+ * Cinq onglets (Dashboard, Tableau, Picks, Bracket, Fantasy). Deux d'entre
+ * eux ont deux vues, affichées sous la barre : Tableau (Tableau | Résultats)
+ * et Bracket (Le jeu | Prédictions). Les URLs de chaque vue n'ont pas changé.
  */
 export default function TournoiNav({ id, nom, masters = false }: { id: string; nom: string; masters?: boolean }) {
   const segment = usePathname().split('/')[3] ?? '';
-  const active: Onglet = PAR_SEGMENT[segment] ?? 'dashboard';
+  const active = ongletDe(segment);
+  const vues = masters ? [] : (ONGLETS.find((o) => o.key === active)?.vues ?? []);
+  const vueActive = vueDe(segment);
   return (
     <div className="space-y-2">
       <h1 className="text-lg font-semibold">{nom}</h1>
-      {/* Sept onglets ne tiennent pas dans la largeur d'un téléphone : la barre
-          défile horizontalement plutôt que de passer à la ligne, ce qui garde
-          l'onglet actif et ses voisins à portée de pouce. */}
+      {/* Cinq onglets tiennent presque dans la largeur d'un téléphone : la barre
+          défile quand même horizontalement plutôt que de passer à la ligne, ce
+          qui garde l'onglet actif et ses voisins à portée de pouce. */}
       <nav aria-label="Onglets du tournoi" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 text-sm">
         {ONGLETS.filter((o) => !masters || o.key === 'dashboard').map((o) => (
           <Link
@@ -65,6 +41,20 @@ export default function TournoiNav({ id, nom, masters = false }: { id: string; n
           </Link>
         ))}
       </nav>
+      {vues.length > 0 && (
+        <nav aria-label="Vues" className="flex flex-wrap gap-1">
+          {vues.map((v) => (
+            <Link
+              key={v.segment}
+              href={`/tournoi/${id}/${v.segment}`}
+              aria-current={vueActive === v.segment ? 'page' : undefined}
+              className={filtreSecondaire(vueActive === v.segment)}
+            >
+              {v.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
