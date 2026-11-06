@@ -492,3 +492,11 @@ select to_regclass('public.tn_masters_pronostics') is not null
    and not has_table_privilege('anon', 'public.tn_masters_pronostics', 'insert')
    as appliquee;
 ```
+
+## 0033 — la vue tn_used_players en security_invoker
+
+La vue `tn_used_players` (joueurs déjà pris, mon stock) avait perdu l'option `security_invoker` posée en 0001 quand 0014 l'a recréée : le conseiller de sécurité Supabase la signalait « security definer view ». Elle s'exécute de nouveau avec les droits de l'appelant. Aucune donnée touchée, lecture publique inchangée (les tables sous-jacentes sont déjà en lecture publique).
+```sql
+select coalesce((select reloptions @> array['security_invoker=on'] from pg_class where oid = 'public.tn_used_players'::regclass), false)
+   as appliquee;
+```
