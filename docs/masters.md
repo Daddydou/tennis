@@ -25,6 +25,23 @@ npm run import:masters -- --tournoi=<id Game Tracker> --debut=AAAA-MM-JJ --ecrir
 - `--debut` (date du premier match) ne sert qu'à la création.
 - Les écrans des tournois à tableau (Tableau, Picks, Bracket, Fantasy, Prédictions, Résultats) renvoient vers le Dashboard pour un Masters, qui montre les poules, les classements, les demies et la finale.
 
+## Résultats des matchs (API tennis)
+
+Source : le tableau des singles de l'API tennis (« WTA Finals - Indian Wells », 1 requête sur les 50 par jour). Il publie dès le vendredi les 12 matchs de poule **sans jour** (paires de joueuses, horaires quand ils sont programmés), puis demies et finale. Le rattachement à nos matchs se fait par la **paire de joueuses**, jamais par une position (`lib/mastersResultats.ts`) :
+
+- journée 1 : mise à jour des résultats, statuts (programmé, en direct, terminé, abandon, forfait), sets (orientés dans l'ordre de nos matchs) et horaires ;
+- journées 2 et 3 : leurs lignes sont **créées dès que la journée 1 d'une poule est jouée** (vainqueurs entre eux, perdantes entre elles, puis les deux duels restants). Si l'API date ces duels dans un ordre qui contredit cette déduction, un avertissement est affiché ;
+- demies placées dès que les deux poules sont terminées, finale dès que les deux demies sont jouées (une finale peut opposer deux joueuses qui se sont déjà affrontées en poule : on distingue poule et phase finale par le tour de l'API) ;
+- le statut du tournoi avance tout seul (à venir, en cours, terminé) et les points des picks sont recalculés (`tn_recompute_picks`).
+
+Trois façons de rafraîchir :
+
+- **bouton « Actualiser les résultats »** sur l'écran du tournoi (1 requête, refusé s'il y a eu un rafraîchissement il y a moins de 2 minutes) ;
+- **cron** toutes les 6 h : le tournoi doit avoir une ligne dans `tn_import_auto` (mode `api`, `source_url` = URL du tableau de l'API) ;
+- **ligne de commande** : `npm run resultats:masters -- --tournoi=<id interne> --nom="WTA Finals - Indian Wells" --annee=2026 [--ecrire]` (aperçu par défaut).
+
+Une joueuse de l'API introuvable parmi les huit : rien n'est écrit. L'API est la source : ses valeurs remplacent les nôtres.
+
 ## Propositions de picks et de pronostic
 
 L'écran du tournoi propose (`lib/mastersSim.ts`, `lib/mastersConseils.ts`, `db/mastersConseils.ts`) :
@@ -36,6 +53,5 @@ Méthode : 10 000 tournois simulés à partir de l'Elo du jour (même chaîne qu
 
 ## Pas encore fait
 
-- Résultats des matchs : source à définir au premier match (l'API tennis ne listait pas encore les WTA Finals).
 - Envoi et lecture des picks vers Game Tracker (le rapprochement des tours de Game Tracker avec nos tours suppose un tableau à élimination directe) et saisie des picks dans l'app : pour l'instant, on pose ses picks chez Game Tracker.
 - Pronostic : saisie, points réels, lecture de la version de Thomas (son bracket est vide tant que le tournoi n'a pas démarré), classement général.

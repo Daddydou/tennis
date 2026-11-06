@@ -24,9 +24,14 @@ import {
   type MotifArret,
 } from '@/lib/importAutoRegles';
 import type { DrawExtract } from '@/lib/types';
-import { ecrireApresImport, parametresDeSurveillance, preparerDepuisApi } from './importApi';
+import { createHash } from 'node:crypto';
+import { revalidatePath } from 'next/cache';
+import { cleApi, ecrireApresImport, parametresDeSurveillance, preparerDepuisApi } from './importApi';
+import { appliquerResultatsMasters } from './mastersResultats';
+import { estMasters } from '@/lib/masters';
+import { lireUrlTableauApi } from '@/lib/extract/matchstat';
 import { mettreAJourEloMaison, retardEloMaison } from './eloMaison';
-import { quotaApi } from '@/externe/tennisApiClient';
+import { quotaApi, tableauTournoi } from '@/externe/tennisApiClient';
 import { eloEnPremier, graviteRetard } from '@/lib/eloMaisonSuivi';
 
 /**
@@ -369,6 +374,10 @@ async function passageApi(
   if (!estDu(s, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Pas encore dû.' };
   if (enPauseApresEchec(dernierEchec, maintenant)) return { tournament_id: id, statut: 'ignore', detail: 'Échec il y a moins d’une heure : pas de relance.' };
 
+  // Format Masters (poules + phase finale) : pas de tableau à élimination directe, chemin à part.
+  const { data: tournoi } = await supabaseAdmin().from('tn_tournaments').select('rounds').eq('id', id).maybeSingle();
+  if (estMasters((tournoi?.rounds as string[] | null) ?? null)) return passageMasters(s, dry, maintenant);
+
   const prep = await preparerDepuisApi(await parametresDeSurveillance(id, s.source_url));
   if (dry) {
     const diagnostic: DiagnosticPage = {
@@ -388,6 +397,48 @@ async function passageApi(
     r.avertissements = [...prep.avertissements, ...(r.avertissements ?? []), ...suite];
   }
   return r;
+}
+
+/**
+ * Mode 'api' pour un Masters : 1 requête à l'API tennis, puis mise à jour des matchs par paire de joueuses
+ * (db/mastersResultats.ts) et des points des picks. Même surveillance (hash, succès, arrêt) que les autres.
+ */
+async function passageMasters(s: LigneImportAuto, dry: boolean, maintenant: Date): Promise<ResultatTournoi> {
+  const id = s.tournament_id;
+  const u = lireUrlTableauApi(s.source_url);
+  if (!u) return { tournament_id: id, statut: 'erreur', detail: 'URL source qui n’est pas une URL de l’API tennis.' };
+  const debut = Date.now();
+  const { donnees: tableau } = await tableauTournoi(cleApi(), u.type, u.nom, u.annee);
+  const r = await appliquerResultatsMasters(supabaseAdmin(), id, tableau, !dry);
+  if (r.erreurs.length) {
+    const detail = r.erreurs.join(' ');
+    if (!dry) await echouer(id, 'serveur', detail, debut);
+    return { tournament_id: id, statut: 'erreur', detail };
+  }
+  const changes = r.maj + r.creees + r.placees;
+  if (dry) {
+    return { tournament_id: id, statut: 'ignore', detail: `À blanc : ${r.maj} mis à jour, ${r.creees} créés, ${r.placees} placés, rien écrit (1 requête API utilisée).`, avertissements: r.avertissements };
+  }
+  const hash = createHash('sha256').update(JSON.stringify(tableau.singles ?? [])).digest('hex');
+  const suite = await noterSucces({ tournamentId: id, tour: s.tour, sourceUrl: s.source_url, hash, maintenant });
+  await journaliser({
+    tournament_id: id,
+    source: 'serveur',
+    ok: true,
+    matchs_total: (tableau.singles ?? []).length,
+    matchs_changes: changes,
+    avertissements: r.avertissements,
+    duree_ms: Date.now() - debut,
+  });
+  if (changes > 0) revalidatePath(`/tournoi/${id}`, 'layout');
+  return {
+    tournament_id: id,
+    statut: changes > 0 ? 'importe' : 'inchange',
+    matchs_total: (tableau.singles ?? []).length,
+    matchs_changes: changes,
+    avertissements: r.avertissements,
+    arret: suite.arret,
+  };
 }
 
 function rapport(dry: boolean, resultats: ResultatTournoi[]): RapportPassage {

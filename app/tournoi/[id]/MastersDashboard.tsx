@@ -3,6 +3,7 @@ import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConse
 import { getMatchRows, getPlayerRows, type TournamentRow } from '@/db/queries';
 import { libelleTourMasters } from '@/lib/masters';
 import { vueMasters, type MatchVue, type PouleVue } from '@/lib/mastersVue';
+import BoutonResultatsMasters from './BoutonResultatsMasters';
 import ConseilsMastersCarte from './ConseilsMasters';
 
 /**
@@ -132,6 +133,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       <p className="text-sm text-zinc-600">
         {tournoi.name} : deux poules de 4 (trois journées), les deux premières de chaque poule jouent des demies croisées, puis la finale.
       </p>
+
+      {tournoi.status !== 'completed' && <BoutonResultatsMasters tournamentId={id} />}
 
       {conseils && <ConseilsMastersCarte conseils={conseils} noms={noms} />}
 
