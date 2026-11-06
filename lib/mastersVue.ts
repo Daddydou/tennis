@@ -29,7 +29,9 @@ export interface LigneMatchMasters {
   winnerId: string | null;
   status: string;
   /** Jeux d'un set ; null tant que le set n'est pas commencé (même forme que tn_matches.sets). */
-  sets: { g1: number | null; g2: number | null }[] | null;
+  sets: { g1: number | null; g2: number | null; tb1?: number | null; tb2?: number | null }[] | null;
+  /** Horaire programmé (tn_matches.scheduled_at), si connu. */
+  scheduledAt?: string | null;
 }
 
 export type EtatMatch = 'a_jouer' | 'en_cours' | 'termine';
