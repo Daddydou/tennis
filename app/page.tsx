@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
+import { estMasters } from '@/lib/masters';
 import type { TournamentRow } from '@/db/queries';
 import { boutonPrimaire, carte, lienBouton, zoneTactile } from './ui';
 
@@ -170,8 +171,17 @@ const GRILLE =
   'sm:grid sm:grid-cols-[7.5rem_minmax(0,1fr)_3.5rem_6rem_5.5rem_4.5rem_6rem_auto] sm:items-center sm:gap-x-3';
 
 /** Liens d'un tournoi : vraies zones tactiles de 44px, au bureau comme au téléphone. */
-function LiensTournoi({ id }: { id: string }) {
+function LiensTournoi({ id, masters }: { id: string; masters: boolean }) {
   const lien = `${zoneTactile} rounded-xl px-2 text-sm text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900`;
+  // Un Masters (WTA Finals) n'a qu'un écran : Tableau, Picks et Résultats
+  // renvoient tous à son Dashboard. Un seul lien, pas trois qui mènent au même endroit.
+  if (masters) {
+    return (
+      <div className="-ml-2 flex flex-wrap">
+        <Link href={`/tournoi/${id}`} className={lien}>Dashboard</Link>
+      </div>
+    );
+  }
   return (
     <div className="-ml-2 flex flex-wrap">
       <Link href={`/tournoi/${id}/tableau`} className={lien}>Tableau</Link>
@@ -181,10 +191,56 @@ function LiensTournoi({ id }: { id: string }) {
   );
 }
 
+/** À venir, et début dans les 7 jours (aujourd'hui compris). */
+const JOURS_AVANT_DEBUT = 7;
+
+function commenceDansLaSemaine(t: TournamentRow, aujourdHui: string): boolean {
+  if (t.status !== 'upcoming') return false;
+  const j = joursDepuis(t.start_date, aujourdHui);
+  return j !== null && j <= 0 && j >= -JOURS_AVANT_DEBUT;
+}
+
+/** Carte d'un tournoi en cours ou qui démarre dans la semaine. */
+function CarteTournoi({ t, debut }: { t: TournamentRow; debut: 'depuis le' | 'début le' }) {
+  const masters = estMasters(t.rounds);
+  return (
+    <li className={`relative overflow-hidden pl-1 ${carte}`}>
+      <span className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`} aria-hidden="true" />
+      <div className="space-y-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/tournoi/${t.id}`} className="text-base font-semibold hover:underline">
+            {t.name}
+          </Link>
+          <PuceCircuit tour={t.tour} />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
+          <BadgeSurface surface={t.surface} />
+          <span>
+            {categorie(t)}
+            {t.best_of ? ` · ${t.best_of} sets` : ''} · {debut} {formatDate(t.start_date)}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Link href={`/tournoi/${t.id}`} className={lienBouton}>
+            Ouvrir
+          </Link>
+          {/* Un Masters n'a pas d'écran Picks à part : ils se posent dans son Dashboard. */}
+          {!masters && (
+            <Link href={`/tournoi/${t.id}/picks`} className={lienBouton}>
+              Mes picks
+            </Link>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export default async function Home() {
   const tournois = await listTournaments();
   const aujourdHui = new Date().toISOString().slice(0, 10);
   const enCours = tournois.filter((t) => fraicheur(t, aujourdHui) === 'en-cours');
+  const bientot = tournois.filter((t) => commenceDansLaSemaine(t, aujourdHui));
 
   return (
     <div className="space-y-6">
@@ -212,35 +268,20 @@ export default async function Home() {
               <h2 className="text-sm font-semibold">En cours</h2>
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {enCours.map((t) => (
-                  <li key={t.id} className={`relative overflow-hidden pl-1 ${carte}`}>
-                    <span
-                      className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`}
-                      aria-hidden="true"
-                    />
-                    <div className="space-y-2 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <Link href={`/tournoi/${t.id}`} className="text-base font-semibold hover:underline">
-                          {t.name}
-                        </Link>
-                        <PuceCircuit tour={t.tour} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
-                        <BadgeSurface surface={t.surface} />
-                        <span>
-                          {categorie(t)}
-                          {t.best_of ? ` · ${t.best_of} sets` : ''} · depuis le {formatDate(t.start_date)}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <Link href={`/tournoi/${t.id}`} className={lienBouton}>
-                          Ouvrir
-                        </Link>
-                        <Link href={`/tournoi/${t.id}/picks`} className={lienBouton}>
-                          Mes picks
-                        </Link>
-                      </div>
-                    </div>
-                  </li>
+                  <CarteTournoi key={t.id} t={t} debut="depuis le" />
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* ── Bientôt : un tournoi qui commence dans la semaine (les WTA
+              Finals, par exemple) se trouve ici, pas au fond de la liste. ── */}
+          {bientot.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-sm font-semibold">Cette semaine</h2>
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {bientot.map((t) => (
+                  <CarteTournoi key={t.id} t={t} debut="début le" />
                 ))}
               </ul>
             </section>
@@ -299,7 +340,7 @@ export default async function Home() {
                         <Statut t={t} f={f} />
                       </span>
                       <span className="order-8 w-full sm:order-8 sm:w-auto">
-                        <LiensTournoi id={t.id} />
+                        <LiensTournoi id={t.id} masters={estMasters(t.rounds)} />
                       </span>
                     </li>
                   );
