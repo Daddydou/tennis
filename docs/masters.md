@@ -42,6 +42,15 @@ Trois façons de rafraîchir :
 
 Une joueuse de l'API introuvable parmi les huit : rien n'est écrit. L'API est la source : ses valeurs remplacent les nôtres.
 
+## Pronostics et classement du tournoi
+
+Table `tn_masters_pronostics` (migration 0032) : un pronostic par participant et par tournoi. Sur l'écran du tournoi (`PronosticsMasters`, `EditeurPronostic`, `mastersPronosticActions`) :
+
+- **Saisie** de son pronostic (classement des deux poules, vainqueur des deux demies, championne) avec le même contrôle que le serveur (`validerPronostic`) ; pour moi, l'éditeur est pré-rempli avec le **pronostic proposé** par la simulation. Les pronostics de Laki et de Thomas se saisissent à la main tant que l'API de Thomas ne les donne pas (son bracket est vide pour les Finals).
+- **Fermeture au premier match** du tournoi (match commencé ou joué, ou heure du premier match programmé passée) : `pronosticFerme`, vérifiée côté serveur.
+- **Points** (`pointsPronostic`) : qualifiée trouvée 4, place exacte 2, finaliste trouvée 8 (quel que soit son parcours), championne 16 ; 64 au maximum. Comptés sur ce qui est déjà connu : les places d'une poule seulement quand elle est terminée **et** que son classement n'a aucune égalité non départagée (on ne donne pas de points à tort) ; finalistes quand les deux demies sont jouées ; championne quand la finale l'est.
+- **Classement du tournoi** : points du pronostic + points des picks ; les ex æquo partagent le rang (1, 1, 3).
+
 ## Picks avec Game Tracker
 
 Panneau « Game Tracker » sur l'écran du tournoi (`lib/mastersGT.ts`, `db/mastersGT.ts`, `mastersGTActions.ts`) :
@@ -62,4 +71,4 @@ Méthode : 10 000 tournois simulés à partir de l'Elo du jour (même chaîne qu
 
 ## Pas encore fait
 
-- Pronostic : saisie, points réels, lecture de la version de Thomas (son bracket est vide tant que le tournoi n'a pas démarré), classement général.
+- Lecture automatique des pronostics de Thomas et de Laki depuis l'API de Thomas : son bracket est vide pour les Finals, le format n'est pas connu.

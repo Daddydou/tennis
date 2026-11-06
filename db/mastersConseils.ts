@@ -4,6 +4,7 @@ import { eloEffectif } from '@/lib/elo';
 import type { PickMasters } from '@/lib/masters';
 import { proposerPicks, proposerPronostic, type PickConseille, type PronosticPropose } from '@/lib/mastersConseils';
 import { simulerMasters, type ResultatSim } from '@/lib/mastersSim';
+import { pronosticFerme } from '@/lib/mastersPronostic';
 import { vueMasters } from '@/lib/mastersVue';
 
 /**
@@ -50,7 +51,7 @@ export async function calculerConseilsMasters(tournoi: TournamentRow, rows: Matc
   const existants: PickMasters[] = tousLesPicks
     .filter((p) => p.participant_id === null)
     .map((p) => ({ round: p.round, half: p.half, playerId: p.player_id }));
-  const commence = rows.some((r) => r.status !== 'scheduled' && r.status !== 'bye');
+  const commence = pronosticFerme(rows.map((r) => ({ status: r.status, scheduledAt: r.scheduled_at })), new Date());
 
   return { poules, pronostic: proposerPronostic(sim, poules), pronosticFerme: commence, picks: proposerPicks(sim, poules, existants), sim, eloIncertain };
 }
