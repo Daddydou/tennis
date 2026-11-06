@@ -351,84 +351,6 @@ export default function PlanPicks({
 
   return (
     <div className="space-y-5">
-      {/* ── Les 4 modes, avec ce que chacun donne ── */}
-      <section className="space-y-2" aria-label="Façon de jouer">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {MODES.map((m) => {
-            const s = stats?.[m.id];
-            const actif = mode === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setMode(m.id)}
-                aria-pressed={actif}
-                className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
-                  actif ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
-                }`}
-              >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold">{m.titre}</span>
-                  <span className="font-mono text-lg font-semibold tabular-nums text-zinc-900">
-                    {s ? f1(s.moyenne) : f1(plans[m.id].total)}
-                  </span>
-                </span>
-                <span className="mt-0.5 block text-xs text-zinc-600">
-                  {s ? (
-                    <>
-                      entre {Math.round(s.p10)} et {Math.round(s.p90)} pts dans 80 % des cas
-                      {s.pPremier !== null && ` · ${pct(s.pPremier)} de finir 1er`}
-                    </>
-                  ) : (
-                    'calcul des scénarios…'
-                  )}
-                </span>
-              </button>
-            );
-          })}
-          {stockId === null && rivaux.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setMode('rivaux')}
-              aria-pressed={mode === 'rivaux'}
-              className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
-                mode === 'rivaux' ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
-              }`}
-            >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="text-sm font-semibold">Contre {nomRivaux}</span>
-                <span className="font-mono text-lg font-semibold tabular-nums">
-                  {stats ? pct(stats.equilibre.pPremier ?? 0) : '…'}
-                </span>
-              </span>
-              <span className="mt-0.5 block text-xs text-zinc-600">
-                chance de finir devant eux (plan équilibré) — cherche mieux d’après leurs picks
-              </span>
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-zinc-500">
-          {modeCourant
-            ? modeCourant.phrase
-            : `Cherche les picks du prochain tour qui maximisent ta chance de finir devant ${nomRivaux}, d’après leurs picks déjà posés.`}{' '}
-          Le gros chiffre est le total de points attendu pour le tournoi (picks déjà joués compris).
-        </p>
-      </section>
-
-      {/* ── Contre Laki et Thomas ── */}
-      {mode === 'rivaux' && stockId === null && (
-        <PanneauRivaux
-          d={d}
-          moi={stock}
-          rivaux={rivaux}
-          recherche={recherche}
-          pret={pret}
-          cibles={appliquerCibles}
-          choixActifs={nbChoix}
-          statsEquilibre={stats?.equilibre ?? null}
-        />
-      )}
-
       {/* ── Le plan, tour par tour ── */}
       <section className="space-y-2" aria-label="Plan par tour">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -600,6 +522,87 @@ export default function PlanPicks({
           </div>
         )}
       </section>
+
+      {/* ── Les 4 modes, avec ce que chacun donne ──
+          SOUS le plan : la décision d'abord, la méthode dessous (DESIGN.md).
+          Changer de mode recalcule le plan affiché au-dessus. ── */}
+      <section className="space-y-2" aria-label="Façon de jouer">
+        <h2 className="text-sm font-semibold">Façon de jouer</h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {MODES.map((m) => {
+            const s = stats?.[m.id];
+            const actif = mode === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMode(m.id)}
+                aria-pressed={actif}
+                className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
+                  actif ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
+                }`}
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold">{m.titre}</span>
+                  <span className="font-mono text-lg font-semibold tabular-nums text-zinc-900">
+                    {s ? f1(s.moyenne) : f1(plans[m.id].total)}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-xs text-zinc-600">
+                  {s ? (
+                    <>
+                      entre {Math.round(s.p10)} et {Math.round(s.p90)} pts dans 80 % des cas
+                      {s.pPremier !== null && ` · ${pct(s.pPremier)} de finir 1er`}
+                    </>
+                  ) : (
+                    'calcul des scénarios…'
+                  )}
+                </span>
+              </button>
+            );
+          })}
+          {stockId === null && rivaux.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMode('rivaux')}
+              aria-pressed={mode === 'rivaux'}
+              className={`rounded-2xl p-3 text-left transition active:scale-[0.99] ${carte} ${
+                mode === 'rivaux' ? 'ring-2 ring-zinc-900' : 'hover:bg-zinc-50'
+              }`}
+            >
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-semibold">Contre {nomRivaux}</span>
+                <span className="font-mono text-lg font-semibold tabular-nums">
+                  {stats ? pct(stats.equilibre.pPremier ?? 0) : '…'}
+                </span>
+              </span>
+              <span className="mt-0.5 block text-xs text-zinc-600">
+                chance de finir devant eux (plan équilibré) — cherche mieux d’après leurs picks
+              </span>
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-zinc-500">
+          {modeCourant
+            ? modeCourant.phrase
+            : `Cherche les picks du prochain tour qui maximisent ta chance de finir devant ${nomRivaux}, d’après leurs picks déjà posés.`}{' '}
+          Le gros chiffre est le total de points attendu pour le tournoi (picks déjà joués compris).
+        </p>
+      </section>
+
+      {/* ── Contre Laki et Thomas ── */}
+      {mode === 'rivaux' && stockId === null && (
+        <PanneauRivaux
+          d={d}
+          moi={stock}
+          rivaux={rivaux}
+          recherche={recherche}
+          pret={pret}
+          cibles={appliquerCibles}
+          choixActifs={nbChoix}
+          statsEquilibre={stats?.equilibre ?? null}
+        />
+      )}
 
       {/* ── Le grand tableau ── */}
       <TableauJoueurs
