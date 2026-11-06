@@ -42,6 +42,15 @@ Trois façons de rafraîchir :
 
 Une joueuse de l'API introuvable parmi les huit : rien n'est écrit. L'API est la source : ses valeurs remplacent les nôtres.
 
+## Picks avec Game Tracker
+
+Panneau « Game Tracker » sur l'écran du tournoi (`lib/mastersGT.ts`, `db/mastersGT.ts`, `mastersGTActions.ts`) :
+
+- **Lire** : lit l'état chez Game Tracker et **recopie ses picks chez nous** (Game Tracker fait foi) : les miens sur les tours encore modifiables, ceux de tous sur les tours verrouillés. Le plan de picks se recalcule alors autour de ce qui est posé.
+- **Envoyer** : pour chaque tour ouvert (ou à venir : picks à l'avance), choix parmi le plan conseillé et ses alternatives, **Vérifier** (rien n'est écrit) puis **Confirmer** ; l'envoi est refusé si Game Tracker a changé entre-temps, et n'est annoncé réussi que si Game Tracker confirme les positions posées. Rien ne part tout seul.
+- Tours de Game Tracker : 1, 2, 3 = journées de poules (`haut` = poule A, `bas` = poule B), 4 = demies, 5 = finale (un seul pick, champ `haut`, candidates cherchées des deux côtés du pool). Rapprochement avec nos joueuses par le nom ; positions 1 à 8 lues dans les pools.
+- **Une fois par phase** (migration 0031) : chaque pick porte sa phase ; un joueur peut être pické en poules puis de nouveau en demie ou en finale.
+
 ## Propositions de picks et de pronostic
 
 L'écran du tournoi propose (`lib/mastersSim.ts`, `lib/mastersConseils.ts`, `db/mastersConseils.ts`) :
@@ -53,5 +62,4 @@ Méthode : 10 000 tournois simulés à partir de l'Elo du jour (même chaîne qu
 
 ## Pas encore fait
 
-- Envoi et lecture des picks vers Game Tracker (le rapprochement des tours de Game Tracker avec nos tours suppose un tableau à élimination directe) et saisie des picks dans l'app : pour l'instant, on pose ses picks chez Game Tracker.
 - Pronostic : saisie, points réels, lecture de la version de Thomas (son bracket est vide tant que le tournoi n'a pas démarré), classement général.

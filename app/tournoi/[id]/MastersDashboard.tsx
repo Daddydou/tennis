@@ -5,6 +5,7 @@ import { libelleTourMasters } from '@/lib/masters';
 import { vueMasters, type MatchVue, type PouleVue } from '@/lib/mastersVue';
 import BoutonResultatsMasters from './BoutonResultatsMasters';
 import ConseilsMastersCarte from './ConseilsMasters';
+import PanneauGTMasters from './PanneauGTMasters';
 
 /**
  * Écran d'un tournoi au format Masters (ATP Finals, WTA Finals) : deux poules de 4 sur trois journées,
@@ -138,6 +139,8 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
 
       {conseils && <ConseilsMastersCarte conseils={conseils} noms={noms} />}
 
+      {conseils && tournoi.status !== 'completed' && <PanneauGTMasters tournamentId={id} picks={conseils.picks} noms={Object.fromEntries(noms)} />}
+
       <div className="grid gap-4 md:grid-cols-2">
         <CartePoule p={vue.poules.A} noms={noms} />
         <CartePoule p={vue.poules.B} noms={noms} />
@@ -177,7 +180,7 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       </section>
 
       <p className={noteInfo}>
-        Propositions seulement : la saisie des picks et du pronostic se fait chez Game Tracker et chez Thomas (pas encore dans l&apos;app). Le
+        Les picks se posent chez Game Tracker depuis le panneau ci-dessus ; le pronostic se saisit chez Thomas (pas encore dans l&apos;app). Le
         tableau à élimination directe, le plan et le Fantasy ne s&apos;appliquent pas à ce format.
       </p>
     </div>
