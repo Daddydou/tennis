@@ -44,7 +44,7 @@ export default function NavGlobale({ deconnexion }: { deconnexion?: ReactNode })
         })}
       </nav>
       {groupe && groupe.liens.length > 0 && (
-        <div className="basis-full border-t border-zinc-100">
+        <div className="min-w-0 basis-full border-t border-zinc-100">
           <nav
             aria-label={groupe.label}
             className="flex min-w-0 items-center overflow-x-auto overflow-y-hidden text-sm *:shrink-0 *:whitespace-nowrap"
