@@ -482,3 +482,13 @@ select exists (select 1 from information_schema.columns where table_name = 'tn_p
    and exists (select 1 from pg_indexes where indexname = 'idx_tn_picks_moi_joueur' and indexdef like '%phase%')
    as appliquee;
 ```
+
+## 0032 — pronostics des Masters (tn_masters_pronostics)
+
+Un pronostic par participant et par tournoi (`participant_id` null = moi) : classement des deux poules, vainqueur des deux demies, championne. Lecture publique, écriture service role seulement (même régime que les autres tables tn_*).
+```sql
+select to_regclass('public.tn_masters_pronostics') is not null
+   and has_table_privilege('anon', 'public.tn_masters_pronostics', 'select')
+   and not has_table_privilege('anon', 'public.tn_masters_pronostics', 'insert')
+   as appliquee;
+```

@@ -54,6 +54,8 @@ export interface MatchRow {
   winner_id: string | null;
   sets: SetJson[] | null;
   status: MatchStatus;
+  /** Horaire programmé (colonne lue par `select('*')`) ; null tant qu'il n'est pas connu. */
+  scheduled_at?: string | null;
 }
 
 export interface PickRow {

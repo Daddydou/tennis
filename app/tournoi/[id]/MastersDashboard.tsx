@@ -1,11 +1,15 @@
 import { badgeNeutre, carte, noteInfo } from '@/app/ui';
+import { supabaseAnon } from '@/db/anon';
 import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConseils';
-import { getMatchRows, getPlayerRows, type TournamentRow } from '@/db/queries';
+import { lirePronostics, type PronosticStocke } from '@/db/mastersPronostic';
+import { getMatchRows, getPlayerRows, getTousLesPicks, type TournamentRow } from '@/db/queries';
+import { pronosticFerme } from '@/lib/mastersPronostic';
 import { libelleTourMasters } from '@/lib/masters';
 import { vueMasters, type MatchVue, type PouleVue } from '@/lib/mastersVue';
 import BoutonResultatsMasters from './BoutonResultatsMasters';
 import ConseilsMastersCarte from './ConseilsMasters';
 import PanneauGTMasters from './PanneauGTMasters';
+import PronosticsMasters, { type ParticipantMasters } from './PronosticsMasters';
 
 /**
  * Écran d'un tournoi au format Masters (ATP Finals, WTA Finals) : deux poules de 4 sur trois journées,
@@ -114,6 +118,21 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
   const ids = [...new Set(rows.flatMap((r) => [r.player1_id, r.player2_id]).filter((x): x is string => x !== null))];
   const noms: Noms = new Map((ids.length ? await getPlayerRows(ids) : []).map((p) => [p.id, p.name]));
 
+  // Pronostics enregistrés, participants et points des picks : jamais bloquants (sans eux, l'écran reste complet).
+  let pronostics: PronosticStocke[] = [];
+  let participants: ParticipantMasters[] = [{ id: null, nom: 'Moi' }];
+  const picksPar: Record<string, number> = {};
+  try {
+    const sb = supabaseAnon();
+    const [stockes, lignes, picks] = await Promise.all([lirePronostics(sb, id), sb.from('tn_participants').select('id, name').order('name'), getTousLesPicks(id)]);
+    pronostics = stockes;
+    participants = [{ id: null, nom: 'Moi' }, ...((lignes.data ?? []) as { id: string; name: string }[]).map((p) => ({ id: p.id, nom: p.name }))];
+    for (const p of picks) picksPar[p.participant_id ?? 'moi'] = (picksPar[p.participant_id ?? 'moi'] ?? 0) + (p.points ?? 0);
+  } catch (e) {
+    console.error('Pronostics Masters :', (e as Error).message);
+  }
+  const ferme = pronosticFerme(rows.map((r) => ({ status: r.status, scheduledAt: r.scheduled_at })), new Date());
+
   // Propositions de picks et de pronostic : jamais bloquantes (sans elles, l'écran reste complet).
   let conseils: ConseilsMasters | null = null;
   try {
@@ -138,6 +157,18 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       {tournoi.status !== 'completed' && <BoutonResultatsMasters tournamentId={id} />}
 
       {conseils && <ConseilsMastersCarte conseils={conseils} noms={noms} />}
+
+      <PronosticsMasters
+        tournamentId={id}
+        vue={vue}
+        poules={{ A: vue.poules.A.joueurs, B: vue.poules.B.joueurs }}
+        noms={Object.fromEntries(noms)}
+        participants={participants}
+        pronostics={pronostics}
+        picksPar={picksPar}
+        propose={conseils?.pronostic.pronostic ?? null}
+        ferme={ferme}
+      />
 
       {conseils && tournoi.status !== 'completed' && <PanneauGTMasters tournamentId={id} picks={conseils.picks} noms={Object.fromEntries(noms)} />}
 
