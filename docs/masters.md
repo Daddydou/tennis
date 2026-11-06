@@ -25,8 +25,17 @@ npm run import:masters -- --tournoi=<id Game Tracker> --debut=AAAA-MM-JJ --ecrir
 - `--debut` (date du premier match) ne sert qu'à la création.
 - Les écrans des tournois à tableau (Tableau, Picks, Bracket, Fantasy, Prédictions, Résultats) renvoient vers le Dashboard pour un Masters, qui montre les poules, les classements, les demies et la finale.
 
+## Propositions de picks et de pronostic
+
+L'écran du tournoi propose (`lib/mastersSim.ts`, `lib/mastersConseils.ts`, `db/mastersConseils.ts`) :
+
+- le **pronostic** qui rapporte le plus en espérance (classement des deux poules, vainqueur des deux demies, championne), avec la probabilité de chaque rang et de chaque titre ; il disparaît au premier match (le pronostic ferme à ce moment) ;
+- les **picks** de chaque tour (trois journées par poule, demie, finale), avec les points espérés et les deux meilleures alternatives ; les picks déjà posés dans l'app sont conservés et bloquent leur joueur pour la phase.
+
+Méthode : 10 000 tournois simulés à partir de l'Elo du jour (même chaîne que le reste de l'app : surface dure, 60 % surface / 40 % général) et des résultats déjà joués. Scores en sets et en jeux simulés avec le modèle de `lib/optimizerProbabilites.ts` (validé contre son calcul analytique : `mastersSim.test.ts`). Journées 2 et 3 : vainqueurs de la journée 1 entre eux, perdants entre eux, puis les deux duels restants (déduction vérifiée sur Game Tracker quand il publiera la journée 2). Forfaits et abandons non simulés ; une égalité parfaite non départagée par les règles est tirée au hasard. Le plan optimise les trois journées ensemble (une joueuse forte n'est utilisée qu'une fois, là où son avantage est le plus grand).
+
 ## Pas encore fait
 
 - Résultats des matchs : source à définir au premier match (l'API tennis ne listait pas encore les WTA Finals).
-- Picks des Masters (règle « une fois par phase », envoi et lecture vers Game Tracker : le rapprochement des tours de Game Tracker avec nos tours suppose un tableau à élimination directe).
-- Pronostic des Masters (saisie, points, lecture de la version de Thomas : son bracket est vide tant que le tournoi n'a pas démarré), classement général.
+- Envoi et lecture des picks vers Game Tracker (le rapprochement des tours de Game Tracker avec nos tours suppose un tableau à élimination directe) et saisie des picks dans l'app : pour l'instant, on pose ses picks chez Game Tracker.
+- Pronostic : saisie, points réels, lecture de la version de Thomas (son bracket est vide tant que le tournoi n'a pas démarré), classement général.
