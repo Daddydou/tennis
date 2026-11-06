@@ -161,6 +161,14 @@ function categorie(t: TournamentRow): string {
   return t.category ? LIBELLE_CATEGORIE_COURT[t.category] ?? t.category : '—';
 }
 
+/**
+ * Colonnes de la liste « Tous les tournois » dès `sm` (même gabarit pour
+ * l'en-tête et pour chaque ligne). Au téléphone, la ligne est une carte
+ * empilée (flex) : le gabarit ne s'applique pas.
+ */
+const GRILLE =
+  'sm:grid sm:grid-cols-[7.5rem_minmax(0,1fr)_3.5rem_6rem_5.5rem_4.5rem_6rem_auto] sm:items-center sm:gap-x-3';
+
 /** Liens d'un tournoi : vraies zones tactiles de 44px, au bureau comme au téléphone. */
 function LiensTournoi({ id }: { id: string }) {
   const lien = `${zoneTactile} rounded-xl px-2 text-sm text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900`;
@@ -241,94 +249,62 @@ export default async function Home() {
           <section className="space-y-2.5">
             <h2 className="text-sm font-semibold">Tous les tournois</h2>
 
-            {/* Téléphone : une carte par tournoi. Les huit colonnes du tableau
-                débordaient de l'écran. */}
-            <ul className="space-y-2 sm:hidden">
-              {tournois.map((t) => {
-                const f = fraicheur(t, aujourdHui);
-                return (
-                  <li key={t.id} className={`relative overflow-hidden pl-1 ${carte}`}>
-                    <span
-                      className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`}
-                      aria-hidden="true"
-                    />
-                    <div className="space-y-1.5 p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <Link href={`/tournoi/${t.id}`} className="font-semibold hover:underline">
-                          {t.name}
-                        </Link>
+            {/* UNE seule liste pour tous les écrans : cartes empilées au
+                téléphone, lignes d'un tableau dès `sm`. Avant, les deux
+                versions étaient dans la page (l'une masquée par CSS) : 331 Ko
+                de HTML pour 44 tournois. */}
+            <div className={`overflow-hidden ${carte}`}>
+              <div
+                className={`hidden border-b border-zinc-200 py-2.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-600 ${GRILLE}`}
+              >
+                <span className="sm:order-1">Début</span>
+                <span className="sm:order-2">Tournoi</span>
+                <span className="sm:order-3">Circuit</span>
+                <span className="sm:order-4">Catégorie</span>
+                <span className="sm:order-5">Surface</span>
+                <span className="sm:order-6">Format</span>
+                <span className="sm:order-7">Statut</span>
+                <span className="sm:order-8 sr-only">Actions</span>
+              </div>
+              <ul className="divide-y divide-zinc-100">
+                {tournois.map((t) => {
+                  const f = fraicheur(t, aujourdHui);
+                  return (
+                    <li
+                      key={t.id}
+                      className={`flex flex-wrap items-center gap-x-2 gap-y-1 border-l-4 py-2 pl-3 pr-3 text-sm hover:bg-zinc-50 ${GRILLE} ${circuitDe(t.tour).barreBordure}`}
+                    >
+                      <Link
+                        href={`/tournoi/${t.id}`}
+                        className="order-1 min-w-0 flex-1 font-semibold hover:underline sm:order-2 sm:flex-none sm:font-medium"
+                      >
+                        {t.name}
+                      </Link>
+                      <span className="order-2 sm:order-3">
                         <PuceCircuit tour={t.tour} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
+                      </span>
+                      <span className="order-3 sm:order-5">
                         <BadgeSurface surface={t.surface} />
-                        <span>
-                          {categorie(t)}
-                          {t.best_of ? ` · ${t.best_of} sets` : ''}
-                        </span>
-                      </div>
-                      <div className="text-xs text-zinc-600">
-                        {formatDate(t.start_date)} · <Statut t={t} f={f} />
-                      </div>
-                      <LiensTournoi id={t.id} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* Écran large : le tableau dense, dans une carte, lignes blanches. */}
-            <div className={`hidden overflow-hidden sm:block ${carte}`}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600">
-                    <th className="py-2.5 pl-4 pr-3 font-medium">Début</th>
-                    <th className="py-2.5 pr-3 font-medium">Tournoi</th>
-                    <th className="py-2.5 pr-3 font-medium">Circuit</th>
-                    <th className="py-2.5 pr-3 font-medium">Catégorie</th>
-                    <th className="py-2.5 pr-3 font-medium">Surface</th>
-                    <th className="py-2.5 pr-3 font-medium">Format</th>
-                    <th className="py-2.5 pr-3 font-medium">Statut</th>
-                    <th className="py-2.5 pr-3 font-medium">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {tournois.map((t) => {
-                    const f = fraicheur(t, aujourdHui);
-                    return (
-                      <tr key={t.id} className="hover:bg-zinc-50">
-                        <td
-                          className={`border-l-4 py-1 pl-3 pr-3 whitespace-nowrap tabular-nums text-zinc-600 ${circuitDe(t.tour).barreBordure}`}
-                        >
-                          {formatDate(t.start_date)}
-                        </td>
-                        <td className="py-1 pr-3">
-                          <Link href={`/tournoi/${t.id}`} className="font-medium hover:underline">
-                            {t.name}
-                          </Link>
-                        </td>
-                        <td className="py-1 pr-3">
-                          <PuceCircuit tour={t.tour} />
-                        </td>
-                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">{categorie(t)}</td>
-                        <td className="py-1 pr-3">
-                          <BadgeSurface surface={t.surface} />
-                        </td>
-                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">
-                          {t.best_of ? `${t.best_of} sets` : '—'}
-                        </td>
-                        <td className="py-1 pr-3 whitespace-nowrap text-zinc-600">
-                          <Statut t={t} f={f} />
-                        </td>
-                        <td className="py-1 pr-3">
-                          <LiensTournoi id={t.id} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      </span>
+                      <span className="order-4 whitespace-nowrap text-xs text-zinc-600 sm:order-4 sm:text-sm">
+                        {categorie(t)}
+                      </span>
+                      <span className="order-5 whitespace-nowrap text-xs text-zinc-600 sm:order-6 sm:text-sm">
+                        {t.best_of ? `${t.best_of} sets` : '—'}
+                      </span>
+                      <span className="order-6 whitespace-nowrap text-xs tabular-nums text-zinc-600 sm:order-1 sm:text-sm">
+                        {formatDate(t.start_date)}
+                      </span>
+                      <span className="order-7 whitespace-nowrap text-xs text-zinc-600 sm:order-7 sm:text-sm">
+                        <Statut t={t} f={f} />
+                      </span>
+                      <span className="order-8 w-full sm:order-8 sm:w-auto">
+                        <LiensTournoi id={t.id} />
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </section>
         </>
