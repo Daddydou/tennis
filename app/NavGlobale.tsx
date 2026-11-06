@@ -10,7 +10,7 @@ import { usePathname } from 'next/navigation';
  * gras) : sans ça, rien ne disait où l'on se trouvait.
  */
 const LIENS: { href: string; label: string; actifSi: (p: string) => boolean }[] = [
-  { href: '/', label: 'Tournois', actifSi: (p) => p === '/' || p.startsWith('/tournoi') },
+  { href: '/tournois', label: 'Tournois', actifSi: (p) => p.startsWith('/tournoi') },
   { href: '/import', label: 'Importer', actifSi: (p) => p.startsWith('/import') },
   { href: '/face-a-face', label: 'Face-à-face', actifSi: (p) => p.startsWith('/face-a-face') },
   { href: '/bilan', label: 'Bilan', actifSi: (p) => p.startsWith('/bilan') },
