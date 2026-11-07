@@ -20,6 +20,7 @@ import {
   totauxDesRivaux,
   utilisesDe,
   type ModeAgressivite,
+  modesIdentiquesAEquilibre,
 } from '@/lib/planEcran';
 import { construireLignesTableau, tourDuTableau } from '@/lib/planGrandTableau';
 import type { Slot } from '@/lib/types';
@@ -158,6 +159,9 @@ export default function PlanPicks({
     }),
     [monde, stock, choixEff],
   );
+
+  // Modes dont les picks sont ceux d'Équilibré : la carte le dit.
+  const memesQueEquilibre = useMemo(() => modesIdentiquesAEquilibre(plans), [plans]);
 
   const rivauxTot = useMemo(() => (pret ? totauxDesRivaux(monde, rivaux) : []), [pret, monde, rivaux]);
   const stats = useMemo(
@@ -558,6 +562,9 @@ export default function PlanPicks({
                     'calcul des scénarios…'
                   )}
                 </span>
+                {memesQueEquilibre.has(m.id) && (
+                  <span className="mt-1 block text-xs font-medium text-zinc-700">mêmes picks qu&apos;Équilibré</span>
+                )}
               </button>
             );
           })}
