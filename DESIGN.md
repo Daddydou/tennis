@@ -2,15 +2,22 @@
 name: Picks Tennis
 description: Outil de stratège pour un jeu de picks tennis ATP/WTA, thème clair esprit Apple.
 colors:
-  action-blue: "#2563eb"
-  action-blue-hover: "#1d4ed8"
-  action-blue-pressed: "#1e40af"
-  page-mist: "#f5f5f7"
+  action-blue: "#0369a1"
+  action-blue-hover: "#075985"
+  action-blue-pressed: "#0c4a6e"
+  page-mist: "#eef5fb"
   card-white: "#ffffff"
   ink: "#1d1d1f"
   ink-strong: "#18181b"
-  ink-muted: "#71717a"
+  ink-muted: "#566274"
   ink-faint: "#a1a1aa"
+  role-titre: "#0c2d5a"
+  role-soustitre: "#0369a1"
+  role-soustitre-fond: "#e0f2fe"
+  role-moi: "#0b4f9c"
+  role-adversaire: "#c2410c"
+  role-points-justes: "#0e7490"
+  role-points-rates: "#be123c"
   well-grey: "#f4f4f5"
   well-grey-hover: "#e4e4e7"
   hairline: "#e4e4e7"
@@ -136,7 +143,7 @@ La couleur porte du sens avant de décorer. Chaque teinte vive est déjà prise 
 
 **Key Characteristics:**
 - Thème clair forcé, pas de mode sombre (`dark:` neutralisé dans globals.css).
-- Profondeur par écart de luminance (page #f5f5f7, carte blanche) plus une ombre très douce, jamais une bordure dure autour d'une carte.
+- Profondeur par écart de luminance (page #eef5fb, carte blanche) plus une ombre très douce, jamais une bordure dure autour d'une carte.
 - Un seul accent d'action, le bleu système ; toutes les autres teintes vives sont sémantiques.
 - Police système, corps de 14px, chiffres en `tabular-nums` dans les tableaux.
 - Chaque élément interactif fait au moins 44px de haut et s'enfonce légèrement à la pression (`scale 0.97`).
@@ -146,20 +153,20 @@ La couleur porte du sens avant de décorer. Chaque teinte vive est déjà prise 
 Une palette neutre gris-zinc, un bleu d'action, et une famille de teintes sémantiques que l'on ne détourne jamais.
 
 ### Primary
-- **Bleu d'action** (#2563eb) : bouton principal, pastille de sélection active, onglet actif du tournoi, texte des liens-boutons, anneau de focus clavier. Blanc sur ce bleu = 5,17:1. Survol #1d4ed8, pression #1e40af.
+- **Bleu d'action « Dur bleu »** (#0369a1) : bouton principal, pastille de sélection active, onglet actif du tournoi, texte des liens-boutons, anneau de focus clavier. Blanc sur ce bleu = 5,93:1. Survol #075985, pression #0c4a6e.
 
 ### Neutral
-- **Brume de page** (#f5f5f7) : fond de page uniquement, jamais d'une carte.
+- **Brume de page** (#eef5fb) : fond de page uniquement, jamais d'une carte.
 - **Blanc de carte** (#ffffff) : cartes, barre d'en-tête, lien-bouton.
 - **Encre** (#1d1d1f) : texte courant, un quasi-noir jamais pur.
 - **Encre forte** (#18181b) : texte des boutons secondaires et des champs.
-- **Encre atténuée** (#71717a) : légendes, en-têtes de tableau, liens de navigation au repos. C'est le gris de texte le plus utilisé.
+- **Encre atténuée** (#566274, zinc-500 redéfini, 5,4:1 sur le fond de page) : légendes, en-têtes de tableau, liens de navigation au repos. C'est le gris de texte le plus utilisé.
 - **Encre pâle** (#a1a1aa) : placeholder et métadonnées non essentielles. Contraste faible, à éviter pour toute information utile (voir Do's and Don'ts).
 - **Puits gris** (#f4f4f5) : fond des boutons secondaires, des pastilles inactives et des champs de saisie. Survol #e4e4e7.
 - **Filet** (#e4e4e7) et **Filet doux** (#f4f4f5) : séparateurs d'en-têtes de tableau et de lignes.
 
 ### Couleurs sémantiques (réservées)
-- **Circuit ATP** : le bleu d'action lui-même (puce blue-600, fond blue-100). Partage assumé, un badge n'est jamais confondu avec un bouton.
+- **Circuit ATP** : un bleu franc (puce blue-800 sur fond blue-100), distinct du bleu d'action sarcelle. Partage assumé, un badge n'est jamais confondu avec un bouton.
 - **Circuit WTA** (#c026d3, fuchsia) : puce et barre WTA.
 - **Surfaces** : terre battue ambre (#f59e0b), dur ciel (#0ea5e9), gazon émeraude (#10b981), moquette ardoise (#94a3b8).
 - **Victoire / en cours** (#059669, émeraude) : résultat gagné, statut actif, points positifs.
@@ -167,10 +174,19 @@ Une palette neutre gris-zinc, un bleu d'action, et une famille de teintes séman
 - **Erreur / Elo par défaut** (#dc2626, rouge) : échec, action destructrice, valeur par défaut suspecte, sur fond rouge-50.
 - **Elo ambigu** (#7c3aed, violet) : homonymes non résolus.
 
+### Rôles de couleur (palette « Dur bleu »)
+Chaque rôle a UNE couleur, partout, via les jetons de `app/globals.css` (`text-titre`, `text-soustitre`, `text-adversaire`, `text-juste`, `text-rate`, `text-moi`, `bg-accent`, `bg-soustitre-fond`). Tous mesurés ≥ 4,5:1 sur le fond de page ET sur blanc.
+- **Titre** (#0c2d5a, bleu nuit) : `h1` et `h3`, posés par défaut dans `@layer base`.
+- **Sous-titre** (#0369a1) : `h2`, sur bandeau #e0f2fe quand il sépare des sections.
+- **Mon joueur** (#0b4f9c) : le joueur que j'ai pris.
+- **Adversaire** (#c2410c, brique) : le joueur d'en face.
+- **Points justes** (#0e7490, sarcelle) et **points ratés** (#be123c, framboise) : les points marqués ou perdus.
+Ces rôles s'ajoutent aux teintes sémantiques ci-dessous et ne les remplacent pas : vert/rouge restent le gagné/perdu d'un match, ambre l'avertissement.
+
 ### Named Rules
 **La règle du bleu qui agit.** Le bleu signale ce qu'on peut faire, jamais un état ni une catégorie, à la seule exception assumée de la puce ATP. Un nouvel élément qui veut attirer l'œil sans être une action n'a pas droit au bleu.
 
-**La règle des teintes prises.** Ambre, émeraude, ciel, fuchsia, violet, rouge et ardoise ont chacun un sens fixé. On ne les réutilise jamais pour décorer ou pour « varier ».
+**La règle des teintes prises.** Ambre, émeraude, ciel, fuchsia, violet, rouge et ardoise ont chacun un sens fixé. On ne les réutilise jamais pour décorer ou pour « varier ». Les rôles Dur bleu (titre, sous-titre, adversaire, points) sont l'exception voulue : ils ont leurs propres jetons, on ne leur substitue pas une teinte sémantique.
 
 ## Typography
 
@@ -200,7 +216,7 @@ Le rythme vertical s'appuie sur une petite échelle : 4, 6, 8 et 12px entre les 
 
 ## Elevation & Depth
 
-Le système est hybride et très plat. La profondeur vient d'abord de l'écart de luminance entre la page (#f5f5f7) et la carte blanche, puis d'une ombre douce à deux couches qui fait « flotter » la carte. Les boutons pleins portent une ombre minime (`shadow-sm`). L'en-tête se détache par un filet d'ombre de 1px.
+Le système est hybride et très plat. La profondeur vient d'abord de l'écart de luminance entre la page (#eef5fb) et la carte blanche, puis d'une ombre douce à deux couches qui fait « flotter » la carte. Les boutons pleins portent une ombre minime (`shadow-sm`). L'en-tête se détache par un filet d'ombre de 1px.
 
 ### Shadow Vocabulary
 - **Carte** (`box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)`) : toute carte de contenu (`carte`, utilitaire `shadow-card`).

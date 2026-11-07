@@ -128,7 +128,7 @@ export default function PossibilitesBracket({
           return (
             <section key={p.userId} className="space-y-1.5 border-t border-zinc-100 pt-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <h3 className="text-sm font-semibold text-zinc-900">{libelle(p.pseudo)}</h3>
+                <h3 className="text-sm font-semibold text-titre">{libelle(p.pseudo)}</h3>
                 <span className="text-xs text-zinc-600">
                   {p.points} pts{p.bornes ? ` · final possible : ${p.bornes.min === p.bornes.max ? p.bornes.max : `${p.bornes.min} à ${p.bornes.max}`}` : ''}
                 </span>

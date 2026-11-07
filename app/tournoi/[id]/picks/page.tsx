@@ -155,12 +155,12 @@ export default async function PicksPage({
                 className={`${pilleSelecteur(actif)} gap-1.5`}
               >
                 {s.nom}
-                <span className={`tabular-nums ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>{pts} pts</span>
+                <span className={`tabular-nums ${actif ? 'text-blue-100' : 'text-juste'}`}>{pts} pts</span>
               </Link>
             ) : (
               <div key={s.id ?? 'moi'} className={`flex min-h-11 items-center gap-1.5 px-3 text-sm ${carte}`}>
                 <span className="font-medium">{s.nom}</span>
-                <span className="tabular-nums text-zinc-500">{pts} pts</span>
+                <span className="tabular-nums text-juste">{pts} pts</span>
               </div>
             );
           })}

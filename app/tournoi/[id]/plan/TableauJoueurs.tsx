@@ -253,7 +253,7 @@ export default function TableauJoueurs({
                       <ul className="space-y-0.5">
                         {l.adversaires.map((a) => (
                           <li key={a.nom}>
-                            <span className={connu && l.resultat === 'perdu' ? 'font-semibold text-emerald-700' : 'text-zinc-700'}>
+                            <span className={connu && l.resultat === 'perdu' ? 'font-semibold text-emerald-700' : 'text-adversaire'}>
                               {connu
                                 ? l.resultat === 'gagne'
                                   ? 'a battu '
@@ -292,7 +292,7 @@ export default function TableauJoueurs({
                     ) : (
                       <ul className="space-y-0.5">
                         {l.adversaires.map((a) => (
-                          <li key={a.nom} title={connu ? undefined : `si adversaire : ${a.nom}`}>
+                          <li key={a.nom} className="text-juste" title={connu ? undefined : `si adversaire : ${a.nom}`}>
                             {f1(a.points)}
                             {connu && l.resultat && <span className="ml-0.5 text-xs font-normal text-zinc-500">réel</span>}
                           </li>

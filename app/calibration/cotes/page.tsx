@@ -113,7 +113,7 @@ export default async function CotesPage({
               href={`/calibration/cotes?tournoi=${t.id}`}
               className={`flex min-h-11 items-center rounded-lg border px-2.5 transition active:scale-[0.97] ${
                 actif
-                  ? 'border-blue-600 bg-blue-600 text-white'
+                  ? 'border-accent bg-accent text-white'
                   : n > 0
                     ? 'border-emerald-300 text-emerald-700'
                     : 'border-zinc-300 text-zinc-500 hover:border-zinc-500'

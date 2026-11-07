@@ -31,7 +31,7 @@ export default async function Home() {
       {tournois.length === 0 ? (
         <p className="text-sm text-zinc-600">
           Aucun tournoi. Commence par{' '}
-          <Link href="/import" className="font-medium text-blue-600 underline underline-offset-2">
+          <Link href="/import" className="font-medium text-accent underline underline-offset-2">
             importer un tableau
           </Link>
           .
@@ -74,7 +74,7 @@ export default async function Home() {
                 <h2 className="text-sm font-semibold">Derniers tournois</h2>
                 <Link
                   href="/tournois"
-                  className="flex min-h-11 items-center rounded-xl px-2 text-sm font-medium text-blue-600 hover:underline"
+                  className="flex min-h-11 items-center rounded-xl px-2 text-sm font-medium text-accent hover:underline"
                 >
                   Tous les tournois ({tournois.length})
                 </Link>

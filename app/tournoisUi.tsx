@@ -42,9 +42,9 @@ interface JeuCircuit {
 // texte, une classe recomposée à l'exécution n'existerait jamais dans le CSS.
 const CIRCUIT: Record<string, JeuCircuit> = {
   ATP: {
-    barre: 'bg-blue-600',
+    barre: 'bg-accent',
     barreBordure: 'border-l-blue-600',
-    puce: 'bg-blue-600 text-white',
+    puce: 'bg-accent text-white',
   },
   WTA: {
     barre: 'bg-fuchsia-600',

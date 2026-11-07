@@ -47,7 +47,7 @@ export default function AttenteCalcul({ quoi }: { quoi: string }) {
 
   return (
     <p role="status" className="flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 text-sm text-zinc-700 shadow-card">
-      <Spinner className="text-blue-600" />
+      <Spinner className="text-accent" />
       Calcul {quoi} en cours… la page se complète d&apos;elle-même.
     </p>
   );

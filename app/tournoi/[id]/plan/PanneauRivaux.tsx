@@ -119,7 +119,7 @@ export default function PanneauRivaux({
                   <button
                     type="button"
                     onClick={() => cibles(prop.cibles)}
-                    className="shrink-0 text-xs font-medium text-blue-600 underline underline-offset-2"
+                    className="shrink-0 text-xs font-medium text-accent underline underline-offset-2"
                   >
                     Appliquer
                   </button>

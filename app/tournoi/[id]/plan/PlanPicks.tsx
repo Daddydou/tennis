@@ -430,7 +430,7 @@ export default function PlanPicks({
                             <button
                               type="button"
                               onClick={() => choisir(l, l.planB!.joueur)}
-                              className="ml-1.5 font-medium text-blue-600 underline underline-offset-2"
+                              className="ml-1.5 font-medium text-accent underline underline-offset-2"
                             >
                               le prendre
                             </button>
