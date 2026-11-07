@@ -25,6 +25,7 @@ describe('groupeActif (quelle page appartient à quel groupe)', () => {
     ['/tournoi/abc/picks', 'tournois'],
     ['/tournoi/abc/fantasy', 'tournois'], // le Fantasy d'un tournoi reste dans Tournois
     ['/bilan', 'saison'],
+    ['/statistiques', 'saison'],
     ['/fantasy', 'saison'],
     ['/face-a-face', 'saison'],
     ['/import', 'outils'],
@@ -69,11 +70,12 @@ describe('NavGlobale', () => {
     expect(screen.queryByRole('navigation', { name: 'Saison' })).toBeNull();
   });
 
-  it('Saison : sous-barre Bilan, Fantasy saison, Face-à-face, avec la page en cours marquée', () => {
+  it('Saison : sous-barre Bilan, Statistiques, Fantasy saison, Face-à-face, avec la page en cours marquée', () => {
     sur('/fantasy');
     const sous = screen.getByRole('navigation', { name: 'Saison' });
     expect(within(sous).getAllByRole('link').map((l) => l.textContent)).toEqual([
       'Bilan',
+      'Statistiques',
       'Fantasy saison',
       'Face-à-face',
     ]);

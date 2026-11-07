@@ -42,10 +42,11 @@ export const GROUPES: GroupeNav[] = [
     href: '/bilan',
     liens: [
       { href: '/bilan', label: 'Bilan' },
+      { href: '/statistiques', label: 'Statistiques' },
       { href: '/fantasy', label: 'Fantasy saison' },
       { href: '/face-a-face', label: 'Face-à-face' },
     ],
-    actifSi: (p) => commence(p, '/bilan', '/fantasy', '/face-a-face'),
+    actifSi: (p) => commence(p, '/bilan', '/statistiques', '/fantasy', '/face-a-face'),
   },
   {
     cle: 'outils',

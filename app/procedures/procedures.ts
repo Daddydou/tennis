@@ -123,6 +123,24 @@ export const GROUPES: Groupe[] = [
         doc: 'README.md (écrans)',
         maj: '2026-10-23',
       },
+      {
+        id: 'statistiques',
+        titre: 'Consulter les statistiques',
+        resume: 'Lire 47 statistiques sur le jeu, réparties en 7 vues.',
+        quand: 'Quand on veut comprendre ses résultats, comparer les trois joueurs ou juger le modèle.',
+        etapes: [
+          'Ouvrir `Saison` puis `Statistiques`.',
+          'Choisir une vue avec les boutons : `Duel`, `Picks`, `Bracket`, `Fantasy`, `Circuit`, `Modèle & marché`, `App`.',
+          'Filtrer par année et par circuit (ATP ou WTA) ; dans `Picks`, choisir aussi de qui on regarde les picks.',
+        ],
+        attention: [
+          'Tout est calculé à l’affichage, en lecture seule : rien n’est écrit en base et aucune requête API n’est consommée.',
+          'L’Elo utilisé est l’Elo actuel, qui connaît déjà le résultat des matchs : les probabilités servent à classer, pas à mesurer une précision exacte. Elo contre bookmakers est donc favorable à l’Elo.',
+          'Les totaux cumulés du Duel ne se comparent que sur les tournois joués par tous (voir la matrice).',
+          'Les imports (vue `App`) ne s’affichent que connecté.',
+        ],
+        maj: '2026-11-07',
+      },
     ],
   },
   {
