@@ -11,6 +11,7 @@ import {
   fraicheur,
   libellePicksAPoser,
   ListeTournois,
+  separerTournois,
 } from '../../tournoisUi';
 
 afterEach(() => cleanup());
@@ -115,5 +116,23 @@ describe('CarteTournoi : picks à poser', () => {
     cleanup();
     render(<CarteTournoi t={MASTERS} debut="début le" aPoser={null} />);
     expect(screen.queryByTestId('picks-a-poser')).toBeNull();
+  });
+});
+
+describe('separerTournois', () => {
+  it('met à part les tournois terminés et garde l\'ordre reçu', () => {
+    const a = tournoi({ id: 'a', status: 'running' });
+    const b = tournoi({ id: 'b', status: 'completed' });
+    const c = tournoi({ id: 'c', status: 'upcoming' });
+    const d = tournoi({ id: 'd', status: 'completed' });
+    const { aSuivre, termines } = separerTournois([a, b, c, d]);
+    expect(aSuivre.map((t) => t.id)).toEqual(['a', 'c']);
+    expect(termines.map((t) => t.id)).toEqual(['b', 'd']);
+  });
+
+  it('ne perd aucun tournoi', () => {
+    const tous = [tournoi({ id: '1', status: 'running' }), tournoi({ id: '2', status: 'completed' })];
+    const { aSuivre, termines } = separerTournois(tous);
+    expect(aSuivre.length + termines.length).toBe(tous.length);
   });
 });

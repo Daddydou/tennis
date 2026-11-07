@@ -264,6 +264,18 @@ export function CarteTournoi({
  * téléphone, lignes d'un tableau dès `sm`). Sert l'accueil (les derniers) et
  * la page /tournois (tous).
  */
+/**
+ * Sépare les tournois à suivre (en cours, à venir, y compris un « en cours »
+ * périmé qui mérite un coup d'œil) des tournois terminés, qu'on replie.
+ * L'ordre reçu est conservé dans chaque groupe.
+ */
+export function separerTournois(tournois: TournamentRow[]): { aSuivre: TournamentRow[]; termines: TournamentRow[] } {
+  return {
+    aSuivre: tournois.filter((t) => t.status !== 'completed'),
+    termines: tournois.filter((t) => t.status === 'completed'),
+  };
+}
+
 export function ListeTournois({ tournois, aujourdHui }: { tournois: TournamentRow[]; aujourdHui: string }) {
   return (
     <div className={`overflow-hidden ${carte}`}>
