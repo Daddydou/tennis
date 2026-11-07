@@ -154,7 +154,11 @@ function tableAbsente(code: string | undefined): boolean {
  * ne pas avoir été jouée, l'app doit continuer de fonctionner sur les Elo
  * maison. Toute autre erreur remonte.
  */
-export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
+export async function chargerIndexElo(
+  tour: Tour,
+  /** Source demandée ; par défaut celle de l'app (SOURCE_ELO). Les statistiques comparent les deux. */
+  base: BaseElo = sourceEloConfiguree(),
+): Promise<IndexElo> {
   const sb = supabaseAnon();
   const t = tour.toLowerCase() as 'atp' | 'wta';
 
@@ -162,7 +166,7 @@ export async function chargerIndexElo(tour: Tour): Promise<IndexElo> {
   // ta_elo, colonnes déjà transformées pour que le mélange 0,6/0,4 de l'app reproduise
   // ses probabilités. Activé par SOURCE_ELO=maison ; repli sur Tennis Abstract si la
   // table est absente ou vide. Les exceptions de noms visent des slugs TA : non reprises.
-  if (sourceEloConfiguree() === 'maison') {
+  if (base === 'maison') {
     const avecCache = process.env.NODE_ENV !== 'test';
     const enCache = avecCache ? CACHE_INDEX_MAISON.get(t) : undefined;
     if (enCache && enCache.expire > Date.now()) return enCache.index;

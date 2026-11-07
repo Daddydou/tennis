@@ -14,7 +14,7 @@ import type { Tour } from '@/lib/types';
 const PAGE = 1000;
 
 /** Lit toutes les pages d'une requête ordonnée. */
-async function toutLire<T>(
+export async function toutLire<T>(
   requete: (debut: number, fin: number) => PromiseLike<{ data: unknown[] | null; error: { message: string; code?: string } | null }>,
 ): Promise<T[]> {
   const out: T[] = [];
