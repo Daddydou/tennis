@@ -104,6 +104,26 @@ describe('libellePicksAPoser', () => {
   });
 });
 
+describe('libellePicksAPoser : réservé', () => {
+  it('tout est réservé : « réservé, à valider » (pas « à poser »)', () => {
+    expect(libellePicksAPoser({ tour: 'F', reste: 1, reserves: 1 })).toBe('Tour F : 1 pick réservé, à valider');
+    expect(libellePicksAPoser({ tour: 'QF', reste: 2, reserves: 2 })).toBe('Tour QF : 2 picks réservés, à valider');
+  });
+
+  it('une partie seulement réservée : le reste est à poser', () => {
+    expect(libellePicksAPoser({ tour: 'QF', reste: 3, reserves: 1 })).toBe('Tour QF : 3 picks à poser (1 réservé)');
+  });
+
+  it('rien de réservé, ou information absente : « à poser »', () => {
+    expect(libellePicksAPoser({ tour: 'QF', reste: 2, reserves: 0 })).toBe('Tour QF : 2 picks à poser');
+    expect(libellePicksAPoser({ tour: 'QF', reste: 2 })).toBe('Tour QF : 2 picks à poser');
+  });
+
+  it('tout posé : picks posés, même avec des réservations', () => {
+    expect(libellePicksAPoser({ tour: 'SF', reste: 0, reserves: 1 })).toBe('Tour SF : picks posés ✓');
+  });
+});
+
 describe('CarteTournoi : picks à poser', () => {
   it('affiche la ligne quand on la fournit', () => {
     render(<CarteTournoi t={tournoi({})} debut="depuis le" aPoser={{ tour: 'QF', reste: 2 }} />);
