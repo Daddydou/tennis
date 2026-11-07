@@ -91,9 +91,10 @@ export const GROUPES: Groupe[] = [
           'Appuyer sur `Envoyer sur Game Tracker` (un bouton par tour : le tour ouvert ou un tour à venir, pour poser ses picks à l’avance). Un tour seulement réservé s’envoie aussi : la ligne indique « ta réservation ».',
           'Relire le résultat affiché : l’app relit le pick réel et signale tout écart.',
           'À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous pour Moi, Laki et Thomas : c’est leur jeu qui compte. Le panneau liste les changements.',
+          'Pour tout lire d’un coup : bouton `Lire Game Tracker` de l’accueil. Il lit un par un les tournois en cours et de la semaine (les Masters se lisent depuis leur écran) et indique, tournoi par tournoi, ce qui a changé ou ce qui n’est pas relié. Il n’envoie jamais rien.',
         ],
         attention: [
-          'Rien ne part tout seul : seul le bouton envoie. Les réservations de l’écran Picks (moi uniquement) sont envoyées comme des picks pour les tours où rien n’est encore validé.',
+          'Rien ne part tout seul : seul le bouton `Envoyer sur Game Tracker` d’un tournoi envoie (le bouton de l’accueil ne fait que lire). Les réservations de l’écran Picks (moi uniquement) sont envoyées comme des picks pour les tours où rien n’est encore validé.',
           'Rien à piquer pour le tour ouvert ? Notre tableau n’a sans doute pas encore les résultats du tour précédent : mettre le tableau à jour (`Importer`), puis relire.',
           'Game Tracker peut rediriger un pick si un joueur « en attente » perd : relire juste avant le verrou.',
           'Le POST remplace le pick du tour en entier (un côté non posé reste tel que chez eux ; l’app ne vide jamais un côté).',
@@ -102,7 +103,7 @@ export const GROUPES: Groupe[] = [
           'La clé est `GAMETRACKER_PICKS_KEY` (Vercel, type sensitive). Elle est donnée par l’admin de Game Tracker, jamais collée dans une conversation.',
         ],
         doc: 'docs/game-tracker-picks.md',
-        maj: '2026-10-29',
+        maj: '2026-11-07',
       },
       {
         id: 'fantasy',
