@@ -21,7 +21,7 @@ export default async function PageTournois() {
       {tournois.length === 0 ? (
         <p className="text-sm text-zinc-600">
           Aucun tournoi. Commence par{' '}
-          <Link href="/import" className="font-medium text-blue-600 underline underline-offset-2">
+          <Link href="/import" className="font-medium text-accent underline underline-offset-2">
             importer un tableau
           </Link>
           .

@@ -17,7 +17,7 @@ const pts = (x: number) => x.toFixed(1).replace('.', ',');
 function ClassementPropose({ titre, ordre, noms, sim }: { titre: string; ordre: string[]; noms: Noms; sim: ConseilsMasters['sim'] }) {
   return (
     <div>
-      <h3 className="text-xs font-medium text-zinc-600">{titre}</h3>
+      <h3 className="text-xs font-medium text-soustitre">{titre}</h3>
       <ol className="mt-1 space-y-0.5 text-sm">
         {ordre.map((id, i) => (
           <li key={id} className="flex flex-wrap items-baseline gap-x-2">
@@ -107,7 +107,7 @@ export default function ConseilsMastersCarte({ conseils, noms }: { conseils: Con
         <div className="space-y-3">
           {(['J1', 'J2', 'J3'] as const).map((j) => (
             <div key={j} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr_1fr]">
-              <h3 className="text-xs font-medium text-zinc-600 sm:pt-0.5">{libelleTourMasters(j)}</h3>
+              <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(j)}</h3>
               <div className="text-sm">
                 <div className="text-xs text-zinc-500">Poule A</div>
                 <CellulePick p={pick(j, 'top')} noms={noms} />
@@ -120,7 +120,7 @@ export default function ConseilsMastersCarte({ conseils, noms }: { conseils: Con
           ))}
           {(['SF', 'F'] as const).map((r) => (
             <div key={r} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr]">
-              <h3 className="text-xs font-medium text-zinc-600 sm:pt-0.5">{libelleTourMasters(r)}</h3>
+              <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(r)}</h3>
               <div className="text-sm">
                 <CellulePick p={pick(r, null)} noms={noms} />
               </div>

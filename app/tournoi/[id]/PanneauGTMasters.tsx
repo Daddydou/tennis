@@ -97,7 +97,7 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
             return (
               <div key={t.numero} className="space-y-2 rounded-xl bg-zinc-50 p-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <h3 className="text-sm font-medium text-zinc-900">{t.nom}</h3>
+                  <h3 className="text-sm font-medium text-titre">{t.nom}</h3>
                   <span className="text-xs text-zinc-600">{t.lockAt ? `verrou : ${new Date(t.lockAt).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' })}` : 'verrou : inconnu'}</span>
                 </div>
                 <p className="text-xs text-zinc-600">
@@ -158,7 +158,7 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
           })}
           {lecture.classement.length > 0 && (
             <div className="text-sm">
-              <h3 className="text-xs font-medium text-zinc-600">Classement Game Tracker</h3>
+              <h3 className="text-xs font-medium text-soustitre">Classement Game Tracker</h3>
               <ol className="mt-1">
                 {lecture.classement.map((c) => (
                   <li key={c.pseudo}>

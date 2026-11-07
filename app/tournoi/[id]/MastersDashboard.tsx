@@ -89,7 +89,7 @@ function CartePoule({ p, noms }: { p: PouleVue; noms: Noms }) {
 
       {p.journees.map((j) => (
         <div key={j.round}>
-          <h3 className="text-xs font-medium text-zinc-600">{libelleTourMasters(j.round)}</h3>
+          <h3 className="text-xs font-medium text-soustitre">{libelleTourMasters(j.round)}</h3>
           <ul>
             {j.matchs.map((m) => (
               <LigneMatch key={m.position} m={m} noms={noms} />
@@ -180,7 +180,7 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       <section className={`${carte} space-y-3 p-4`}>
         <h2 className="text-base font-semibold">Phase finale</h2>
         <div>
-          <h3 className="text-xs font-medium text-zinc-600">Demi-finales (1er A – 2e B, 1er B – 2e A)</h3>
+          <h3 className="text-xs font-medium text-soustitre">Demi-finales (1er A – 2e B, 1er B – 2e A)</h3>
           <ul>
             {vue.demis.map((d) =>
               d.match && d.match.etat !== 'a_jouer' ? (
@@ -195,7 +195,7 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
           </ul>
         </div>
         <div>
-          <h3 className="text-xs font-medium text-zinc-600">Finale</h3>
+          <h3 className="text-xs font-medium text-soustitre">Finale</h3>
           {vue.finale.match && vue.finale.match.etat !== 'a_jouer' ? (
             <ul>
               <LigneMatch m={{ ...vue.finale.match, player1Id: vue.finale.player1Id, player2Id: vue.finale.player2Id }} noms={noms} />

@@ -33,7 +33,7 @@ export default function TournoiNav({ id, nom, masters = false }: { id: string; n
             aria-current={o.key === active ? 'page' : undefined}
             className={`-mb-px flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 transition active:scale-[0.97] ${
               o.key === active
-                ? 'border-blue-600 font-semibold text-blue-600'
+                ? 'border-accent font-semibold text-accent'
                 : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >

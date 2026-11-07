@@ -102,7 +102,7 @@ function Duel({
         ? 'border-emerald-400 bg-emerald-50 font-medium'
         : 'border-zinc-200 text-zinc-500'
       : actif
-        ? 'border-blue-600 bg-blue-600 font-medium text-white'
+        ? 'border-accent bg-accent font-medium text-white'
         : 'border-zinc-300 hover:border-zinc-500';
     const cliquable = onChoisir !== null && id !== null;
     return (

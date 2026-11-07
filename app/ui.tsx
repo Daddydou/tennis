@@ -23,7 +23,7 @@
  * blanc sur bleu à 40 % devenait illisible au soleil.
  */
 export const boutonPrimaire =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97] active:bg-blue-800 hover:bg-blue-700 disabled:pointer-events-none disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97] active:bg-accent-actif hover:bg-accent-fonce disabled:pointer-events-none disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none';
 
 /** Bouton secondaire : une action possible, jamais LA priorité de l'écran. */
 export const boutonSecondaire =
@@ -35,7 +35,7 @@ export const boutonDanger =
 
 /** Lien discret habillé en action (mêmes zones tactiles) — pour naviguer, pas pour valider. */
 export const lienBouton =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 text-sm font-medium text-blue-600 shadow-sm transition active:scale-[0.97] hover:bg-zinc-50';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 text-sm font-medium text-accent shadow-sm transition active:scale-[0.97] hover:bg-zinc-50';
 
 /**
  * Agrandit la zone cliquable d'un lien texte SANS le transformer en bouton
@@ -51,7 +51,7 @@ export const zoneTactile = 'inline-flex min-h-11 items-center';
  */
 export function pilleSelecteur(actif: boolean): string {
   return `inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition active:scale-[0.97] ${
-    actif ? 'bg-blue-600 text-white shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+    actif ? 'bg-accent text-white shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
   }`;
 }
 
@@ -79,7 +79,7 @@ export const carte = 'rounded-2xl bg-white shadow-card';
  * blanc dans une carte), qui blanchit et s'entoure d'un anneau bleu au focus.
  */
 export const champTexte =
-  'min-h-11 rounded-xl border border-transparent bg-zinc-100 px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500';
+  'min-h-11 rounded-xl border border-transparent bg-zinc-100 px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-accent';
 
 /**
  * Note d'information neutre (méthode, contexte, mode d'emploi) : gris clair,
