@@ -197,8 +197,26 @@ export function commenceDansLaSemaine(t: TournamentRow, aujourdHui: string): boo
   return j !== null && j <= 0 && j >= -JOURS_AVANT_DEBUT;
 }
 
+/** Ce que je dois encore poser (calculé côté serveur, cf. db/picksAPoser.ts). */
+export type PicksAPoserCarte = { tour: string; reste: number };
+
+/** Libellé de la carte : le même que l'en-tête de l'écran Picks. */
+export function libellePicksAPoser(p: PicksAPoserCarte): string {
+  return p.reste === 0
+    ? `Tour ${p.tour} : picks posés ✓`
+    : `Tour ${p.tour} : ${p.reste} pick${p.reste > 1 ? 's' : ''} à poser`;
+}
+
 /** Carte d'un tournoi en cours ou qui démarre dans la semaine. */
-export function CarteTournoi({ t, debut }: { t: TournamentRow; debut: 'depuis le' | 'début le' }) {
+export function CarteTournoi({
+  t,
+  debut,
+  aPoser,
+}: {
+  t: TournamentRow;
+  debut: 'depuis le' | 'début le';
+  aPoser?: PicksAPoserCarte | null;
+}) {
   const masters = estMasters(t.rounds);
   return (
     <li className={`relative overflow-hidden pl-1 ${carte}`}>
@@ -217,6 +235,14 @@ export function CarteTournoi({ t, debut }: { t: TournamentRow; debut: 'depuis le
             {t.best_of ? ` · ${t.best_of} sets` : ''} · {debut} {formatDate(t.start_date)}
           </span>
         </div>
+        {aPoser && (
+          <p
+            className={`text-sm ${aPoser.reste > 0 ? 'font-semibold text-amber-900' : 'text-zinc-600'}`}
+            data-testid="picks-a-poser"
+          >
+            {libellePicksAPoser(aPoser)}
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 pt-1">
           <Link href={`/tournoi/${t.id}`} className={lienBouton}>
             Ouvrir

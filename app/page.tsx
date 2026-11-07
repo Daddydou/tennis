@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
+import { picksAPoserMoi } from '@/db/picksAPoser';
 import { boutonPrimaire } from './ui';
 import { CarteTournoi, commenceDansLaSemaine, fraicheur, ListeTournois } from './tournoisUi';
 
@@ -15,6 +16,8 @@ export default async function Home() {
   const bientot = tournois.filter((t) => commenceDansLaSemaine(t, aujourdHui));
   const dejaAffiches = new Set([...enCours, ...bientot].map((t) => t.id));
   const recents = tournois.filter((t) => !dejaAffiches.has(t.id)).slice(0, NB_RECENTS);
+  // Picks que je dois encore poser, pour les seules cartes « En cours ».
+  const aPoser = await picksAPoserMoi(enCours);
 
   return (
     <div className="space-y-6">
@@ -42,7 +45,7 @@ export default async function Home() {
               <h2 className="text-sm font-semibold">En cours</h2>
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {enCours.map((t) => (
-                  <CarteTournoi key={t.id} t={t} debut="depuis le" />
+                  <CarteTournoi key={t.id} t={t} debut="depuis le" aPoser={aPoser.get(t.id)} />
                 ))}
               </ul>
             </section>
