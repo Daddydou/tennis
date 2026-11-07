@@ -7,7 +7,7 @@ import PanneauGameTracker from './PanneauGameTracker';
 import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import PlanPicks from '../plan/PlanPicks';
-import { carte, pilleSelecteur } from '@/app/ui';
+import { carte, couleurPoints, pilleSelecteur } from '@/app/ui';
 import {
   avancementPicks,
   getParticipants,
@@ -226,8 +226,8 @@ export default async function PicksPage({
                     {p.round}
                     {p.half ? ` · ${MOITIE[p.half] ?? p.half}` : ''}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{players[p.player_id]?.name ?? p.player_id}</span>
-                  <span className="shrink-0 font-mono tabular-nums">{p.points ?? 0}</span>
+                  <span className={`min-w-0 flex-1 truncate ${stockId === null ? 'font-medium text-moi' : ''}`}>{players[p.player_id]?.name ?? p.player_id}</span>
+                  <span className={`shrink-0 font-mono tabular-nums ${couleurPoints(p.points ?? 0)}`}>{p.points ?? 0}</span>
                 </li>
               ))}
             </ul>

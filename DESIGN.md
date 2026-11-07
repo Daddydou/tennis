@@ -178,9 +178,9 @@ Une palette neutre gris-zinc, un bleu d'action, et une famille de teintes séman
 Chaque rôle a UNE couleur, partout, via les jetons de `app/globals.css` (`text-titre`, `text-soustitre`, `text-adversaire`, `text-juste`, `text-rate`, `text-moi`, `bg-accent`, `bg-soustitre-fond`). Tous mesurés ≥ 4,5:1 sur le fond de page ET sur blanc.
 - **Titre** (#0c2d5a, bleu nuit) : `h1` et `h3`, posés par défaut dans `@layer base`.
 - **Sous-titre** (#0369a1) : `h2`, sur bandeau #e0f2fe quand il sépare des sections.
-- **Mon joueur** (#0b4f9c) : le joueur que j'ai pris.
+- **Mon joueur** (#0b4f9c) : le joueur que j'ai pris (liste « Tours joués » de l'écran Picks, tableau de l'onglet Résultats).
 - **Adversaire** (#c2410c, brique) : le joueur d'en face.
-- **Points justes** (#0e7490, sarcelle) et **points ratés** (#be123c, framboise) : les points marqués ou perdus.
+- **Points justes** (#0e7490, sarcelle) et **points ratés** (#be123c, framboise) : un pick qui a marqué, un pick resté à zéro. Helper `couleurPoints` (app/ui.tsx) : aucune couleur tant que le match n'est pas joué.
 Ces rôles s'ajoutent aux teintes sémantiques ci-dessous et ne les remplacent pas : vert/rouge restent le gagné/perdu d'un match, ambre l'avertissement.
 
 ### Named Rules
