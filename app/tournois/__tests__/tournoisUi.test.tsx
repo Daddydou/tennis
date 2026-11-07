@@ -5,7 +5,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import type { TournamentRow } from '@/db/types';
-import { commenceDansLaSemaine, fraicheur, ListeTournois } from '../../tournoisUi';
+import {
+  CarteTournoi,
+  commenceDansLaSemaine,
+  fraicheur,
+  libellePicksAPoser,
+  ListeTournois,
+} from '../../tournoisUi';
 
 afterEach(() => cleanup());
 
@@ -86,5 +92,28 @@ describe('fraicheur', () => {
     expect(fraicheur(tournoi({ status: 'running', start_date: '2026-11-02' }), '2026-11-06')).toBe('en-cours');
     expect(fraicheur(tournoi({ status: 'running', start_date: '2026-09-01' }), '2026-11-06')).toBe('perime');
     expect(fraicheur(tournoi({ status: 'completed' }), '2026-11-06')).toBe('autre');
+  });
+});
+
+describe('libellePicksAPoser', () => {
+  it('même texte que l\'en-tête de l\'écran Picks', () => {
+    expect(libellePicksAPoser({ tour: 'QF', reste: 1 })).toBe('Tour QF : 1 pick à poser');
+    expect(libellePicksAPoser({ tour: 'QF', reste: 3 })).toBe('Tour QF : 3 picks à poser');
+    expect(libellePicksAPoser({ tour: 'SF', reste: 0 })).toBe('Tour SF : picks posés ✓');
+  });
+});
+
+describe('CarteTournoi : picks à poser', () => {
+  it('affiche la ligne quand on la fournit', () => {
+    render(<CarteTournoi t={tournoi({})} debut="depuis le" aPoser={{ tour: 'QF', reste: 2 }} />);
+    expect(screen.getByTestId('picks-a-poser').textContent).toBe('Tour QF : 2 picks à poser');
+  });
+
+  it('n\'affiche rien sans donnée (lecture ratée, Masters) : pas de chiffre inventé', () => {
+    render(<CarteTournoi t={tournoi({})} debut="depuis le" />);
+    expect(screen.queryByTestId('picks-a-poser')).toBeNull();
+    cleanup();
+    render(<CarteTournoi t={MASTERS} debut="début le" aPoser={null} />);
+    expect(screen.queryByTestId('picks-a-poser')).toBeNull();
   });
 });
