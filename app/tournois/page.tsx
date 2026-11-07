@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
 import { boutonPrimaire } from '../ui';
-import { ListeTournois } from '../tournoisUi';
+import { ListeTournois, separerTournois } from '../tournoisUi';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PageTournois() {
   const tournois = await listTournaments();
   const aujourdHui = new Date().toISOString().slice(0, 10);
+  const { aSuivre, termines } = separerTournois(tournois);
 
   return (
     <div className="space-y-4">
@@ -27,7 +28,23 @@ export default async function PageTournois() {
           .
         </p>
       ) : (
-        <ListeTournois tournois={tournois} aujourdHui={aujourdHui} />
+        <>
+          {aSuivre.length > 0 && (
+            <section className="space-y-2.5">
+              <h2 className="text-sm font-semibold">En cours et à venir</h2>
+              <ListeTournois tournois={aSuivre} aujourdHui={aujourdHui} />
+            </section>
+          )}
+          {termines.length > 0 && (
+            <details className="group space-y-2.5">
+              <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-soustitre">
+                <span aria-hidden="true" className="transition group-open:rotate-90">▸</span>
+                Tournois terminés ({termines.length})
+              </summary>
+              <ListeTournois tournois={termines} aujourdHui={aujourdHui} />
+            </details>
+          )}
+        </>
       )}
     </div>
   );
