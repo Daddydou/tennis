@@ -198,13 +198,17 @@ export function commenceDansLaSemaine(t: TournamentRow, aujourdHui: string): boo
 }
 
 /** Ce que je dois encore poser (calculé côté serveur, cf. db/picksAPoser.ts). */
-export type PicksAPoserCarte = { tour: string; reste: number };
+export type PicksAPoserCarte = { tour: string; reste: number; reserves?: number };
 
 /** Libellé de la carte : le même que l'en-tête de l'écran Picks. */
 export function libellePicksAPoser(p: PicksAPoserCarte): string {
-  return p.reste === 0
-    ? `Tour ${p.tour} : picks posés ✓`
-    : `Tour ${p.tour} : ${p.reste} pick${p.reste > 1 ? 's' : ''} à poser`;
+  if (p.reste === 0) return `Tour ${p.tour} : picks posés ✓`;
+  const reserves = Math.min(p.reserves ?? 0, p.reste);
+  const pluriel = (n: number) => (n > 1 ? 's' : '');
+  // Réservé = brouillon du plan : pas encore un pick (il se valide quand les joueurs du tour sont connus).
+  if (reserves === p.reste) return `Tour ${p.tour} : ${p.reste} pick${pluriel(p.reste)} réservé${pluriel(p.reste)}, à valider`;
+  if (reserves > 0) return `Tour ${p.tour} : ${p.reste} pick${pluriel(p.reste)} à poser (${reserves} réservé${pluriel(reserves)})`;
+  return `Tour ${p.tour} : ${p.reste} pick${pluriel(p.reste)} à poser`;
 }
 
 /** Carte d'un tournoi en cours ou qui démarre dans la semaine. */

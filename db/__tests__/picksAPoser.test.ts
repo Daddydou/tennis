@@ -8,14 +8,16 @@ import type { TournamentRow } from '../types';
 const avancementPicks = vi.fn();
 const getMatchRows = vi.fn();
 const getPicks = vi.fn();
+const getReservationsPlan = vi.fn();
 
 vi.mock('../tableau', () => ({ avancementPicks: (...a: unknown[]) => avancementPicks(...a) }));
 vi.mock('../lectures', () => ({
   getMatchRows: (...a: unknown[]) => getMatchRows(...a),
   getPicks: (...a: unknown[]) => getPicks(...a),
+  getReservationsPlan: (...a: unknown[]) => getReservationsPlan(...a),
 }));
 
-import { picksAPoserMoi, resumePicksAPoser } from '../picksAPoser';
+import { compterReserves, picksAPoserMoi, resumePicksAPoser } from '../picksAPoser';
 
 const ROUNDS = ['R16', 'QF', 'SF', 'F'];
 const tournoi = (id: string, rounds: string[] = ROUNDS) => ({ id, rounds }) as unknown as TournamentRow;
@@ -24,6 +26,7 @@ beforeEach(() => {
   avancementPicks.mockReset();
   getMatchRows.mockReset().mockResolvedValue([]);
   getPicks.mockReset().mockResolvedValue([]);
+  getReservationsPlan.mockReset().mockResolvedValue([]);
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -36,7 +39,7 @@ describe('resumePicksAPoser', () => {
       ],
       tourCourant: 'QF',
     });
-    expect(resumePicksAPoser(ROUNDS, [], [])).toEqual({ tour: 'QF', reste: 3 });
+    expect(resumePicksAPoser(ROUNDS, [], [])).toEqual({ tour: 'QF', reste: 3, reserves: 0 });
   });
 
   it('0 quand tout est posé, et jamais négatif', () => {
@@ -44,12 +47,53 @@ describe('resumePicksAPoser', () => {
       parTour: [{ round: 'F', faits: 2, requis: 1, neutralises: 0 }],
       tourCourant: 'F',
     });
-    expect(resumePicksAPoser(ROUNDS, [], [])).toEqual({ tour: 'F', reste: 0 });
+    expect(resumePicksAPoser(ROUNDS, [], [])).toEqual({ tour: 'F', reste: 0, reserves: 0 });
   });
 
   it("null s'il n'y a pas de tour courant", () => {
     avancementPicks.mockReturnValue({ parTour: [], tourCourant: null });
     expect(resumePicksAPoser([], [], [])).toBeNull();
+  });
+});
+
+describe('réservations (brouillons du plan)', () => {
+  const R = (round: string, half: 'top' | 'bottom' | null = null) => ({ round, half });
+
+  it('compte les emplacements du tour réservés et pas encore validés', () => {
+    expect(compterReserves('F', [R('SF')], [R('F')])).toBe(1);
+  });
+
+  it('ignore les réservations des autres tours et celles déjà validées', () => {
+    expect(compterReserves('F', [R('F')], [R('F'), R('SF')])).toBe(0);
+  });
+
+  it('une réservation = un emplacement, même répétée', () => {
+    expect(compterReserves('QF', [], [R('QF', 'top'), R('QF', 'top'), R('QF', 'bottom')])).toBe(2);
+  });
+
+  it('le résumé indique combien du reste est déjà réservé (jamais plus que le reste)', () => {
+    avancementPicks.mockReturnValue({
+      parTour: [{ round: 'F', faits: 0, requis: 1, neutralises: 0 }],
+      tourCourant: 'F',
+    });
+    expect(resumePicksAPoser(ROUNDS, [], [], [R('F'), R('F', 'top')])).toEqual({ tour: 'F', reste: 1, reserves: 1 });
+  });
+
+  it("picksAPoserMoi ne prend que MES réservations (participant null) et survit à une lecture ratée", async () => {
+    avancementPicks.mockReturnValue({
+      parTour: [{ round: 'F', faits: 0, requis: 1, neutralises: 0 }],
+      tourCourant: 'F',
+    });
+    getReservationsPlan.mockImplementation(async (id: string) => {
+      if (id === 'casse') throw new Error('illisible');
+      return [
+        { round: 'F', half: null, participant_id: 'laki' },
+        { round: 'F', half: null, participant_id: null },
+      ];
+    });
+    const r = await picksAPoserMoi([tournoi('ok'), tournoi('casse')]);
+    expect(r.get('ok')).toEqual({ tour: 'F', reste: 1, reserves: 1 });
+    expect(r.get('casse')).toEqual({ tour: 'F', reste: 1, reserves: 0 });
   });
 });
 
@@ -60,8 +104,8 @@ describe('picksAPoserMoi', () => {
       tourCourant: 'QF',
     });
     const r = await picksAPoserMoi([tournoi('a'), tournoi('b')]);
-    expect(r.get('a')).toEqual({ tour: 'QF', reste: 2 });
-    expect(r.get('b')).toEqual({ tour: 'QF', reste: 2 });
+    expect(r.get('a')).toEqual({ tour: 'QF', reste: 2, reserves: 0 });
+    expect(r.get('b')).toEqual({ tour: 'QF', reste: 2, reserves: 0 });
     expect(getPicks).toHaveBeenCalledWith('a');
     expect(getPicks).toHaveBeenCalledWith('b');
   });
@@ -84,6 +128,6 @@ describe('picksAPoserMoi', () => {
     });
     const r = await picksAPoserMoi([tournoi('casse'), tournoi('ok')]);
     expect(r.has('casse')).toBe(false);
-    expect(r.get('ok')).toEqual({ tour: 'SF', reste: 1 });
+    expect(r.get('ok')).toEqual({ tour: 'SF', reste: 1, reserves: 0 });
   });
 });

@@ -8,6 +8,8 @@ import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import PlanPicks from '../plan/PlanPicks';
 import { carte, couleurPoints, pilleSelecteur } from '@/app/ui';
+import { libellePicksAPoser } from '@/app/tournoisUi';
+import { compterReserves } from '@/db/picksAPoser';
 import {
   avancementPicks,
   getParticipants,
@@ -125,6 +127,9 @@ export default async function PicksPage({
   const { parTour, tourCourant } = avancementPicks(rounds, matchRows, picksDuStock);
   const avancement = parTour.find((t) => t.round === tourCourant);
   const reste = avancement ? Math.max(0, avancement.requis - avancement.faits) : 0;
+  const reserves = tourCourant
+    ? Math.min(reste, compterReserves(tourCourant, picksDuStock, reservations.filter((r) => (r.participant_id ?? null) === stockId)))
+    : 0;
   const tourEnJeu = rounds[donnees.r0] ?? null;
   // Seul le tour dont les joueurs sont connus se valide (cf. PlanPicks) : un
   // tour suivant s'ouvre quand le tour en jeu est entièrement joué.
@@ -182,9 +187,7 @@ export default async function PicksPage({
         {tourCourant && (
           <div className="space-y-0.5">
             <h2 className="text-lg font-semibold">
-              {reste === 0
-                ? `Tour ${tourCourant} : picks posés ✓`
-                : `Tour ${tourCourant} : ${reste} pick${reste > 1 ? 's' : ''} à poser`}
+              {libellePicksAPoser({ tour: tourCourant, reste, reserves })}
             </h2>
             {enAttente && (
               <p className="text-sm text-zinc-600">

@@ -1,7 +1,7 @@
 import { avancementPicks } from './tableau';
-import { getMatchRows, getPicks } from './lectures';
+import { getMatchRows, getPicks, getReservationsPlan } from './lectures';
 import { estMasters } from '@/lib/masters';
-import type { MatchRow, PickRow, TournamentRow } from './types';
+import type { MatchRow, PickRow, PlanReservationRow, TournamentRow } from './types';
 
 /**
  * Picks que JE dois encore poser sur un tournoi : le tour à picker et le
@@ -12,7 +12,31 @@ import type { MatchRow, PickRow, TournamentRow } from './types';
  */
 export interface PicksAPoser {
   tour: string;
+  /** Picks pas encore VALIDÉS sur ce tour (une réservation n'est pas un pick). */
   reste: number;
+  /** Parmi eux, ceux pour lesquels une réservation existe déjà (brouillon du plan). */
+  reserves: number;
+}
+
+/**
+ * Emplacements du tour déjà réservés et pas encore validés. Une réservation
+ * n'est ni un pick ni un envoi à Game Tracker : elle sert au plan, et le tour
+ * ne se valide qu'une fois ses joueurs connus.
+ */
+export function compterReserves(
+  tour: string,
+  picks: Pick<PickRow, 'round' | 'half'>[],
+  reservations: Pick<PlanReservationRow, 'round' | 'half'>[],
+): number {
+  const cle = (x: { round: string; half: string | null }) => `${x.round}|${x.half ?? ''}`;
+  const valides = new Set(picks.map((p) => cle({ round: p.round, half: p.half ?? null })));
+  const reserves = new Set(
+    reservations
+      .filter((r) => r.round === tour)
+      .map((r) => cle({ round: r.round, half: r.half ?? null }))
+      .filter((c) => !valides.has(c)),
+  );
+  return reserves.size;
 }
 
 /** Le tour à picker et ce qu'il reste à y poser, à partir des données déjà lues. */
@@ -20,11 +44,13 @@ export function resumePicksAPoser(
   rounds: string[],
   matchRows: MatchRow[],
   mesPicks: PickRow[],
+  mesReservations: Pick<PlanReservationRow, 'round' | 'half'>[] = [],
 ): PicksAPoser | null {
   const { parTour, tourCourant } = avancementPicks(rounds, matchRows, mesPicks);
   if (!tourCourant) return null;
   const t = parTour.find((x) => x.round === tourCourant);
-  return { tour: tourCourant, reste: Math.max(0, (t?.requis ?? 0) - (t?.faits ?? 0)) };
+  const reste = Math.max(0, (t?.requis ?? 0) - (t?.faits ?? 0));
+  return { tour: tourCourant, reste, reserves: Math.min(reste, compterReserves(tourCourant, mesPicks, mesReservations)) };
 }
 
 /**
@@ -40,8 +66,14 @@ export async function picksAPoserMoi(tournois: TournamentRow[]): Promise<Map<str
       .filter((t) => !estMasters(t.rounds))
       .map(async (t) => {
         try {
-          const [matchRows, mesPicks] = await Promise.all([getMatchRows(t.id), getPicks(t.id)]);
-          const resume = resumePicksAPoser(t.rounds ?? [], matchRows, mesPicks);
+          const [matchRows, mesPicks, reservations] = await Promise.all([
+            getMatchRows(t.id),
+            getPicks(t.id),
+            // Une lecture ratée des réservations ne doit pas masquer le tournoi : on retombe sur « à poser ».
+            getReservationsPlan(t.id).catch(() => []),
+          ]);
+          const mesReservations = reservations.filter((r) => (r.participant_id ?? null) === null);
+          const resume = resumePicksAPoser(t.rounds ?? [], matchRows, mesPicks, mesReservations);
           if (resume) resultat.set(t.id, resume);
         } catch (e) {
           console.error(`Picks à poser illisibles (${t.id}) :`, (e as Error).message);
