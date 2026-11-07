@@ -125,6 +125,33 @@ export function participantPourSimulation(d: DonneesPlan, p: ParticipantDonnees)
   return { cle: p.id ?? 'moi', nom: p.nom, base, places, slotsLibres: libres, utilises };
 }
 
+/** Les picks d'un plan sous une forme comparable : un joueur par slot, indépendamment de l'ordre. */
+function signaturePicks(p: { picks: { round: string; half: Half | null; playerId: string }[] }): string {
+  return p.picks
+    .map((k) => `${k.round}|${k.half ?? ''}|${k.playerId}`)
+    .sort()
+    .join(';');
+}
+
+/**
+ * Les modes dont les picks sont EXACTEMENT ceux d'Équilibré (mêmes joueurs sur
+ * les mêmes slots). Quand il reste peu de picks libres, un poids de risque de
+ * ±1 écart-type ne renverse aucun choix : les cartes affichent alors les mêmes
+ * chiffres, et l'écran le dit au lieu de laisser croire à un bug. Vide si
+ * Équilibré n'a aucun pick à poser (rien à comparer).
+ */
+export function modesIdentiquesAEquilibre(
+  plans: Record<ModeAgressivite, { picks: { round: string; half: Half | null; playerId: string }[] }>,
+): Set<ModeAgressivite> {
+  const identiques = new Set<ModeAgressivite>();
+  if (plans.equilibre.picks.length === 0) return identiques;
+  const ref = signaturePicks(plans.equilibre);
+  for (const m of ['prudent', 'audacieux'] as const) {
+    if (signaturePicks(plans[m]) === ref) identiques.add(m);
+  }
+  return identiques;
+}
+
 /** Le plan d'un participant pour un niveau d'agressivité, avec les choix de l'écran gardés tels quels. */
 export function planDe(
   m: Monde,
