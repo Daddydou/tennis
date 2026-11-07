@@ -2,9 +2,12 @@ import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
 import { picksAPoserMoi } from '@/db/picksAPoser';
 import { boutonPrimaire } from './ui';
+import BoutonLireGameTracker from './BoutonLireGameTracker';
 import { CarteTournoi, commenceDansLaSemaine, fraicheur, ListeTournois } from './tournoisUi';
 
 export const dynamic = 'force-dynamic';
+// La lecture globale de Game Tracker enchaîne plusieurs tournois (Server Action de cette page).
+export const maxDuration = 60;
 
 /** Combien de tournois récents sous les cartes ; la liste complète est sur /tournois. */
 const NB_RECENTS = 5;
@@ -27,6 +30,8 @@ export default async function Home() {
           Importer un tableau
         </Link>
       </div>
+
+      {(enCours.length > 0 || bientot.length > 0) && <BoutonLireGameTracker />}
 
       {tournois.length === 0 ? (
         <p className="text-sm text-zinc-600">
