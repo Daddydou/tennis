@@ -17,6 +17,7 @@ import {
 } from '@/db/queries';
 import { genererSlots } from '@/lib/optimizer';
 import { estEnCours, estIndecis } from '@/lib/types';
+import { couleurPoints } from '@/app/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,7 +157,7 @@ export default async function ResultatsPage({
                   <td className="py-1.5 pr-3 text-zinc-500">
                     {p.half ? HALF_LABEL[p.half] : '—'}
                   </td>
-                  <td className="py-1.5 pr-3">
+                  <td className="py-1.5 pr-3 font-medium text-moi">
                     {nomDe.get(p.player_id) ?? p.player_id}
                     {enAttente && (
                       <span className="ml-1 text-xs text-zinc-500">
@@ -173,7 +174,7 @@ export default async function ResultatsPage({
                   <td className="py-1.5 pr-3 text-right tabular-nums">
                     {num(p.points_games)}
                   </td>
-                  <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
+                  <td className={`py-1.5 pr-3 text-right font-semibold tabular-nums ${enAttente ? '' : couleurPoints(p.points)}`}>
                     {num(p.points)}
                   </td>
                   <td className="py-1.5 pr-3 text-right tabular-nums text-zinc-500">
