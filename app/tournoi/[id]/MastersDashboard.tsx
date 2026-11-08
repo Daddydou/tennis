@@ -57,9 +57,12 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
       <ul className="grid gap-2 md:grid-cols-3">
         {liens.map((l) => (
           <li key={l.href} className={carte}>
-            <Link href={l.href} className={`${zoneTactile} block p-3`}>
-              <span className="block text-base font-semibold">{l.titre}</span>
-              <span className="block text-sm text-zinc-600">{l.texte}</span>
+            {/* zoneTactile est un flex : sans conteneur, le titre et le texte se plaçaient côte à côte. */}
+            <Link href={l.href} className={`${zoneTactile} w-full p-3`}>
+              <span className="block">
+                <span className="block text-base font-semibold">{l.titre}</span>
+                <span className="block text-sm text-zinc-600">{l.texte}</span>
+              </span>
             </Link>
           </li>
         ))}
