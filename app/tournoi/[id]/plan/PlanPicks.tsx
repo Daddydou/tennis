@@ -337,13 +337,10 @@ export default function PlanPicks({
   if (termine) {
     return <p className="text-sm text-zinc-500">Tournoi terminé : il n’y a plus de pick à poser.</p>;
   }
-  if (libres.length === 0) {
-    return (
-      <p className="text-sm text-zinc-500">
-        {stock.nom === 'Moi' ? 'Tous tes picks sont posés pour ce tournoi.' : `Tous les picks de ${stock.nom} sont posés.`}
-      </p>
-    );
-  }
+  // Tous les picks sont posés : on garde TOUT l'écran (plan, Elo, points espérés,
+  // grand tableau, « Retirer » pour changer de joueur avant le verrou). Avant, cet
+  // écran se réduisait à une phrase et on ne pouvait plus rien voir ni modifier.
+  const tousPoses = libres.length === 0;
 
   const nomRivaux = rivaux.map((r) => r.nom).join(' et ');
   const lignesAValider = lignesPlan.filter(
@@ -361,9 +358,13 @@ export default function PlanPicks({
           <h2 className="text-sm font-semibold">
             {stockId === null ? 'Mon plan' : `Plan de ${stock.nom}`}
             <span className="ml-2 text-xs font-normal text-zinc-500">
-              {nbChoix > 0
-                ? `${nbChoix} réservation${nbChoix > 1 ? 's' : ''}, le reste s’adapte`
-                : 'recalculé à chaque choix et à chaque résultat'}
+              {tousPoses
+                ? stock.nom === 'Moi'
+                  ? 'tous tes picks sont posés · « Retirer » pour changer de joueur avant le verrou'
+                  : `tous les picks de ${stock.nom} sont posés`
+                : nbChoix > 0
+                  ? `${nbChoix} réservation${nbChoix > 1 ? 's' : ''}, le reste s’adapte`
+                  : 'recalculé à chaque choix et à chaque résultat'}
             </span>
           </h2>
           <div className="flex items-center gap-2">
@@ -413,6 +414,9 @@ export default function PlanPicks({
                       <>
                         <span className="font-semibold">{joueur.nom}</span>
                         {joueur.rang ? <span className="ml-1 text-xs text-zinc-500">#{joueur.rang}</span> : null}
+                        <span className="ml-1.5 text-xs tabular-nums text-zinc-500" title="Elo effectif (pondéré surface)">
+                          Elo {Math.round(joueur.elo)}
+                        </span>
                         <span
                           className={`ml-2 rounded px-1.5 py-px text-xs font-medium ${
                             l.etat === 'valide'
@@ -530,6 +534,7 @@ export default function PlanPicks({
       {/* ── Les 4 modes, avec ce que chacun donne ──
           SOUS le plan : la décision d'abord, la méthode dessous (DESIGN.md).
           Changer de mode recalcule le plan affiché au-dessus. ── */}
+      {!tousPoses && (
       <section className="space-y-2" aria-label="Façon de jouer">
         <h2 className="text-sm font-semibold">Façon de jouer</h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -596,9 +601,10 @@ export default function PlanPicks({
           Le gros chiffre est le total de points attendu pour le tournoi (picks déjà joués compris).
         </p>
       </section>
+      )}
 
       {/* ── Contre Laki et Thomas ── */}
-      {mode === 'rivaux' && stockId === null && (
+      {!tousPoses && mode === 'rivaux' && stockId === null && (
         <PanneauRivaux
           d={d}
           moi={stock}

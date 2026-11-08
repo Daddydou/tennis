@@ -75,10 +75,11 @@ export const GROUPES: Groupe[] = [
           'Un joueur ne se pique qu’une fois par tournoi PAR participant : Moi, Laki et Thomas peuvent prendre le même joueur.',
           'Vérifier pour qui on pique : un bandeau orange s’affiche quand on modifie les picks de Laki ou de Thomas.',
           '`Retirer` un pick validé demande une confirmation (`Oui, retirer`).',
+          'Quand tous les picks sont posés, l’écran garde le plan (avec l’Elo et les points espérés de chaque pick) et le grand tableau : pour changer de joueur avant le verrou, `Retirer` le pick puis `Valider` un autre.',
           'En demi-finale et en finale : un seul pick.',
         ],
         doc: 'README.md (principe du jeu)',
-        maj: '2026-10-29',
+        maj: '2026-11-08',
       },
       {
         id: 'envoyer-game-tracker',
