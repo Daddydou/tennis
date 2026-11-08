@@ -9,7 +9,7 @@ import { pronosticFerme } from '@/lib/mastersPronostic';
 import { vueMasters, type VueMasters } from '@/lib/mastersVue';
 import ConseilsMastersCarte from './ConseilsMasters';
 import { CartePoule, PhaseFinale, type Noms } from './MastersPieces';
-import PanneauGTMasters from './PanneauGTMasters';
+import PlanMasters from './PlanMasters';
 import PronosticsMasters, { type ParticipantMasters } from './PronosticsMasters';
 
 /**
@@ -123,12 +123,16 @@ export async function MastersPicks({ id, tournoi }: { id: string; tournoi: Tourn
   return (
     <div className="space-y-4" data-testid="masters-picks">
       {conseils ? (
-        <ConseilsMastersCarte conseils={conseils} noms={noms} partie="picks" />
+        <PlanMasters
+          tournamentId={id}
+          strategies={conseils.strategies}
+          noms={Object.fromEntries(noms)}
+          avancement={conseils.avancement}
+          afficherGT={tournoi.status !== 'completed'}
+        />
       ) : (
         <p className={noteInfo}>Les propositions de picks apparaissent quand les deux poules de 4 sont connues.</p>
       )}
-
-      {conseils && tournoi.status !== 'completed' && <PanneauGTMasters tournamentId={id} picks={conseils.picks} noms={Object.fromEntries(noms)} />}
 
       <AnalyseMatchsMasters matchs={matchs} noms={noms} />
 

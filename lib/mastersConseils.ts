@@ -89,16 +89,24 @@ const JOURS = ['J1', 'J2', 'J3'] as const;
  * DIFFÉRENTS (affectation optimale) ; puis demie et finale à deux joueurs différents. Les picks déjà posés
  * (`existants`) sont conservés et bloquent leur joueur pour le reste de la phase.
  */
-export function proposerPicks(sim: ResultatSim, poules: { A: string[]; B: string[] }, existants: PickMasters[]): PickConseille[] {
-  const ep = (id: string, tour: TourSim) => sim.ep[id]?.[tour] ?? 0;
+export function proposerPicks(
+  sim: ResultatSim,
+  poules: { A: string[]; B: string[] },
+  existants: PickMasters[],
+  /** Valeur qu'on cherche à maximiser pour un pick (par défaut ses points espérés ; voir lib/mastersStrategies.ts). */
+  valeur?: (id: string, tour: TourSim) => number,
+): PickConseille[] {
+  const epVrai = (id: string, tour: TourSim) => sim.ep[id]?.[tour] ?? 0;
+  const v = valeur ?? epVrai;
+  const ep = epVrai;
   const posé = (round: string, half: Moitie | null) => existants.find((p) => p.round === round && (p.half ?? null) === half)?.playerId ?? null;
   const out: PickConseille[] = [];
   const alternatives = (ids: string[], tour: TourSim, choisi: string, interdits: Set<string>) =>
     ids
       .filter((id) => id !== choisi && !interdits.has(id))
-      .map((id) => ({ playerId: id, ep: ep(id, tour) }))
-      .sort((a, b) => b.ep - a.ep)
-      .slice(0, 2);
+      .sort((a, b) => v(b, tour) - v(a, tour))
+      .slice(0, 2)
+      .map((id) => ({ playerId: id, ep: ep(id, tour) }));
 
   // Poules : une affectation par poule.
   const parJour: Record<(typeof JOURS)[number], PickConseille[]> = { J1: [], J2: [], J3: [] };
@@ -118,7 +126,7 @@ export function proposerPicks(sim: ResultatSim, poules: { A: string[]; B: string
       }
       for (const id of dispos) {
         if (pris.includes(id)) continue;
-        rec(k + 1, [...pris, id], total + ep(id, libres[k]));
+        rec(k + 1, [...pris, id], total + v(id, libres[k]));
       }
     };
     rec(0, [], 0);
@@ -144,7 +152,7 @@ export function proposerPicks(sim: ResultatSim, poules: { A: string[]; B: string
     for (const s of sf0 ? [sf0] : tous) {
       for (const fi of f0 ? [f0] : tous) {
         if (s === fi) continue;
-        const total = ep(s, 'SF') + ep(fi, 'F');
+        const total = v(s, 'SF') + v(fi, 'F');
         if (!meilleur || total > meilleur.total + 1e-12) meilleur = { s, f: fi, total };
       }
     }

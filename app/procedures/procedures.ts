@@ -77,6 +77,7 @@ export const GROUPES: Groupe[] = [
           '`Retirer` un pick validé demande une confirmation (`Oui, retirer`).',
           'Quand tous les picks sont posés, l’écran garde le plan (avec l’Elo et les points espérés de chaque pick) et le grand tableau : pour changer de joueur avant le verrou, `Retirer` le pick puis `Valider` un autre.',
           'En demi-finale et en finale : un seul pick.',
+          'Masters (ATP Finals, WTA Finals) : l’onglet `Picks` propose aussi `Prudent`, `Équilibré`, `Audacieux` et `Contre Laki et Thomas` pour TOUT le tournoi (poules, demie, finale). Chaque carte donne les points attendus et la chance de finir devant Laki et Thomas ; le bilan détaille mauvais cas et bon cas. Les plans sont recalculés à chaque chargement, donc après chaque résultat importé. Le panneau `Game Tracker` envoie les picks de la stratégie choisie, tour ouvert seulement, après un clic.',
         ],
         doc: 'README.md (principe du jeu)',
         maj: '2026-11-08',
