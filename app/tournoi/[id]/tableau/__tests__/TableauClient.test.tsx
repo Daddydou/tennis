@@ -86,6 +86,36 @@ describe('TableauClient', () => {
     expect(within(liste).getAllByRole('listitem')).toHaveLength(1);
   });
 
+  it('un même joueur absent choisi par plusieurs participants : une seule ligne, les pastilles à côté', () => {
+    const tours = construireTableau({
+      rounds: ['SF', 'F'],
+      matchs,
+      picks: [
+        ...picks,
+        { participant_id: null, round: 'F', position: 0, player_id: 'z' },
+      ],
+      stocks,
+      nomJoueur: (id) => NOMS[id] ?? id,
+    });
+    render(<TableauClient tours={tours} stocks={stocks} />);
+    const liste = within(telephone()).getByRole('list', { name: 'Pronostics hors match' });
+    const lignes = within(liste).getAllByRole('listitem');
+    expect(lignes).toHaveLength(1);
+    expect(lignes[0].textContent).toContain('Zverev');
+    // Deux pastilles (Moi et Laki) sur cette seule ligne.
+    expect(lignes[0].querySelectorAll('[title*="Zverev"]')).toHaveLength(2);
+  });
+
+  it('réserve la même largeur de pastilles sur les deux lignes (scores alignés)', () => {
+    rendu();
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
+    const carte0 = within(telephone()).getAllByTestId('carte-match')[0];
+    const l1 = within(carte0).getByTestId('pastilles-1') as HTMLElement;
+    const l2 = within(carte0).getByTestId('pastilles-2') as HTMLElement;
+    expect(l1.style.width).toBe(l2.style.width);
+    expect(l1.style.width).not.toBe('');
+  });
+
   it('affiche le bilan justes/décidés de chacun en tête', () => {
     rendu();
     // Le bilan figure en tête ET dans le résumé du tour replié : on vérifie la tête (premier).

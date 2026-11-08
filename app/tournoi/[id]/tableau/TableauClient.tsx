@@ -99,7 +99,13 @@ function LigneJoueur({
           </span>
         ))}
       </div>
-      <span className="flex shrink-0 gap-0.5" data-testid={`pastilles-${cote}`}>
+      {/* Zone de largeur FIXE (toujours la place de tous les participants) : les scores des deux
+          lignes restent alignés, avec ou sans pastille. */}
+      <span
+        className="flex shrink-0 justify-end gap-0.5"
+        style={{ width: `${stocks.length * 1.25 + Math.max(0, stocks.length - 1) * 0.125}rem` }}
+        data-testid={`pastilles-${cote}`}
+      >
         {stocks.map((s) => {
           const p = m.picks[cleStock(s.id)];
           return p && p.cote === cote ? <Pastille key={cleStock(s.id)} stock={s} pick={p} /> : null;
@@ -122,12 +128,20 @@ const STYLE_PICK_JEU: Record<string, string> = {
  */
 function PicksDuJeu({ picks }: { picks: PickJeuVue[] }) {
   if (picks.length === 0) return null;
+  // Un même joueur pické par plusieurs participants : UNE ligne, les participants à côté.
+  const groupes = new Map<string, { joueurNom: string; verdict: Verdict; participants: string[] }>();
+  for (const p of picks) {
+    const g = groupes.get(p.joueurNom);
+    if (g) g.participants.push(p.participantNom);
+    else groupes.set(p.joueurNom, { joueurNom: p.joueurNom, verdict: p.verdict, participants: [p.participantNom] });
+  }
   return (
     <ul aria-label="Picks du jeu" className="mt-2 space-y-0.5 border-t border-zinc-200 pt-1.5 text-xs">
-      {picks.map((p) => (
-        <li key={p.cle} className={`truncate ${STYLE_PICK_JEU[p.verdict]}`}>
-          <span className="font-semibold">{p.participantNom}</span> : {p.joueurNom}{' '}
-          {p.verdict === 'juste' ? '✓' : p.verdict === 'rate' ? '✗' : <span className="text-zinc-500">· en attente</span>}
+      {[...groupes.values()].map((g) => (
+        <li key={g.joueurNom} className={`truncate ${STYLE_PICK_JEU[g.verdict]}`}>
+          <span className="font-semibold">{g.joueurNom}</span>{' '}
+          {g.verdict === 'juste' ? '✓' : g.verdict === 'rate' ? '✗' : <span className="text-zinc-500">· en attente</span>}
+          <span className="text-zinc-600"> · {g.participants.join(', ')}</span>
         </li>
       ))}
     </ul>
@@ -141,17 +155,26 @@ function PicksDuJeu({ picks }: { picks: PickJeuVue[] }) {
 function Absents({ m, stocks }: { m: MatchVue; stocks: StockEntree[] }) {
   const absents = stocks.filter((s) => m.picks[cleStock(s.id)]?.absent);
   if (absents.length === 0) return null;
+  // Un même joueur choisi par plusieurs participants : UNE ligne, les pastilles à côté.
+  const parJoueur = new Map<string, { pick: PickVue; stocks: StockEntree[] }>();
+  for (const s of absents) {
+    const p = m.picks[cleStock(s.id)]!;
+    const g = parJoueur.get(p.joueurNom);
+    if (g) g.stocks.push(s);
+    else parJoueur.set(p.joueurNom, { pick: p, stocks: [s] });
+  }
   return (
     <ul aria-label="Pronostics hors match" className="mt-1.5 space-y-0.5 text-xs text-red-700">
-      {absents.map((s) => {
-        const p = m.picks[cleStock(s.id)]!;
-        return (
-          <li key={cleStock(s.id)} className="flex items-center gap-1.5">
-            <Pastille stock={s} pick={p} rouge />
-            <span className="truncate">{p.joueurNom}</span>
-          </li>
-        );
-      })}
+      {[...parJoueur.entries()].map(([joueurNom, g]) => (
+        <li key={joueurNom} className="flex items-center gap-1.5">
+          <span className="flex gap-0.5">
+            {g.stocks.map((s) => (
+              <Pastille key={cleStock(s.id)} stock={s} pick={g.pick} rouge />
+            ))}
+          </span>
+          <span className="truncate">{joueurNom}</span>
+        </li>
+      ))}
     </ul>
   );
 }
