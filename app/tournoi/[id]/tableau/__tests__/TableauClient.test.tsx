@@ -48,6 +48,30 @@ function rendu() {
 // on lit celle du téléphone, qui contient les mêmes cartes.
 const telephone = () => document.querySelector('.md\\:hidden') as HTMLElement;
 
+describe('Jeu de picks et bracket sont deux jeux distincts', () => {
+  it('un ✓ du jeu de picks est titré « Jeu de picks » et ne compte pas dans « n/N juste » du bracket', () => {
+    // Bracket : Moi avait Zverev (absent du match) : raté. Jeu de picks : Moi a pické Alcaraz, qui gagne : ✓.
+    const tours = construireTableau({
+      rounds: ['SF', 'F'],
+      matchs,
+      picks: [{ participant_id: null, round: 'SF', position: 0, player_id: 'z' }],
+      picksJeu: [{ participant_id: null, round: 'SF', player_id: 'a' }],
+      stocks,
+      nomJoueur: (id) => NOMS[id] ?? id,
+    });
+    render(<TableauClient tours={tours} stocks={stocks} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
+    const carte = within(telephone()).getAllByTestId('carte-match')[0];
+    const jeu = within(carte).getByTestId('picks-du-jeu');
+    expect(jeu.textContent).toContain('Jeu de picks · pas le bracket');
+    expect(jeu.textContent).toContain('Alcaraz');
+    expect(jeu.textContent).toContain('✓');
+    expect(jeu.textContent).toContain('· Moi');
+    // Le bracket de ce match reste à 0 : le ✓ du jeu de picks n'y est pas compté.
+    expect(within(carte).getByTestId('bilan-match').textContent).toMatch(/^0\/2/);
+  });
+});
+
 describe('TableauClient', () => {
   it('ouvre sur le tour en cours (premier tour avec un match à jouer) et replie les précédents', () => {
     rendu();

@@ -136,15 +136,19 @@ function PicksDuJeu({ picks }: { picks: PickJeuVue[] }) {
     else groupes.set(p.joueurNom, { joueurNom: p.joueurNom, verdict: p.verdict, participants: [p.participantNom] });
   }
   return (
-    <ul aria-label="Picks du jeu" className="mt-2 space-y-0.5 border-t border-zinc-200 pt-1.5 text-xs">
-      {[...groupes.values()].map((g) => (
-        <li key={g.joueurNom} className={`truncate ${STYLE_PICK_JEU[g.verdict]}`}>
-          <span className="font-semibold">{g.joueurNom}</span>{' '}
-          {g.verdict === 'juste' ? '✓' : g.verdict === 'rate' ? '✗' : <span className="text-zinc-500">· en attente</span>}
-          <span className="text-zinc-600"> · {g.participants.join(', ')}</span>
-        </li>
-      ))}
-    </ul>
+    <div className="mt-2 border-t border-zinc-200 pt-1.5" data-testid="picks-du-jeu">
+      {/* Titre visible : ces ✓ / ✗ jugent le pick du JEU DE PICKS, pas le pronostic du bracket (pastilles). */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Jeu de picks · pas le bracket</p>
+      <ul aria-label="Picks du jeu" className="mt-0.5 space-y-0.5 text-xs">
+        {[...groupes.values()].map((g) => (
+          <li key={g.joueurNom} className={`truncate ${STYLE_PICK_JEU[g.verdict]}`}>
+            <span className="font-semibold">{g.joueurNom}</span>{' '}
+            {g.verdict === 'juste' ? '✓' : g.verdict === 'rate' ? '✗' : <span className="text-zinc-500">· en attente</span>}
+            <span className="text-zinc-600"> · {g.participants.join(', ')}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -331,6 +335,10 @@ export function TableauClient({ tours, stocks }: { tours: TourVue[]; stocks: Sto
         <p className="mt-1 text-xs text-zinc-500">
           Pastille sur un joueur = vainqueur pronostiqué dans le bracket (vert juste, rouge raté, gris en attente).
           Pastille rouge sous un match = son vainqueur n&apos;y est plus.
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          En bas d&apos;une carte, « Jeu de picks » = le joueur pické pour ce tour dans le jeu de picks : un autre jeu que le bracket, ses ✓ et ✗ ne
+          comptent pas dans « n/3 juste » ni dans les bilans ci-dessus.
         </p>
       </div>
 
