@@ -170,12 +170,14 @@ const GRILLE =
 /** Liens d'un tournoi : vraies zones tactiles de 44px, au bureau comme au téléphone. */
 function LiensTournoi({ id, masters }: { id: string; masters: boolean }) {
   const lien = `${zoneTactile} rounded-xl px-2 text-sm text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900`;
-  // Un Masters (WTA Finals) n'a qu'un écran : Tableau, Picks et Résultats
-  // renvoient tous à son Dashboard. Un seul lien, pas trois qui mènent au même endroit.
+  // Un Masters (WTA Finals) a ses propres onglets : Tableau, Picks et Pronostic
+  // (pas de Résultats : le Tableau les montre). Le nom du tournoi mène au Dashboard.
   if (masters) {
     return (
       <div className="-ml-2 flex flex-wrap">
-        <Link href={`/tournoi/${id}`} className={lien}>Dashboard</Link>
+        <Link href={`/tournoi/${id}/tableau`} className={lien}>Tableau</Link>
+        <Link href={`/tournoi/${id}/picks`} className={lien}>Picks</Link>
+        <Link href={`/tournoi/${id}/pronostic`} className={lien}>Pronostic</Link>
       </div>
     );
   }
@@ -221,7 +223,6 @@ export function CarteTournoi({
   debut: 'depuis le' | 'début le';
   aPoser?: PicksAPoserCarte | null;
 }) {
-  const masters = estMasters(t.rounds);
   return (
     <li className={`relative overflow-hidden pl-1 ${carte}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`} aria-hidden="true" />
@@ -248,15 +249,13 @@ export function CarteTournoi({
           </p>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
-          <Link href={`/tournoi/${t.id}`} className={lienBouton}>
-            Ouvrir
+          {/* Le nom du tournoi mène au Dashboard : pas de bouton « Ouvrir ». Un Masters a aussi ses onglets Tableau et Picks. */}
+          <Link href={`/tournoi/${t.id}/tableau`} className={lienBouton}>
+            Tableau
           </Link>
-          {/* Un Masters n'a pas d'écran Picks à part : ils se posent dans son Dashboard. */}
-          {!masters && (
-            <Link href={`/tournoi/${t.id}/picks`} className={lienBouton}>
-              Mes picks
-            </Link>
-          )}
+          <Link href={`/tournoi/${t.id}/picks`} className={lienBouton}>
+            Picks
+          </Link>
         </div>
       </div>
     </li>

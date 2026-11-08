@@ -63,12 +63,12 @@ describe('ListeTournois', () => {
     expect(within(ligne).queryByRole('link', { name: 'Dashboard' })).toBeNull();
   });
 
-  it("un Masters n'a qu'un lien Dashboard (ses autres écrans y renvoient)", () => {
+  it('un Masters a ses liens Tableau, Picks et Pronostic (pas de Résultats)', () => {
     render(<ListeTournois tournois={[MASTERS]} aujourdHui="2026-11-06" />);
     const ligne = screen.getByRole('listitem');
-    expect(within(ligne).getByRole('link', { name: 'Dashboard' }).getAttribute('href')).toBe('/tournoi/id-masters');
-    expect(within(ligne).queryByRole('link', { name: 'Tableau' })).toBeNull();
-    expect(within(ligne).queryByRole('link', { name: 'Picks' })).toBeNull();
+    expect(within(ligne).getByRole('link', { name: 'Tableau' }).getAttribute('href')).toBe('/tournoi/id-masters/tableau');
+    expect(within(ligne).getByRole('link', { name: 'Picks' }).getAttribute('href')).toBe('/tournoi/id-masters/picks');
+    expect(within(ligne).getByRole('link', { name: 'Pronostic' }).getAttribute('href')).toBe('/tournoi/id-masters/pronostic');
     expect(within(ligne).queryByRole('link', { name: 'Résultats' })).toBeNull();
   });
 });
@@ -121,6 +121,25 @@ describe('libellePicksAPoser : réservé', () => {
 
   it('tout posé : picks posés, même avec des réservations', () => {
     expect(libellePicksAPoser({ tour: 'SF', reste: 0, reserves: 1 })).toBe('Tour SF : picks posés ✓');
+  });
+});
+
+describe('CarteTournoi : liens', () => {
+  it('le nom mène au Dashboard, puis Tableau et Picks ; plus de bouton « Ouvrir »', () => {
+    render(<CarteTournoi t={tournoi({})} debut="depuis le" />);
+    expect(screen.getByRole('link', { name: 'Paris 2026' }).getAttribute('href')).toBe('/tournoi/id-1');
+    expect(screen.getByRole('link', { name: 'Tableau' }).getAttribute('href')).toBe('/tournoi/id-1/tableau');
+    expect(screen.getByRole('link', { name: 'Picks' }).getAttribute('href')).toBe('/tournoi/id-1/picks');
+    expect(screen.queryByRole('link', { name: 'Ouvrir' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Mes picks' })).toBeNull();
+  });
+
+  it('un Masters a les mêmes liens (ses onglets Tableau et Picks existent)', () => {
+    render(<CarteTournoi t={MASTERS} debut="début le" />);
+    expect(screen.getByRole('link', { name: 'WTA Finals 2026' }).getAttribute('href')).toBe('/tournoi/id-masters');
+    expect(screen.getByRole('link', { name: 'Tableau' }).getAttribute('href')).toBe('/tournoi/id-masters/tableau');
+    expect(screen.getByRole('link', { name: 'Picks' }).getAttribute('href')).toBe('/tournoi/id-masters/picks');
+    expect(screen.queryByRole('link', { name: 'Ouvrir' })).toBeNull();
   });
 });
 
