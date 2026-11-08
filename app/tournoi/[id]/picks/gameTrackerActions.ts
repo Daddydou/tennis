@@ -8,11 +8,14 @@ import { chargerContexteLocalGT, ecrireLienGT } from '@/db/gameTrackerPicks';
 import { alignerSurGameTracker } from '@/db/gameTrackerAlignement';
 import { recalculerPoints } from '@/db/points';
 import { reprendreResultatsThomas } from '@/db/resultatsSecoursThomas';
+import { BracketIncoherent, ecrireBracketExterne } from '@/db/bracketExterneEcriture';
+import { pontVersRoundPicks } from '@/db/bracketExternePont';
 import { bracketThomas } from '@/externe/thomasClient';
 import { decrireChangement } from '@/lib/gameTrackerAlignement';
 import { etatPicksGT, listerTournoisPicks, poserPicksGT } from '@/externe/gameTrackerPicksClient';
 import {
   candidatsLienGT,
+  decisionEnvoiAuto,
   ecartsApresEnvoi,
   type CandidatLienGT,
   preparerEnvoi,
@@ -53,6 +56,19 @@ export type AlignementLu =
   | { ok: true; rounds: string[]; changements: string[]; avertissements: string[] }
   | { ok: false; raisons: string[] };
 
+/** Ce que la lecture a rapatrié du bracket de Thomas (lecture seule chez lui). */
+export type ResumeThomasLecture =
+  | { ok: true; matchs: number; pronostics: number; points: { pseudo: string; points: number }[]; pont: string }
+  | { ok: false; message: string };
+
+/** Envoi de mes picks VALIDÉS à Game Tracker, déclenché par le bouton de l'écran Picks (jamais par la lecture globale). */
+export interface EnvoiAuto {
+  envoye: boolean;
+  message: string;
+  /** Écarts constatés après relecture du pick réel (redirection d'une joueuse en attente...). */
+  ecarts?: number;
+}
+
 export type LectureGameTracker =
   | { ok: true; lie: false; message: string; candidats: CandidatLienGT[] }
   | {
@@ -69,6 +85,10 @@ export type LectureGameTracker =
        * encore, repris à la lecture (« Fritz bat Fils (R16) »). Vide la plupart du temps.
        */
       resultatsRepris: string[];
+      /** Bracket de Thomas rapatrié (résultats, pronostics, points). */
+      thomas?: ResumeThomasLecture;
+      /** Présent seulement si la lecture a été demandée avec l'envoi des picks validés. */
+      envoiAuto?: EnvoiAuto | null;
     }
   | { ok: false; erreur: string };
 
@@ -124,25 +144,94 @@ async function preparer(tournamentId: string, etatDeja?: EtatGT, tourCible?: num
 }
 
 /**
- * Filet de sécurité : reprend chez Thomas (même identifiant de tournoi que Game Tracker) les
- * résultats que notre source n'a pas encore (lib/resultatsSecours.ts). Au mieux : une panne de
- * l'API de Thomas ne doit jamais empêcher de lire Game Tracker.
+ * Tout ce qu'on rapatrie de chez Thomas à la lecture (UNE seule lecture de son API, en lecture seule).
+ * Au mieux : une panne de l'API de Thomas ne doit jamais empêcher de lire Game Tracker.
+ *  1. filet de sécurité : les résultats que notre source n'a pas encore (lib/resultatsSecours.ts) ;
+ *  2. le bracket complet (résultats, pronostics, points de chacun : tn_bracket_externe_*) et le report des
+ *     pronostics dans le Simulateur (pont : emplacements vides seulement, écarts signalés, jamais de suppression).
+ * Avant, seule la partie 1 était faite à la lecture : la partie 2 restait une synchro manuelle, d'où des points
+ * Bracket figés à la dernière synchro.
  */
-async function reprendreDepuisThomas(tournamentId: string, thomasId: string): Promise<string[]> {
+async function rapatrierDepuisThomas(
+  tournamentId: string,
+  thomasId: string,
+): Promise<{ resultatsRepris: string[]; thomas: ResumeThomasLecture }> {
+  let bracket;
   try {
-    const res = await reprendreResultatsThomas(supabaseAdmin(), tournamentId, await bracketThomas(thomasId));
-    if ('erreurs' in res || res.repris.length === 0) return [];
-    // Les points des picks sont ENREGISTRÉS (tn_picks.points) : sans ce recalcul, un pick dont le
-    // match vient d'être complété garderait ses anciens points (Fritz : 0 au lieu de 16).
-    await recalculerPoints(tournamentId);
-    revalidatePath(`/tournoi/${tournamentId}`, 'layout');
-    return res.repris.map((x) => `${x.vainqueur}${x.perdant ? ` bat ${x.perdant}` : ''} (${x.round})`);
-  } catch {
-    return [];
+    bracket = await bracketThomas(thomasId);
+  } catch (e) {
+    return { resultatsRepris: [], thomas: { ok: false, message: `Bracket de Thomas indisponible : ${(e as Error).message}` } };
   }
+  const sb = supabaseAdmin();
+
+  let resultatsRepris: string[] = [];
+  try {
+    const res = await reprendreResultatsThomas(sb, tournamentId, bracket);
+    if (!('erreurs' in res) && res.repris.length > 0) {
+      // Les points des picks sont ENREGISTRÉS (tn_picks.points) : sans ce recalcul, un pick dont le
+      // match vient d'être complété garderait ses anciens points (Fritz : 0 au lieu de 16).
+      await recalculerPoints(tournamentId);
+      resultatsRepris = res.repris.map((x) => `${x.vainqueur}${x.perdant ? ` bat ${x.perdant}` : ''} (${x.round})`);
+    }
+  } catch {
+    /* au mieux */
+  }
+
+  let thomas: ResumeThomasLecture;
+  try {
+    const resume = await ecrireBracketExterne(sb, bracket);
+    const pont = await pontVersRoundPicks(sb, sb, bracket, { ecraser: false });
+    thomas = {
+      ok: true,
+      matchs: resume.matchs,
+      pronostics: resume.pronostics,
+      points: resume.participants.map((p) => ({ pseudo: p.pseudo, points: p.thomas ?? p.calcule })),
+      pont:
+        pont.statut === 'ok'
+          ? `${pont.inseres} pronostic(s) ajouté(s) au Simulateur${pont.ecarts.length > 0 ? `, ${pont.ecarts.length} écart(s) avec chez Thomas (non écrasés)` : ''}`
+          : pont.message,
+    };
+  } catch (e) {
+    thomas = {
+      ok: false,
+      message: e instanceof BracketIncoherent ? `Bracket de Thomas incohérent, rien écrit : ${e.message}` : `Synchro du bracket de Thomas impossible : ${(e as Error).message}`,
+    };
+  }
+  revalidatePath(`/tournoi/${tournamentId}`, 'layout');
+  return { resultatsRepris, thomas };
 }
 
-export async function lireGameTracker(tournamentId: string): Promise<LectureGameTracker> {
+/**
+ * Pose chez Game Tracker MES picks VALIDÉS du tour ouvert quand ils diffèrent des leurs. Appelé seulement
+ * depuis la lecture d'un tournoi (clic sur le bouton de l'écran Picks) :
+ *   - jamais une simple réservation (seulement un pick validé dans l'app) ;
+ *   - uniquement le tour ouvert, jamais verrouillé, jamais un côté vidé (preparerEnvoi renvoie tel quel
+ *     le côté que nous n'avons pas posé) ;
+ *   - au moindre doute (refus de preparerEnvoi) on n'envoie rien ;
+ *   - le pick RÉEL est relu après l'envoi et les écarts sont signalés.
+ */
+async function envoyerSiValides(
+  r: { gtId: string; etat: EtatGT; preparation: PreparationEnvoi },
+): Promise<{ envoi: EnvoiAuto; etatApres: EtatGT | null }> {
+  const prep = r.preparation;
+  const decision = decisionEnvoiAuto(prep);
+  if (!decision.envoyer) return { envoi: { envoye: false, message: decision.message }, etatApres: null };
+  if (!prep.ok) return { envoi: { envoye: false, message: 'Rien envoyé.' }, etatApres: null };
+  const rep = await poserPicksGT(r.gtId, prep.tour, prep.haut, prep.bas);
+  if (!rep.enregistre) {
+    return { envoi: { envoye: false, message: `Refusé par Game Tracker${rep.erreur ? ` : ${rep.erreur}` : ''}. Rien n’a changé.` }, etatApres: null };
+  }
+  const apres = await etatPicksGT(r.gtId);
+  const reel = tourPickable(apres, prep.tour)?.monPick ?? { haut: null, bas: null, etat: 'manquant' };
+  const unSeulPick = tourPickable(apres, prep.tour)?.picksAttendus === 1;
+  const ecarts = ecartsApresEnvoi({ haut: prep.haut, bas: prep.bas }, reel, unSeulPick);
+  return {
+    envoi: { envoye: true, message: `Picks validés envoyés à Game Tracker (tour ${prep.roundLocal}).`, ecarts: ecarts.length },
+    etatApres: apres,
+  };
+}
+
+export async function lireGameTracker(tournamentId: string, options: { envoyer?: boolean } = {}): Promise<LectureGameTracker> {
   if (!(await sessionValide())) return REFUS;
   if (!UUID.test(tournamentId)) return { ok: false, erreur: 'Tournoi invalide.' };
   try {
@@ -165,16 +254,28 @@ export async function lireGameTracker(tournamentId: string): Promise<LectureGame
     } catch (e) {
       alignement = { ok: false, raisons: [(e as Error).message] };
     }
-    const resultatsRepris = await reprendreDepuisThomas(tournamentId, r.gtId);
-    if (alignement.ok && alignement.changements.length > 0) {
+    const { resultatsRepris, thomas } = await rapatrierDepuisThomas(tournamentId, r.gtId);
+    let courant = r;
+    if ((alignement.ok && alignement.changements.length > 0) || resultatsRepris.length > 0) {
       revalidatePath(`/tournoi/${tournamentId}`, 'layout');
-      // Nos picks ont changé : ce qui serait envoyé est recalculé (même état lu, pas de 2e appel).
+      // Nos picks (ou nos résultats) ont changé : ce qui serait envoyé est recalculé (même état lu, pas de 2e appel).
       const r2 = await preparer(tournamentId, r.etat);
-      if (r2.lie) {
-        return { ok: true, lie: true, etat: r2.etat, preparation: r2.preparation, aVenir: r2.aVenir, pool: r2.pool, alignement, resultatsRepris };
+      if (r2.lie) courant = r2;
+    }
+    if (!courant.lie) return { ok: false, erreur: MESSAGE_SANS_LIEN };
+
+    // Envoi de mes picks validés, seulement si le bouton de l'écran Picks l'a demandé.
+    let envoiAuto: EnvoiAuto | null = null;
+    if (options.envoyer) {
+      const e = await envoyerSiValides({ gtId: courant.gtId, etat: courant.etat, preparation: courant.preparation });
+      envoiAuto = e.envoi;
+      if (e.etatApres) {
+        // Game Tracker a changé : on recalcule l'aperçu sur l'état RÉEL relu.
+        const r3 = await preparer(tournamentId, e.etatApres);
+        if (r3.lie) courant = r3;
       }
     }
-    return { ok: true, lie: true, etat: r.etat, preparation: r.preparation, aVenir: r.aVenir, pool: r.pool, alignement, resultatsRepris };
+    return { ok: true, lie: true, etat: courant.etat, preparation: courant.preparation, aVenir: courant.aVenir, pool: courant.pool, alignement, resultatsRepris, thomas, envoiAuto };
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }

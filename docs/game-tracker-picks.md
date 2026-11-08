@@ -21,7 +21,9 @@ Résumé de l'API « Picks tennis » de Game Tracker (l'app de Thomas) et de la 
 
 Pour un tour à venir, l'app envoie ce qui est posé chez nous pour ce tour : les picks validés, et, quand rien n'est validé pour ce tour, **tes réservations** de l'écran Picks (vue « Moi » seulement : la clé agit en ton nom). C'est ce qui permet de poser chez Game Tracker les QF pendant les huitièmes, alors que l'app ne propose encore que « Réserver ». La ligne d'aperçu indique « ta réservation ». Un pick validé pour le même tour l'emporte sur la réservation ; un joueur déjà validé à un autre tour n'est pas renvoyé. Ni pick ni réservation = rien n'est envoyé.
 
-Rien ne part tout seul. L'écran ne contacte Game Tracker que quand tu cliques sur « Lire ».
+**Lire = tout rapatrier, et envoyer mes picks validés (depuis le 2026-11-08).** Le bouton « Lire Game Tracker » d'un tournoi lit Game Tracker, aligne les tours verrouillés, synchronise le bracket de Thomas (résultats, pronostics Moi/Laki/Thomas, points : mêmes règles que `/import/thomas`) puis envoie mes picks VALIDÉS du tour ouvert s'ils diffèrent de ceux de Game Tracker. Garde-fous (fonction pure `decisionEnvoiAuto`) : une simple réservation ne part jamais avec « Lire » ; rien si le tour est verrouillé, si le joueur est hors pool ou en cas de doute ; un côté n'est jamais vidé ; après l'envoi on relit le pick RÉEL et on signale les écarts. Le bouton « Lire Game Tracker » de l'accueil, lui, ne fait que lire.
+
+Rien ne part tout seul à l'ouverture de la page ni par cron : il faut un clic sur « Lire » (ou « Envoyer ») d'un tournoi.
 
 **Repères sur la grille de picks.** Après « Lire Game Tracker », chaque joueur du tour ouvert chez eux est marqué : **hors pool GT** (pas dans ton pool : l'envoi serait refusé), **déjà pické GT** (utilisé à un autre tour chez eux : refusé aussi), **en attente** (son match précédent n'est pas joué : le pick pourra être redirigé). Ces repères sont indicatifs, ils ne bloquent pas la sélection ; ils ne s'affichent que pour le tour que Game Tracker a ouvert, et jamais sur la vue d'un autre participant. Le recoupement par le nom se fait à l'envoi.
 

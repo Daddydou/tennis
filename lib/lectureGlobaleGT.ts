@@ -1,6 +1,7 @@
 /**
  * « Lire Game Tracker » depuis l'accueil : un seul bouton qui lit TOUS les
- * tournois en cours ou de la semaine (lecture seule, jamais d'envoi).
+ * tournois en cours ou de la semaine et rapatrie le bracket de Thomas
+ * (jamais d'envoi de picks : l'envoi est le bouton de l'écran Picks d'un tournoi).
  *
  * Module PUR : transforme le résultat de `lireGameTracker` (un tournoi) en une
  * ligne lisible pour l'accueil. L'enchaînement des tournois et la garde de
@@ -16,6 +17,8 @@ export type LectureResumable =
       lie: true;
       alignement: { ok: true; changements: string[]; avertissements: string[] } | { ok: false; raisons: string[] };
       resultatsRepris: string[];
+      /** Bracket de Thomas rapatré à la lecture (absent si la lecture n'en parle pas). */
+      thomas?: { ok: true } | { ok: false; message: string };
     };
 
 /** lu = lecture faite ; non-relie = pas de lien Game Tracker ; erreur = échec ; masters = ignoré ici. */
@@ -58,6 +61,11 @@ export function resumerLecture(r: LectureResumable): Pick<LigneLecture, 'statut'
   }
   if (r.resultatsRepris.length > 0) {
     morceaux.push(`${pluriel(r.resultatsRepris.length, 'résultat')} repris de Thomas`);
+  }
+  if (r.thomas?.ok === true) morceaux.push('bracket de Thomas synchronisé');
+  if (r.thomas?.ok === false) {
+    morceaux.push('bracket de Thomas non synchronisé');
+    attention = true;
   }
   return { statut: 'lu', detail: morceaux.length > 0 ? morceaux.join(' · ') : 'Rien de nouveau.', attention };
 }
