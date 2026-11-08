@@ -64,7 +64,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Choisir ses joueurs pour le tour ouvert.',
         quand: 'À chaque tour, avant le premier match du tour.',
         etapes: [
-          'Ouvrir le tournoi puis `Picks`, vue `Moi` (l’ancien onglet `Plan` est devenu cet écran).',
+          'Ouvrir le tournoi puis `Picks`, vue `Moi` (l’ancien onglet `Plan` est devenu cet écran). Raccourci : sur la carte du tournoi de l’accueil, le bouton `Picks` (ou `Tableau`) ; le nom du tournoi ouvre le Dashboard.',
           'Choisir une façon de jouer (`Prudent`, `Équilibré`, `Audacieux` ou `Contre Laki et Thomas`) : le plan propose un joueur pour chaque pick restant du tournoi.',
           'Garder la proposition ou en choisir une autre (`plan B`, ou une case du grand tableau) : le reste du plan s’adapte.',
           'Le grand tableau ne liste que les joueurs encore en course pour le tour à picker (ex. les QF quand le R16 est verrouillé), avec leur Elo du jour. Adversaire connu : écart d’Elo, % de victoire et points du match. Adversaire pas encore connu : les deux adversaires possibles (Elo seul, sans écart ni %) et les points du match pour chacun. Les points des tours suivants et « Déjà pris par » sont aussi affichés ; tris, filtre par moitié et `Masquer ceux déjà pickés` restent disponibles.',

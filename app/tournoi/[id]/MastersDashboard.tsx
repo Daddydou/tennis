@@ -1,7 +1,5 @@
-import Link from 'next/link';
-import { carte, noteInfo, zoneTactile } from '@/app/ui';
-import { getMatchRows, getParticipants, getTousLesPicks, type TournamentRow } from '@/db/queries';
-import { pronosticFerme } from '@/lib/mastersPronostic';
+import { carte } from '@/app/ui';
+import { getParticipants, getTousLesPicks, type TournamentRow } from '@/db/queries';
 import BoutonResultatsMasters from './BoutonResultatsMasters';
 
 /**
@@ -11,7 +9,7 @@ import BoutonResultatsMasters from './BoutonResultatsMasters';
  * Les onglets Bracket et Fantasy n'ont pas de sens pour ce format (pas de tableau à élimination directe).
  */
 export default async function MastersDashboard({ id, tournoi }: { id: string; tournoi: TournamentRow }) {
-  const [rows, participants, picks] = await Promise.all([getMatchRows(id), getParticipants(), getTousLesPicks(id)]);
+  const [participants, picks] = await Promise.all([getParticipants(), getTousLesPicks(id)]);
 
   const points = new Map<string | null, number>();
   for (const p of picks) points.set(p.participant_id ?? null, (points.get(p.participant_id ?? null) ?? 0) + (p.points ?? 0));
@@ -19,18 +17,7 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
     .map((s) => ({ ...s, pts: points.get(s.id) ?? 0 }))
     .sort((a, b) => b.pts - a.pts);
 
-  const ferme = pronosticFerme(rows.map((r) => ({ status: r.status, scheduledAt: r.scheduled_at })), new Date());
   const termine = tournoi.status === 'completed';
-
-  const liens = [
-    { href: `/tournoi/${id}/tableau`, titre: 'Tableau', texte: 'Poules, classements, demi-finales, finale et résultats.' },
-    { href: `/tournoi/${id}/picks`, titre: 'Picks', texte: 'Picks proposés par journée, joueuses, adversaires, Elo, qui a pické qui, envoi à Game Tracker.' },
-    {
-      href: `/tournoi/${id}/pronostic`,
-      titre: 'Pronostic',
-      texte: ferme ? 'Fermé : le premier match est lancé. Voir les pronostics et les points.' : 'Classement des poules, demi-finales, championne : à saisir avant le premier match.',
-    },
-  ];
 
   return (
     <div className="space-y-4" data-testid="masters-dashboard">
@@ -53,24 +40,6 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
           </div>
         ))}
       </section>
-
-      <ul className="grid gap-2 md:grid-cols-3">
-        {liens.map((l) => (
-          <li key={l.href} className={carte}>
-            {/* zoneTactile est un flex : sans conteneur, le titre et le texte se plaçaient côte à côte. */}
-            <Link href={l.href} className={`${zoneTactile} w-full p-3`}>
-              <span className="block">
-                <span className="block text-base font-semibold">{l.titre}</span>
-                <span className="block text-sm text-zinc-600">{l.texte}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      <p className={noteInfo}>
-        Le tableau à élimination directe, le plan et le Fantasy ne s&apos;appliquent pas à ce format.
-      </p>
     </div>
   );
 }
