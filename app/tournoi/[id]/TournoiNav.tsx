@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { filtreSecondaire } from '@/app/ui';
-import { ONGLETS, ongletDe, vueDe } from './onglets';
+import { ONGLETS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
 
 /**
  * Titre et onglets du tournoi, rendus UNE fois par le layout du tournoi :
@@ -26,7 +26,7 @@ export default function TournoiNav({ id, nom, masters = false }: { id: string; n
           défile quand même horizontalement plutôt que de passer à la ligne, ce
           qui garde l'onglet actif et ses voisins à portée de pouce. */}
       <nav aria-label="Onglets du tournoi" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 text-sm">
-        {ONGLETS.filter((o) => !masters || o.key === 'dashboard').map((o) => (
+        {(masters ? ONGLETS_MASTERS : ONGLETS).map((o) => (
           <Link
             key={o.key}
             href={o.href(id)}

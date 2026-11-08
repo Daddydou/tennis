@@ -1,5 +1,6 @@
-import { redirigerSiMasters } from '../garde';
 import { notFound } from 'next/navigation';
+import { estMasters } from '@/lib/masters';
+import { MastersTableau } from '../MastersEcrans';
 import {
   getTournament,
   getMatchRows,
@@ -20,11 +21,13 @@ export default async function TableauPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await redirigerSiMasters(id);
+  // Un tournoi au format Masters (poules) a son propre Tableau : poules, classements, demies, finale.
+  const tournoiMasters = await getTournament(id);
+  if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersTableau id={id} />;
 
   // Lectures indépendantes : en parallèle (jamais en cascade, cf. CLAUDE.md).
   const [tournoi, matchRows, participants, picks, picksJeu] = await Promise.all([
-    getTournament(id),
+    Promise.resolve(tournoiMasters),
     getMatchRows(id),
     getParticipants(),
     getBracketRoundPicks(id),

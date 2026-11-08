@@ -1,5 +1,6 @@
-import { redirigerSiMasters } from '../garde';
 import Link from 'next/link';
+import { estMasters } from '@/lib/masters';
+import { MastersPicks } from '../MastersEcrans';
 import { notFound } from 'next/navigation';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
 import ProvenanceElo from './ProvenanceElo';
@@ -15,6 +16,7 @@ import {
   avancementPicks,
   getParticipants,
   getReservationsPlan,
+  getTournament,
   getTousLesPicks,
   loadEngineData,
   surfacePourElo,
@@ -44,7 +46,10 @@ export default async function PicksPage({
   searchParams: Promise<{ participant?: string }>;
 }) {
   const { id } = await params;
-  await redirigerSiMasters(id);
+  // Un tournoi au format Masters (poules) a son propre écran Picks : picks proposés par journée,
+  // joueuses, adversaires, Elo, qui a pické qui, envoi à Game Tracker.
+  const tournoiMasters = await getTournament(id);
+  if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersPicks id={id} tournoi={tournoiMasters} />;
   const { participant: participantParam } = await searchParams;
 
   // Toutes les lectures partent de front : en cascade, chaque aller-retour

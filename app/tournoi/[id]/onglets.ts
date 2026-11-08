@@ -7,7 +7,7 @@
  * (les chances de chacun, puis l'arbre pronostiqué à l'Elo). Les URLs de
  * chaque écran sont inchangées : seul leur regroupement change.
  */
-export type Onglet = 'dashboard' | 'tableau' | 'picks' | 'bracket' | 'fantasy';
+export type Onglet = 'dashboard' | 'tableau' | 'picks' | 'bracket' | 'fantasy' | 'pronostic';
 
 export type Vue = { segment: string; label: string };
 
@@ -47,6 +47,17 @@ export const ONGLETS: DefOnglet[] = [
   { key: 'fantasy', label: 'Fantasy', href: (id) => `/tournoi/${id}/fantasy`, vues: [] },
 ];
 
+/**
+ * Onglets d'un tournoi au format Masters (poules + phase finale, pas de tableau à élimination directe) :
+ * Dashboard, Tableau (poules, demies, finale), Picks et Pronostic. Pas de sous-vues, ni de Bracket ni de Fantasy.
+ */
+export const ONGLETS_MASTERS: DefOnglet[] = [
+  { key: 'dashboard', label: 'Dashboard', href: (id) => `/tournoi/${id}`, vues: [] },
+  { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}/tableau`, vues: [] },
+  { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks`, vues: [] },
+  { key: 'pronostic', label: 'Pronostic', href: (id) => `/tournoi/${id}/pronostic`, vues: [] },
+];
+
 /** Segment d'URL (le 3e : /tournoi/<id>/<segment>) -> onglet actif. */
 const PAR_SEGMENT: Record<string, Onglet> = {
   tableau: 'tableau',
@@ -55,6 +66,7 @@ const PAR_SEGMENT: Record<string, Onglet> = {
   simulateur: 'bracket',
   predictions: 'bracket',
   fantasy: 'fantasy',
+  pronostic: 'pronostic',
 };
 
 export function ongletDe(segment: string): Onglet {

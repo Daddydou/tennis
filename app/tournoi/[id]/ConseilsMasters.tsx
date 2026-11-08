@@ -51,7 +51,16 @@ function CellulePick({ p, noms }: { p: PickConseille | undefined; noms: Noms }) 
   );
 }
 
-export default function ConseilsMastersCarte({ conseils, noms }: { conseils: ConseilsMasters; noms: Noms }) {
+export default function ConseilsMastersCarte({
+  conseils,
+  noms,
+  partie = 'tout',
+}: {
+  conseils: ConseilsMasters;
+  noms: Noms;
+  /** Quelle(s) carte(s) montrer : le pronostic proposé, les picks proposés, ou les deux. */
+  partie?: 'tout' | 'pronostic' | 'picks';
+}) {
   const { pronostic, picks, sim } = conseils;
   const p = pronostic.pronostic;
   const e = pronostic.esperance;
@@ -60,6 +69,7 @@ export default function ConseilsMastersCarte({ conseils, noms }: { conseils: Con
 
   return (
     <div className="space-y-4" data-testid="conseils-masters">
+      {partie !== 'picks' && (
       <section className={`${carte} space-y-3 p-4`}>
         <header className="flex flex-wrap items-baseline justify-between gap-x-3">
           <h2 className="text-base font-semibold">Pronostic proposé</h2>
@@ -98,7 +108,9 @@ export default function ConseilsMastersCarte({ conseils, noms }: { conseils: Con
           </>
         )}
       </section>
+      )}
 
+      {partie !== 'pronostic' && (
       <section className={`${carte} space-y-3 p-4`}>
         <header className="flex flex-wrap items-baseline justify-between gap-x-3">
           <h2 className="text-base font-semibold">Picks proposés</h2>
@@ -135,6 +147,7 @@ export default function ConseilsMastersCarte({ conseils, noms }: { conseils: Con
           rencontrent, les perdantes aussi).
         </p>
       </section>
+      )}
 
       {conseils.eloIncertain.length > 0 && (
         <p className={noteInfo}>Elo non trouvé pour {conseils.eloIncertain.map(nom).join(', ')} : valeur par défaut du circuit, propositions moins fiables.</p>

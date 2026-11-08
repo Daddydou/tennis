@@ -23,7 +23,7 @@ npm run import:masters -- --tournoi=<id Game Tracker> --debut=AAAA-MM-JJ --ecrir
 
 - Lit les poules et la journée 1 dans l'API de picks de Game Tracker. Les journées 2 et 3 dépendent des résultats de la journée 1 (les vainqueurs se rencontrent, les perdants aussi, puis les duels restants) : Game Tracker ne les donne qu'après. **Relancer la commande après la journée 1** pour les ajouter ; elle ne duplique rien et ne touche jamais à un résultat déjà enregistré.
 - `--debut` (date du premier match) ne sert qu'à la création.
-- Les écrans des tournois à tableau (Tableau, Picks, Bracket, Fantasy, Prédictions, Résultats) renvoient vers le Dashboard pour un Masters, qui montre les poules, les classements, les demies et la finale.
+- Les écrans des tournois à tableau (Tableau, Picks, Bracket, Fantasy, Prédictions, Résultats) n'ont pas de sens pour un Masters (Bracket, Fantasy, Prédictions, Résultats renvoient vers le Dashboard). Un Masters a quatre onglets : **Dashboard** (synthèse : classement des picks, résultats, accès aux onglets), **Tableau** (poules, classements, demies, finale), **Picks** (picks proposés par journée, joueuses avec adversaire, Elo, chance de gagner et qui les a pickées, panneau Game Tracker) et **Pronostic** (classement des poules, demies, championne). Code : `MastersEcrans.tsx` (un composant par onglet), `MastersPieces.tsx`, `lib/mastersAnalyse.ts`, `onglets.ts` (`ONGLETS_MASTERS`).
 
 ## Résultats des matchs (API tennis)
 
