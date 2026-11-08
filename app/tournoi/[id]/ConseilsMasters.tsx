@@ -51,6 +51,36 @@ function CellulePick({ p, noms }: { p: PickConseille | undefined; noms: Noms }) 
   );
 }
 
+/** Les picks d'un plan, tour par tour : poules A et B pour les journées, puis demie et finale. */
+export function GrillePicks({ picks, noms }: { picks: PickConseille[]; noms: Noms }) {
+  const pick = (round: string, half: 'top' | 'bottom' | null) => picks.find((x) => x.round === round && x.half === half);
+  return (
+    <div className="space-y-3" data-testid="grille-picks">
+      {(['J1', 'J2', 'J3'] as const).map((j) => (
+        <div key={j} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr_1fr]">
+          <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(j)}</h3>
+          <div className="text-sm">
+            <div className="text-xs text-zinc-500">Poule A</div>
+            <CellulePick p={pick(j, 'top')} noms={noms} />
+          </div>
+          <div className="text-sm">
+            <div className="text-xs text-zinc-500">Poule B</div>
+            <CellulePick p={pick(j, 'bottom')} noms={noms} />
+          </div>
+        </div>
+      ))}
+      {(['SF', 'F'] as const).map((r) => (
+        <div key={r} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr]">
+          <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(r)}</h3>
+          <div className="text-sm">
+            <CellulePick p={pick(r, null)} noms={noms} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ConseilsMastersCarte({
   conseils,
   noms,
@@ -65,7 +95,6 @@ export default function ConseilsMastersCarte({
   const p = pronostic.pronostic;
   const e = pronostic.esperance;
   const nom = (id: string) => noms.get(id) ?? id;
-  const pick = (round: string, half: 'top' | 'bottom' | null) => picks.find((x) => x.round === round && x.half === half);
 
   return (
     <div className="space-y-4" data-testid="conseils-masters">
@@ -116,29 +145,7 @@ export default function ConseilsMastersCarte({
           <h2 className="text-base font-semibold">Picks proposés</h2>
           <span className="text-xs text-zinc-600">points espérés par pick</span>
         </header>
-        <div className="space-y-3">
-          {(['J1', 'J2', 'J3'] as const).map((j) => (
-            <div key={j} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr_1fr]">
-              <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(j)}</h3>
-              <div className="text-sm">
-                <div className="text-xs text-zinc-500">Poule A</div>
-                <CellulePick p={pick(j, 'top')} noms={noms} />
-              </div>
-              <div className="text-sm">
-                <div className="text-xs text-zinc-500">Poule B</div>
-                <CellulePick p={pick(j, 'bottom')} noms={noms} />
-              </div>
-            </div>
-          ))}
-          {(['SF', 'F'] as const).map((r) => (
-            <div key={r} className="grid gap-x-4 gap-y-2 sm:grid-cols-[7rem_1fr]">
-              <h3 className="text-xs font-medium text-soustitre sm:pt-0.5">{libelleTourMasters(r)}</h3>
-              <div className="text-sm">
-                <CellulePick p={pick(r, null)} noms={noms} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <GrillePicks picks={picks} noms={noms} />
         <p className="text-xs text-zinc-600">
           Un joueur ne se pique qu&apos;une fois par phase : trois joueuses différentes par poule sur les trois journées, puis, en phase finale, deux
           différentes (demie et finale). Le plan optimise les trois journées ENSEMBLE : une joueuse forte n&apos;est utilisée qu&apos;une fois, là où

@@ -165,6 +165,22 @@ export interface ResultatSim {
   joue: Record<string, Record<TourSim, number>>;
   /** Espérance de points d'un pick sur ce joueur à ce tour (0 s'il ne joue pas). */
   ep: Record<string, Record<TourSim, number>>;
+  /** Écart-type des points d'un pick sur ce joueur à ce tour (0 points compté quand il ne joue pas). */
+  ecart: Record<string, Record<TourSim, number>>;
+  /** Joueurs dans l'ordre de `points` (poule A puis poule B). */
+  ordre: string[];
+  /**
+   * Points de chaque joueur à chaque tour dans chaque tournoi simulé : l'index de (tournoi n, joueur j,
+   * tour t) est `(n * ordre.length + j) * TOURS_SIM.length + t`. Sert à comparer des plans de picks sur les
+   * MÊMES tournois tirés (risque, chance de finir devant les rivaux) : voir lib/mastersStrategies.ts.
+   */
+  points: Float32Array;
+}
+
+/** Points d'un pick (joueur, tour) dans le tournoi simulé n. */
+export function pointsSim(sim: ResultatSim, n: number, joueur: string, tour: TourSim): number {
+  const j = sim.ordre.indexOf(joueur);
+  return j < 0 ? 0 : sim.points[(n * sim.ordre.length + j) * TOURS_SIM.length + TOURS_SIM.indexOf(tour)];
 }
 
 const DECIDES = ['completed', 'walkover', 'retired'];
@@ -210,6 +226,11 @@ export function simulerMasters(e: EntreeSim): ResultatSim {
   const champN = vide();
   const joueN = Object.fromEntries(tous.map((id) => [id, { J1: 0, J2: 0, J3: 0, SF: 0, F: 0 }])) as Record<string, Record<TourSim, number>>;
   const epN = Object.fromEntries(tous.map((id) => [id, { J1: 0, J2: 0, J3: 0, SF: 0, F: 0 }])) as Record<string, Record<TourSim, number>>;
+  const epCarreN = Object.fromEntries(tous.map((id) => [id, { J1: 0, J2: 0, J3: 0, SF: 0, F: 0 }])) as Record<string, Record<TourSim, number>>;
+  const nbTours = TOURS_SIM.length;
+  const indice = new Map(tous.map((id, i) => [id, i]));
+  const points = new Float32Array(N * tous.length * nbTours);
+  let courant = 0;
 
   // Duels réels de chaque poule et de chaque journée, tels qu'ils sont dans la base.
   const reelsPoule = (poule: 'A' | 'B', round: 'J1' | 'J2' | 'J3'): DuelEtat[] =>
@@ -231,8 +252,13 @@ export function simulerMasters(e: EntreeSim): ResultatSim {
     const perdant = r.gagne1 ? d.p2 : d.p1;
     joueN[d.p1][tour]++;
     joueN[d.p2][tour]++;
-    epN[d.p1][tour] += pointsDuMatch(r.sets, true, r.gagne1);
-    epN[d.p2][tour] += pointsDuMatch(r.sets, false, !r.gagne1);
+    const t = TOURS_SIM.indexOf(tour);
+    for (const [id, estJoueur1] of [[d.p1, true], [d.p2, false]] as [string, boolean][]) {
+      const p = pointsDuMatch(r.sets, estJoueur1, estJoueur1 ? r.gagne1 : !r.gagne1);
+      epN[id][tour] += p;
+      epCarreN[id][tour] += p * p;
+      points[(courant * tous.length + (indice.get(id) as number)) * nbTours + t] = p;
+    }
     return { gagnant, perdant, sets: r.sets };
   };
 
@@ -263,6 +289,7 @@ export function simulerMasters(e: EntreeSim): ResultatSim {
   };
 
   for (let n = 0; n < N; n++) {
+    courant = n;
     const cA = jouerPoule('A');
     const cB = jouerPoule('B');
     for (const c of [cA, cB]) {
@@ -297,5 +324,18 @@ export function simulerMasters(e: EntreeSim): ResultatSim {
     champion: sur(champN),
     joue: parTour(joueN),
     ep: parTour(epN),
+    ecart: Object.fromEntries(
+      tous.map((id) => [
+        id,
+        Object.fromEntries(
+          TOURS_SIM.map((r) => {
+            const m = epN[id][r] / N;
+            return [r, Math.sqrt(Math.max(0, epCarreN[id][r] / N - m * m))];
+          }),
+        ),
+      ]),
+    ) as Record<string, Record<TourSim, number>>,
+    ordre: tous,
+    points,
   };
 }
