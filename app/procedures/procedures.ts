@@ -94,7 +94,7 @@ export const GROUPES: Groupe[] = [
           'Pastille rouge sous un match : le vainqueur de son bracket n’est plus dans ce match (éliminé avant). Le nom du joueur est rappelé à côté.',
         ],
         attention: [
-          'Les pronostics viennent du bracket (`Bracket`, jeu bracket). Les « Picks du jeu » (un joueur par tour) restent affichés en bas de chaque match, à part.',
+          'Les pronostics viennent du bracket (`Bracket`, jeu bracket). En bas de chaque match, le bloc « Jeu de picks · pas le bracket » montre le joueur pické pour ce tour dans le jeu de picks (un joueur par tour) : c’est un AUTRE jeu. On peut donc avoir pické Van Assche en quarts (✓ dans ce bloc) sans l’avoir mis vainqueur dans son bracket (pastille rouge) ; ces ✓ et ✗ ne comptent pas dans `n/3 juste` ni dans les bilans.',
           'Un match gagné par abandon ou forfait compte comme joué : le gagnant avance au tour suivant.',
         ],
         maj: '2026-11-08',
