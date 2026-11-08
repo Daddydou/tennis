@@ -91,6 +91,11 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
 
       {lecture?.ok && (
         <div className="space-y-3">
+          {lecture.remplacements.length > 0 && (
+            <p role="status" className={noteInfo}>
+              Remplaçante prise en compte : {lecture.remplacements.join(' ; ')}. Le tableau est à jour.
+            </p>
+          )}
           {lecture.alignement.inconnus.length > 0 && <p className={noteInfo}>Participants inconnus de l&apos;app, ignorés : {lecture.alignement.inconnus.join(', ')}.</p>}
           {lecture.tours.map((t) => {
             const slots = picks.filter((p) => p.round === t.round);

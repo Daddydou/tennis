@@ -53,9 +53,10 @@ export const GROUPES: Groupe[] = [
         attention: [
           'Quota de l’API : 50 requêtes par jour, partagées avec l’Elo maison. Éviter de multiplier `Mettre à jour maintenant`.',
           'Un tournoi déjà importé avec le bookmarklet n’est pas réimporté depuis l’API (volontaire).',
+          'Masters (Finals) : `Importer le tableau` et `Mettre à jour maintenant` mettent à jour les résultats du Masters (poules, demies, finale). Si une joueuse a été remplacée avant le tournoi, la remplaçante est détectée et mise à sa place automatiquement (message « Remplaçante prise en compte »). En cas de doute, rien n’est écrit et un message explique pourquoi.',
         ],
         doc: 'docs/import-auto.md',
-        maj: '2026-11-06',
+        maj: '2026-11-08',
       },
       {
         id: 'poser-picks',
@@ -97,13 +98,14 @@ export const GROUPES: Groupe[] = [
           'Rien ne part tout seul : seul le bouton `Envoyer sur Game Tracker` d’un tournoi envoie (le bouton de l’accueil ne fait que lire). Les réservations de l’écran Picks (moi uniquement) sont envoyées comme des picks pour les tours où rien n’est encore validé.',
           'Rien à piquer pour le tour ouvert ? Notre tableau n’a sans doute pas encore les résultats du tour précédent : mettre le tableau à jour (`Importer`), puis relire.',
           'Game Tracker peut rediriger un pick si un joueur « en attente » perd : relire juste avant le verrou.',
+          'Masters (Finals) : si une joueuse est remplacée avant le tournoi, `Lire Game Tracker` repère la remplaçante (un nom inconnu pour une joueuse disparue), la met à sa place dans le tableau et l’écrit (message « Remplaçante prise en compte »). En cas de doute (plusieurs candidates, remplaçante absente de notre base, joueuse qui a déjà joué), rien n’est modifié et un message l’explique.',
           'Le POST remplace le pick du tour en entier (un côté non posé reste tel que chez eux ; l’app ne vide jamais un côté).',
           'Un tour se verrouille au début de son premier match : on peut le modifier à volonté jusque-là, y compris pour un tour à venir.',
           'Message « Tu n’es pas inscrit à ce tournoi » : il faut d’abord être inscrit chez Game Tracker.',
           'La clé est `GAMETRACKER_PICKS_KEY` (Vercel, type sensitive). Elle est donnée par l’admin de Game Tracker, jamais collée dans une conversation.',
         ],
         doc: 'docs/game-tracker-picks.md',
-        maj: '2026-11-07',
+        maj: '2026-11-08',
       },
       {
         id: 'fantasy',

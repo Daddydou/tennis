@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { MatchApi, TableauApi } from '@/lib/extract/matchstat';
 import { trouverJoueur } from '@/lib/mastersImport';
+import { nomsDeApi } from '@/lib/mastersRemplacement';
+import { appliquerRemplacementsMasters } from './mastersRemplacement';
 import { planResultatsMasters, type ObservationApi, type PlanResultats } from '@/lib/mastersResultats';
 import type { LigneMatchMasters } from '@/lib/mastersVue';
 
@@ -20,6 +22,8 @@ export interface ResumeResultatsMasters {
   placees: number;
   avertissements: string[];
   erreurs: string[];
+  /** Remplaçantes détectées (« Kostyuk remplace Rybakina ») ; appliquées à la base seulement si `ecrit`. */
+  remplacements: string[];
   tournoiStatut: PlanResultats['tournoiStatut'] | null;
 }
 
@@ -60,7 +64,11 @@ export function observationsDepuisApi(singles: MatchApi[], joueurs: { id: string
  * @param ecrire faux : calcule et renvoie ce qui serait écrit, sans rien écrire.
  */
 export async function appliquerResultatsMasters(sb: SupabaseClient, tournamentId: string, tableau: TableauApi, ecrire = true): Promise<ResumeResultatsMasters> {
-  const vide = (erreurs: string[]): ResumeResultatsMasters => ({ ecrit: false, maj: 0, creees: 0, placees: 0, avertissements: [], erreurs, tournoiStatut: null });
+  const vide = (erreurs: string[]): ResumeResultatsMasters => ({ ecrit: false, maj: 0, creees: 0, placees: 0, avertissements: [], erreurs, remplacements: [], tournoiStatut: null });
+
+  // Une remplaçante (forfait avant le tournoi) ? On l'installe AVANT de lire les matchs : le reste du geste voit alors les huit bonnes joueuses.
+  const remp = await appliquerRemplacementsMasters(sb, tournamentId, nomsDeApi(tableau.singles ?? []), ecrire);
+  if (remp.erreurs.length) return vide([...remp.erreurs, 'Rien n\'a été écrit.']);
 
   const rows = await lire<
     { round: string; position: number | null; half: 'top' | 'bottom' | null; player1_id: string | null; player2_id: string | null; winner_id: string | null; status: string; sets: { g1: number | null; g2: number | null; tb1?: number | null; tb2?: number | null }[] | null; scheduled_at: string | null }[]
@@ -68,6 +76,14 @@ export async function appliquerResultatsMasters(sb: SupabaseClient, tournamentId
     sb.from('tn_matches').select('round, position, half, player1_id, player2_id, winner_id, status, sets, scheduled_at').eq('tournament_id', tournamentId),
     'tn_matches',
   );
+  // Simulation : la base n'a pas bougé, on applique les échanges aux lignes lues.
+  if (!ecrire && remp.echanges.length) {
+    const nouveau = new Map(remp.echanges.map((e) => [e.ancienId, e.nouveauId]));
+    for (const r of rows) {
+      if (r.player1_id && nouveau.has(r.player1_id)) r.player1_id = nouveau.get(r.player1_id)!;
+      if (r.player2_id && nouveau.has(r.player2_id)) r.player2_id = nouveau.get(r.player2_id)!;
+    }
+  }
   const ids = [...new Set(rows.flatMap((r) => [r.player1_id, r.player2_id]).filter((x): x is string => x !== null))];
   const joueurs = ids.length ? await lire<{ id: string; name: string }[]>(sb.from('tn_players').select('id, name').in('id', ids), 'tn_players') : [];
 
@@ -93,6 +109,7 @@ export async function appliquerResultatsMasters(sb: SupabaseClient, tournamentId
     placees: plan.placements.length,
     avertissements: plan.avertissements,
     erreurs: [],
+    remplacements: remp.messages,
     tournoiStatut: plan.tournoiStatut,
   };
   if (!ecrire) return resume;
