@@ -82,6 +82,23 @@ export const GROUPES: Groupe[] = [
         maj: '2026-11-08',
       },
       {
+        id: 'lire-le-tableau',
+        titre: 'Lire le Tableau (pronostics de chacun)',
+        resume: 'Voir, match par match, qui avait pronostiqué quel vainqueur dans le bracket.',
+        quand: 'Pendant le tournoi, pour comparer Moi, Laki et Thomas.',
+        etapes: [
+          'Ouvrir le tournoi puis `Tableau` : un seul tableau pour les trois participants.',
+          'Choisir le tour avec les onglets (par défaut : le tour en cours). Les tours précédents sont repliés au-dessus : un clic pour les ouvrir.',
+          'Sur chaque match, une pastille (la lettre du participant) se pose à côté du joueur qu’il avait pronostiqué : vert = juste, rouge = raté, gris = en attente. `n/3 juste` résume le match une fois joué.',
+          'Pastille rouge sous un match : le vainqueur de son bracket n’est plus dans ce match (éliminé avant). Le nom du joueur est rappelé à côté.',
+        ],
+        attention: [
+          'Les pronostics viennent du bracket (`Bracket`, jeu bracket). Les « Picks du jeu » (un joueur par tour) restent affichés en bas de chaque match, à part.',
+          'Un match gagné par abandon ou forfait compte comme joué : le gagnant avance au tour suivant.',
+        ],
+        maj: '2026-11-08',
+      },
+      {
         id: 'envoyer-game-tracker',
         titre: 'Envoyer ses picks sur Game Tracker',
         resume: 'Poser chez Thomas les picks déjà choisis dans l’app.',

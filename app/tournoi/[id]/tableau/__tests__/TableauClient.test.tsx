@@ -1,6 +1,8 @@
 /**
- * Tests de l'écran Tableau : sélecteur de participant, verdict des pronostics,
- * tie-break en exposant (app/tournoi/[id]/tableau/TableauClient.tsx).
+ * Tests de l'écran Tableau compilé : pastilles des participants sur le joueur
+ * pronostiqué, rappel rouge quand son vainqueur n'est plus dans le match,
+ * « n/3 juste », choix du tour et tours précédents repliés, tie-break en
+ * exposant (app/tournoi/[id]/tableau/TableauClient.tsx).
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -9,7 +11,7 @@ import { construireTableau, type MatchEntree, type PickEntree } from '@/lib/tabl
 
 afterEach(() => cleanup());
 
-const NOMS: Record<string, string> = { a: 'Alcaraz', b: 'Bublik', c: 'Cobolli', d: 'Draper' };
+const NOMS: Record<string, string> = { a: 'Alcaraz', b: 'Bublik', c: 'Cobolli', d: 'Draper', z: 'Zverev' };
 const stocks = [
   { id: null, nom: 'Moi' },
   { id: 'p-laki', nom: 'Laki' },
@@ -27,6 +29,8 @@ const picks: PickEntree[] = [
   { participant_id: null, round: 'SF', position: 0, player_id: 'a' },
   { participant_id: null, round: 'SF', position: 1, player_id: 'c' },
   { participant_id: 'p-laki', round: 'SF', position: 0, player_id: 'b' },
+  // Laki avait Zverev en finale : il n'y est pas.
+  { participant_id: 'p-laki', round: 'F', position: 0, player_id: 'z' },
 ];
 
 function rendu() {
@@ -45,40 +49,64 @@ function rendu() {
 const telephone = () => document.querySelector('.md\\:hidden') as HTMLElement;
 
 describe('TableauClient', () => {
-  it('montre Moi par défaut, avec le verdict de chaque pronostic', () => {
+  it('ouvre sur le tour en cours (premier tour avec un match à jouer) et replie les précédents', () => {
     rendu();
-    const t = within(telephone());
-    expect(t.getByText(/✓ Ton choix : Alcaraz/)).toBeTruthy();
-    expect(t.getByText(/✗ Ton choix : Cobolli/)).toBeTruthy();
-    expect(t.getByText('Vainqueur : Draper')).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Finale' }).getAttribute('aria-selected')).toBe('true');
+    const precedents = screen.getByRole('region', { name: 'Tours précédents' });
+    expect(within(precedents).getByText(/Demi-finales/)).toBeTruthy();
+    expect(precedents.querySelector('details')?.hasAttribute('open')).toBe(false);
   });
 
-  it('affiche le bilan justes/décidés sur la pastille du participant', () => {
+  it('pose une pastille par participant sur le joueur qu’il a pronostiqué', () => {
     rendu();
-    const pastilleMoi = screen.getByRole('button', { name: /Moi/ });
-    expect(pastilleMoi.textContent).toContain('1/2');
-    expect(pastilleMoi.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
+    const cartes = within(telephone()).getAllByTestId('carte-match');
+    // Match 0 : Alcaraz (ligne 1) choisi par Moi, Bublik (ligne 2) choisi par Laki.
+    expect(within(cartes[0]).getByTestId('pastilles-1').textContent).toContain('Moi a pronostiqué Alcaraz (juste)');
+    expect(within(cartes[0]).getByTestId('pastilles-2').textContent).toContain('Laki a pronostiqué Bublik (raté)');
+    // Match 1 : Moi avait Cobolli, battu.
+    expect(within(cartes[1]).getByTestId('pastilles-1').textContent).toContain('Moi a pronostiqué Cobolli (raté)');
   });
 
-  it('change de participant au clic', () => {
+  it('affiche « n/N juste » sur un match décidé, rien sur un match à jouer', () => {
     rendu();
-    fireEvent.click(screen.getByRole('button', { name: /Laki/ }));
-    const t = within(telephone());
-    expect(t.getByText(/✗ Choix de Laki : Bublik/)).toBeTruthy();
-    expect(t.getByText('Pas de pronostic posé')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
+    const bilans = within(telephone()).getAllByTestId('bilan-match').map((e) => e.textContent);
+    expect(bilans).toEqual(['1/2 juste', '0/2 juste']);
+    fireEvent.click(screen.getByRole('tab', { name: 'Finale' }));
+    expect(within(telephone()).queryByTestId('bilan-match')).toBeNull();
+  });
+
+  it('rappelle en rouge, sous le match, le vainqueur du bracket qui n’y est plus', () => {
+    rendu();
+    const liste = within(telephone()).getByRole('list', { name: 'Pronostics hors match' });
+    expect(liste.textContent).toContain('Zverev');
+    expect(liste.className).toContain('text-red-700');
+    // Moi n'a rien posé en finale : pas de rappel pour lui.
+    expect(within(liste).getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('affiche le bilan justes/décidés de chacun en tête', () => {
+    rendu();
+    // Le bilan figure en tête ET dans le résumé du tour replié : on vérifie la tête (premier).
+    expect(screen.getAllByText('Moi 1/2')[0]).toBeTruthy();
+    expect(screen.getAllByText('Laki 0/1')[0]).toBeTruthy();
   });
 
   it('affiche le tie-break du perdant en exposant, sur son score', () => {
     rendu();
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
     const exposants = Array.from(telephone().querySelectorAll('sup')).map((e) => e.textContent);
     expect(exposants).toEqual(['3']);
   });
 
-  it('change de tour sur téléphone et signale « Pas de pronostic posé » quand rien n\'est posé', () => {
+  it('change de tour : les tours d’avant se replient, ceux d’après disparaissent de la liste mobile', () => {
     rendu();
-    fireEvent.click(screen.getByRole('tab', { name: /Finale/ }));
-    const t = within(telephone());
-    expect(t.getByText('Pas de pronostic posé')).toBeTruthy();
-    expect(t.getByText('À jouer')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: /Demi-finales/ }));
+    expect(screen.queryByRole('region', { name: 'Tours précédents' })).toBeNull();
+    expect(within(telephone()).getAllByTestId('carte-match')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('tab', { name: 'Finale' }));
+    expect(within(telephone()).getAllByTestId('carte-match')).toHaveLength(1);
+    expect(within(telephone()).getByText('À jouer')).toBeTruthy();
   });
 });

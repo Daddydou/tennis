@@ -73,6 +73,16 @@ export interface LigneVue {
 export interface PickVue {
   joueurNom: string;
   verdict: Verdict;
+  /**
+   * Ligne (1 ou 2) du match où joue le joueur pronostiqué ; null s'il n'est
+   * dans aucune des deux (éliminé plus tôt : son bracket ne colle plus).
+   */
+  cote: 1 | 2 | null;
+  /**
+   * Les deux joueurs du match sont connus et AUCUN n'est celui du pronostic :
+   * à montrer en rouge sous le match (le vainqueur du bracket n'y est plus).
+   */
+  absent: boolean;
 }
 
 /** Pick du jeu d'un participant sur CE match (le joueur qu'il a pické y joue). */
@@ -94,6 +104,8 @@ export interface MatchVue {
   picks: Record<string, PickVue | null>;
   /** Picks du jeu (tous participants) dont le joueur joue ce match, dans l'ordre des participants. */
   picksJeu: PickJeuVue[];
+  /** « n/3 juste » : null tant que le match n'est pas décidé. `participants` = nombre de participants. */
+  bilanMatch: { justes: number; participants: number } | null;
 }
 
 export interface BilanTour {
@@ -204,7 +216,10 @@ export function construireTableau(args: {
           continue;
         }
         const verdict: Verdict = !decide ? 'attente' : joueurId === m.winner_id ? 'juste' : 'rate';
-        picksVue[cle] = { joueurNom: nomJoueur(joueurId), verdict };
+        const cote: 1 | 2 | null = joueurId === m.player1_id ? 1 : joueurId === m.player2_id ? 2 : null;
+        // « Absent » seulement quand on peut l'affirmer : les deux joueurs du match sont connus.
+        const absent = cote === null && m.player1_id !== null && m.player2_id !== null;
+        picksVue[cle] = { joueurNom: nomJoueur(joueurId), verdict, cote, absent };
         const b = bilans[cle];
         b.poses += 1;
         if (decide) b.decides += 1;
@@ -233,6 +248,12 @@ export function construireTableau(args: {
         vainqueurNom: decide && m.winner_id ? nomJoueur(m.winner_id) : null,
         picks: picksVue,
         picksJeu: picksJeuVue,
+        bilanMatch: decide
+          ? {
+              justes: Object.values(picksVue).filter((p) => p?.verdict === 'juste').length,
+              participants: stocks.length,
+            }
+          : null,
       };
     });
 
@@ -240,6 +261,17 @@ export function construireTableau(args: {
   }
 
   return tours;
+}
+
+/** Tour affiché au départ : le premier où un match reste à jouer, sinon le dernier. */
+export function tourEnCours(tours: TourVue[]): string {
+  const t = tours.find((x) => x.matchs.some((m) => m.bilanMatch === null));
+  return (t ?? tours[tours.length - 1])?.round ?? '';
+}
+
+/** Lettre de la pastille d'un participant (première lettre de son nom, en majuscule). */
+export function initiale(nom: string): string {
+  return nom.trim().charAt(0).toUpperCase() || '?';
 }
 
 /**
