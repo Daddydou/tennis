@@ -87,15 +87,15 @@ export const GROUPES: Groupe[] = [
         quand: 'Après avoir validé ou réservé ses picks, avant le verrouillage du tour.',
         etapes: [
           'Écran `Picks` du tournoi, panneau `Game Tracker`.',
-          'Appuyer sur `Lire Game Tracker` : on voit le tour ouvert, l’heure de verrou, le pick actuel, le classement (avec le rang) et ce qui serait envoyé. Les tours à venir sont listés dessous, chacun avec son verrou et son aperçu.',
+          'Appuyer sur `Lire Game Tracker` (le bouton du tournoi) : l’app lit Game Tracker, recopie les tours verrouillés, synchronise le bracket de Thomas (résultats, pronostics, points) ET envoie tes picks VALIDÉS du tour ouvert s’ils diffèrent de ceux de Game Tracker. On voit ensuite le tour ouvert, l’heure de verrou, le pick actuel, le classement (avec le rang) et ce qui a été envoyé. Les tours à venir sont listés dessous, chacun avec son verrou et son aperçu.',
           'Si le tournoi n’est pas encore relié, choisir le bon tournoi dans la liste puis `Relier` (une seule fois par tournoi).',
           'Appuyer sur `Envoyer sur Game Tracker` (un bouton par tour : le tour ouvert ou un tour à venir, pour poser ses picks à l’avance). Un tour seulement réservé s’envoie aussi : la ligne indique « ta réservation ».',
           'Relire le résultat affiché : l’app relit le pick réel et signale tout écart.',
           'À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous pour Moi, Laki et Thomas : c’est leur jeu qui compte. Le panneau liste les changements.',
-          'Pour tout lire d’un coup : bouton `Lire Game Tracker` de l’accueil. Il lit un par un les tournois en cours et de la semaine (les Masters se lisent depuis leur écran) et indique, tournoi par tournoi, ce qui a changé ou ce qui n’est pas relié. Il n’envoie jamais rien.',
+          'Pour tout lire d’un coup : bouton `Lire Game Tracker` de l’accueil. Il lit un par un les tournois en cours et de la semaine (les Masters se lisent depuis leur écran) et indique, tournoi par tournoi, ce qui a changé ou ce qui n’est pas relié. Il synchronise aussi le bracket de Thomas, mais il n’envoie jamais rien.',
         ],
         attention: [
-          'Rien ne part tout seul : seul le bouton `Envoyer sur Game Tracker` d’un tournoi envoie (le bouton de l’accueil ne fait que lire). Les réservations de l’écran Picks (moi uniquement) sont envoyées comme des picks pour les tours où rien n’est encore validé.',
+          'Seuls les picks VALIDÉS partent, et seulement quand tu appuies sur `Lire Game Tracker` d’un tournoi (ou sur `Envoyer sur Game Tracker`). Une simple réservation ne part jamais avec la lecture, un tour verrouillé n’est jamais touché, un côté n’est jamais vidé, et au moindre doute rien n’est envoyé (le message dit pourquoi). Aucun envoi à l’ouverture de la page, aucun cron, et le bouton de l’accueil ne fait que lire. Les réservations de l’écran Picks (moi uniquement) sont envoyées comme des picks pour les tours où rien n’est encore validé.',
           'Rien à piquer pour le tour ouvert ? Notre tableau n’a sans doute pas encore les résultats du tour précédent : mettre le tableau à jour (`Importer`), puis relire.',
           'Game Tracker peut rediriger un pick si un joueur « en attente » perd : relire juste avant le verrou.',
           'Masters (Finals) : si une joueuse est remplacée avant le tournoi, `Lire Game Tracker` repère la remplaçante (un nom inconnu pour une joueuse disparue), la met à sa place dans le tableau et l’écrit (message « Remplaçante prise en compte »). En cas de doute (plusieurs candidates, remplaçante absente de notre base, joueuse qui a déjà joué), rien n’est modifié et un message l’explique.',

@@ -10,9 +10,10 @@ import { commenceDansLaSemaine, fraicheur } from './tournoisUi';
 
 /**
  * « Lire Game Tracker » de l'accueil : lit, UN PAR UN, les tournois en cours
- * et ceux de la semaine (les mêmes que les cartes de l'accueil). LECTURE SEULE :
- * on appelle uniquement `lireGameTracker` (GET + alignement de nos tours
- * verrouillés) ; l'ENVOI de mes picks reste le bouton de chaque tournoi.
+ * et ceux de la semaine (les mêmes que les cartes de l'accueil). AUCUN ENVOI :
+ * on appelle `lireGameTracker` en mode lecture (GET + alignement de nos tours
+ * verrouillés + synchro du bracket de Thomas) ; l'ENVOI de mes picks validés
+ * se fait depuis le bouton « Lire Game Tracker » de chaque tournoi.
  *
  * Toujours déclenché à la main (bouton), jamais à l'ouverture de la page.
  * Un tournoi à la fois, pour rester sous la limite de 60 requêtes/minute de

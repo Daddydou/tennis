@@ -44,12 +44,12 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
     setLecture(r);
     definirPool(r.ok && r.lie ? r.pool : null);
     // Nos picks ont été alignés sur Game Tracker : la grille et les points se rechargent.
-    if (r.ok && r.lie && ((r.alignement.ok && r.alignement.changements.length > 0) || r.resultatsRepris.length > 0)) router.refresh();
+    if (r.ok && r.lie && ((r.alignement.ok && r.alignement.changements.length > 0) || r.resultatsRepris.length > 0 || r.thomas?.ok === true || r.envoiAuto?.envoye === true)) router.refresh();
   }
 
   function lire() {
     setEnvoi(null);
-    startTransition(async () => appliquer(await lireGameTracker(tournamentId)));
+    startTransition(async () => appliquer(await lireGameTracker(tournamentId, { envoyer: true })));
   }
 
   function lier(gtId: string) {
@@ -78,19 +78,20 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
   const to = etat?.tourOuvert ?? null;
 
   return (
-    <details className={`${carte} px-3 py-2`}>
-      <summary className="min-h-11 cursor-pointer select-none py-2 text-sm font-semibold">Game Tracker</summary>
+    <details open className={`${carte} px-3 py-2`}>
+      <summary className="min-h-11 cursor-pointer select-none py-2 text-sm font-semibold">Game Tracker et bracket de Thomas</summary>
       <div className="space-y-3 pb-2 text-sm">
         <p className="text-xs text-zinc-500">
-          Lit ton état chez Game Tracker et y pose tes picks (tour ouvert ou tours à venir), au nom de ton compte. Rien n&apos;est envoyé sans
-          ton clic sur « Envoyer ». Un pick posé chez eux peut être redirigé automatiquement si un joueur « en attente »
+          Un seul clic sur « Synchroniser » : lit ton état chez Game Tracker, rapatrie le bracket de Thomas (résultats, pronostics,
+          points : lecture seule chez lui) et envoie tes picks VALIDÉS du tour ouvert quand ils diffèrent des leurs. Une simple
+          réservation ne part jamais toute seule : « Envoyer » ci-dessous reste là pour les réservations et les tours à venir. Un pick posé chez eux peut être redirigé automatiquement si un joueur « en attente »
           perd : relis avant le verrou. À chaque lecture, les tours déjà verrouillés chez Game Tracker sont recopiés chez nous
           pour Moi, Laki et Thomas : c&apos;est leur jeu qui compte.
         </p>
 
         <button onClick={lire} disabled={pending} className={boutonSecondaire}>
           {pending && <Spinner />}
-          {lecture ? 'Relire Game Tracker' : 'Lire Game Tracker'}
+          {lecture ? 'Synchroniser à nouveau' : 'Synchroniser avec Game Tracker et Thomas'}
         </button>
 
         {lecture && !lecture.ok && <p className="text-xs text-red-600">{lecture.erreur}</p>}
@@ -166,6 +167,34 @@ export default function PanneauGameTracker({ tournamentId }: { tournamentId: str
                   <li key={a}>{a}</li>
                 ))}
               </ul>
+            )}
+          </div>
+        )}
+
+        {lecture && lecture.ok && lecture.lie && lecture.envoiAuto && (
+          <div
+            role="status"
+            className={`rounded-xl px-2.5 py-2 text-xs ${lecture.envoiAuto.envoye ? (lecture.envoiAuto.ecarts ? 'bg-amber-50 text-amber-900' : 'bg-emerald-50 text-emerald-900') : 'bg-zinc-100 text-zinc-800'}`}
+          >
+            <p className="font-medium">{lecture.envoiAuto.message}</p>
+            {lecture.envoiAuto.ecarts ? (
+              <p>Game Tracker montre un pick différent de celui envoyé (redirection ?) : vérifie ci-dessous.</p>
+            ) : null}
+          </div>
+        )}
+
+        {lecture && lecture.ok && lecture.lie && lecture.thomas && (
+          <div className={`rounded-xl px-2.5 py-2 text-xs ${lecture.thomas.ok ? 'bg-zinc-100 text-zinc-800' : 'bg-amber-50 text-amber-900'}`}>
+            {lecture.thomas.ok ? (
+              <>
+                <p className="font-medium">
+                  Bracket de Thomas rapatrié : {lecture.thomas.matchs} matchs, {lecture.thomas.pronostics} pronostics. Points chez Thomas :{' '}
+                  {lecture.thomas.points.map((p) => `${p.pseudo} ${p.points}`).join(' · ')}.
+                </p>
+                <p className="text-zinc-600">{lecture.thomas.pont}.</p>
+              </>
+            ) : (
+              <p>{lecture.thomas.message}</p>
             )}
           </div>
         )}

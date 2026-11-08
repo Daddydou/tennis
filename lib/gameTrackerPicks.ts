@@ -367,6 +367,25 @@ export type PreparationEnvoi =
     }
   | { ok: false; raisons: string[] };
 
+/**
+ * Faut-il envoyer MAINTENANT, sans clic sur « Envoyer », quand l'utilisateur a cliqué sur « Synchroniser » ?
+ * Oui seulement si : le tour est ouvert et non verrouillé (preparerEnvoi ok), Game Tracker n'a pas déjà ces picks,
+ * il y a au moins un pick VALIDÉ de chez nous, et AUCUNE ligne n'est une simple réservation. Sinon on n'envoie rien
+ * et on dit pourquoi.
+ */
+export function decisionEnvoiAuto(prep: PreparationEnvoi): { envoyer: true } | { envoyer: false; message: string } {
+  if (!prep.ok) return { envoyer: false, message: `Rien envoyé : ${prep.raisons.join(' ')}` };
+  if (prep.dejaAJour) return { envoyer: false, message: 'Game Tracker a déjà tes picks validés : rien à envoyer.' };
+  const locales = prep.lignes.filter((l) => l.origine === 'local');
+  if (locales.length === 0) return { envoyer: false, message: 'Aucun pick validé à envoyer.' };
+  if (locales.some((l) => l.reserve === true)) {
+    return {
+      envoyer: false,
+      message: 'Une réservation n’est pas un pick validé : valide-la dans l’app pour qu’elle parte, ou envoie-la à la main ci-dessous.',
+    };
+  }
+  return { envoyer: true };
+}
 export interface ParametresEnvoi {
   etat: EtatGT;
   /** tn_tournaments.rounds. */
