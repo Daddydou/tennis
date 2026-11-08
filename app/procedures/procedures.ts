@@ -78,6 +78,7 @@ export const GROUPES: Groupe[] = [
           'Quand tous les picks sont posés, l’écran garde le plan (avec l’Elo et les points espérés de chaque pick) et le grand tableau : pour changer de joueur avant le verrou, `Retirer` le pick puis `Valider` un autre.',
           'En demi-finale et en finale : un seul pick.',
           'Masters (ATP Finals, WTA Finals) : l’onglet `Picks` propose aussi `Prudent`, `Équilibré`, `Audacieux` et `Contre Laki et Thomas` pour TOUT le tournoi (poules, demie, finale). Chaque carte donne les points attendus et la chance de finir devant Laki et Thomas ; le bilan détaille mauvais cas et bon cas. Les plans sont recalculés à chaque chargement, donc après chaque résultat importé. Le panneau `Game Tracker` envoie les picks de la stratégie choisie, tour ouvert seulement, après un clic.',
+          'Masters : en haut de l’onglet `Picks`, les pastilles `Moi`, `Laki`, `Thomas` (avec leurs points Picks) permettent de voir les picks des autres, comme sur Paris. Pour Laki et Thomas, c’est en LECTURE SEULE (journée par journée et par poule, demie, finale) : leurs picks arrivent par `Lire Game Tracker`, une fois le tour verrouillé chez Game Tracker.',
         ],
         doc: 'README.md (principe du jeu)',
         maj: '2026-11-08',
@@ -97,6 +98,7 @@ export const GROUPES: Groupe[] = [
         attention: [
           'Les pronostics viennent du bracket (`Bracket`, jeu bracket). En bas de chaque match, le bloc « Jeu de picks · pas le bracket » montre le joueur pické pour ce tour dans le jeu de picks (un joueur par tour) : c’est un AUTRE jeu. On peut donc avoir pické Van Assche en quarts (✓ dans ce bloc) sans l’avoir mis vainqueur dans son bracket (pastille rouge) ; ces ✓ et ✗ ne comptent pas dans `n/3 juste` ni dans les bilans.',
           'Un match gagné par abandon ou forfait compte comme joué : le gagnant avance au tour suivant.',
+          'Masters (ATP Finals, WTA Finals) : le `Tableau` montre les pronostics de chacun sur les poules (une pastille par participant : lettre + place prévue ; vert = place exacte, ambre = qualifiée trouvée mais pas à la bonne place, rouge = raté, gris = poule pas finie) et, sous la finale, ses finalistes et sa championne (✓ juste, ✗ raté). Le Dashboard classe Moi, Laki et Thomas : points du Pronostic + points des Picks = Total. Un pronostic se saisit à la main dans l’onglet `Pronostic` (il ferme au premier match) : l’API de Thomas ne donne pas encore ceux de Laki et de Thomas pour les Finals.',
         ],
         maj: '2026-11-08',
       },

@@ -1,4 +1,5 @@
-import { carte, noteInfo } from '@/app/ui';
+import Link from 'next/link';
+import { carte, noteInfo, pilleSelecteur } from '@/app/ui';
 import { supabaseAnon } from '@/db/anon';
 import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConseils';
 import { lirePronostics, type PronosticStocke } from '@/db/mastersPronostic';
@@ -6,10 +7,13 @@ import { getMatchRows, getParticipants, getPlayerRows, getTousLesPicks, type Mat
 import { libelleTourMasters } from '@/lib/masters';
 import { analyserMatchsMasters, type JoueuseAnalyseMasters, type MatchAnalyseMasters } from '@/lib/mastersAnalyse';
 import { pronosticFerme } from '@/lib/mastersPronostic';
+import { lignesPhaseFinale, pastillesPoule, pronosticsParParticipant, type ParticipantPronostic } from '@/lib/mastersPronosticVue';
 import { vueMasters, type VueMasters } from '@/lib/mastersVue';
 import ConseilsMastersCarte from './ConseilsMasters';
-import { CartePoule, PhaseFinale, type Noms } from './MastersPieces';
+import { CartePoule, LegendePronostics, PhaseFinale, type Noms } from './MastersPieces';
+import PicksParticipantMasters from './PicksParticipantMasters';
 import PlanMasters from './PlanMasters';
+import { pointsPicksParStock, stocksDuGroupe } from './pointsStock';
 import PronosticsMasters, { type ParticipantMasters } from './PronosticsMasters';
 
 /**
@@ -19,9 +23,9 @@ import PronosticsMasters, { type ParticipantMasters } from './PronosticsMasters'
  * Le Dashboard (MastersDashboard.tsx) ne garde que la synthèse.
  */
 
-async function chargerBase(id: string): Promise<{ rows: MatchRow[]; vue: VueMasters; noms: Noms }> {
-  const rows = await getMatchRows(id);
-  const vue = vueMasters(
+/** Vue (poules, demies, finale) d'un Masters d'après ses lignes de tn_matches. */
+export function vueDepuisRows(rows: MatchRow[]): VueMasters {
+  return vueMasters(
     rows.map((r) => ({
       round: r.round,
       position: r.position,
@@ -33,6 +37,11 @@ async function chargerBase(id: string): Promise<{ rows: MatchRow[]; vue: VueMast
       sets: r.sets,
     })),
   );
+}
+
+async function chargerBase(id: string): Promise<{ rows: MatchRow[]; vue: VueMasters; noms: Noms }> {
+  const rows = await getMatchRows(id);
+  const vue = vueDepuisRows(rows);
   const ids = [...new Set(rows.flatMap((r) => [r.player1_id, r.player2_id]).filter((x): x is string => x !== null))];
   const noms: Noms = new Map((ids.length ? await getPlayerRows(ids) : []).map((p) => [p.id, p.name]));
   return { rows, vue, noms };
@@ -40,13 +49,32 @@ async function chargerBase(id: string): Promise<{ rows: MatchRow[]; vue: VueMast
 
 export async function MastersTableau({ id }: { id: string }) {
   const { vue, noms } = await chargerBase(id);
+
+  // Pronostics de chacun (jamais bloquants : sans eux, le tableau s'affiche comme avant).
+  let parts: ParticipantPronostic[] = [];
+  try {
+    const [stockes, participants] = await Promise.all([lirePronostics(supabaseAnon(), id), getParticipants()]);
+    parts = pronosticsParParticipant(stockes, [{ id: null, nom: 'Moi' }, ...participants.map((p) => ({ id: p.id as string | null, nom: p.name }))]);
+  } catch (e) {
+    console.error('Pronostics du tableau Masters :', (e as Error).message);
+  }
+  const prevus = (poule: 'A' | 'B') =>
+    parts.map((p) => ({ cle: p.cle, nom: p.nom, classementPrevu: p.pronostic ? (poule === 'A' ? p.pronostic.classementA : p.pronostic.classementB) : null }));
+  const sansPronostic = parts.filter((p) => !p.pronostic).map((p) => p.nom);
+
   return (
     <div className="space-y-4" data-testid="masters-tableau">
       <div className="grid gap-4 md:grid-cols-2">
-        <CartePoule p={vue.poules.A} noms={noms} />
-        <CartePoule p={vue.poules.B} noms={noms} />
+        <CartePoule p={vue.poules.A} noms={noms} pastilles={pastillesPoule(vue.poules.A, prevus('A'))} />
+        <CartePoule p={vue.poules.B} noms={noms} pastilles={pastillesPoule(vue.poules.B, prevus('B'))} />
       </div>
-      <PhaseFinale vue={vue} noms={noms} />
+      <PhaseFinale vue={vue} noms={noms} pronostics={lignesPhaseFinale(vue, parts)} />
+      {parts.some((p) => p.pronostic) && <LegendePronostics />}
+      {sansPronostic.length > 0 && (
+        <p className={noteInfo}>
+          Pas de pronostic enregistré pour {sansPronostic.join(', ')} : à saisir dans l&apos;onglet Pronostic (il ferme au premier match).
+        </p>
+      )}
     </div>
   );
 }
@@ -99,16 +127,32 @@ function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[];
   );
 }
 
-export async function MastersPicks({ id, tournoi }: { id: string; tournoi: TournamentRow }) {
+export async function MastersPicks({
+  id,
+  tournoi,
+  participantId = null,
+}: {
+  id: string;
+  tournoi: TournamentRow;
+  /** Participant dont on regarde les picks (?participant=) ; null ou inconnu = moi. */
+  participantId?: string | null;
+}) {
   const { rows, vue, noms } = await chargerBase(id);
   const [participants, tousLesPicks] = await Promise.all([getParticipants(), getTousLesPicks(id)]);
 
-  // Propositions : jamais bloquantes (sans elles, l'analyse et l'envoi restent là).
+  // Un id inconnu dans l'URL (participant retiré) retombe sur moi, comme sur Paris.
+  const autre = participantId ? (participants.find((p) => p.id === participantId) ?? null) : null;
+  const picksParStock = pointsPicksParStock(tousLesPicks);
+  const lienParticipant = (pid: string | null) => `/tournoi/${id}/picks${pid ? `?participant=${pid}` : ''}`;
+
+  // Propositions et envoi : seulement pour MES picks (inutile de les calculer pour un autre).
   let conseils: ConseilsMasters | null = null;
-  try {
-    conseils = await calculerConseilsMasters(tournoi, rows);
-  } catch (e) {
-    console.error('Propositions Masters :', (e as Error).message);
+  if (!autre) {
+    try {
+      conseils = await calculerConseilsMasters(tournoi, rows);
+    } catch (e) {
+      console.error('Propositions Masters :', (e as Error).message);
+    }
   }
 
   const nomParticipant = (pid: string | null) => (pid === null ? 'Moi' : (participants.find((p) => p.id === pid)?.name ?? 'Participant'));
@@ -122,7 +166,46 @@ export async function MastersPicks({ id, tournoi }: { id: string; tournoi: Tourn
 
   return (
     <div className="space-y-4" data-testid="masters-picks">
-      {conseils ? (
+      {/* Pour qui, et où chacun en est : même sélecteur que Paris (Moi, Laki, Thomas + leurs points Picks). */}
+      {participants.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5" data-testid="selecteur-picks-masters">
+          {stocksDuGroupe(participants).map((s) => {
+            const actif = (s.id ?? null) === (autre?.id ?? null);
+            const pts = picksParStock.get(s.id) ?? 0;
+            return (
+              <Link
+                key={s.id ?? 'moi'}
+                href={lienParticipant(s.id ?? null)}
+                aria-current={actif ? 'page' : undefined}
+                className={`${pilleSelecteur(actif)} gap-1.5`}
+              >
+                {s.nom}
+                <span className={`tabular-nums ${actif ? 'text-blue-100' : 'text-juste'}`}>{pts} pts</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {autre ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-amber-100 px-3 py-2 text-sm text-amber-950">
+            <span>
+              Tu regardes les picks de <strong>{autre.name}</strong> (lecture seule).
+            </span>
+            <Link href={lienParticipant(null)} className="inline-flex min-h-11 items-center font-medium underline underline-offset-2">
+              Revenir à mes picks
+            </Link>
+          </div>
+          <PicksParticipantMasters
+            nom={autre.name}
+            noms={Object.fromEntries(noms)}
+            picks={tousLesPicks
+              .filter((p) => p.participant_id === autre.id)
+              .map((p) => ({ round: p.round, half: (p.half ?? null) as 'top' | 'bottom' | null, playerId: p.player_id, points: p.points ?? null }))}
+          />
+        </>
+      ) : conseils ? (
         <PlanMasters
           tournamentId={id}
           strategies={conseils.strategies}

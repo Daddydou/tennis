@@ -46,11 +46,14 @@ export default async function PicksPage({
   searchParams: Promise<{ participant?: string }>;
 }) {
   const { id } = await params;
-  // Un tournoi au format Masters (poules) a son propre écran Picks : picks proposés par journée,
-  // joueuses, adversaires, Elo, qui a pické qui, envoi à Game Tracker.
-  const tournoiMasters = await getTournament(id);
-  if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersPicks id={id} tournoi={tournoiMasters} />;
   const { participant: participantParam } = await searchParams;
+  // Un tournoi au format Masters (poules) a son propre écran Picks : picks proposés par journée,
+  // joueuses, adversaires, Elo, qui a pické qui, envoi à Game Tracker. Le sélecteur Moi / Laki /
+  // Thomas (?participant=) y marche comme sur Paris, en lecture seule pour les autres.
+  const tournoiMasters = await getTournament(id);
+  if (tournoiMasters && estMasters(tournoiMasters.rounds)) {
+    return <MastersPicks id={id} tournoi={tournoiMasters} participantId={participantParam ?? null} />;
+  }
 
   // Toutes les lectures partent de front : en cascade, chaque aller-retour
   // vers la base s'ajoutait au temps d'affichage.
