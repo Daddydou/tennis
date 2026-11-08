@@ -28,6 +28,7 @@ describe('ongletDe (quel écran appartient à quel onglet)', () => {
     ['simulateur', 'bracket'],
     ['predictions', 'bracket'],
     ['fantasy', 'fantasy'],
+    ['pronostic', 'pronostic'],
     ['inconnu', 'dashboard'],
   ])('%s -> %s', (segment, attendu) => {
     expect(ongletDe(segment)).toBe(attendu);
@@ -87,9 +88,20 @@ describe('TournoiNav', () => {
     }
   });
 
-  it("un Masters n'a que l'onglet Dashboard, sans barre de vues", () => {
+  it("un Masters a quatre onglets (Dashboard, Tableau, Picks, Pronostic), sans barre de vues", () => {
     sur('/tournoi/t1', true);
-    expect(within(onglets()).getAllByRole('link').map((l) => l.textContent)).toEqual(['Dashboard']);
+    const liens = within(onglets()).getAllByRole('link');
+    expect(liens.map((l) => [l.textContent, l.getAttribute('href')])).toEqual([
+      ['Dashboard', '/tournoi/t1'],
+      ['Tableau', '/tournoi/t1/tableau'],
+      ['Picks', '/tournoi/t1/picks'],
+      ['Pronostic', '/tournoi/t1/pronostic'],
+    ]);
     expect(screen.queryByRole('navigation', { name: 'Vues' })).toBeNull();
+  });
+
+  it("Pronostic d'un Masters : onglet actif", () => {
+    sur('/tournoi/t1/pronostic', true);
+    expect(within(onglets()).getByRole('link', { name: 'Pronostic' }).getAttribute('aria-current')).toBe('page');
   });
 });

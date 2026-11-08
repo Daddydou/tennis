@@ -20,6 +20,8 @@ export interface ConseilsMasters {
   pronosticFerme: boolean;
   picks: PickConseille[];
   sim: ResultatSim;
+  /** Elo effectif (surface pondérée) de chaque joueuse, pour l'analyse des matchs. */
+  elo: Record<string, number>;
   /** Joueurs dont l'Elo n'est pas un vrai Elo (défaut du circuit) : les propositions sont moins fiables. */
   eloIncertain: string[];
 }
@@ -53,5 +55,5 @@ export async function calculerConseilsMasters(tournoi: TournamentRow, rows: Matc
     .map((p) => ({ round: p.round, half: p.half, playerId: p.player_id }));
   const commence = pronosticFerme(rows.map((r) => ({ status: r.status, scheduledAt: r.scheduled_at })), new Date());
 
-  return { poules, pronostic: proposerPronostic(sim, poules), pronosticFerme: commence, picks: proposerPicks(sim, poules, existants), sim, eloIncertain };
+  return { poules, pronostic: proposerPronostic(sim, poules), pronosticFerme: commence, picks: proposerPicks(sim, poules, existants), sim, elo: Object.fromEntries(elo), eloIncertain };
 }
