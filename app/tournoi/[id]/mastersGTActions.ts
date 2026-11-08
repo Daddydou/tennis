@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { sessionValide } from '@/auth/garde';
 import { alignerPicksMasters, idGameTrackerDuTournoi, type ResumeAlignementMasters } from '@/db/mastersGT';
+import { appliquerRemplacementsMasters } from '@/db/mastersRemplacement';
 import { supabaseAdmin } from '@/db/server';
 import { etatPicksGT, poserPicksGT } from '@/externe/gameTrackerPicksClient';
 import type { EtatGT } from '@/lib/gameTrackerPicks';
+import { nomsDeGameTracker } from '@/lib/mastersRemplacement';
 import {
   picksDepuisGT,
   positionsGT,
@@ -42,6 +44,8 @@ export type LectureMasters =
       tours: TourMastersGT[];
       classement: { pseudo: string; moi: boolean; points: number; rang: number | null }[];
       alignement: ResumeAlignementMasters;
+      /** Remplaçantes détectées et appliquées à cette lecture (« Kostyuk remplace Rybakina »). */
+      remplacements: string[];
     }
   | { ok: false; erreur: string };
 
@@ -61,7 +65,31 @@ async function contexte(tournamentId: string) {
 
 const nomPick = (p: { prenom: string | null; nom: string | null } | null) => (p ? `${p.prenom ?? ''} ${p.nom ?? ''}`.trim() : null);
 
-async function lireEtMiroiter(tournamentId: string, c: Awaited<ReturnType<typeof contexte>>, etat: EtatGT): Promise<LectureMasters> {
+type Contexte = Awaited<ReturnType<typeof contexte>>;
+
+/**
+ * Une remplaçante est-elle entrée dans le tournoi (forfait avant le Masters) ? Si Game Tracker montre un nom
+ * que notre tournoi ne connaît pas et qu'une joueuse a disparu, on les associe (lib/mastersRemplacement.ts).
+ * `ecrire` faux (vérification avant envoi) : la liste est élargie en mémoire, la base n'est pas touchée.
+ */
+async function avecRemplacements(
+  tournamentId: string,
+  c: Contexte,
+  etat: EtatGT,
+  ecrire: boolean,
+): Promise<{ ok: true; c: Contexte; remplacements: string[] } | { ok: false; erreurs: string[] }> {
+  const r = await appliquerRemplacementsMasters(c.sb, tournamentId, nomsDeGameTracker(etat), ecrire);
+  if (r.erreurs.length) return { ok: false, erreurs: r.erreurs };
+  if (r.messages.length === 0) return { ok: true, c, remplacements: [] };
+  if (r.ecrit) revalidatePath(`/tournoi/${tournamentId}`, 'layout');
+  return {
+    ok: true,
+    c: { ...c, joueurs: r.joueurs, nomDe: (id: string) => r.joueurs.find((j) => j.id === id)?.name ?? id },
+    remplacements: r.messages,
+  };
+}
+
+async function lireEtMiroiter(tournamentId: string, c: Contexte, etat: EtatGT, remplacements: string[] = []): Promise<LectureMasters> {
   const positions = positionsGT(etat, c.joueurs);
   if (positions.erreurs.length) return { ok: false, erreur: positions.erreurs.join(' ') };
   const { picks, erreurs } = picksDepuisGT(etat, positions, c.joueurs);
@@ -83,14 +111,18 @@ async function lireEtMiroiter(tournamentId: string, c: Awaited<ReturnType<typeof
     })),
     classement: etat.classement,
     alignement,
+    remplacements,
   };
 }
 
 export async function lireGameTrackerMasters(tournamentId: string): Promise<LectureMasters> {
   if (!(await sessionValide())) return REFUS;
   try {
-    const c = await contexte(tournamentId);
-    return await lireEtMiroiter(tournamentId, c, await etatPicksGT(c.gtId));
+    const c0 = await contexte(tournamentId);
+    const etat = await etatPicksGT(c0.gtId);
+    const r = await avecRemplacements(tournamentId, c0, etat, true);
+    if (!r.ok) return { ok: false, erreur: r.erreurs.join(' ') };
+    return await lireEtMiroiter(tournamentId, r.c, etat, r.remplacements);
   } catch (e) {
     return { ok: false, erreur: (e as Error).message };
   }
@@ -103,8 +135,12 @@ export async function preparerGameTrackerMasters(
 ): Promise<PreparationEnvoiMasters | { ok: false; raisons: string[] }> {
   if (!(await sessionValide())) return { ok: false, raisons: [REFUS.erreur] };
   try {
-    const c = await contexte(tournamentId);
-    const etat = await etatPicksGT(c.gtId);
+    const c0 = await contexte(tournamentId);
+    const etat = await etatPicksGT(c0.gtId);
+    // Vérification : aucune écriture, la remplaçante est seulement prise en compte en mémoire.
+    const r = await avecRemplacements(tournamentId, c0, etat, false);
+    if (!r.ok) return { ok: false, raisons: r.erreurs };
+    const c = r.c;
     const positions = positionsGT(etat, c.joueurs);
     if (positions.erreurs.length) return { ok: false, raisons: positions.erreurs };
     return preparerEnvoiMasters({ etat, numeroTour, souhaits, positions, nomDe: c.nomDe });
@@ -123,8 +159,11 @@ export async function envoyerGameTrackerMasters(
 ): Promise<ResultatEnvoiMasters> {
   if (!(await sessionValide())) return { ok: false, raisons: [REFUS.erreur] };
   try {
-    const c = await contexte(tournamentId);
-    const etat = await etatPicksGT(c.gtId);
+    const c0 = await contexte(tournamentId);
+    const etat = await etatPicksGT(c0.gtId);
+    const r0 = await avecRemplacements(tournamentId, c0, etat, true);
+    if (!r0.ok) return { ok: false, raisons: r0.erreurs };
+    const c = r0.c;
     const positions = positionsGT(etat, c.joueurs);
     if (positions.erreurs.length) return { ok: false, raisons: positions.erreurs };
     const prep = preparerEnvoiMasters({ etat, numeroTour, souhaits, positions, nomDe: c.nomDe });

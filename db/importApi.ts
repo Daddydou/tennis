@@ -16,6 +16,7 @@ import {
   type TournoiApi,
 } from '@/lib/extract/matchstat';
 import type { ExtraitBrut } from '@/lib/extract';
+import { estMasters } from '@/lib/masters';
 import type { Tour } from '@/lib/types';
 
 /**
@@ -395,3 +396,18 @@ export async function parametresDeSurveillance(tournamentId: string, sourceUrl: 
   return { ...u, seasonId: ext.slice(PREFIXE_ID.length), startDate: data?.start_date ?? null };
 }
 
+/**
+ * Identifiant du tournoi déjà en base pour cette saison de l'API SI c'est un Masters (poules + demies + finale).
+ * Un Masters ne passe pas par l'import générique (tableau à élimination directe) : « Importer » et
+ * « Mettre à jour » le dirigent vers la mise à jour des résultats d'un Masters, qui gère aussi les remplaçantes.
+ */
+export async function mastersExistantPourSaison(seasonId: number | string): Promise<string | null> {
+  const { data, error } = await supabaseAdmin()
+    .from('tn_tournaments')
+    .select('id, rounds')
+    .eq('external_id', `${PREFIXE_ID}${seasonId}`)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Tournoi : ${error.message}`);
+  return data && estMasters((data.rounds as string[] | null) ?? null) ? (data.id as string) : null;
+}
