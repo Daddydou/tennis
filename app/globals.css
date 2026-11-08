@@ -63,11 +63,34 @@ html {
   color-scheme: light;
 }
 
+/*
+ * AFFICHAGE SELON L'ÉCRAN. Toutes les tailles de Tailwind (texte, marges,
+ * hauteurs, largeur max de la page) sont en rem : agrandir la base du <html>
+ * agrandit TOUT l'écran d'un coup, sans toucher aux composants. Téléphone et
+ * tablette : 16px (inchangé). Ordinateur (>= 1024px) : 18px. Grand écran
+ * (>= 1536px) : 20px. Si c'est trop gros ou pas assez, ces deux pourcentages
+ * sont les seuls réglages.
+ */
+html {
+  font-size: 100%;
+}
+@media (min-width: 1024px) {
+  html {
+    font-size: 112.5%;
+  }
+}
+@media (min-width: 1536px) {
+  html {
+    font-size: 125%;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 14px;
+  /* 0.875rem = 14px sur téléphone (inchangé), puis suit la base du <html>. */
+  font-size: 0.875rem;
 }
 
 /* Tableaux denses par défaut (c'est un outil, pas une vitrine). */

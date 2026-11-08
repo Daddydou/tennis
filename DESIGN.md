@@ -212,6 +212,8 @@ Une colonne centrée d'au plus 1152px (`max-w-6xl`), avec 16px de gouttière lat
 
 Le rythme vertical s'appuie sur une petite échelle : 4, 6, 8 et 12px entre les éléments d'un bloc (`space-y-1` à `space-y-3`), 16 à 20px entre les sections (`space-y-4`, `space-y-5`). Les cartes ont un padding interne de 12px. Les tableaux larges défilent horizontalement dans leur conteneur au lieu de casser la page.
 
+**Échelle selon l'écran.** Tout est en `rem` (Tailwind), donc une seule règle dans `app/globals.css` règle la taille de l'écran entier : base du `<html>` à 16px au téléphone et sur tablette (les 14px de corps, 12px de label et 1152px de colonne décrits ici), 18px dès 1024px de large (ordinateur), 20px dès 1536px (grand écran). Corps, labels, marges, hauteurs tactiles et largeur de colonne grandissent ensemble, dans les mêmes proportions. Aucune taille en `px` ne doit être ajoutée dans un composant : elle ne suivrait pas.
+
 **La règle du pouce.** Toute zone cliquable fait au moins 44px de haut (`min-h-11`), lien texte compris (`zoneTactile`).
 
 ## Elevation & Depth
