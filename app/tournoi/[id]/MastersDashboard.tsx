@@ -4,6 +4,7 @@ import { supabaseAnon } from '@/db/anon';
 import { lirePronostics, type PronosticStocke } from '@/db/mastersPronostic';
 import { getMatchRows, getParticipants, getTousLesPicks, type TournamentRow } from '@/db/queries';
 import { classerTournoi, reelDepuisVue } from '@/lib/mastersPronostic';
+import BoutonLireGTMasters from './BoutonLireGTMasters';
 import BoutonResultatsMasters from './BoutonResultatsMasters';
 import { vueDepuisRows } from './MastersEcrans';
 
@@ -45,7 +46,12 @@ export default async function MastersDashboard({ id, tournoi }: { id: string; to
         {tournoi.name} : deux poules de 4 (trois journées), les deux premières de chaque poule jouent des demies croisées, puis la finale.
       </p>
 
-      {!termine && <BoutonResultatsMasters tournamentId={id} />}
+      {!termine && (
+        <div className="space-y-3">
+          <BoutonResultatsMasters tournamentId={id} />
+          <BoutonLireGTMasters tournamentId={id} />
+        </div>
+      )}
 
       <section className="space-y-2.5">
         <h2 className="text-sm font-semibold">Classement</h2>
