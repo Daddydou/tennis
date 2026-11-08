@@ -6,6 +6,7 @@ import {
   getPlayerRows,
   getParticipants,
   getBracketRoundPicks,
+  getTousLesPicks,
 } from '@/db/queries';
 import { construireTableau } from '@/lib/tableauVue';
 import { stocksDuGroupe } from '../pointsStock';
@@ -22,11 +23,12 @@ export default async function TableauPage({
   await redirigerSiMasters(id);
 
   // Lectures indépendantes : en parallèle (jamais en cascade, cf. CLAUDE.md).
-  const [tournoi, matchRows, participants, picks] = await Promise.all([
+  const [tournoi, matchRows, participants, picks, picksJeu] = await Promise.all([
     getTournament(id),
     getMatchRows(id),
     getParticipants(),
     getBracketRoundPicks(id),
+    getTousLesPicks(id),
   ]);
   if (!tournoi) notFound();
 
@@ -43,6 +45,7 @@ export default async function TableauPage({
     rounds: tournoi.rounds ?? [],
     matchs: matchRows,
     picks,
+    picksJeu,
     stocks: stocksDuGroupe(participants),
     nomJoueur: (pid) => nomParId.get(pid) ?? pid,
   });

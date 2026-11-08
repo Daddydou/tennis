@@ -34,6 +34,13 @@ export interface PickEntree {
   player_id: string;
 }
 
+/** Pick du JEU de picks (tn_picks) : un joueur par moitié et par tour, jugé sur le match de ce tour où il joue. */
+export interface PickJeuEntree {
+  participant_id: string | null;
+  round: string;
+  player_id: string;
+}
+
 export interface StockEntree {
   id: string | null;
   nom: string;
@@ -68,6 +75,15 @@ export interface PickVue {
   verdict: Verdict;
 }
 
+/** Pick du jeu d'un participant sur CE match (le joueur qu'il a pické y joue). */
+export interface PickJeuVue {
+  /** Clé du participant (cleStock). */
+  cle: string;
+  participantNom: string;
+  joueurNom: string;
+  verdict: Verdict;
+}
+
 export interface MatchVue {
   id: string;
   position: number;
@@ -76,6 +92,8 @@ export interface MatchVue {
   vainqueurNom: string | null;
   /** Pronostic de chaque participant (clé = cleStock), null = rien de posé sur ce match. */
   picks: Record<string, PickVue | null>;
+  /** Picks du jeu (tous participants) dont le joueur joue ce match, dans l'ordre des participants. */
+  picksJeu: PickJeuVue[];
 }
 
 export interface BilanTour {
@@ -137,11 +155,14 @@ export function construireTableau(args: {
   rounds: string[];
   matchs: MatchEntree[];
   picks: PickEntree[];
+  /** Picks du jeu (tn_picks), tous participants : affichés sur le match où le joueur pické joue. */
+  picksJeu?: PickJeuEntree[];
   stocks: StockEntree[];
   /** Nom d'un joueur par son id. */
   nomJoueur: (id: string) => string;
 }): TourVue[] {
   const { rounds, matchs, picks, stocks, nomJoueur } = args;
+  const picksJeu = args.picksJeu ?? [];
 
   const pickParStock = new Map<string, Map<string, string>>();
   for (const p of picks) {
@@ -190,6 +211,20 @@ export function construireTableau(args: {
         if (verdict === 'juste') b.justes += 1;
       }
 
+      const picksJeuVue: PickJeuVue[] = [];
+      for (const s of stocks) {
+        const cle = cleStock(s.id);
+        const pj = picksJeu.find(
+          (p) =>
+            cleStock(p.participant_id) === cle &&
+            p.round === round &&
+            (p.player_id === m.player1_id || p.player_id === m.player2_id),
+        );
+        if (!pj) continue;
+        const verdict: Verdict = !decide ? 'attente' : pj.player_id === m.winner_id ? 'juste' : 'rate';
+        picksJeuVue.push({ cle, participantNom: s.nom, joueurNom: nomJoueur(pj.player_id), verdict });
+      }
+
       return {
         id: m.id,
         position,
@@ -197,6 +232,7 @@ export function construireTableau(args: {
         lignes: [ligne(m.player1_id, 1), ligne(m.player2_id, 2)],
         vainqueurNom: decide && m.winner_id ? nomJoueur(m.winner_id) : null,
         picks: picksVue,
+        picksJeu: picksJeuVue,
       };
     });
 
