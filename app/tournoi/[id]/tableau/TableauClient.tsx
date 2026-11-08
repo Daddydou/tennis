@@ -51,7 +51,7 @@ const LIBELLE_VERDICT: Record<Verdict, string> = {
 };
 
 /** Largeur d'une carte et hauteur d'un emplacement du premier tour affiché (px), arbre ordinateur. */
-const LARGEUR_CARTE = 252;
+const LARGEUR_CARTE = 284;
 const HAUTEUR_EMPLACEMENT = 220;
 const LONGUEUR_LIEN = 42;
 
@@ -299,7 +299,7 @@ function ColonnesSimples({ tours, stocks }: { tours: TourVue[]; stocks: StockEnt
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
       {tours.map((t) => (
-        <section key={t.round} aria-label={t.libelle} className="w-64 shrink-0 space-y-2">
+        <section key={t.round} aria-label={t.libelle} className="w-72 shrink-0 space-y-2">
           <h2 className="rounded-lg bg-soustitre-fond px-2 py-1 text-xs font-semibold uppercase tracking-wide">
             {t.libelle} · {t.matchs.length}
           </h2>
