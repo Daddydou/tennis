@@ -211,7 +211,7 @@ export default function PlanPicks({
       const cle = cleSlot(slot);
       const pose = poses.get(cle);
       if (pose) {
-        return { cle, slot, etat: 'valide', joueur: pose.joueur, e: eDe(pose.joueur, slot.round), sigma: sDe(pose.joueur, slot.round), planB: null, points: pose.points };
+        return { cle, slot, etat: 'valide', joueur: pose.joueur, e: eDe(pose.joueur, slot.round), sigma: sDe(pose.joueur, slot.round), planB: null, points: pose.points ? pose.points : null };
       }
       const c = choixEff[cle];
       if (c !== undefined) {
