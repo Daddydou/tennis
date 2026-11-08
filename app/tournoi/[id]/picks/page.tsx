@@ -7,6 +7,7 @@ import PanneauGameTracker from './PanneauGameTracker';
 import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import PlanPicks from '../plan/PlanPicks';
+import AnalyseJoueurs from './AnalyseJoueurs';
 import { carte, couleurPoints, pilleSelecteur } from '@/app/ui';
 import { libellePicksAPoser } from '@/app/tournoisUi';
 import { compterReserves } from '@/db/picksAPoser';
@@ -22,6 +23,7 @@ import { chargerBlendProduction } from '@/db/cotesBlend';
 import { getInsights } from '@/db/insights';
 import { POIDS_SURFACE } from '@/db/elo';
 import { construireDonneesPlan, type EntreeDonnees } from '@/lib/planDonnees';
+import { construireAnalyseJoueurs } from '@/lib/analyseJoueurs';
 import type { PlayerInsight } from '@/lib/insights';
 
 export const dynamic = 'force-dynamic';
@@ -205,6 +207,9 @@ export default async function PicksPage({
           insights={insightsParId}
           reservationsInitiales={reservationsInitiales}
         />
+
+        {/* Joueurs du tour : toujours visibles, même quand tous les picks sont posés. */}
+        <AnalyseJoueurs affiches={construireAnalyseJoueurs(donnees)} />
 
         {/* Game Tracker : MES picks uniquement (la clé agit au nom d'un seul joueur). */}
         {stockId === null && (
