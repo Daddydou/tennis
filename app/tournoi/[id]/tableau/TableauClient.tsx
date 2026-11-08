@@ -5,14 +5,25 @@ import { carte, pilleSelecteur } from '@/app/ui';
 import {
   arbreRegulier,
   cleStock,
-  type BilanTour,
+  initiale,
+  tourEnCours,
   type LigneVue,
   type MatchVue,
   type PickJeuVue,
   type PickVue,
   type StockEntree,
   type TourVue,
+  type Verdict,
 } from '@/lib/tableauVue';
+
+/**
+ * Tableau compilé (comme l'app de Thomas) : UN seul tableau pour tous les
+ * participants. Sur chaque match, une pastille par participant se pose à côté
+ * du joueur qu'il a pronostiqué vainqueur (vert = juste, rouge = raté, gris =
+ * en attente). Si le vainqueur de son bracket n'est dans aucun des deux
+ * joueurs du match, il est rappelé en rouge sous le match. Choix du tour en
+ * haut ; les tours précédents sont repliés.
+ */
 
 /**
  * Statut : libellé + couleur, JAMAIS la couleur seule. Ambre pour une fin
@@ -27,23 +38,54 @@ const STATUT: Record<string, { label: string; classes: string }> = {
   bye: { label: 'Bye', classes: 'text-zinc-600' },
 };
 
-const BARRE: Record<string, string> = {
-  juste: 'bg-emerald-600',
-  rate: 'bg-red-600',
-  attente: 'bg-zinc-300',
-  aucun: 'bg-zinc-200',
+const STYLE_PASTILLE: Record<Verdict, string> = {
+  juste: 'bg-emerald-600 text-white',
+  rate: 'bg-red-600 text-white',
+  attente: 'bg-zinc-200 text-zinc-700',
 };
 
-/** Largeur d'une carte et hauteur d'un emplacement du premier tour (px), arbre ordinateur. */
-const LARGEUR_CARTE = 244;
-const HAUTEUR_EMPLACEMENT = 148;
+const LIBELLE_VERDICT: Record<Verdict, string> = {
+  juste: 'juste',
+  rate: 'raté',
+  attente: 'en attente',
+};
+
+/** Largeur d'une carte et hauteur d'un emplacement du premier tour affiché (px), arbre ordinateur. */
+const LARGEUR_CARTE = 252;
+const HAUTEUR_EMPLACEMENT = 220;
 const LONGUEUR_LIEN = 42;
 
-function LigneJoueur({ l }: { l: LigneVue }) {
+/** Pastille ronde d'un participant : sa lettre, colorée selon le verdict du pronostic. */
+function Pastille({ stock, pick, rouge = false }: { stock: StockEntree; pick: PickVue; rouge?: boolean }) {
+  const style = rouge ? 'bg-white text-red-700 ring-1 ring-red-600' : STYLE_PASTILLE[pick.verdict];
+  return (
+    <span
+      title={`${stock.nom} : ${pick.joueurNom} (${rouge ? 'absent du match' : LIBELLE_VERDICT[pick.verdict]})`}
+      className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-bold leading-none ${style}`}
+    >
+      {initiale(stock.nom)}
+      <span className="sr-only">
+        {` : ${stock.nom} a pronostiqué ${pick.joueurNom} (${rouge ? 'absent du match' : LIBELLE_VERDICT[pick.verdict]})`}
+      </span>
+    </span>
+  );
+}
+
+function LigneJoueur({
+  l,
+  cote,
+  stocks,
+  m,
+}: {
+  l: LigneVue;
+  cote: 1 | 2;
+  stocks: StockEntree[];
+  m: MatchVue;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`flex-1 truncate ${
+        className={`min-w-0 flex-1 truncate ${
           l.gagnant ? 'font-semibold text-titre' : l.bye || l.perdant ? 'text-zinc-500' : 'text-zinc-900'
         }`}
       >
@@ -57,38 +99,12 @@ function LigneJoueur({ l }: { l: LigneVue }) {
           </span>
         ))}
       </div>
-    </div>
-  );
-}
-
-function ZonePick({
-  pick,
-  stock,
-  vainqueurNom,
-}: {
-  pick: PickVue | null;
-  stock: StockEntree;
-  vainqueurNom: string | null;
-}) {
-  if (!pick) {
-    return <p className="mt-2 text-xs text-zinc-500">Pas de pronostic posé</p>;
-  }
-  const libelle = stock.id === null ? 'Ton choix' : `Choix de ${stock.nom}`;
-  const style =
-    pick.verdict === 'juste'
-      ? 'bg-emerald-50 text-emerald-700'
-      : pick.verdict === 'rate'
-        ? 'bg-red-50 text-red-700'
-        : 'bg-zinc-100 text-zinc-700';
-  const marque = pick.verdict === 'juste' ? '✓ ' : pick.verdict === 'rate' ? '✗ ' : '';
-  return (
-    <div className={`mt-2 rounded-lg px-2 py-1.5 text-xs font-medium ${style}`}>
-      <p className="truncate">
-        {marque}
-        {libelle} : {pick.joueurNom}
-        {pick.verdict === 'attente' && <span className="font-normal"> · en attente</span>}
-      </p>
-      {pick.verdict === 'rate' && vainqueurNom && <p className="truncate font-normal">Vainqueur : {vainqueurNom}</p>}
+      <span className="flex shrink-0 gap-0.5" data-testid={`pastilles-${cote}`}>
+        {stocks.map((s) => {
+          const p = m.picks[cleStock(s.id)];
+          return p && p.cote === cote ? <Pastille key={cleStock(s.id)} stock={s} pick={p} /> : null;
+        })}
+      </span>
     </div>
   );
 }
@@ -118,29 +134,89 @@ function PicksDuJeu({ picks }: { picks: PickJeuVue[] }) {
   );
 }
 
-function CarteMatch({ m, stock }: { m: MatchVue; stock: StockEntree }) {
-  const pick = m.picks[cleStock(stock.id)] ?? null;
-  const statut = STATUT[m.statut];
-  const barre = pick ? BARRE[pick.verdict] : BARRE.aucun;
+/**
+ * Participants dont le vainqueur de bracket n'est dans aucun des deux joueurs
+ * du match : leur choix rappelé en rouge, sous le match.
+ */
+function Absents({ m, stocks }: { m: MatchVue; stocks: StockEntree[] }) {
+  const absents = stocks.filter((s) => m.picks[cleStock(s.id)]?.absent);
+  if (absents.length === 0) return null;
   return (
-    <div className={`relative overflow-hidden py-2.5 pl-4 pr-3 ${carte}`} data-testid="carte-match">
-      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${barre}`} />
-      <LigneJoueur l={m.lignes[0]} />
-      <LigneJoueur l={m.lignes[1]} />
-      {statut && <p className={`mt-1.5 text-xs font-medium uppercase tracking-wide ${statut.classes}`}>{statut.label}</p>}
-      <ZonePick pick={pick} stock={stock} vainqueurNom={m.vainqueurNom} />
+    <ul aria-label="Pronostics hors match" className="mt-1.5 space-y-0.5 text-xs text-red-700">
+      {absents.map((s) => {
+        const p = m.picks[cleStock(s.id)]!;
+        return (
+          <li key={cleStock(s.id)} className="flex items-center gap-1.5">
+            <Pastille stock={s} pick={p} rouge />
+            <span className="truncate">{p.joueurNom}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function CarteMatch({ m, stocks }: { m: MatchVue; stocks: StockEntree[] }) {
+  const statut = STATUT[m.statut];
+  return (
+    <div className={`relative overflow-hidden px-3 py-2.5 ${carte}`} data-testid="carte-match">
+      <LigneJoueur l={m.lignes[0]} cote={1} stocks={stocks} m={m} />
+      <LigneJoueur l={m.lignes[1]} cote={2} stocks={stocks} m={m} />
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
+        {statut ? (
+          <span className={`font-medium uppercase tracking-wide ${statut.classes}`}>{statut.label}</span>
+        ) : (
+          <span />
+        )}
+        {m.bilanMatch && (
+          <span className="tabular-nums text-zinc-600" data-testid="bilan-match">
+            {m.bilanMatch.justes}/{m.bilanMatch.participants} juste
+          </span>
+        )}
+      </div>
+      <Absents m={m} stocks={stocks} />
       <PicksDuJeu picks={m.picksJeu} />
     </div>
   );
 }
 
-function texteBilan(b: BilanTour | undefined): string | null {
-  if (!b || b.decides === 0) return null;
-  return `${b.justes}/${b.decides}`;
+/** Bilan d'un participant sur un ensemble de tours : « justes / décidés ». */
+function bilanDe(tours: TourVue[], cle: string): { justes: number; decides: number } {
+  return tours.reduce(
+    (acc, t) => {
+      const b = t.bilans[cle];
+      return { justes: acc.justes + (b?.justes ?? 0), decides: acc.decides + (b?.decides ?? 0) };
+    },
+    { justes: 0, decides: 0 },
+  );
 }
 
-/** Colonne-arbre d'ordinateur : cartes centrées dans des emplacements qui doublent à chaque tour. */
-function ArbreOrdinateur({ tours, stock }: { tours: TourVue[]; stock: StockEntree }) {
+/** Une rangée de pastilles avec le bilan de chacun (en-tête, ou résumé d'un tour replié). */
+function Bilans({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {stocks.map((s) => {
+        const b = bilanDe(tours, cleStock(s.id));
+        return (
+          <span key={cleStock(s.id)} className="inline-flex items-center gap-1 text-xs tabular-nums text-zinc-700">
+            <span
+              aria-hidden="true"
+              className="inline-flex size-5 items-center justify-center rounded-full bg-zinc-800 text-[0.65rem] font-bold text-white"
+            >
+              {initiale(s.nom)}
+            </span>
+            <span>
+              {s.nom} {b.decides > 0 ? `${b.justes}/${b.decides}` : '–'}
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+/** Colonnes en arbre d'ordinateur : cartes centrées dans des emplacements qui doublent à chaque tour. */
+function ArbreOrdinateur({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) {
   const hauteurTotale = tours[0].matchs.length * HAUTEUR_EMPLACEMENT;
   return (
     <div className="overflow-x-auto pb-2">
@@ -164,7 +240,7 @@ function ArbreOrdinateur({ tours, stock }: { tours: TourVue[]; stock: StockEntre
                       />
                     )}
                     <div className="w-full">
-                      <CarteMatch m={m} stock={stock} />
+                      <CarteMatch m={m} stocks={stocks} />
                     </div>
                     {!dernier && (
                       <>
@@ -196,7 +272,7 @@ function ArbreOrdinateur({ tours, stock }: { tours: TourVue[]; stock: StockEntre
 }
 
 /** Colonnes simples (tableau trop grand ou irrégulier) : même carte, sans traits de liaison. */
-function ColonnesSimples({ tours, stock }: { tours: TourVue[]; stock: StockEntree }) {
+function ColonnesSimples({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
       {tours.map((t) => (
@@ -205,7 +281,7 @@ function ColonnesSimples({ tours, stock }: { tours: TourVue[]; stock: StockEntre
             {t.libelle} · {t.matchs.length}
           </h2>
           {t.matchs.map((m) => (
-            <CarteMatch key={m.id} m={m} stock={stock} />
+            <CarteMatch key={m.id} m={m} stocks={stocks} />
           ))}
         </section>
       ))}
@@ -214,79 +290,80 @@ function ColonnesSimples({ tours, stock }: { tours: TourVue[]; stock: StockEntre
 }
 
 export function TableauClient({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) {
-  const [cleChoisie, setCleChoisie] = useState<string>(cleStock(stocks[0]?.id ?? null));
-  const [roundChoisi, setRoundChoisi] = useState<string>(tours[0]?.round ?? '');
-  const stock = stocks.find((s) => cleStock(s.id) === cleChoisie) ?? stocks[0];
-  const tourMobile = tours.find((t) => t.round === roundChoisi) ?? tours[0];
-  const arbre = arbreRegulier(tours);
+  const [roundChoisi, setRoundChoisi] = useState<string>(() => tourEnCours(tours));
+  const indexChoisi = Math.max(
+    0,
+    tours.findIndex((t) => t.round === roundChoisi),
+  );
+  const tourChoisi = tours[indexChoisi];
+  const precedents = tours.slice(0, indexChoisi);
+  const aPartirDuChoix = tours.slice(indexChoisi);
+  const arbre = arbreRegulier(aPartirDuChoix);
 
   return (
     <div className="space-y-4">
-      <div role="group" aria-label="Participant" className="flex flex-wrap gap-2">
-        {stocks.map((s) => {
-          const cle = cleStock(s.id);
-          const actif = cle === cleChoisie;
-          const total = tours.reduce(
-            (acc, t) => {
-              const b = t.bilans[cle];
-              return { justes: acc.justes + (b?.justes ?? 0), decides: acc.decides + (b?.decides ?? 0) };
-            },
-            { justes: 0, decides: 0 },
-          );
+      {/* Bilan de chacun sur tout le tournoi : les pastilles se retrouvent sur les matchs. */}
+      <div className={`${carte} px-3 py-2`}>
+        <Bilans tours={tours} stocks={stocks} />
+        <p className="mt-1 text-xs text-zinc-500">
+          Pastille sur un joueur = vainqueur pronostiqué dans le bracket (vert juste, rouge raté, gris en attente).
+          Pastille rouge sous un match = son vainqueur n&apos;y est plus.
+        </p>
+      </div>
+
+      <div role="tablist" aria-label="Tour" className="flex gap-2 overflow-x-auto pb-1">
+        {tours.map((t) => {
+          const actif = t.round === tourChoisi.round;
           return (
             <button
-              key={cle}
+              key={t.round}
               type="button"
-              aria-pressed={actif}
-              onClick={() => setCleChoisie(cle)}
-              className={pilleSelecteur(actif)}
+              role="tab"
+              aria-selected={actif}
+              onClick={() => setRoundChoisi(t.round)}
+              className={`${pilleSelecteur(actif)} shrink-0`}
             >
-              {s.nom}
-              {total.decides > 0 && (
-                <span className={`ml-1.5 tabular-nums ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>
-                  {total.justes}/{total.decides}
-                </span>
-              )}
+              {t.libelle}
             </button>
           );
         })}
       </div>
 
-      {/* Téléphone : un tour à la fois. */}
-      <div className="space-y-3 md:hidden">
-        <div role="tablist" aria-label="Tour" className="flex gap-2 overflow-x-auto pb-1">
-          {tours.map((t) => {
-            const actif = t.round === tourMobile.round;
-            const bilan = texteBilan(t.bilans[cleChoisie]);
-            return (
-              <button
-                key={t.round}
-                type="button"
-                role="tab"
-                aria-selected={actif}
-                onClick={() => setRoundChoisi(t.round)}
-                className={`${pilleSelecteur(actif)} shrink-0`}
-              >
-                {t.libelle}
-                {bilan && (
-                  <span className={`ml-1.5 text-xs tabular-nums ${actif ? 'text-blue-100' : 'text-zinc-500'}`}>
-                    {bilan} justes
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div className="space-y-2">
-          {tourMobile.matchs.map((m) => (
-            <CarteMatch key={m.id} m={m} stock={stock} />
+      {precedents.length > 0 && (
+        <section aria-label="Tours précédents" className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Tours précédents — repliés</h2>
+          {precedents.map((t) => (
+            <details key={t.round} className={`${carte} px-3 py-1`}>
+              <summary className="flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm font-medium text-zinc-800">
+                <span>
+                  {t.libelle} <span className="font-normal text-zinc-500">· {t.matchs.length} matchs</span>
+                </span>
+                <Bilans tours={[t]} stocks={stocks} />
+              </summary>
+              <div className="grid gap-2 pb-3 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+                {t.matchs.map((m) => (
+                  <CarteMatch key={m.id} m={m} stocks={stocks} />
+                ))}
+              </div>
+            </details>
           ))}
-        </div>
+        </section>
+      )}
+
+      {/* Téléphone : le tour choisi, carte par carte. */}
+      <div className="space-y-2 md:hidden">
+        {tourChoisi.matchs.map((m) => (
+          <CarteMatch key={m.id} m={m} stocks={stocks} />
+        ))}
       </div>
 
-      {/* Ordinateur : tous les tours côte à côte. */}
+      {/* Ordinateur : l'arbre du tour choisi jusqu'à la finale. */}
       <div className="hidden md:block">
-        {arbre ? <ArbreOrdinateur tours={tours} stock={stock} /> : <ColonnesSimples tours={tours} stock={stock} />}
+        {arbre ? (
+          <ArbreOrdinateur tours={aPartirDuChoix} stocks={stocks} />
+        ) : (
+          <ColonnesSimples tours={aPartirDuChoix} stocks={stocks} />
+        )}
       </div>
     </div>
   );
