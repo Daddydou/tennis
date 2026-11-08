@@ -70,6 +70,22 @@ describe('Jeu de picks et bracket sont deux jeux distincts', () => {
     // Le bracket de ce match reste à 0 : le ✓ du jeu de picks n'y est pas compté.
     expect(within(carte).getByTestId('bilan-match').textContent).toMatch(/^0\/2/);
   });
+
+  it('rappelle en haut les points du bracket de chacun ; null = pas de bracket, à ne pas confondre avec 0', () => {
+    const tours = construireTableau({ rounds: ['SF', 'F'], matchs, picks, stocks, nomJoueur: (id) => NOMS[id] ?? id });
+    render(<TableauClient tours={tours} stocks={stocks} pointsBracket={{ moi: 64, 'p-laki': null }} />);
+    const rangee = screen.getByTestId('points-bracket');
+    expect(rangee.textContent).toContain('Points du bracket');
+    expect(rangee.textContent).toContain('Moi64 pts');
+    expect(rangee.textContent).toContain('Lakipas de bracket');
+  });
+
+  it('un vrai 0 s’affiche « 0 pts », pas « pas de bracket »', () => {
+    const tours = construireTableau({ rounds: ['SF', 'F'], matchs, picks, stocks, nomJoueur: (id) => NOMS[id] ?? id });
+    render(<TableauClient tours={tours} stocks={stocks} pointsBracket={{ moi: 0, 'p-laki': 12 }} />);
+    expect(screen.getByTestId('points-bracket').textContent).toContain('Moi0 pts');
+    expect(screen.getByTestId('points-bracket').textContent).not.toContain('pas de bracket');
+  });
 });
 
 describe('TableauClient', () => {

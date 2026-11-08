@@ -316,7 +316,38 @@ function ColonnesSimples({ tours, stocks }: { tours: TourVue[]; stocks: StockEnt
   );
 }
 
-export function TableauClient({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) {
+/**
+ * Rappel des points du BRACKET de chacun, au même format que la rangée de l'onglet Picks
+ * (« Moi 88 pts »). `null` = aucun pronostic de bracket importé pour ce participant :
+ * à distinguer d'un vrai 0.
+ */
+function PointsBracket({ stocks, points }: { stocks: StockEntree[]; points: Record<string, number | null> }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Points du bracket" data-testid="points-bracket">
+      <span className="mr-1 text-xs font-medium text-soustitre">Points du bracket</span>
+      {stocks.map((s) => {
+        const p = points[cleStock(s.id)] ?? null;
+        return (
+          <div key={cleStock(s.id)} className={`flex min-h-11 items-center gap-1.5 px-3 text-sm ${carte}`}>
+            <span className="font-medium">{s.nom}</span>
+            {p === null ? <span className="text-xs text-zinc-500">pas de bracket</span> : <span className="tabular-nums text-juste">{p} pts</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function TableauClient({
+  tours,
+  stocks,
+  pointsBracket,
+}: {
+  tours: TourVue[];
+  stocks: StockEntree[];
+  /** Points du bracket de chaque participant (clé = cleStock) ; absent : la rangée n'est pas affichée. */
+  pointsBracket?: Record<string, number | null>;
+}) {
   const [roundChoisi, setRoundChoisi] = useState<string>(() => tourEnCours(tours));
   const indexChoisi = Math.max(
     0,
@@ -329,6 +360,8 @@ export function TableauClient({ tours, stocks }: { tours: TourVue[]; stocks: Sto
 
   return (
     <div className="space-y-4">
+      {pointsBracket && <PointsBracket stocks={stocks} points={pointsBracket} />}
+
       {/* Bilan de chacun sur tout le tournoi : les pastilles se retrouvent sur les matchs. */}
       <div className={`${carte} px-3 py-2`}>
         <Bilans tours={tours} stocks={stocks} />

@@ -10,7 +10,7 @@ import {
   getTousLesPicks,
 } from '@/db/queries';
 import { construireTableau } from '@/lib/tableauVue';
-import { stocksDuGroupe } from '../pointsStock';
+import { pointsBracketParStock, stocksDuGroupe } from '../pointsStock';
 import { TableauClient } from './TableauClient';
 
 export const dynamic = 'force-dynamic';
@@ -44,21 +44,29 @@ export default async function TableauPage({
   const players = await getPlayerRows([...ids]);
   const nomParId = new Map(players.map((p) => [p.id, p.name]));
 
+  const stocks = stocksDuGroupe(participants);
   const tours = construireTableau({
     rounds: tournoi.rounds ?? [],
     matchs: matchRows,
     picks,
     picksJeu,
-    stocks: stocksDuGroupe(participants),
+    stocks,
     nomJoueur: (pid) => nomParId.get(pid) ?? pid,
   });
+
+  // Points du bracket : le MÊME calcul que le Dashboard (pointsBracketParStock). Un participant absent de la
+  // carte n'a aucun pronostic de bracket : null (à distinguer d'un vrai 0).
+  const pointsParStock = pointsBracketParStock(matchRows, tournoi.rounds ?? [], picks);
+  const pointsBracket: Record<string, number | null> = Object.fromEntries(
+    stocks.map((s) => [s.id ?? 'moi', pointsParStock.has(s.id) ? (pointsParStock.get(s.id) as number) : null]),
+  );
 
   return (
     <div className="space-y-5">
       {tours.length === 0 ? (
         <p className="text-sm text-zinc-500">Aucun match importé.</p>
       ) : (
-        <TableauClient tours={tours} stocks={stocksDuGroupe(participants)} />
+        <TableauClient tours={tours} stocks={stocks} pointsBracket={pointsBracket} />
       )}
     </div>
   );

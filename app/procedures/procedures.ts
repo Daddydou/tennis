@@ -89,6 +89,7 @@ export const GROUPES: Groupe[] = [
         quand: 'Pendant le tournoi, pour comparer Moi, Laki et Thomas.',
         etapes: [
           'Ouvrir le tournoi puis `Tableau` : un seul tableau pour les trois participants.',
+          'En haut, `Points du bracket` rappelle les points de Moi, Laki et Thomas (le même calcul que le Dashboard). « pas de bracket » = aucun pronostic de bracket importé pour ce participant, ce qui n’est pas un score de 0.',
           'Choisir le tour avec les onglets (par défaut : le tour en cours). Les tours précédents sont repliés au-dessus : un clic pour les ouvrir.',
           'Sur chaque match, une pastille (la lettre du participant) se pose à côté du joueur qu’il avait pronostiqué : vert = juste, rouge = raté, gris = en attente. `n/3 juste` résume le match une fois joué.',
           'Pastille rouge sous un match : le vainqueur de son bracket n’est plus dans ce match (éliminé avant). Le nom du joueur est rappelé à côté.',
