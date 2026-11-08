@@ -133,3 +133,34 @@ describe('libelleTour / arbreRegulier', () => {
     expect(arbreRegulier([])).toBe(false);
   });
 });
+
+describe('construireTableau : picks du jeu', () => {
+  const matchs = [
+    match({ id: 'm1', round: 'QF', position: 0, winner_id: 'a', status: 'completed' }),
+    match({ id: 'm2', round: 'QF', position: 1, player1_id: 'c', player2_id: 'd' }),
+  ];
+  const construire = (picksJeu: { participant_id: string | null; round: string; player_id: string }[]) =>
+    construireTableau({ rounds: ['QF'], matchs, picks: [], picksJeu, stocks, nomJoueur });
+
+  it('place chaque pick sur le match où le joueur pické joue, avec ✓ / ✗ / attente', () => {
+    const [qf] = construire([
+      { participant_id: null, round: 'QF', player_id: 'a' },
+      { participant_id: 'p-laki', round: 'QF', player_id: 'b' },
+      { participant_id: null, round: 'QF', player_id: 'c' },
+    ]);
+    expect(qf.matchs[0].picksJeu).toEqual([
+      { cle: 'moi', participantNom: 'Moi', joueurNom: 'Alcaraz', verdict: 'juste' },
+      { cle: 'p-laki', participantNom: 'Laki', joueurNom: 'Bublik', verdict: 'rate' },
+    ]);
+    expect(qf.matchs[1].picksJeu).toEqual([
+      { cle: 'moi', participantNom: 'Moi', joueurNom: 'Cobolli', verdict: 'attente' },
+    ]);
+  });
+
+  it('ignore un pick d\'un autre tour et reste vide sans picksJeu', () => {
+    const [qf] = construire([{ participant_id: null, round: 'SF', player_id: 'a' }]);
+    expect(qf.matchs[0].picksJeu).toEqual([]);
+    const [sans] = construireTableau({ rounds: ['QF'], matchs, picks: [], stocks, nomJoueur });
+    expect(sans.matchs[1].picksJeu).toEqual([]);
+  });
+});

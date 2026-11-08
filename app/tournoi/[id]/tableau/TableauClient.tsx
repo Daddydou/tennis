@@ -8,6 +8,7 @@ import {
   type BilanTour,
   type LigneVue,
   type MatchVue,
+  type PickJeuVue,
   type PickVue,
   type StockEntree,
   type TourVue,
@@ -92,6 +93,31 @@ function ZonePick({
   );
 }
 
+const STYLE_PICK_JEU: Record<string, string> = {
+  juste: 'text-emerald-700',
+  rate: 'text-red-700',
+  attente: 'text-zinc-600',
+};
+
+/**
+ * Picks du JEU (un joueur par moitié et par tour) de chaque participant dont
+ * le joueur pické joue ce match, avec le résultat : ✓ juste, ✗ raté, sinon
+ * « en attente ». Le texte porte le sens, la couleur n'est qu'un renfort.
+ */
+function PicksDuJeu({ picks }: { picks: PickJeuVue[] }) {
+  if (picks.length === 0) return null;
+  return (
+    <ul aria-label="Picks du jeu" className="mt-2 space-y-0.5 border-t border-zinc-200 pt-1.5 text-xs">
+      {picks.map((p) => (
+        <li key={p.cle} className={`truncate ${STYLE_PICK_JEU[p.verdict]}`}>
+          <span className="font-semibold">{p.participantNom}</span> : {p.joueurNom}{' '}
+          {p.verdict === 'juste' ? '✓' : p.verdict === 'rate' ? '✗' : <span className="text-zinc-500">· en attente</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function CarteMatch({ m, stock }: { m: MatchVue; stock: StockEntree }) {
   const pick = m.picks[cleStock(stock.id)] ?? null;
   const statut = STATUT[m.statut];
@@ -103,6 +129,7 @@ function CarteMatch({ m, stock }: { m: MatchVue; stock: StockEntree }) {
       <LigneJoueur l={m.lignes[1]} />
       {statut && <p className={`mt-1.5 text-xs font-medium uppercase tracking-wide ${statut.classes}`}>{statut.label}</p>}
       <ZonePick pick={pick} stock={stock} vainqueurNom={m.vainqueurNom} />
+      <PicksDuJeu picks={m.picksJeu} />
     </div>
   );
 }
