@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 import { estMasters } from '@/lib/masters';
+import { statutPicksAPoser } from '@/lib/pastillesPicks';
 import type { TournamentRow } from '@/db/queries';
+import { ChipStatutPick } from './pastillesPicks';
 import { carte, lienBouton, zoneTactile } from './ui';
 
 const SURFACE_LABEL: Record<string, string> = {
@@ -241,11 +243,8 @@ export function CarteTournoi({
           </span>
         </div>
         {aPoser && (
-          <p
-            className={`text-sm ${aPoser.reste > 0 ? 'font-semibold text-amber-900' : 'text-zinc-600'}`}
-            data-testid="picks-a-poser"
-          >
-            {libellePicksAPoser(aPoser)}
+          <p className="text-sm" data-testid="picks-a-poser">
+            <ChipStatutPick statut={statutPicksAPoser(aPoser)} libelle={libellePicksAPoser(aPoser)} grand />
           </p>
         )}
         <div className="flex flex-wrap gap-2 pt-1">

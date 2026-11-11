@@ -49,6 +49,35 @@
   --color-zinc-600: #475569;
 }
 
+/*
+ * GRAMMAIRE DES STATUTS ET DES RÉSULTATS DE PICKS (DESIGN.md, « Statuts, résultats, participants »).
+ * Trois familles qui ne se mélangent pas :
+ *  - RÉSULTAT d'un match : fond de ligne (gagné vert pâle, perdu rouge pâle), toujours avec ✓ / ✗ et le mot.
+ *  - STATUT d'un pick : posé = bleu, réservé = ambre, à poser = pointillé gris, verrouillé = ardoise + cadenas.
+ *  - PARTICIPANT : un point rond avec l'initiale, seulement là (Moi, Laki, Thomas).
+ * Contrastes mesurés ≥ 4,5:1 (texte sur son fond, point sur blanc). Jamais de valeur écrite en dur dans un composant.
+ */
+@theme {
+  --color-gagne-fond: #ecfdf3;
+  --color-gagne-bord: #86efac;
+  --color-gagne-texte: #14532d;
+  --color-perdu-fond: #fef2f2;
+  --color-perdu-bord: #fca5a5;
+  --color-perdu-texte: #7f1d1d;
+  --color-coche: #15803d;
+  --color-croix: #b91c1c;
+  --color-statut-pose-fond: #dbeafe;
+  --color-statut-pose-texte: #0b4f9c;
+  --color-statut-reserve-fond: #fef3c7;
+  --color-statut-reserve-texte: #92400e;
+  --color-statut-verrou-fond: #e2e8f0;
+  --color-statut-verrou-texte: #334155;
+  --color-participant-moi: #0b4f9c;
+  --color-participant-laki: #6d28d9;
+  --color-participant-thomas: #b45309;
+  --color-participant-autre: #475569;
+}
+
 @layer base {
   h1,
   h3 {

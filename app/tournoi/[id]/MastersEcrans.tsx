@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { classeLigneResultat, EtiquetteResultat, PastillePick, PuceParticipant } from '@/app/pastillesPicks';
 import { carte, noteInfo, pilleSelecteur } from '@/app/ui';
 import { supabaseAnon } from '@/db/anon';
 import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConseils';
@@ -7,6 +8,7 @@ import { getMatchRows, getParticipants, getPlayerRows, getTousLesPicks, type Mat
 import { libelleTourMasters } from '@/lib/masters';
 import { analyserMatchsMasters, type JoueuseAnalyseMasters, type MatchAnalyseMasters } from '@/lib/mastersAnalyse';
 import { pronosticFerme } from '@/lib/mastersPronostic';
+import { pastillesDuTour, resultatLigne } from '@/lib/pastillesPicks';
 import { lignesPhaseFinale, pastillesPoule, pronosticsParParticipant, type ParticipantPronostic } from '@/lib/mastersPronosticVue';
 import { vueMasters, type VueMasters } from '@/lib/mastersVue';
 import ConseilsMastersCarte from './ConseilsMasters';
@@ -79,21 +81,34 @@ export async function MastersTableau({ id }: { id: string }) {
   );
 }
 
-function LigneJoueuse({ j, noms, vainqueur }: { j: JoueuseAnalyseMasters; noms: Noms; vainqueur: string | null }) {
-  const gagne = vainqueur !== null && vainqueur === j.id;
-  const perdu = vainqueur !== null && vainqueur !== j.id;
+/**
+ * Une joueuse dans le bloc d'UN tour : fond vert / rouge pâle selon le résultat du match, et les pastilles
+ * des seuls picks posés POUR CE TOUR (un pick de la journée 2 ne s'affiche jamais dans la journée 1).
+ */
+function LigneJoueuse({ j, noms, vainqueur, round }: { j: JoueuseAnalyseMasters; noms: Noms; vainqueur: string | null; round: string }) {
+  const resultat = resultatLigne(vainqueur, j.id);
+  const pastilles = pastillesDuTour({ picks: j.picks, round, joueuseId: j.id, vainqueurId: vainqueur });
   return (
-    <div className={`space-y-0.5 py-1.5 ${perdu ? 'text-zinc-500' : ''}`}>
+    <div className={`space-y-1 ${classeLigneResultat(resultat)}`} data-resultat={resultat}>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-medium">{noms.get(j.id) ?? j.id}</span>
         {j.elo !== null && <span className="text-xs tabular-nums text-zinc-600">Elo {j.elo}</span>}
         {j.proba !== null && vainqueur === null && <span className="text-xs tabular-nums text-zinc-600">{Math.round(j.proba * 100)} % de gagner</span>}
-        {gagne && <span className="text-xs font-medium">Gagné</span>}
-        {perdu && <span className="text-xs font-medium">Perdu</span>}
+        {resultat !== 'a_jouer' && (
+          <span className="ml-auto">
+            <EtiquetteResultat r={resultat} />
+          </span>
+        )}
       </div>
-      <p className="text-xs text-zinc-600">
-        {j.picks.length === 0 ? 'Pickée par personne' : `Pickée par ${j.picks.map((p) => `${p.participant} (${libelleTourMasters(p.round)})`).join(', ')}`}
-      </p>
+      {pastilles.length === 0 ? (
+        <p className="text-xs text-zinc-600">Aucun pick</p>
+      ) : (
+        <p className="flex flex-wrap items-center gap-1.5" data-testid="pastilles-picks">
+          {pastilles.map((p) => (
+            <PastillePick key={p.participant} p={p} />
+          ))}
+        </p>
+      )}
     </div>
   );
 }
@@ -113,11 +128,10 @@ function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[];
             {matchs
               .filter((m) => m.round === round)
               .map((m, i) => (
-                <div key={i} className={`${carte} px-3 py-1`} data-testid="affiche-masters">
-                  {m.poule && <p className="pt-1 text-xs text-zinc-500">Poule {m.poule}</p>}
-                  <LigneJoueuse j={m.joueuses[0]} noms={noms} vainqueur={m.vainqueurId} />
-                  <div className="border-t border-zinc-100" />
-                  <LigneJoueuse j={m.joueuses[1]} noms={noms} vainqueur={m.vainqueurId} />
+                <div key={i} className={`${carte} space-y-1.5 p-2`} data-testid="affiche-masters">
+                  {m.poule && <p className="px-1 text-xs text-zinc-500">Poule {m.poule}</p>}
+                  <LigneJoueuse j={m.joueuses[0]} noms={noms} vainqueur={m.vainqueurId} round={round} />
+                  <LigneJoueuse j={m.joueuses[1]} noms={noms} vainqueur={m.vainqueurId} round={round} />
                 </div>
               ))}
           </div>
@@ -179,6 +193,7 @@ export async function MastersPicks({
                 aria-current={actif ? 'page' : undefined}
                 className={`${pilleSelecteur(actif)} gap-1.5`}
               >
+                <PuceParticipant nom={s.nom} />
                 {s.nom}
                 <span className={`tabular-nums ${actif ? 'text-blue-100' : 'text-juste'}`}>{pts} pts</span>
               </Link>
@@ -220,7 +235,8 @@ export async function MastersPicks({
       <AnalyseMatchsMasters matchs={matchs} noms={noms} />
 
       <p className={noteInfo}>
-        Un joueur ne se pique qu&apos;une fois par phase. « Pickée par » donne les picks de Moi, Laki et Thomas déjà enregistrés (alignés sur Game Tracker à chaque lecture).
+        Un joueur ne se pique qu&apos;une fois par phase. Les pastilles donnent les picks de Moi, Laki et Thomas déjà enregistrés (alignés sur Game Tracker à chaque lecture),
+        dans la journée où ils ont été posés : ✓ juste, ✗ raté, horloge = match pas encore joué.
       </p>
     </div>
   );
