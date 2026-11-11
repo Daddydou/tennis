@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { ChipStatutPick } from '@/app/pastillesPicks';
 import { boutonSecondaire, carte, noteInfo } from '@/app/ui';
 import type { PreparationEnvoiMasters, Souhait } from '@/lib/mastersGT';
 import { envoyerGameTrackerMasters, lireGameTrackerMasters, preparerGameTrackerMasters, type LectureMasters } from './mastersGTActions';
@@ -130,7 +131,7 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
                           </option>
                         ))}
                       </select>
-                      {s.fixe && <span className="text-xs text-zinc-500">déjà posé</span>}
+                      {s.fixe && <ChipStatutPick statut="pose" libelle="déjà posé" />}
                     </label>
                   );
                 })}

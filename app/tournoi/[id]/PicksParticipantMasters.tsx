@@ -1,5 +1,7 @@
+import { ChipStatutPick, classeLigneResultat, EtiquetteResultat, PuceParticipant } from '@/app/pastillesPicks';
 import { carte, couleurPoints } from '@/app/ui';
 import { libelleTourMasters } from '@/lib/masters';
+import { ligneDepuisPoints } from '@/lib/pastillesPicks';
 
 /**
  * Picks d'un autre participant (Laki, Thomas) sur un Masters, en LECTURE SEULE : un emplacement par
@@ -41,8 +43,11 @@ export default function PicksParticipantMasters({
   const total = picks.reduce((s, p) => s + (p.points ?? 0), 0);
   return (
     <section className={`${carte} space-y-2 p-4`} data-testid="picks-participant-masters" aria-label={`Picks de ${nom}`}>
-      <header className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <h2 className="text-base font-semibold">Picks de {nom}</h2>
+      <header className="flex flex-wrap items-center justify-between gap-x-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <PuceParticipant nom={nom} />
+          Picks de {nom}
+        </h2>
         <span className="text-sm tabular-nums text-zinc-700">{total} pts</span>
       </header>
       {picks.length === 0 && (
@@ -50,13 +55,15 @@ export default function PicksParticipantMasters({
           Aucun pick de {nom} chez nous pour l&apos;instant : ils arrivent quand le tour est verrouillé chez Game Tracker, à chaque lecture.
         </p>
       )}
-      <ul className="divide-y divide-zinc-100 text-sm">
+      <ul className="space-y-1.5 text-sm">
         {EMPLACEMENTS.map((e) => {
           // Demie et finale : un seul pick, quelle que soit la moitié stockée (Game Tracker écrit « haut »).
           const pick = picks.find((p) => p.round === e.round && (e.half === null || p.half === e.half));
+          // Fond de la ligne : des points = juste (vert pâle), zéro = raté (rouge pâle), null = pas joué (blanc).
+          const ligne = ligneDepuisPoints(pick?.points);
           return (
-            <li key={`${e.round}|${e.half ?? ''}`} className="flex items-baseline gap-3 py-1.5">
-              <span className="w-28 shrink-0 text-xs text-zinc-500">
+            <li key={`${e.round}|${e.half ?? ''}`} className={`flex items-center gap-3 ${pick ? classeLigneResultat(ligne) : 'rounded-xl px-2.5 py-1.5'}`} data-resultat={pick ? ligne : 'vide'}>
+              <span className="w-28 shrink-0 text-xs text-zinc-600">
                 {libelleTourMasters(e.round)}
                 {e.half ? ` · ${POULE[e.half]}` : ''}
               </span>
@@ -64,13 +71,18 @@ export default function PicksParticipantMasters({
                 <>
                   <span className="min-w-0 flex-1 truncate font-medium">{noms[pick.playerId] ?? pick.playerId}</span>
                   {pick.points === null ? (
-                    <span className="shrink-0 text-xs text-zinc-500">à jouer</span>
+                    <span className="shrink-0 text-xs text-zinc-600">à jouer</span>
                   ) : (
-                    <span className={`shrink-0 font-mono tabular-nums ${couleurPoints(pick.points)}`}>{pick.points}</span>
+                    <span className="inline-flex shrink-0 items-center gap-1.5">
+                      <EtiquetteResultat r={ligne} />
+                      <span className={`font-mono tabular-nums ${couleurPoints(pick.points)}`}>{pick.points}</span>
+                    </span>
                   )}
                 </>
               ) : (
-                <span className="min-w-0 flex-1 text-zinc-500">pas posé</span>
+                <span className="min-w-0 flex-1">
+                  <ChipStatutPick statut="a_poser" libelle="pas posé" />
+                </span>
               )}
             </li>
           );

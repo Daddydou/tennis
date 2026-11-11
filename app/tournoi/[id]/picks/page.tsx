@@ -10,7 +10,9 @@ import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import PlanPicks from '../plan/PlanPicks';
 import AnalyseJoueurs from './AnalyseJoueurs';
 import { carte, couleurPoints, pilleSelecteur } from '@/app/ui';
+import { classeLigneResultat } from '@/app/pastillesPicks';
 import { libellePicksAPoser } from '@/app/tournoisUi';
+import { ligneDepuisPoints } from '@/lib/pastillesPicks';
 import { compterReserves } from '@/db/picksAPoser';
 import {
   avancementPicks,
@@ -235,10 +237,13 @@ export default async function PicksPage({
               </span>
               <span className="tabular-nums text-zinc-900">{pointsJoues} pts</span>
             </summary>
-            <ul className="divide-y divide-zinc-100 pb-2 text-sm">
+            <ul className="space-y-1.5 pb-3 text-sm">
               {picksJoues.map((p) => (
-                <li key={`${p.round}|${p.half ?? ''}`} className="flex items-baseline gap-3 py-1.5">
-                  <span className="w-20 shrink-0 text-xs text-zinc-500">
+                <li
+                  key={`${p.round}|${p.half ?? ''}`}
+                  className={`flex items-center gap-3 ${classeLigneResultat(ligneDepuisPoints(p.points))}`}
+                >
+                  <span className="w-20 shrink-0 text-xs text-zinc-600">
                     {p.round}
                     {p.half ? ` · ${MOITIE[p.half] ?? p.half}` : ''}
                   </span>

@@ -79,9 +79,10 @@ export const GROUPES: Groupe[] = [
           'En demi-finale et en finale : un seul pick.',
           'Masters (ATP Finals, WTA Finals) : l’onglet `Picks` propose aussi `Prudent`, `Équilibré`, `Audacieux` et `Contre Laki et Thomas` pour TOUT le tournoi (poules, demie, finale). Chaque carte donne les points attendus et la chance de finir devant Laki et Thomas ; le bilan détaille mauvais cas et bon cas. Les plans sont recalculés à chaque chargement, donc après chaque résultat importé. Le panneau `Game Tracker` envoie les picks de la stratégie choisie, tour ouvert seulement, après un clic.',
           'Masters : en haut de l’onglet `Picks`, les pastilles `Moi`, `Laki`, `Thomas` (avec leurs points Picks) permettent de voir les picks des autres, comme sur Paris. Pour Laki et Thomas, c’est en LECTURE SEULE (journée par journée et par poule, demie, finale) : leurs picks arrivent par `Lire Game Tracker`, une fois le tour verrouillé chez Game Tracker.',
+          'Lire les couleurs (Masters, `Picks`) : fond vert pâle = joueuse qui a gagné (✓), fond rouge pâle = perdu (✗), fond blanc = à jouer. Sous chaque joueuse, une pastille par participant (point rond avec son initiale : Moi bleu, Laki violet, Thomas ocre) montre qui l’a pickée POUR CETTE JOURNÉE seulement : ✓ juste, ✗ raté, horloge = match pas encore joué. Statut d’un pick : `déjà posé` bleu, `réservé, à valider` ambre, `à poser` en pointillé gris, `verrouillé` gris foncé avec cadenas. Toujours un mot ou un signe à côté de la couleur.',
         ],
         doc: 'README.md (principe du jeu)',
-        maj: '2026-11-08',
+        maj: '2026-11-11',
       },
       {
         id: 'lire-le-tableau',

@@ -183,8 +183,17 @@ Chaque rôle a UNE couleur, partout, via les jetons de `app/globals.css` (`text-
 - **Points justes** (#0e7490, sarcelle) et **points ratés** (#be123c, framboise) : un pick qui a marqué, un pick resté à zéro. Helper `couleurPoints` (app/ui.tsx) : aucune couleur tant que le match n'est pas joué.
 Ces rôles s'ajoutent aux teintes sémantiques ci-dessous et ne les remplacent pas : vert/rouge restent le gagné/perdu d'un match, ambre l'avertissement.
 
+### Statuts, résultats, participants (grammaire des picks)
+Trois familles qui ne se mélangent jamais, chacune avec ses jetons dans `app/globals.css` (jamais de valeur en dur dans un composant) et ses composants dans `app/pastillesPicks.tsx`. La couleur ne porte jamais seule : une icône et un mot l'accompagnent toujours. Tous les textes sont mesurés ≥ 4,5:1 sur leur fond.
+- **Résultat d'un match = le fond de la ligne.** Gagné : vert pâle (`gagne-fond` #ecfdf3, bord `gagne-bord` #86efac, texte `gagne-texte` #14532d), avec « ✓ Gagné ». Perdu : rouge pâle (`perdu-fond` #fef2f2, `perdu-bord` #fca5a5, `perdu-texte` #7f1d1d), avec « ✗ Perdu ». À jouer : blanc. Helper `classeLigneResultat`.
+- **Statut d'un pick = une puce** (`ChipStatutPick`, la même partout : écran Picks, panneau Game Tracker, carte de l'accueil). Déjà posé : bleu (`statut-pose-*`, coche). Réservé, à valider : ambre (`statut-reserve-*`). À poser : bordure pointillée grise, sans fond. Verrouillé : ardoise (`statut-verrou-*`) avec cadenas.
+- **Participant = un point rond avec son initiale** (`PuceParticipant`), le même partout : Moi #0b4f9c (`participant-moi`), Laki #6d28d9 (`participant-laki`), Thomas #b45309 (`participant-thomas`), autre `participant-autre`. La pastille d'un pick = point + nom + ✓ (`coche`, juste), ✗ (`croix`, raté) ou horloge (match pas joué), et n'apparaît que dans le bloc de SA journée (`lib/pastillesPicks.ts`, `pastillesDuTour`).
+- **Points** : toujours `couleurPoints` (sarcelle / framboise), inchangé.
+
 ### Named Rules
-**La règle du bleu qui agit.** Le bleu signale ce qu'on peut faire, jamais un état ni une catégorie, à la seule exception assumée de la puce ATP. Un nouvel élément qui veut attirer l'œil sans être une action n'a pas droit au bleu.
+**La règle du bleu qui agit.** Le bleu signale ce qu'on peut faire, jamais un état ni une catégorie, à deux exceptions assumées : la puce ATP et la puce « déjà posé » (statut de pick, avec coche et mot, jamais sur un bouton). Un nouvel élément qui veut attirer l'œil sans être une action n'a pas droit au bleu.
+
+**L'exception des couleurs de participants.** Violet (Laki) et ambre foncé (Thomas) reprennent des teintes réservées (Elo ambigu, avertissement). Elles ne vivent que dans le petit point rond d'un participant, avec son initiale, jamais en fond de ligne, jamais en texte, jamais seules : le sens réservé de ces teintes ailleurs n'est pas touché.
 
 **La règle des teintes prises.** Ambre, émeraude, ciel, fuchsia, violet, rouge et ardoise ont chacun un sens fixé. On ne les réutilise jamais pour décorer ou pour « varier ». Les rôles Dur bleu (titre, sous-titre, adversaire, points) sont l'exception voulue : ils ont leurs propres jetons, on ne leur substitue pas une teinte sémantique.
 

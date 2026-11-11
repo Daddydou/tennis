@@ -1,4 +1,5 @@
-import { badgeNeutre, carte, noteInfo } from '@/app/ui';
+import { ChipStatutPick } from '@/app/pastillesPicks';
+import { carte, noteInfo } from '@/app/ui';
 import type { ConseilsMasters } from '@/db/mastersConseils';
 import { libelleTourMasters, MAX_PRONOSTIC } from '@/lib/masters';
 import type { PickConseille } from '@/lib/mastersConseils';
@@ -40,7 +41,7 @@ function CellulePick({ p, noms }: { p: PickConseille | undefined; noms: Noms }) 
       <div className="flex flex-wrap items-baseline gap-x-1.5">
         <span className="font-semibold text-zinc-900">{noms.get(p.playerId) ?? p.playerId}</span>
         <span className="font-mono text-xs text-zinc-600">{pts(p.ep)} pts</span>
-        {p.fixe && <span className={badgeNeutre}>déjà posé</span>}
+        {p.fixe && <ChipStatutPick statut="pose" libelle="déjà posé" />}
       </div>
       {p.alternatives.length > 0 && (
         <div className="text-xs text-zinc-500">
