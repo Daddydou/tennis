@@ -53,7 +53,7 @@ export interface SetPair {
  * pas ceux entamés puis coupés net par l'abandon (ex. 2-1, ou 0-0 quand
  * l'abandon tombe dès l'entame du set).
  */
-function setTermine(a: number, b: number): boolean {
+export function setTermine(a: number, b: number): boolean {
   const haut = Math.max(a, b);
   const bas = Math.min(a, b);
   if (haut < 6) return false;

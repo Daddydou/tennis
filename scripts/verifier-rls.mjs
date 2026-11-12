@@ -76,6 +76,12 @@ const TABLES = [
   'tn_elo_maison_alias',
   // 0032 - pronostics des Masters
   'tn_masters_pronostics',
+  // 0034 - Coupe Davis
+  'tn_davis_rencontres',
+  'tn_davis_matchs',
+  'tn_davis_picks',
+  'tn_davis_bracket',
+  'tn_davis_pronos',
 ];
 
 /**
