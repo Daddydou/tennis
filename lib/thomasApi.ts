@@ -411,6 +411,9 @@ export function pronosticsNonDesignes(b: BracketThomas): { tour: number; index: 
 /** Barème du bracket de Thomas : 1, 2, 4, 8… points du premier tour à la finale. */
 export const BAREME_THOMAS = (tour: number): number => 2 ** (tour - 1);
 
+/** Coupe Davis (type `DAVIS` chez Thomas) : nation juste 2 / 4 / 8 (quart, demie, finale). Le bonus de score n'est pas dans ses pronostics. */
+export const BAREME_DAVIS = (tour: number): number => 2 * 2 ** (tour - 1);
+
 /**
  * Est-ce que ce pronostic est correct, à NOTRE avis : la position
  * pronostiquée est le vainqueur du match. N'utilise PAS `resultat` (le

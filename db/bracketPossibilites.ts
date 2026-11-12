@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { EntreePossibilites } from '@/lib/bracketPossibilites';
+import { estDavis } from '@/lib/davisRencontre';
 
 /**
  * Données du bracket de Thomas pour un tournoi de l'app (tables tn_bracket_externe_*, remplies par la
@@ -23,15 +24,18 @@ export function nomLisible(prenom: string | null, nom: string | null): string {
 }
 
 export async function chargerDonneesPossibilites(sb: SupabaseClient, tournamentId: string): Promise<DonneesPossibilites | null> {
-  const tournois = await lire<{ id: string; nom: string; draw_size: number }[]>(
-    sb
-      .from('tn_bracket_externe_tournois')
-      .select('id, nom, draw_size')
-      .eq('tournament_id_interne', tournamentId)
-      .order('updated_at', { ascending: false })
-      .limit(1),
-    'tn_bracket_externe_tournois',
-  );
+  const [tournois, interne] = await Promise.all([
+    lire<{ id: string; nom: string; draw_size: number }[]>(
+      sb
+        .from('tn_bracket_externe_tournois')
+        .select('id, nom, draw_size')
+        .eq('tournament_id_interne', tournamentId)
+        .order('updated_at', { ascending: false })
+        .limit(1),
+      'tn_bracket_externe_tournois',
+    ),
+    lire<{ rounds: string[] | null }[]>(sb.from('tn_tournaments').select('rounds').eq('id', tournamentId).limit(1), 'tn_tournaments'),
+  ]);
   const t = tournois[0];
   if (!t) return null;
 
@@ -59,6 +63,7 @@ export async function chargerDonneesPossibilites(sb: SupabaseClient, tournamentI
     thomasId: t.id,
     thomasNom: t.nom,
     drawSize: t.draw_size,
+    facteurPoints: estDavis(interne[0]?.rounds) ? 2 : 1,
     noms: new Map(joueurs.map((j) => [j.position, nomLisible(j.prenom, j.nom)])),
     matchs: matchs.map((m) => ({
       tour: m.tour,

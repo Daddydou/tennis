@@ -29,6 +29,8 @@ export interface EntreePossibilites {
   pronostics: { userId: string; tour: number; index: number; position: number | null }[];
   /** « max » affiché chez Thomas, par pseudo (facultatif). */
   max?: Record<string, number>;
+  /** Multiplicateur du barème 1, 2, 4... (2 pour la Coupe Davis : 2, 4, 8). 1 par défaut. */
+  facteurPoints?: number;
 }
 
 export interface Candidat {
@@ -76,7 +78,7 @@ export interface PossibilitesParticipant {
   champion: Candidat[];
 }
 
-const bareme = (tour: number) => 2 ** (tour - 1);
+const bareme = (tour: number, facteur = 1) => facteur * 2 ** (tour - 1);
 /** Au-delà, on n'énumère pas (2^18 = 262 144 tableaux, déjà quelques centaines de ms). */
 const MAX_MATCHS_CACHES = 18;
 
@@ -120,7 +122,7 @@ export function possibilitesBracket(e: EntreePossibilites): PossibilitesParticip
     for (const m of e.matchs) {
       if (m.tour > base || m.vainqueur !== null) continue;
       const p = pick(m.tour, m.index);
-      if (p !== null && vivant(p)) visibles += bareme(m.tour);
+      if (p !== null && vivant(p)) visibles += bareme(m.tour, e.facteurPoints);
     }
 
     if (base === 0 || base >= nbTours) return sortie('rien_a_deduire', { visibles });
@@ -147,7 +149,7 @@ export function possibilitesBracket(e: EntreePossibilites): PossibilitesParticip
       if (k === cases.length) {
         total++;
         let pts = 0;
-        for (const c of cases) if (vivant(choisi.get(`${c.tour}|${c.match}`)!)) pts += bareme(c.tour);
+        for (const c of cases) if (vivant(choisi.get(`${c.tour}|${c.match}`)!)) pts += bareme(c.tour, e.facteurPoints);
         if (cible !== null && pts !== cible) return;
         compatibles++;
         if (pts < ptsMin) ptsMin = pts;

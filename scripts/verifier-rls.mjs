@@ -76,12 +76,6 @@ const TABLES = [
   'tn_elo_maison_alias',
   // 0032 - pronostics des Masters
   'tn_masters_pronostics',
-  // 0034 - Coupe Davis
-  'tn_davis_rencontres',
-  'tn_davis_matchs',
-  'tn_davis_picks',
-  'tn_davis_bracket',
-  'tn_davis_pronos',
 ];
 
 /**
@@ -104,6 +98,7 @@ const FONCTIONS = [
   ['tn_score_match', { p_sets: [], p_won: true, p_status: 'completed', p_best_of: 3 }],
   // 0025 — points d'un forfait gagné au jeu des picks
   ['tn_points_forfait', { p_start_date: '2026-10-05', p_best_of: 3 }],
+  ['tn_score_davis', { p_sets: [], p_cote: 0, p_won: true, p_status: 'completed' }],
 ];
 
 let ko = 0;
