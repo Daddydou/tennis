@@ -500,3 +500,14 @@ La vue `tn_used_players` (joueurs déjà pris, mon stock) avait perdu l'option `
 select coalesce((select reloptions @> array['security_invoker=on'] from pg_class where oid = 'public.tn_used_players'::regclass), false)
    as appliquee;
 ```
+
+## 0034 - Coupe Davis (cinq tables tn_davis_*)
+
+Tournoi lancé par Thomas : 8 nations (quarts, demies, finale), trois jeux (picks par pays, bracket des nations, pronos des matchs). `tn_davis_rencontres`, `tn_davis_matchs`, `tn_davis_picks`, `tn_davis_bracket`, `tn_davis_pronos` : indépendantes de `tn_tournaments` et `tn_players` (les « joueurs » sont des nations). Lecture publique, écriture service role seulement (même régime que les autres tables tn_*).
+```sql
+select bool_and(to_regclass('public.' || t) is not null
+                and has_table_privilege('anon', 'public.' || t, 'select')
+                and not has_table_privilege('anon', 'public.' || t, 'insert'))
+   as appliquee
+from unnest(array['tn_davis_rencontres','tn_davis_matchs','tn_davis_picks','tn_davis_bracket','tn_davis_pronos']) as t;
+```

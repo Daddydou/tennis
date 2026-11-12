@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { listTournaments } from '@/db/queries';
-import { boutonPrimaire } from '../ui';
+import { boutonPrimaire, boutonSecondaire } from '../ui';
 import { ListeTournois, separerTournois } from '../tournoisUi';
 
 export const dynamic = 'force-dynamic';
@@ -14,9 +14,14 @@ export default async function PageTournois() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Tournois</h1>
-        <Link href="/import" className={boutonPrimaire}>
-          Importer un tableau
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/davis" className={boutonSecondaire}>
+            Coupe Davis
+          </Link>
+          <Link href="/import" className={boutonPrimaire}>
+            Importer un tableau
+          </Link>
+        </div>
       </div>
 
       {tournois.length === 0 ? (
