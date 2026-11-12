@@ -33,8 +33,8 @@ export const GROUPES: GroupeNav[] = [
     label: 'Tournois',
     href: '/tournois',
     liens: [],
-    // /tournois (liste), /tournoi/<id>/... (un tournoi) et /davis (la Coupe Davis, hors tableaux ATP/WTA)
-    actifSi: (p) => commence(p, '/tournois', '/tournoi', '/davis'),
+    // /tournois (liste) et /tournoi/<id>/... (un tournoi)
+    actifSi: (p) => commence(p, '/tournois', '/tournoi'),
   },
   {
     cle: 'saison',

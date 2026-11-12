@@ -16,6 +16,7 @@
     "cotes:reapparier": "node --env-file=.env.local scripts/reapparier-cotes.mts",
     "resultats:masters": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/resultats-masters.mts",
     "import:masters": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/importer-masters.mts",
+    "import:davis": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/importer-davis.mts",
     "backtest:insights": "node --env-file=.env.local scripts/backtest-insights.mts",
     "verify:doublons-joueurs": "node --env-file=.env.local scripts/verifier-doublons-joueurs.mts",
     "verify:elo-inconnus": "node --env-file=.env.local --experimental-loader ./scripts/test-loader.mjs scripts/verifier-elo-inconnus.mts",
