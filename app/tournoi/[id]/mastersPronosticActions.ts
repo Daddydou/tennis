@@ -10,9 +10,10 @@ import { vueMasters } from '@/lib/mastersVue';
 
 /**
  * Enregistre le pronostic d'un participant à un Masters (moi, ou un autre dont on saisit le pronostic à la main).
- * Refusé si le pronostic est fermé (premier match du tournoi commencé ou heure passée), s'il est incohérent
- * (classements qui ne sont pas les 4 joueurs de la poule, vainqueur de demie hors de sa demie, championne qui
- * n'est pas finaliste), ou si le participant est inconnu. Protégé par la session.
+ * Refusé s'il est incohérent (classements qui ne sont pas les 4 joueurs de la poule, vainqueur de demie hors de sa
+ * demie, championne qui n'est pas finaliste) ou si le participant est inconnu. Protégé par la session.
+ * La fermeture au premier match ne bloque PLUS la saisie à la main : c'est ainsi qu'on recopie les pronostics déjà
+ * posés chez Game Tracker (source « manuel » une fois le tournoi lancé).
  */
 
 export type ResultatPronostic = { ok: true } | { ok: false; erreurs: string[] };
@@ -36,9 +37,9 @@ export async function enregistrerPronosticMasters(tournamentId: string, particip
       status: r.status as string,
       sets: r.sets as { g1: number | null; g2: number | null }[] | null,
     }));
-    if (pronosticFerme(lignes.map((l, i) => ({ status: l.status, scheduledAt: (rows ?? [])[i].scheduled_at as string | null })), new Date())) {
-      return { ok: false, erreurs: ['Le pronostic est fermé : le premier match du tournoi est lancé.'] };
-    }
+    // Fermé = le premier match est lancé. On accepte quand même la saisie : c'est la seule façon de recopier un pronostic
+    // posé chez Game Tracker avant le premier match (son API ne donne pas les pronostics d'un Masters). Source « manuel ».
+    const ferme = pronosticFerme(lignes.map((l, i) => ({ status: l.status, scheduledAt: (rows ?? [])[i].scheduled_at as string | null })), new Date());
     const vue = vueMasters(lignes);
     const poules = { A: vue.poules.A.joueurs, B: vue.poules.B.joueurs };
     if (poules.A.length !== 4 || poules.B.length !== 4) return { ok: false, erreurs: ['Les poules du tournoi ne sont pas complètes.'] };
@@ -48,7 +49,7 @@ export async function enregistrerPronosticMasters(tournamentId: string, particip
       const { data: p } = await sb.from('tn_participants').select('id').eq('id', participantId).maybeSingle();
       if (!p) return { ok: false, erreurs: ['Participant inconnu.'] };
     }
-    await enregistrerPronostic(sb, tournamentId, participantId, pronostic, participantId === null ? 'app' : 'manuel');
+    await enregistrerPronostic(sb, tournamentId, participantId, pronostic, participantId === null && !ferme ? 'app' : 'manuel');
     revalidatePath(`/tournoi/${tournamentId}`, 'layout');
     return { ok: true };
   } catch (e) {

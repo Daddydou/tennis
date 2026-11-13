@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { boutonSecondaire } from '@/app/ui';
 import { demisFinales, validerPronostic, type PronosticMasters } from '@/lib/masters';
+import { corrigerPronostic } from '@/lib/mastersScenario';
 import { enregistrerPronosticMasters } from './mastersPronosticActions';
 
 /**
@@ -10,13 +11,8 @@ import { enregistrerPronosticMasters } from './mastersPronosticActions';
  * que ce classement dessine, puis la championne. Même contrôle que le serveur (lib/masters.ts : validerPronostic).
  */
 
-/** Remet d'équerre les vainqueurs de demie et la championne quand le classement change. */
-function corriger(p: PronosticMasters): PronosticMasters {
-  const [d1, d2] = demisFinales([p.classementA[0], p.classementA[1]], [p.classementB[0], p.classementB[1]]);
-  const w1 = d1.includes(p.vainqueursDemis[0]) ? p.vainqueursDemis[0] : d1[0];
-  const w2 = d2.includes(p.vainqueursDemis[1]) ? p.vainqueursDemis[1] : d2[0];
-  return { ...p, vainqueursDemis: [w1, w2], champion: [w1, w2].includes(p.champion) ? p.champion : w1 };
-}
+/** Remet d'équerre les vainqueurs de demie et la championne quand le classement change (lib/mastersScenario.ts). */
+const corriger = corrigerPronostic;
 
 export default function EditeurPronostic({
   tournamentId,

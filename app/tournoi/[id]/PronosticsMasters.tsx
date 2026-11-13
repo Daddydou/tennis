@@ -2,12 +2,16 @@ import { badgeNeutre, carte, noteInfo } from '@/app/ui';
 import type { PronosticStocke } from '@/db/mastersPronostic';
 import { MAX_PRONOSTIC, pointsPronostic, type PronosticMasters } from '@/lib/masters';
 import { classerTournoi, reelDepuisVue } from '@/lib/mastersPronostic';
+import { pronosticsParParticipant } from '@/lib/mastersPronosticVue';
+import { grilleComparaison, scenarioInitial } from '@/lib/mastersScenario';
 import type { VueMasters } from '@/lib/mastersVue';
+import ComparaisonPronostics from './ComparaisonPronostics';
 import EditeurPronostic from './EditeurPronostic';
 
 /**
  * Pronostics des Masters et classement du tournoi : points du pronostic (qualifiée 4, place exacte 2, finaliste 8,
- * championne 16 ; 64 au maximum) + points des picks. Le pronostic se saisit jusqu'au premier match.
+ * championne 16 ; 64 au maximum) + points des picks. Le pronostic ferme au premier match, mais reste saisissable à la main
+ * (recopie de ce qui a été posé chez Game Tracker). Un seul écran : grille des pronostics de tous + bracket simulé.
  */
 
 export interface ParticipantMasters {
@@ -71,7 +75,24 @@ export default function PronosticsMasters({
   );
   const parDefaut: PronosticMasters = { classementA: poules.A, classementB: poules.B, vainqueursDemis: [poules.A[0], poules.B[0]], champion: poules.A[0] };
 
+  // Un seul écran : le pronostic de chacun côte à côte + un bracket simulé dont les points se recalculent.
+  const parts = pronosticsParParticipant(
+    pronostics.map((x) => ({ participantId: x.participantId, pronostic: x.pronostic })),
+    participants,
+  );
+  const { scenario, fige } = scenarioInitial(vue);
+
   return (
+    <>
+    <ComparaisonPronostics
+      poules={poules}
+      noms={noms}
+      participants={parts.map((p) => ({ cle: p.cle, nom: p.nom, pronostic: p.pronostic, picks: picksPar[p.cle] ?? 0 }))}
+      grille={grilleComparaison(vue, parts)}
+      reel={reel}
+      initial={scenario}
+      fige={fige}
+    />
     <section className={`${carte} space-y-3 p-4`} data-testid="pronostics-masters">
       <header className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h2 className="text-base font-semibold">Pronostics et classement</h2>
@@ -105,7 +126,9 @@ export default function PronosticsMasters({
         {participants.map((part) => {
           const p = stocke(part.id);
           const points = p ? pointsPronostic(p, reel) : null;
-          const initial = p ?? (part.id === null && propose ? propose : parDefaut);
+          // Départ du formulaire : le pronostic enregistré ; sinon ma proposition (tant que c'est ouvert) ; sinon, une fois
+          // fermé, le classement actuel des poules (scénario) ; sinon l'ordre des joueuses.
+          const initial = p ?? (part.id === null && propose && !ferme ? propose : ferme ? scenario : parDefaut);
           return (
             <details key={cle(part.id)} className="rounded-xl bg-zinc-50 p-3">
               <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 text-sm font-medium text-zinc-900">
@@ -124,14 +147,16 @@ export default function PronosticsMasters({
                     Qualifiées {pts(points.qualifies)} + places exactes {pts(points.places)} + finalistes {pts(points.finalistes)} + championne {pts(points.champion)}.
                   </p>
                 )}
-                {!ferme ? (
-                  <>
-                    <p className="text-xs font-medium text-zinc-700">{p ? 'Modifier ce pronostic' : part.id === null && propose ? 'Pré-rempli avec le pronostic proposé ci-dessus' : 'Saisir un pronostic'}</p>
-                    <EditeurPronostic tournamentId={tournamentId} participantId={part.id} poules={poules} noms={noms} initial={initial} />
-                  </>
-                ) : !p ? (
-                  <p className={noteInfo}>Pas de pronostic enregistré : il est fermé depuis le premier match.</p>
-                ) : null}
+                <p className="text-xs font-medium text-zinc-700">
+                  {p
+                    ? 'Modifier ce pronostic'
+                    : part.id === null && propose && !ferme
+                      ? 'Pré-rempli avec le pronostic proposé ci-dessus'
+                      : 'Saisir un pronostic'}
+                </p>
+                {ferme && <p className={noteInfo}>Le pronostic est fermé depuis le premier match : cette saisie à la main sert à recopier un pronostic déjà posé chez Game Tracker (enregistré comme « manuel »).</p>}
+                <EditeurPronostic tournamentId={tournamentId} participantId={part.id} poules={poules} noms={noms} initial={initial} />
+                {ferme && !p && <p className="text-xs text-zinc-600">Départ du formulaire : le classement des poules tel qu&apos;il est aujourd&apos;hui, à corriger.</p>}
               </div>
             </details>
           );
@@ -139,9 +164,10 @@ export default function PronosticsMasters({
       </div>
       <p className="text-xs text-zinc-600">
         Qualifiée trouvée 4 pts (dans ton top 2), place exacte 2 pts, finaliste trouvée 8 pts (quel que soit son parcours), championne 16 pts : {MAX_PRONOSTIC} au maximum.
-        Les places d&apos;une poule ne comptent qu&apos;une fois la poule terminée et son classement sans égalité. Les pronostics de Thomas et de Laki se saisissent à la
-        main tant que l&apos;API de Thomas ne les donne pas.
+        Les places d&apos;une poule ne comptent qu&apos;une fois la poule terminée et son classement sans égalité. L&apos;API de Thomas ne donne pas les pronostics d&apos;un
+        Masters (ils ne se lisent que sur son site) : ceux de Laki et de Thomas se saisissent à la main, même après le premier match.
       </p>
     </section>
+    </>
   );
 }

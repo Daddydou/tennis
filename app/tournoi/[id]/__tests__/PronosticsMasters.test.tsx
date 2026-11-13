@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PronosticStocke } from '@/db/mastersPronostic';
 import type { PronosticMasters } from '@/lib/masters';
@@ -40,7 +40,7 @@ describe('PronosticsMasters', () => {
     expect(screen.getByText('Pronostics et classement')).toBeTruthy();
     expect(screen.getAllByText('Laki').length).toBeGreaterThan(0);
     // Laki : pas de pronostic, 30 picks : premier ; Moi : pronostic saisi (0 point, rien de joué) + 12 picks.
-    const lignesTab = screen.getAllByRole('row');
+    const lignesTab = within(screen.getByTestId('pronostics-masters')).getAllByRole('row');
     expect(lignesTab[1].textContent).toContain('Laki');
     expect(lignesTab[1].textContent).toContain('30');
     expect(lignesTab[2].textContent).toContain('Moi');
@@ -48,11 +48,13 @@ describe('PronosticsMasters', () => {
     expect(screen.getByText('pas de pronostic')).toBeTruthy();
   });
 
-  it('pronostic fermé : plus d\'éditeur ; sans pronostic, une note le dit', () => {
+  it('pronostic fermé : la saisie à la main reste possible (éditeur + note), départ = classement actuel des poules', () => {
     rendu({ ferme: true, pronostics: [stocke(null, prono())] });
     expect(screen.getByText(/fermés/)).toBeTruthy();
-    expect(screen.queryByText('Enregistrer ce pronostic')).toBeNull();
-    expect(screen.getByText(/Pas de pronostic enregistré/)).toBeTruthy();
+    // Un éditeur par participant (Moi a un pronostic, Laki n'en a pas) : on peut tout compléter après coup.
+    expect(screen.getAllByText('Enregistrer ce pronostic')).toHaveLength(2);
+    expect(screen.getAllByText(/cette saisie à la main sert à recopier/)).toHaveLength(2);
+    expect(screen.getByText('Saisir un pronostic')).toBeTruthy();
   });
 
   it('pronostic ouvert : éditeur pré-rempli avec la proposition pour moi', () => {

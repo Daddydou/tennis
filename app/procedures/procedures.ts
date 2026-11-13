@@ -152,6 +152,26 @@ export const GROUPES: Groupe[] = [
         maj: '2026-11-12',
       },
       {
+        id: 'pronostics-masters',
+        titre: 'Pronostics et picks d’un Masters (WTA Finals, ATP Finals)',
+        resume: 'Un seul écran compare les pronostics de tous et simule un bracket ; les pronostics se saisissent à la main, même après le premier match.',
+        quand: 'Une fois par participant (pronostic posé chez Game Tracker), puis à chaque fois qu’on veut savoir ce que rapporterait un résultat.',
+        etapes: [
+          'Ouvrir le tournoi puis l’onglet `Pronostic` : la grille met côte à côte le pronostic de chacun (vert = juste, ambre = bien qualifiée, rouge = raté, blanc = pas encore joué) et une colonne « Simulé ».',
+          'Pour simuler : dans la colonne « Simulé », choisir le classement des deux poules, les vainqueurs des demies et la championne. Les points de chacun (pronostic, puis total avec les picks) se recalculent tout de suite. `Revenir à l’état réel` remet le départ. Ce qui est déjà joué est figé.',
+          'Pour saisir un pronostic à la main : sous la grille, ouvrir le bloc du participant, classer les deux poules, choisir les vainqueurs des demies et la championne, puis `Enregistrer ce pronostic`. C’est possible même après le premier match (enregistré comme « manuel »).',
+          'Onglet `Picks` : « Joueuses et adversaires » montre les picks de Moi, Laki et Thomas seulement sur les tours non validés ; les tours dont tous les matchs sont joués sont repliés (résultats et mes picks). Les picks d’un autre sur un tour terminé : cliquer sur son nom en haut de l’écran.',
+        ],
+        attention: [
+          'L’API de Thomas ne donne PAS les pronostics d’un Masters (ils sont tous « sans_prono » dans /brackets) : ils ne se lisent que sur son site, page « Pronostics des participants ». Il faut les recopier à la main. Seuls ses points totaux par participant sont exposés.',
+          'La synchro du bracket de Thomas refuse un Masters (« Bracket incohérent ») : ses tours sont des poules, pas un tableau à élimination directe. Les écrans Masters n’en ont pas besoin.',
+          'Les picks des autres sur un tour ouvert ne viennent que de Game Tracker, une fois le tour verrouillé : avant, ils ne sont pas visibles.',
+          'Le bracket simulé ne simule pas les picks : ils comptent pour leurs points actuels.',
+        ],
+        doc: 'docs/masters.md ; lib/mastersScenario.ts, app/tournoi/[id]/ComparaisonPronostics.tsx',
+        maj: '2026-11-13',
+      },
+      {
         id: 'fantasy',
         titre: 'Composer l’équipe Fantasy',
         resume: 'Choisir une équipe, une seule fois, avant le début du tournoi.',
