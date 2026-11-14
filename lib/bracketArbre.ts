@@ -4,6 +4,8 @@
  * lib/bracketSim.ts, point d'entrée qui réexporte ce fichier.
  */
 
+import { estDavis } from './davisRencontre';
+
 /** Un match réel, tel qu'il est en base — jamais une hypothèse. */
 export interface MatchReel {
   round: string;
@@ -20,10 +22,13 @@ export function cleDuel(round: string, position: number): string {
   return `${round}|${position}`;
 }
 
-/** Points d'une bonne prédiction à ce tour : 2^(index du tour depuis le premier). */
+/**
+ * Points d'une bonne prédiction à ce tour : 2^(index du tour depuis le premier). Coupe Davis (tours QF, SF, F) :
+ * nation juste 2 / 4 / 8, soit le double (le bonus de score, +1 / +2 / +4, vient des données de Thomas).
+ */
 export function pointsDuTour(rounds: string[], round: string): number {
   const i = rounds.indexOf(round);
-  return i === -1 ? 0 : 2 ** i;
+  return i === -1 ? 0 : 2 ** i * (estDavis(rounds) ? 2 : 1);
 }
 
 /** Un emplacement du tableau, résolu selon une source donnée (réel/pronostic/scénario). */

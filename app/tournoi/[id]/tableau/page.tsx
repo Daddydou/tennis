@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { estMasters } from '@/lib/masters';
+import { estDavis, saisieDepuisStockage } from '@/lib/davisRencontre';
 import { MastersTableau } from '../MastersEcrans';
 import {
   getTournament,
@@ -12,6 +13,7 @@ import {
 import { construireTableau } from '@/lib/tableauVue';
 import { pointsBracketParStock, stocksDuGroupe } from '../pointsStock';
 import { TableauClient } from './TableauClient';
+import { SaisieDavis, type RencontreASaisir } from './SaisieDavis';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,8 +63,24 @@ export default async function TableauPage({
     stocks.map((s) => [s.id ?? 'moi', pointsParStock.has(s.id) ? (pointsParStock.get(s.id) as number) : null]),
   );
 
+  // Coupe Davis : saisie du résultat de chaque rencontre (ses trois matchs), ce qui alimente les points des picks.
+  const rencontresDavis: RencontreASaisir[] = estDavis(tournoi.rounds)
+    ? matchRows
+        .filter((m) => m.position !== null)
+        .sort((a, b) => a.round_order - b.round_order || (a.position as number) - (b.position as number))
+        .map((m) => ({
+          round: m.round,
+          position: m.position as number,
+          libelle: m.round === 'F' ? 'Finale' : `${m.round === 'SF' ? 'Demi-finale' : 'Quart de finale'} ${(m.position as number) + 1}`,
+          nation1: m.player1_id ? (nomParId.get(m.player1_id) ?? m.player1_id) : null,
+          nation2: m.player2_id ? (nomParId.get(m.player2_id) ?? m.player2_id) : null,
+          saisie: saisieDepuisStockage(m.sets),
+        }))
+    : [];
+
   return (
     <div className="space-y-5">
+      {rencontresDavis.length > 0 && <SaisieDavis tournamentId={id} rencontres={rencontresDavis} />}
       {tours.length === 0 ? (
         <p className="text-sm text-zinc-500">Aucun match importé.</p>
       ) : (

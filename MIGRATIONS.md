@@ -501,13 +501,15 @@ select coalesce((select reloptions @> array['security_invoker=on'] from pg_class
    as appliquee;
 ```
 
-## 0034 - Coupe Davis (cinq tables tn_davis_*)
+## 0034 - Coupe Davis (cinq tables tn_davis_*) - retirée par la 0035
 
-Tournoi lancé par Thomas : 8 nations (quarts, demies, finale), trois jeux (picks par pays, bracket des nations, pronos des matchs). `tn_davis_rencontres`, `tn_davis_matchs`, `tn_davis_picks`, `tn_davis_bracket`, `tn_davis_pronos` : indépendantes de `tn_tournaments` et `tn_players` (les « joueurs » sont des nations). Lecture publique, écriture service role seulement (même régime que les autres tables tn_*).
+Premier jet de la Coupe Davis : cinq tables indépendantes (`tn_davis_rencontres`, `tn_davis_matchs`, `tn_davis_picks`, `tn_davis_bracket`, `tn_davis_pronos`). Remplacée le jour même par un vrai tournoi : la 0035 les supprime (elles étaient vides).
+
+## 0035 - Coupe Davis : barème des picks, retrait des tables tn_davis_*
+
+Supprime les cinq tables de la 0034. Ajoute `tn_score_davis` (barème des picks de la Coupe Davis : les matchs d'une rencontre à la place des sets, voir `lib/davis.ts`) et recrée `tn_recompute_picks` : un tournoi aux tours exacts `QF`, `SF`, `F` (la Coupe Davis, seul tableau de 8) utilise `tn_score_davis`, tous les autres gardent EXACTEMENT le calcul précédent. Les matchs d'une rencontre sont rangés dans `tn_matches.sets` (un élément par match, avec ses `jeux`).
 ```sql
-select bool_and(to_regclass('public.' || t) is not null
-                and has_table_privilege('anon', 'public.' || t, 'select')
-                and not has_table_privilege('anon', 'public.' || t, 'insert'))
-   as appliquee
-from unnest(array['tn_davis_rencontres','tn_davis_matchs','tn_davis_picks','tn_davis_bracket','tn_davis_pronos']) as t;
+select to_regproc('public.tn_score_davis') is not null
+   and to_regclass('public.tn_davis_matchs') is null
+   as appliquee;
 ```

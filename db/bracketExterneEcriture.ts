@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  BAREME_DAVIS,
   desaccordsResultat,
   estNonDesignee,
   pronosticsNonDesignes,
@@ -67,7 +68,7 @@ export function preparerSynchro(b: BracketThomas, maintenant = new Date().toISOS
   if (erreurs.length) throw new BracketIncoherent(erreurs);
 
   const t = b.tournoi;
-  const calcules = recalculerPointsTotaux(b.tours);
+  const calcules = recalculerPointsTotaux(b.tours, t.type === 'DAVIS' ? BAREME_DAVIS : undefined);
   const participants = b.participants.map((p) => ({
     userId: p.userId,
     pseudo: p.pseudo,
