@@ -49,7 +49,7 @@ export async function importerTournoiApi(seasonId: number, type: 'atp' | 'wta'):
   try {
     const t = (await tournoisImportables()).find((x) => x.seasonId === seasonId && x.type === type);
     if (!t) return refus('Tournoi absent du calendrier des tournois importables.');
-    const masters = await mastersExistantPourSaison(t.seasonId);
+    const masters = await mastersExistantPourSaison(t.seasonId, { type: t.type, nom: t.nom, annee: t.annee });
     if (masters) {
       const rm = await viaMasters(masters);
       revalidatePath('/import');

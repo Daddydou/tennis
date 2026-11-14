@@ -53,10 +53,10 @@ export const GROUPES: Groupe[] = [
         attention: [
           'Quota de l’API : 50 requêtes par jour, partagées avec l’Elo maison. Éviter de multiplier `Mettre à jour maintenant`.',
           'Un tournoi déjà importé avec le bookmarklet n’est pas réimporté depuis l’API (volontaire).',
-          'Masters (Finals) : `Importer le tableau` et `Mettre à jour maintenant` mettent à jour les résultats du Masters (poules, demies, finale). Si une joueuse a été remplacée avant le tournoi, la remplaçante est détectée et mise à sa place automatiquement (message « Remplaçante prise en compte »). En cas de doute, rien n’est écrit et un message explique pourquoi.',
+          'Masters (Finals) : `Importer le tableau` et `Mettre à jour maintenant` mettent à jour les résultats du Masters (poules, demies, finale). Si une joueuse a été remplacée avant le tournoi, la remplaçante est détectée et mise à sa place automatiquement (message « Remplaçante prise en compte »). En cas de doute, rien n’est écrit et un message explique pourquoi. Un Masters cr\u00e9\u00e9 depuis Game Tracker (identifiant gt:) est retrouv\u00e9 par sa surveillance (m\u00eame circuit, m\u00eame nom d\u2019API, m\u00eame ann\u00e9e) : \u00ab aucun match dans cette extraction \u00bb ne doit plus appara\u00eetre pour lui.',
         ],
         doc: 'docs/import-auto.md',
-        maj: '2026-11-08',
+        maj: '2026-11-14',
       },
       {
         id: 'poser-picks',
