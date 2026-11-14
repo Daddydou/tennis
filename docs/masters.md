@@ -42,6 +42,16 @@ Trois façons de rafraîchir :
 
 Une joueuse de l'API introuvable parmi les huit : rien n'est écrit. L'API est la source : ses valeurs remplacent les nôtres.
 
+### Remplaçante d'une joueuse qui a déjà joué (alias)
+
+Si une joueuse est remplacée **après** avoir joué (cas Muchova → Shnaider, WTA Finals 2026 : la remplaçante garde les matchs et les points des journées déjà jouées et joue la suite), l'API et Game Tracker continuent d'appeler la place par l'**ancien nom**. Rien n'est réécrit en base : `reconnaitreAlias` (`lib/mastersRemplacement.ts`, pur) reconnaît l'ancien nom comme un **alias** de la remplaçante, sur preuve seulement :
+
+- par l'API : l'ancienne joueuse a, dans sa poule, les adversaires que la remplaçante n'a pas encore rencontrés, et eux seuls (un seul candidat possible) ;
+- par Game Tracker : une seule absente de la poule avec des matchs joués, une seule joueuse inconnue dans cette même poule ;
+- la remplaçante doit être connue en base. Au moindre doute, aucun alias : on n'écrit rien et on le dit.
+
+`db/mastersRemplacement.ts` ajoute alors l'alias à la liste des joueuses (`alias`), utilisée par `db/mastersResultats.ts` et par les picks Game Tracker du Masters. Message affiché : « … est le nom d'origine de … (même place dans le tournoi) ».
+
 ## Pronostics et classement du tournoi
 
 Table `tn_masters_pronostics` (migration 0032) : un pronostic par participant et par tournoi. Sur l'écran du tournoi (`PronosticsMasters`, `EditeurPronostic`, `mastersPronosticActions`) :

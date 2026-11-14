@@ -188,3 +188,111 @@ export function nomsDeApi(singles: MatchApi[]): NomApi[] {
 export function phraseRemplacement(r: Remplacement, nomNouvelle: string): string {
   return `${nomNouvelle} remplace ${r.absenteNom}`;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Remplacement EN COURS de tournoi : l'ancien nom reste utilisé       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Une joueuse est remplacée APRÈS avoir joué (ex. Muchova remplacée par Shnaider en WTA Finals 2026) et chez nous
+ * la remplaçante a pris sa place sur TOUT le tournoi (elle garde ses matchs et ses points des premières journées).
+ * Les sources, elles, continuent à utiliser l'ancien nom pour ces matchs : l'API tennis met « Muchova » en J1 et J2
+ * puis « Shnaider » en J3, Game Tracker garde « Muchova » partout. Sans traitement, ce nom est « inconnu dans le
+ * tournoi » et tout l'import est refusé.
+ *
+ * Ici on reconnaît ce cas SANS RIEN ÉCRIRE : l'ancien nom est un ALIAS de la joueuse qui occupe la place chez nous.
+ * Deux preuves, jamais de devinette :
+ *  1. par les adversaires (API tennis) : l'ancien nom et une joueuse du tournoi ne se rencontrent jamais, n'ont aucun
+ *     adversaire en commun et, à deux, ont joué toutes les autres joueuses de la poule (une place, deux noms) ;
+ *  2. par la poule (Game Tracker) : une seule joueuse de la poule a disparu de la liste reçue, elle a déjà joué, et
+ *     un seul nom inconnu apparaît dans cette poule.
+ * Dans les deux cas le nom inconnu doit être une vraie joueuse de la base du circuit.
+ */
+export interface CandidatAlias {
+  entrante: Entrante;
+  /** Ids (chez nous) des adversaires du nom inconnu d'après la source, ou null si la source n'en donne pas / si l'un n'est pas retrouvé. */
+  adversairesIds: string[] | null;
+  /** Le nom inconnu est une joueuse de la base du circuit (sinon : faute de frappe probable, jamais d'alias). */
+  connueEnBase: boolean;
+}
+
+export interface AliasMasters {
+  entrante: Entrante;
+  joueuseId: string;
+  joueuseNom: string;
+  /** Sur quelle preuve : les adversaires (API) ou la poule (Game Tracker). */
+  preuve: 'adversaires' | 'poule';
+}
+
+/**
+ * @param tournoi         toutes les joueuses du tournoi chez nous (avec leur poule)
+ * @param absentes        celles qui ne sont PAS dans la liste reçue
+ * @param adversairesRecus pour chaque joueuse du tournoi présente dans la liste reçue : ses adversaires d'après la source
+ */
+export function reconnaitreAlias(
+  candidats: CandidatAlias[],
+  tournoi: JoueuseTournoi[],
+  absentes: JoueuseTournoi[],
+  adversairesRecus: Map<string, Set<string>>,
+): { alias: AliasMasters[]; restantes: Entrante[] } {
+  const alias: AliasMasters[] = [];
+  const pris = new Set<string>();
+
+  for (const c of candidats) {
+    if (!c.connueEnBase) continue;
+    const e = c.entrante;
+
+    // Preuve 1 : les adversaires (API tennis).
+    if (c.adversairesIds && c.adversairesIds.length > 0) {
+      const advE = new Set(c.adversairesIds);
+      const moitie = e.moitie ?? moitieDesAdversaires(c.adversairesIds, tournoi);
+      if (moitie) {
+        const poule = tournoi.filter((j) => j.moitie === moitie);
+        const trouvees = poule.filter((s) => {
+          if (advE.has(s.id)) return false; // elles se rencontrent : deux joueuses différentes
+          const advS = adversairesRecus.get(s.id);
+          if (!advS || advS.size === 0) return false;
+          if ([...advS].some((x) => advE.has(x))) return false; // adversaire en commun : pas la même place
+          const couverts = new Set([...advE, ...advS]);
+          return poule.every((p) => p.id === s.id || couverts.has(p.id)) && [...couverts].every((x) => x !== s.id);
+        });
+        if (trouvees.length === 1) {
+          alias.push({ entrante: e, joueuseId: trouvees[0].id, joueuseNom: trouvees[0].name, preuve: 'adversaires' });
+          continue;
+        }
+      }
+    }
+
+    // Preuve 2 : la poule (Game Tracker).
+    if (e.moitie) {
+      const absentesPoule = absentes.filter((a) => a.moitie === e.moitie);
+      const inconnuesPoule = candidats.filter((x) => x.entrante.moitie === e.moitie);
+      if (absentesPoule.length === 1 && absentesPoule[0].aJoue && inconnuesPoule.length === 1) {
+        alias.push({ entrante: e, joueuseId: absentesPoule[0].id, joueuseNom: absentesPoule[0].name, preuve: 'poule' });
+      }
+    }
+  }
+
+  // Deux noms inconnus pour la même place : ambigu, on n'en reconnaît aucun.
+  for (const a of alias) pris.add(a.joueuseId);
+  const doublons = new Set([...pris].filter((id) => alias.filter((a) => a.joueuseId === id).length > 1));
+  const gardes = alias.filter((a) => !doublons.has(a.joueuseId));
+  const restantes = candidats.map((c) => c.entrante).filter((e) => !gardes.some((a) => a.entrante === e));
+  return { alias: gardes, restantes };
+}
+
+/** Poule des adversaires quand ils sont tous dans la même (ils jouent contre toute la poule de l'inconnue). */
+function moitieDesAdversaires(adversairesIds: string[], tournoi: JoueuseTournoi[]): Moitie | null {
+  const vues = new Set<Moitie>();
+  for (const id of adversairesIds) {
+    const m = tournoi.find((j) => j.id === id)?.moitie;
+    if (m) vues.add(m);
+  }
+  return vues.size === 1 ? [...vues][0] : null;
+}
+
+/** Phrase pour l'utilisateur : « Karolina Muchova est le nom d'origine de D. Shnaider (même place) ». */
+export function phraseAlias(a: AliasMasters): string {
+  const nom = `${a.entrante.prenom ?? ''} ${a.entrante.nom ?? ''}`.trim();
+  return `${nom} est le nom d'origine de ${a.joueuseNom} (même place dans le tournoi)`;
+}

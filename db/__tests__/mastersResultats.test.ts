@@ -19,6 +19,11 @@ function faux(tables: Record<string, Ligne[]>) {
       eq: (k: string, v: unknown) => (filtres.push((l) => l[k] === v), b),
       is: (k: string, v: unknown) => (filtres.push((l) => l[k] === v), b),
       in: (k: string, vs: unknown[]) => (filtres.push((l) => vs.includes(l[k])), b),
+      ilike: (k: string, motif: string) => {
+        const fin = motif.replace(/^%/, '').toLowerCase();
+        filtres.push((l) => String(l[k]).toLowerCase().endsWith(fin));
+        return b;
+      },
       update: (p: Ligne) => ((patch = p), b),
       insert: async (v: Ligne) => {
         tables[table].push({ ...v });

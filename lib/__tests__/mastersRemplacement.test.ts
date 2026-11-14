@@ -2,7 +2,16 @@
 import { describe, expect, it } from 'vitest';
 import type { EtatGT } from '../gameTrackerPicks';
 import type { MatchApi } from '../extract/matchstat';
-import { appairerRemplacements, moitieParAdversaires, nomsDeApi, nomsDeGameTracker, type JoueuseTournoi } from '../mastersRemplacement';
+import {
+  appairerRemplacements,
+  moitieParAdversaires,
+  nomsDeApi,
+  nomsDeGameTracker,
+  phraseAlias,
+  reconnaitreAlias,
+  type CandidatAlias,
+  type JoueuseTournoi,
+} from '../mastersRemplacement';
 
 const abs = (id: string, name: string, moitie: 'top' | 'bottom' | null = 'top', aJoue = false): JoueuseTournoi => ({ id, name, moitie, aJoue });
 const ent = (prenom: string, nom: string, moitie: 'top' | 'bottom' | null = null) => ({ prenom, nom, moitie });
@@ -111,5 +120,107 @@ describe('nomsDeGameTracker', () => {
   it('demie / finale : pas de poule', () => {
     const etat = { tourOuvert: tour(4, [p(1, 'A', 'Bb')], []), toursAVenir: [], tours: [], dejaPickes: [] } as unknown as EtatGT;
     expect(nomsDeGameTracker(etat)[0].moitie).toBeNull();
+  });
+});
+
+/**
+ * Remplacement EN COURS de tournoi (WTA Finals 2026) : Shnaider a pris la place de Muchova sur tout le tournoi chez
+ * nous, mais l'API tennis met encore « Muchova » en J1 et J2 et Game Tracker la garde partout.
+ */
+describe('reconnaitreAlias', () => {
+  // Poule du bas : Sabalenka, Svitolina, Andreeva et Shnaider (chez nous, à la place de Muchova). Poule du haut : 4 autres.
+  const j = (id: string, name: string, moitie: 'top' | 'bottom'): JoueuseTournoi => ({ id, name, moitie, aJoue: true });
+  const tournoi = [
+    j('sab', 'A. Sabalenka', 'bottom'),
+    j('svi', 'E. Svitolina', 'bottom'),
+    j('and', 'M. Andreeva', 'bottom'),
+    j('shn', 'D. Shnaider', 'bottom'),
+    j('gau', 'C. Gauff', 'top'),
+    j('nos', 'L. Noskova', 'top'),
+    j('peg', 'J. Pegula', 'top'),
+    j('kos', 'M. Kostyuk', 'top'),
+  ];
+  // API tennis : adversaires de chaque joueuse du tournoi (le nom « Muchova » n'est pas retrouvé, donc absent des listes).
+  const apiAdv = new Map<string, Set<string>>([
+    ['sab', new Set(['svi', 'and'])],
+    ['svi', new Set(['sab', 'and'])],
+    ['and', new Set(['sab', 'svi', 'shn'])],
+    ['shn', new Set(['and'])],
+    ['gau', new Set(['nos', 'peg', 'kos'])],
+    ['nos', new Set(['gau', 'peg', 'kos'])],
+    ['peg', new Set(['gau', 'nos', 'kos'])],
+    ['kos', new Set(['gau', 'nos', 'peg'])],
+  ]);
+  const muchova = { prenom: 'Karolina', nom: 'Muchova', moitie: null as 'top' | 'bottom' | null };
+  const candidat = (over: Partial<CandidatAlias> = {}): CandidatAlias => ({
+    entrante: muchova,
+    adversairesIds: ['sab', 'svi'],
+    connueEnBase: true,
+    ...over,
+  });
+
+  it('API : même place (aucun adversaire en commun, à deux ils couvrent la poule) -> alias de Shnaider', () => {
+    const r = reconnaitreAlias([candidat()], tournoi, [], apiAdv);
+    expect(r.restantes).toEqual([]);
+    expect(r.alias).toHaveLength(1);
+    expect(r.alias[0]).toMatchObject({ joueuseId: 'shn', joueuseNom: 'D. Shnaider', preuve: 'adversaires' });
+    expect(phraseAlias(r.alias[0])).toBe("Karolina Muchova est le nom d'origine de D. Shnaider (même place dans le tournoi)");
+  });
+
+  it("API : un nom qui affronte déjà Shnaider est une AUTRE joueuse, jamais un alias", () => {
+    const r = reconnaitreAlias([candidat({ adversairesIds: ['sab', 'svi', 'shn'] })], tournoi, [], apiAdv);
+    expect(r.alias).toEqual([]);
+    expect(r.restantes).toHaveLength(1);
+  });
+
+  it("API : un nom qui n'est pas une joueuse de la base (faute de frappe) n'est jamais un alias", () => {
+    const r = reconnaitreAlias([candidat({ connueEnBase: false })], tournoi, [], apiAdv);
+    expect(r.alias).toEqual([]);
+    expect(r.restantes).toHaveLength(1);
+  });
+
+  it("API : adversaires non tous retrouvés -> pas de preuve, pas d'alias", () => {
+    const r = reconnaitreAlias([candidat({ adversairesIds: null })], tournoi, [], apiAdv);
+    expect(r.alias).toEqual([]);
+  });
+
+  it('API : une vraie remplaçante avant le tournoi (elle joue toute la poule) n\'est pas un alias', () => {
+    // « Muchova » aurait joué les 3 autres de la poule : aucune joueuse du tournoi ne la complète.
+    const r = reconnaitreAlias([candidat({ adversairesIds: ['sab', 'svi', 'and'] })], tournoi, [], apiAdv);
+    expect(r.alias).toEqual([]);
+  });
+
+  it("Game Tracker : une seule joueuse de la poule a disparu de la liste, elle a déjà joué -> alias", () => {
+    const absentes = [tournoi.find((x) => x.id === 'shn')!];
+    const gt = { ...muchova, moitie: 'bottom' as const };
+    const r = reconnaitreAlias([{ entrante: gt, adversairesIds: null, connueEnBase: true }], tournoi, absentes, new Map());
+    expect(r.alias).toHaveLength(1);
+    expect(r.alias[0]).toMatchObject({ joueuseId: 'shn', preuve: 'poule' });
+    expect(r.restantes).toEqual([]);
+  });
+
+  it("Game Tracker : si l'absente n'a encore joué aucun match, c'est une vraie remplaçante (traitée ailleurs)", () => {
+    const absentes = [{ ...tournoi.find((x) => x.id === 'shn')!, aJoue: false }];
+    const gt = { ...muchova, moitie: 'bottom' as const };
+    const r = reconnaitreAlias([{ entrante: gt, adversairesIds: null, connueEnBase: true }], tournoi, absentes, new Map());
+    expect(r.alias).toEqual([]);
+    expect(r.restantes).toEqual([gt]);
+  });
+
+  it("Game Tracker : deux noms inconnus dans la même poule -> ambigu, aucun alias", () => {
+    const absentes = [tournoi.find((x) => x.id === 'shn')!];
+    const a = { prenom: 'Karolina', nom: 'Muchova', moitie: 'bottom' as const };
+    const b = { prenom: 'Zoe', nom: 'Autre', moitie: 'bottom' as const };
+    const r = reconnaitreAlias(
+      [
+        { entrante: a, adversairesIds: null, connueEnBase: true },
+        { entrante: b, adversairesIds: null, connueEnBase: true },
+      ],
+      tournoi,
+      absentes,
+      new Map(),
+    );
+    expect(r.alias).toEqual([]);
+    expect(r.restantes).toHaveLength(2);
   });
 });
