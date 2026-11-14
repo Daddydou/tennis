@@ -1,5 +1,5 @@
 /**
- * Tests de la navigation globale à 4 entrées (app/NavGlobale.tsx + app/navigation.ts).
+ * Tests de la navigation globale à 3 entrées (app/NavGlobale.tsx + app/navigation.ts).
  * usePathname est simulé : on choisit la page « en cours » à chaque test.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -24,10 +24,11 @@ describe('groupeActif (quelle page appartient à quel groupe)', () => {
     ['/tournoi/abc', 'tournois'],
     ['/tournoi/abc/picks', 'tournois'],
     ['/tournoi/abc/fantasy', 'tournois'], // le Fantasy d'un tournoi reste dans Tournois
-    ['/bilan', 'saison'],
-    ['/statistiques', 'saison'],
-    ['/fantasy', 'saison'],
-    ['/face-a-face', 'saison'],
+    // Les pages de l'ancien onglet Saison existent toujours (même URL) mais n'ont plus d'entrée de menu.
+    ['/bilan', null],
+    ['/statistiques', null],
+    ['/fantasy', null],
+    ['/face-a-face', null],
     ['/import', 'outils'],
     ['/import/thomas', 'outils'],
     ['/calibration', 'outils'],
@@ -47,11 +48,11 @@ describe('groupeActif (quelle page appartient à quel groupe)', () => {
 });
 
 describe('NavGlobale', () => {
-  it('affiche exactement 4 entrées principales', () => {
+  it('affiche exactement 3 entrées principales (plus d\'onglet Saison)', () => {
     sur('/');
     const principale = screen.getByRole('navigation', { name: 'Navigation principale' });
     const liens = within(principale).getAllByRole('link');
-    expect(liens.map((l) => l.textContent)).toEqual(['Accueil', 'Tournois', 'Saison', 'Outils']);
+    expect(liens.map((l) => l.textContent)).toEqual(['Accueil', 'Tournois', 'Outils']);
   });
 
   it("marque l'entrée en cours avec aria-current", () => {
@@ -70,17 +71,12 @@ describe('NavGlobale', () => {
     expect(screen.queryByRole('navigation', { name: 'Saison' })).toBeNull();
   });
 
-  it('Saison : sous-barre Bilan, Statistiques, Fantasy saison, Face-à-face, avec la page en cours marquée', () => {
-    sur('/fantasy');
-    const sous = screen.getByRole('navigation', { name: 'Saison' });
-    expect(within(sous).getAllByRole('link').map((l) => l.textContent)).toEqual([
-      'Bilan',
-      'Statistiques',
-      'Fantasy saison',
-      'Face-à-face',
-    ]);
-    expect(within(sous).getByRole('link', { name: 'Fantasy saison' }).getAttribute('aria-current')).toBe('page');
-    expect(within(sous).getByRole('link', { name: 'Bilan' }).getAttribute('aria-current')).toBeNull();
+  it('sur une ancienne page Saison (/statistiques), aucune sous-barre ni entrée marquée en cours', () => {
+    sur('/statistiques');
+    expect(screen.queryByRole('navigation', { name: 'Saison' })).toBeNull();
+    const principale = screen.getByRole('navigation', { name: 'Navigation principale' });
+    expect(within(principale).queryByRole('link', { name: 'Saison' })).toBeNull();
+    for (const l of within(principale).getAllByRole('link')) expect(l.getAttribute('aria-current')).toBeNull();
   });
 
   it('Outils : sous-barre avec Importer, Participants, Calibration, Procédures et les URLs inchangées', () => {
