@@ -195,7 +195,7 @@ export const GROUPES: Groupe[] = [
         resume: 'Lire 47 statistiques sur le jeu, réparties en 7 vues.',
         quand: 'Quand on veut comprendre ses résultats, comparer les trois joueurs ou juger le modèle.',
         etapes: [
-          'Ouvrir `Saison` puis `Statistiques`.',
+          'Ouvrir la page `/statistiques` (plus d’onglet `Saison` dans le menu : on y va en tapant l’adresse).',
           'Choisir une vue avec les boutons : `Duel`, `Picks`, `Bracket`, `Fantasy`, `Circuit`, `Modèle & marché`, `App`.',
           'Filtrer par année et par circuit (ATP ou WTA) ; dans `Picks`, choisir aussi de qui on regarde les picks.',
         ],
@@ -205,7 +205,7 @@ export const GROUPES: Groupe[] = [
           'Les totaux cumulés du Duel ne se comparent que sur les tournois joués par tous (voir la matrice).',
           'Les imports (vue `App`) ne s’affichent que connecté.',
         ],
-        maj: '2026-11-07',
+        maj: '2026-11-14',
       },
     ],
   },
