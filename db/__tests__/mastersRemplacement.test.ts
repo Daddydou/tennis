@@ -91,13 +91,17 @@ describe('appliquerRemplacementsMasters', () => {
     expect(tables.tn_matches[0].player1_id).toBe('ryb');
   });
 
-  it('l\'absente a déjà joué : refus, rien d\'écrit', async () => {
+  it('l\'absente a déjà joué : on ne réécrit JAMAIS ses matchs ; le nouveau nom est un alias (même place), rien n\'est écrit', async () => {
     const { sb, tables } = base();
     tables.tn_matches[0].winner_id = 'ryb';
     tables.tn_matches[0].status = 'finished';
+    const avant = JSON.stringify(tables.tn_matches);
     const r = await appliquerRemplacementsMasters(sb, T, recus, true);
     expect(r.ecrit).toBe(false);
-    expect(r.erreurs[0]).toContain('a déjà joué');
+    expect(r.erreurs).toEqual([]);
+    expect(r.echanges).toEqual([]);
+    expect(r.alias).toEqual([{ id: 'ryb', name: 'M. Kostyuk' }]);
+    expect(JSON.stringify(tables.tn_matches)).toBe(avant);
     expect(tables.tn_matches[1].player2_id).toBe('ryb');
   });
 
@@ -109,5 +113,89 @@ describe('appliquerRemplacementsMasters', () => {
     expect(r.erreurs[0]).toContain('Kostyuk');
     expect(r.erreurs[0]).toContain('ajoute-la');
     expect(tables.tn_matches[0].player1_id).toBe('ryb');
+  });
+});
+
+/**
+ * WTA Finals 2026 : Shnaider a remplacé Muchova EN COURS de tournoi et occupe sa place sur tout le tournoi chez nous.
+ * L'API tennis garde « Muchova » en J1 et J2 ; Game Tracker la garde partout. Ce n'est ni une erreur ni une remplaçante.
+ */
+describe('appliquerRemplacementsMasters : ancien nom encore utilisé (remplacement en cours de tournoi)', () => {
+  const joue = (round: string, position: number, p1: string, p2: string, gagnant: string): Ligne =>
+    match(round, position, 'bottom', p1, p2, { winner_id: gagnant, status: 'completed' });
+
+  function poule() {
+    return faux({
+      tn_tournaments: [{ id: T, tour: 'WTA' }],
+      tn_players: [
+        { id: 'sab', name: 'A. Sabalenka', tour: 'WTA' },
+        { id: 'svi', name: 'E. Svitolina', tour: 'WTA' },
+        { id: 'and', name: 'M. Andreeva', tour: 'WTA' },
+        { id: 'shn', name: 'D. Shnaider', tour: 'WTA' },
+        { id: 'muc', name: 'K. Muchova', tour: 'WTA' },
+      ],
+      tn_matches: [
+        joue('J1', 2, 'sab', 'shn', 'sab'), // Sabalenka - (Muchova)
+        joue('J1', 3, 'and', 'svi', 'and'),
+        joue('J2', 2, 'sab', 'and', 'and'),
+        joue('J2', 3, 'shn', 'svi', 'svi'), // (Muchova) - Svitolina
+        match('J3', 2, 'bottom', 'sab', 'svi'),
+        match('J3', 3, 'bottom', 'shn', 'and'), // Shnaider - Andreeva
+      ],
+    });
+  }
+  const n = (prenom: string, nom: string) => ({ prenom, nom });
+
+  it('API tennis : « Muchova » est reconnue comme le nom d\'origine de Shnaider, rien n\'est écrit', async () => {
+    const { sb, tables } = poule();
+    const avant = JSON.stringify(tables.tn_matches);
+    const recus = [
+      { ...n('Aryna', 'Sabalenka'), adversaires: [n('Karolina', 'Muchova'), n('Mirra', 'Andreeva'), n('Elina', 'Svitolina')] },
+      { ...n('Elina', 'Svitolina'), adversaires: [n('Mirra', 'Andreeva'), n('Karolina', 'Muchova'), n('Aryna', 'Sabalenka')] },
+      { ...n('Mirra', 'Andreeva'), adversaires: [n('Elina', 'Svitolina'), n('Aryna', 'Sabalenka'), n('Diana', 'Shnaider')] },
+      { ...n('Diana', 'Shnaider'), adversaires: [n('Mirra', 'Andreeva')] },
+      { ...n('Karolina', 'Muchova'), adversaires: [n('Aryna', 'Sabalenka'), n('Elina', 'Svitolina')] },
+    ];
+    const r = await appliquerRemplacementsMasters(sb, T, recus, true);
+    expect(r.erreurs).toEqual([]);
+    expect(r.ecrit).toBe(false);
+    expect(r.echanges).toEqual([]);
+    expect(r.alias).toEqual([{ id: 'shn', name: 'K. Muchova' }]);
+    expect(r.messages).toEqual(["Karolina Muchova est le nom d'origine de D. Shnaider (même place dans le tournoi)"]);
+    // L'alias est une entrée de plus qui pointe vers la même joueuse : les lectures par nom la retrouvent.
+    expect(r.joueurs.filter((j) => j.id === 'shn').map((j) => j.name)).toEqual(['D. Shnaider', 'K. Muchova']);
+    expect(JSON.stringify(tables.tn_matches)).toBe(avant);
+  });
+
+  it('Game Tracker : « Muchova » (poule du bas) est reconnue comme le nom d\'origine de Shnaider', async () => {
+    const { sb, tables } = poule();
+    const avant = JSON.stringify(tables.tn_matches);
+    const bas = 'bottom' as const;
+    const recus = [
+      { ...n('Aryna', 'Sabalenka'), moitie: bas },
+      { ...n('Elina', 'Svitolina'), moitie: bas },
+      { ...n('Mirra', 'Andreeva'), moitie: bas },
+      { ...n('Karolina', 'MUCHOVA'), moitie: bas },
+    ];
+    const r = await appliquerRemplacementsMasters(sb, T, recus, true);
+    expect(r.erreurs).toEqual([]);
+    expect(r.ecrit).toBe(false);
+    expect(r.alias).toEqual([{ id: 'shn', name: 'K. Muchova' }]);
+    expect(JSON.stringify(tables.tn_matches)).toBe(avant);
+  });
+
+  it('un nom inconnu de la base (faute de frappe) reste une erreur, rien n\'est écrit', async () => {
+    const { sb, tables } = poule();
+    const avant = JSON.stringify(tables.tn_matches);
+    const recus = [
+      { ...n('Aryna', 'Sabalenka'), moitie: 'bottom' as const },
+      { ...n('Elina', 'Svitolina'), moitie: 'bottom' as const },
+      { ...n('Mirra', 'Andreeva'), moitie: 'bottom' as const },
+      { ...n('Karolina', 'Muchovva'), moitie: 'bottom' as const },
+    ];
+    const r = await appliquerRemplacementsMasters(sb, T, recus, true);
+    expect(r.alias).toEqual([]);
+    expect(r.erreurs.length).toBeGreaterThan(0);
+    expect(JSON.stringify(tables.tn_matches)).toBe(avant);
   });
 });
