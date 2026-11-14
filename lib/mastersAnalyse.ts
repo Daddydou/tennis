@@ -33,6 +33,16 @@ export interface MatchAnalyseMasters {
   joueuses: [JoueuseAnalyseMasters, JoueuseAnalyseMasters];
 }
 
+/**
+ * Tours VALIDÉS = tous leurs matchs sont joués (vainqueur connu). Les autres (en cours ou à jouer) sont les tours
+ * « non validés » : ce sont les seuls où l'on affiche les picks des autres participants.
+ */
+export function partitionnerTours(matchs: { round: string; vainqueurId: string | null }[]): { ouverts: string[]; valides: string[] } {
+  const tours = [...new Set(matchs.map((m) => m.round))];
+  const valide = (round: string) => matchs.filter((m) => m.round === round).every((m) => m.vainqueurId !== null);
+  return { ouverts: tours.filter((r) => !valide(r)), valides: tours.filter(valide) };
+}
+
 export function analyserMatchsMasters(args: {
   vue: VueMasters;
   elo: Record<string, number>;

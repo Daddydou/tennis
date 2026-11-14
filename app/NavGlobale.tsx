@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 import { GROUPES, groupeActif, lienActif } from './navigation';
 
 /**
- * Navigation globale en 4 entrées (Accueil, Tournois, Saison, Outils), plus
- * une sous-barre quand on est dans Saison ou Outils. Chaque lien a sa propre
+ * Navigation globale en 3 entrées (Accueil, Tournois, Outils), plus
+ * une sous-barre quand on est dans Outils. Chaque lien a sa propre
  * zone tactile de 44px. La page en cours est marquée (aria-current + texte
  * foncé et gras) : sans ça, rien ne disait où l'on se trouvait.
  *

@@ -42,12 +42,23 @@ Trois façons de rafraîchir :
 
 Une joueuse de l'API introuvable parmi les huit : rien n'est écrit. L'API est la source : ses valeurs remplacent les nôtres.
 
+### Remplaçante d'une joueuse qui a déjà joué (alias)
+
+Si une joueuse est remplacée **après** avoir joué (cas Muchova → Shnaider, WTA Finals 2026 : la remplaçante garde les matchs et les points des journées déjà jouées et joue la suite), l'API et Game Tracker continuent d'appeler la place par l'**ancien nom**. Rien n'est réécrit en base : `reconnaitreAlias` (`lib/mastersRemplacement.ts`, pur) reconnaît l'ancien nom comme un **alias** de la remplaçante, sur preuve seulement :
+
+- par l'API : l'ancienne joueuse a, dans sa poule, les adversaires que la remplaçante n'a pas encore rencontrés, et eux seuls (un seul candidat possible) ;
+- par Game Tracker : une seule absente de la poule avec des matchs joués, une seule joueuse inconnue dans cette même poule ;
+- la remplaçante doit être connue en base. Au moindre doute, aucun alias : on n'écrit rien et on le dit.
+
+`db/mastersRemplacement.ts` ajoute alors l'alias à la liste des joueuses (`alias`), utilisée par `db/mastersResultats.ts` et par les picks Game Tracker du Masters. Message affiché : « … est le nom d'origine de … (même place dans le tournoi) ».
+
 ## Pronostics et classement du tournoi
 
 Table `tn_masters_pronostics` (migration 0032) : un pronostic par participant et par tournoi. Sur l'écran du tournoi (`PronosticsMasters`, `EditeurPronostic`, `mastersPronosticActions`) :
 
 - **Saisie** de son pronostic (classement des deux poules, vainqueur des deux demies, championne) avec le même contrôle que le serveur (`validerPronostic`) ; pour moi, l'éditeur est pré-rempli avec le **pronostic proposé** par la simulation. Les pronostics de Laki et de Thomas se saisissent à la main tant que l'API de Thomas ne les donne pas (son bracket est vide pour les Finals).
-- **Fermeture au premier match** du tournoi (match commencé ou joué, ou heure du premier match programmé passée) : `pronosticFerme`, vérifiée côté serveur.
+- **Fermeture au premier match** du tournoi (match commencé ou joué, ou heure du premier match programmé passée) : `pronosticFerme`. Elle ne bloque plus la saisie : après le premier match, on peut toujours saisir ou corriger un pronostic à la main (c'est la seule façon de recopier ceux déjà posés chez Game Tracker) ; la source est alors « manuel », et le formulaire part du classement actuel des poules.
+- **Un seul écran** (onglet Pronostic, `ComparaisonPronostics.tsx`, logique pure dans `lib/mastersScenario.ts`) : une grille côte à côte avec le pronostic de chaque participant (vert = juste, ambre = bien qualifiée mais pas à cette place, rouge = raté, blanc = pas encore joué) et une colonne **Simulé**, un bracket au format d'un pronostic (classement des deux poules, vainqueurs des demies, championne) que l'on modifie à volonté. Les points de chacun (pronostic puis total avec les picks, rang, écart avec aujourd'hui) se recalculent tout de suite comme si le scénario était la réalité (`pointsSousScenario`). Départ du scénario = la réalité (`scenarioInitial`) ; ce qui est déjà joué (poule terminée sans égalité, demie, finale) est figé. Les picks ne sont pas simulés : ils comptent pour leurs points actuels.
 - **Points** (`pointsPronostic`) : qualifiée trouvée 4, place exacte 2, finaliste trouvée 8 (quel que soit son parcours), championne 16 ; 64 au maximum. Comptés sur ce qui est déjà connu : les places d'une poule seulement quand elle est terminée **et** que son classement n'a aucune égalité non départagée (on ne donne pas de points à tort) ; finalistes quand les deux demies sont jouées ; championne quand la finale l'est.
 - **Classement du tournoi** : points du pronostic + points des picks ; les ex æquo partagent le rang (1, 1, 3). Affiché sur le Dashboard (`MastersDashboard.tsx`, `classerTournoi`) : une ligne par participant avec Pronostic, Picks et Total (« Pronostic » et non « Bracket » : un Masters n'a pas de bracket).
 - **Pronostics sur le Tableau** (`lib/mastersPronosticVue.ts`, pur ; `MastersPieces.tsx`) : sur chaque joueuse de poule, une pastille par participant (lettre + place prévue). Vert = place exacte, ambre = bien qualifiée (top 2) mais pas à cette place, rouge = raté, gris = poule pas finie ou égalité non départagée. Sous la finale : finalistes et championne de chacun (✓ juste, ✗ raté, sans signe = pas encore joué), jugés dès que c'est certain (éliminée en poule, demie perdue…). Un participant sans pronostic est signalé par une note.
@@ -74,4 +85,6 @@ Méthode : 10 000 tournois simulés à partir de l'Elo du jour (même chaîne qu
 
 ## Pas encore fait
 
-- Lecture automatique des pronostics de Thomas et de Laki depuis l'API de Thomas : son bracket est vide pour les Finals, le format n'est pas connu.
+- Lecture automatique des pronostics de Thomas et de Laki depuis l'API de Thomas. Constat du 13/11/2026 (sondes en lecture seule) : pour un tournoi de type `FINALS`, `GET /brackets` ne renvoie que les 12 matchs de poule (3 tours de 4 matchs, positions 1 à 8, pas de demies ni de finale), et chaque `pronostics[]` est `{ position: null, resultat: "sans_prono" }` pour tous les participants, alors que `participants[]` donne bien `rempli` et `pointsTotaux` (ex. 6, 6 et 0). Le pronostic de poules (classements, demies, championne) n'est donc exposé nulle part par l'API ; il ne se lit que sur le site de Thomas (page « Pronostics des participants »). Notre synchro de bracket (`sync:bracket-thomas`) rejette cette forme (« Bracket incohérent », 12 erreurs) : sans effet pour les Masters, qui n'en ont pas besoin. Il faudrait que Thomas ajoute les pronostics de poules à sa réponse (`/brackets`) pour automatiser la lecture. En attendant : saisie à la main (pronostics de Moi et de Laki recopiés le 13/11 ; Thomas n'en a pas posé, `rempli: false`). Contrôle utile : après saisie, les points affichés doivent retomber sur les `pointsTotaux` de Thomas.
+- Les « points encore possibles » d'un pronostic (`maxRestant`) ne tiennent pas compte des joueuses déjà éliminées (Thomas, lui, les déduit : « max 46 » pour 54 chez nous).
+- **Picks des autres** (onglet Picks) : visibles sur les tours non validés seulement (tour dont tous les matchs ne sont pas joués) ; les tours validés sont repliés avec mes seuls picks (`partitionnerTours`). Les picks d'un autre sur un tour pas encore verrouillé chez Game Tracker ne sont pas lisibles : l'API ne les donne qu'au verrouillage.

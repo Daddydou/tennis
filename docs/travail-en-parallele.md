@@ -4,16 +4,24 @@ Deux sessions Claude Code (ou une session et toi) peuvent travailler en même te
 
 ## 1. Un dossier de travail (worktree) par session
 
-Le dossier principal `Projets\tennis` reste sur `main`, à jour, **sans rien y développer**. Chaque session crée son propre dossier :
+Tout vit dans `Projets\tennis-app\` : le dossier principal `principal` reste sur `main`, à jour, **sans rien y développer**, et chaque session crée son propre dossier à côté, au même niveau :
 
 ```
-cd C:\Users\lolor\Projets\tennis
+Projets\tennis-app\
+  principal\        (main)
+  <sujet>\          (un dossier de travail par branche)
+```
+
+```
+cd C:\Users\lolor\Projets\tennis-app\principal
 git fetch origin
-git worktree add ..\tennis-<sujet> -b <branche> origin/main
-cmd /c mklink /J ..\tennis-<sujet>\node_modules node_modules
+git worktree add ..\<sujet> -b <branche> origin/main
+cmd /c mklink /J ..\<sujet>\node_modules node_modules
 ```
 
-La jonction `node_modules` évite de réinstaller les paquets. Le fichier `.env.local` n'est pas copié : pour un script qui en a besoin, passer `--env-file=C:\Users\lolor\Projets\tennis\.env.local`.
+La jonction `node_modules` évite de réinstaller les paquets. Le fichier `.env.local` n'est pas copié : pour un script qui en a besoin, passer `--env-file=C:\Users\lolor\Projets\tennis-app\principal\.env.local`.
+
+L'ancien moteur `tennis-picks` (dépôt à part, en fin de vie) est rangé dans `Projets\_archives\tennis-picks`.
 
 ## 2. Une branche par sujet, partie de `origin/main`
 
@@ -39,13 +47,17 @@ Les fichiers où deux branches se touchent le plus souvent : `package.json` (pla
 ## Retirer un dossier de travail (une fois la branche fusionnée)
 
 ```
-cmd /c rmdir ..\tennis-<sujet>\node_modules      # AVANT : retire la jonction, pas le vrai node_modules
-git worktree remove ..\tennis-<sujet>
+cmd /c rmdir ..\<sujet>\node_modules      # AVANT : retire la jonction, pas le vrai node_modules
+git worktree remove ..\<sujet>
 git branch -d <branche>                           # -D si la PR a été fusionnée par « squash »
 git worktree prune
 ```
 
 Ne jamais supprimer le dossier à la main ni avec `Remove-Item -Recurse` tant que la jonction existe : cela viderait le vrai `node_modules` du projet principal.
+
+## Déplacer un dossier de travail
+
+Ne pas le déplacer à la main sans suite : après le déplacement, lancer `git worktree repair <nouveau chemin>` depuis `principal`, puis recréer la jonction `node_modules` (retirée avant avec `cmd /c rmdir`). Une commande (`vitest`, `npm`) lancée depuis le mauvais dossier crée des `node_modules` ou des caches parasites : vérifier le dossier courant avant de la lancer.
 
 ## Pièges de l'environnement (PC Windows)
 

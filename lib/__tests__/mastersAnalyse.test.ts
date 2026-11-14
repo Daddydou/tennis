@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { analyserMatchsMasters } from '../mastersAnalyse';
+import { analyserMatchsMasters, partitionnerTours } from '../mastersAnalyse';
 import { vueMasters, type LigneMatchMasters } from '../mastersVue';
 
 function ligne(round: string, position: number, half: 'top' | 'bottom' | null, p1: string | null, p2: string | null, winner: string | null = null): LigneMatchMasters {
@@ -51,5 +51,18 @@ describe('analyserMatchsMasters', () => {
     const r = analyserMatchsMasters({ vue, elo: { a1: 2200 }, picks: [] });
     expect(r[0].joueuses[0].proba).toBeNull();
     expect(r[0].joueuses[1].elo).toBeNull();
+  });
+});
+
+describe('partitionnerTours', () => {
+  const m = (round: string, vainqueurId: string | null) => ({ round, vainqueurId });
+
+  it('un tour est validé quand tous ses matchs sont joués ; sinon il reste ouvert', () => {
+    const r = partitionnerTours([m('J1', 'a'), m('J1', 'b'), m('J2', 'a'), m('J2', null), m('J3', null)]);
+    expect(r).toEqual({ ouverts: ['J2', 'J3'], valides: ['J1'] });
+  });
+
+  it('aucun match : rien d\'ouvert ni de validé', () => {
+    expect(partitionnerTours([])).toEqual({ ouverts: [], valides: [] });
   });
 });

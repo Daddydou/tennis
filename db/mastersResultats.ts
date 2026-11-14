@@ -87,7 +87,8 @@ export async function appliquerResultatsMasters(sb: SupabaseClient, tournamentId
   const ids = [...new Set(rows.flatMap((r) => [r.player1_id, r.player2_id]).filter((x): x is string => x !== null))];
   const joueurs = ids.length ? await lire<{ id: string; name: string }[]>(sb.from('tn_players').select('id, name').in('id', ids), 'tn_players') : [];
 
-  const { observations, erreurs } = observationsDepuisApi(tableau.singles ?? [], joueurs);
+  // Les anciens noms encore utilisés par l'API (« Muchova » en J1 et J2, remplacée par Shnaider) pointent vers la joueuse en place.
+  const { observations, erreurs } = observationsDepuisApi(tableau.singles ?? [], [...joueurs, ...remp.alias]);
   if (erreurs.length) return vide([...erreurs, 'Rien n\'a été écrit.']);
 
   const lignes: LigneMatchMasters[] = rows.map((r) => ({

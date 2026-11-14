@@ -1,9 +1,9 @@
 /**
- * Plan de navigation globale : 4 entrées (Accueil, Tournois, Saison, Outils).
+ * Plan de navigation globale : 3 entrées (Accueil, Tournois, Outils).
  * Module pur (ni React ni Next) : il décrit seulement quelle page appartient
  * à quel groupe. Les URLs ne changent pas, on regroupe seulement.
  */
-export type CleGroupe = 'accueil' | 'tournois' | 'saison' | 'outils';
+export type CleGroupe = 'accueil' | 'tournois' | 'outils';
 
 export type LienNav = { href: string; label: string };
 
@@ -35,18 +35,6 @@ export const GROUPES: GroupeNav[] = [
     liens: [],
     // /tournois (liste) et /tournoi/<id>/... (un tournoi)
     actifSi: (p) => commence(p, '/tournois', '/tournoi'),
-  },
-  {
-    cle: 'saison',
-    label: 'Saison',
-    href: '/bilan',
-    liens: [
-      { href: '/bilan', label: 'Bilan' },
-      { href: '/statistiques', label: 'Statistiques' },
-      { href: '/fantasy', label: 'Fantasy saison' },
-      { href: '/face-a-face', label: 'Face-à-face' },
-    ],
-    actifSi: (p) => commence(p, '/bilan', '/statistiques', '/fantasy', '/face-a-face'),
   },
   {
     cle: 'outils',

@@ -401,13 +401,32 @@ export async function parametresDeSurveillance(tournamentId: string, sourceUrl: 
  * Un Masters ne passe pas par l'import générique (tableau à élimination directe) : « Importer » et
  * « Mettre à jour » le dirigent vers la mise à jour des résultats d'un Masters, qui gère aussi les remplaçantes.
  */
-export async function mastersExistantPourSaison(seasonId: number | string): Promise<string | null> {
-  const { data, error } = await supabaseAdmin()
+export async function mastersExistantPourSaison(
+  seasonId: number | string,
+  edition?: { type: 'atp' | 'wta'; nom: string; annee: number },
+): Promise<string | null> {
+  const sb = supabaseAdmin();
+  const { data, error } = await sb
     .from('tn_tournaments')
     .select('id, rounds')
     .eq('external_id', `${PREFIXE_ID}${seasonId}`)
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`Tournoi : ${error.message}`);
-  return data && estMasters((data.rounds as string[] | null) ?? null) ? (data.id as string) : null;
+  if (data) return estMasters((data.rounds as string[] | null) ?? null) ? (data.id as string) : null;
+  if (!edition) return null;
+
+  // Un Masters créé depuis Game Tracker (`npm run import:masters`) a un identifiant « gt:… », pas « api:… » : on le
+  // retrouve par sa surveillance (même circuit, même nom d'API, même année). Sans ça, « Importer le tableau » le
+  // traitait comme un tableau à élimination directe et répondait « aucun match dans cette extraction ».
+  const { data: surveillances, error: e2 } = await sb.from('tn_import_auto').select('tournament_id, source_url').eq('mode', 'api');
+  if (e2) throw new Error(`Surveillance : ${e2.message}`);
+  const trouvee = (surveillances ?? []).find((s) => {
+    const u = lireUrlTableauApi(String(s.source_url));
+    return u !== null && u.type === edition.type && u.nom === edition.nom && u.annee === edition.annee;
+  });
+  if (!trouvee) return null;
+  const { data: t, error: e3 } = await sb.from('tn_tournaments').select('id, rounds').eq('id', trouvee.tournament_id).maybeSingle();
+  if (e3) throw new Error(`Tournoi : ${e3.message}`);
+  return t && estMasters((t.rounds as string[] | null) ?? null) ? (t.id as string) : null;
 }
