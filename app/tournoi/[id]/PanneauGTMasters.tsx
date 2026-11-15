@@ -123,7 +123,7 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
                           setPrep(null);
                           setChoix((c) => ({ ...c, [cleSlot(s.round, s.half)]: e.target.value }));
                         }}
-                        className="min-h-11 rounded-xl bg-white px-3 text-sm shadow-sm"
+                        className="min-h-11 rounded-xl bg-surface px-3 text-sm shadow-sm"
                       >
                         {options.map((o) => (
                           <option key={o.playerId} value={o.playerId}>
@@ -139,7 +139,7 @@ export default function PanneauGTMasters({ tournamentId, picks, noms }: { tourna
                   Vérifier l&apos;envoi
                 </button>
                 {prep && prep.numero === t.numero && prep.r.ok && (
-                  <div className="space-y-2 rounded-xl bg-white p-3 text-sm shadow-sm">
+                  <div className="space-y-2 rounded-xl bg-surface p-3 text-sm shadow-sm">
                     <p className="font-medium">À envoyer pour {prep.r.nomTour} :</p>
                     <ul className="list-disc pl-5 text-sm">
                       {prep.r.lignes.map((l) => (

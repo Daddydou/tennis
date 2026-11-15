@@ -12,7 +12,7 @@
 import { niveauBadge, type NiveauBadge, type PlayerInsight } from '@/lib/insights';
 
 const STYLE: Record<NiveauBadge, { classes: string; libelle: string }> = {
-  forfait: { classes: 'bg-red-600 text-white', libelle: 'Forfait' },
+  forfait: { classes: 'bg-red-600 text-encre', libelle: 'Forfait' },
   blessure: { classes: 'bg-amber-400 text-amber-950', libelle: 'Blessure' },
   charge: { classes: 'bg-zinc-200 text-zinc-700', libelle: 'Charge' },
 };

@@ -253,7 +253,7 @@ export default async function CalibrationPage() {
         )}
       </div>
 
-      <div className="rounded-2xl bg-white px-3 py-3 text-xs text-zinc-500 shadow-card">
+      <div className="rounded-2xl bg-surface px-3 py-3 text-xs text-zinc-500 shadow-card">
         <p className="font-medium text-zinc-700">
           Ce que ce constat vaut — et ce qu&apos;il ne vaut pas
         </p>

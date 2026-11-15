@@ -49,7 +49,7 @@ export default function ProvenanceElo({
     );
 
   return (
-    <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
+    <details className="rounded-2xl bg-surface px-3 py-2 text-xs shadow-card">
       <summary className="min-h-11 cursor-pointer py-3 text-zinc-600">
         <span className="font-medium text-zinc-900">{sources.ta}</span>{' '}
         joueur(s) sur {sources.total} avec {nomBase},{' '}
@@ -101,7 +101,7 @@ export default function ProvenanceElo({
                 {j.sql && (
                   <p className="text-xs text-violet-700">
                     Trancher (remplacer le slug si besoin) :{' '}
-                    <code className="rounded bg-white/60 px-1">{j.sql}</code>
+                    <code className="rounded bg-surface/60 px-1">{j.sql}</code>
                   </p>
                 )}
               </div>

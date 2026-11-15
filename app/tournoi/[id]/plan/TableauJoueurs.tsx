@@ -123,7 +123,7 @@ export default function TableauJoueurs({
         <table className="w-full min-w-[980px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-100 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              <th className="sticky left-0 z-10 bg-white px-3 py-2">Joueur</th>
+              <th className="sticky left-0 z-10 bg-surface px-3 py-2">Joueur</th>
               <th className="px-2 py-2 text-right">Elo</th>
               <th className="px-2 py-2" title="Adversaire à ce tour : connu, ou les adversaires possibles tant que le duel voisin n'est pas joué">
                 Adversaire {tourCourant}
@@ -157,7 +157,7 @@ export default function TableauJoueurs({
               const connu = l.adversaires.length === 1 ? l.adversaires[0] : null;
               const ecart = connu ? Math.round(l.elo - connu.elo) : null;
               return (
-                <tr key={l.idx} className={`border-b border-zinc-50 last:border-0 ${l.utilise ? 'bg-zinc-50' : 'bg-white'}`}>
+                <tr key={l.idx} className={`border-b border-zinc-50 last:border-0 ${l.utilise ? 'bg-zinc-50' : 'bg-surface'}`}>
                   <td className="sticky left-0 z-10 bg-inherit px-3 py-2 align-top">
                     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                       <span
@@ -312,9 +312,9 @@ export default function TableauJoueurs({
                       etat === 'valide'
                         ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-400'
                         : etat === 'choisi'
-                          ? 'bg-zinc-900 text-white'
+                          ? 'bg-zinc-900 text-encre'
                           : etat === 'plan'
-                            ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-400'
+                            ? 'bg-surface text-zinc-900 shadow-sm ring-1 ring-zinc-400'
                             : cliquable
                               ? 'hover:bg-zinc-100'
                               : 'text-zinc-300';

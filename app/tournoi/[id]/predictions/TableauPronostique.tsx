@@ -11,6 +11,8 @@ import {
   type DuelBracket,
 } from '@/lib/bracket';
 import { badge, badgeNeutre, carte, filtreSecondaire, pilleSelecteur } from '@/app/ui';
+import ArbreBracket from '../ArbreBracket';
+import { construireArbre, departParDefaut, departsPossibles } from '../arbreGeometrie';
 
 const SURFACE_LABEL: Record<string, string> = {
   hard: 'dur',
@@ -82,7 +84,7 @@ function LigneJoueur({
         </span>
         {champion && (
           <span
-            className={`${badge} bg-zinc-800 text-white`}
+            className={`${badge} bg-zinc-800 text-encre`}
             title="Champion prédit"
           >
             titre
@@ -165,12 +167,15 @@ export default function TableauPronostique({
   blend,
   roundParam,
   moitieParam,
+  depuisParam,
 }: {
   id: string;
   engine: NonNullable<Awaited<ReturnType<typeof loadEngineData>>>;
   blend: Awaited<ReturnType<typeof chargerBlendProduction>>;
   roundParam?: string;
   moitieParam?: string;
+  /** Tour de départ de l'arbre (?depuis=QF), les quarts par défaut. */
+  depuisParam?: string;
 }) {
   const { tournament, matches, players, elos } = engine;
   const rounds = tournament.rounds ?? [];
@@ -253,7 +258,20 @@ export default function TableauPronostique({
   const champion = bracket.champion;
   const vueChampion = vue(champion);
   const lien = (r: string, m: Moitie | null) =>
-    `/tournoi/${id}/predictions?vue=tableau&round=${r}${m ? `&moitie=${m}` : ''}`;
+    `/tournoi/${id}/predictions?vue=tableau&round=${r}${m ? `&moitie=${m}` : ''}${depuisParam ? `&depuis=${depuisParam}` : ''}`;
+
+  // ── Arbre pronostiqué, façon arbre généalogique : des quarts (par défaut)
+  // jusqu'au champion prédit. Mêmes duels que la liste ci-dessous.
+  const duelsArbre = bracket.duels.map((d) => ({ round: d.round, position: d.position, a: d.a, b: d.b, vainqueur: d.gagnant }));
+  const departs = departsPossibles(bracket.rounds, duelsArbre);
+  const depuis = depuisParam && departs.includes(depuisParam) ? depuisParam : departParDefaut(bracket.rounds, duelsArbre);
+  const arbre = depuis ? construireArbre(bracket.rounds, duelsArbre, depuis) : null;
+  const joueursArbre: Record<string, { nom: string; rang: number | null }> = {};
+  for (const d of bracket.duels)
+    for (const pid of [d.a, d.b])
+      if (pid) joueursArbre[pid] = { nom: players[pid]?.name ?? pid, rang: players[pid]?.rank ?? null };
+  const lienDepuis = (r: string) =>
+    `/tournoi/${id}/predictions?vue=tableau&round=${roundParam ?? bracket.rounds[0]}&depuis=${r}`;
 
   return (
     <div className="space-y-4">
@@ -305,6 +323,27 @@ export default function TableauPronostique({
               );
             })}
           </ul>
+        </section>
+      )}
+
+      {arbre && (
+        <section aria-label="Arbre pronostiqué" className="space-y-3">
+          {departs.length > 1 && (
+            <nav aria-label="Départ de l'arbre" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs text-zinc-600">Arbre depuis :</span>
+              {departs.map((r) => (
+                <Link key={r} href={lienDepuis(r)} aria-current={r === depuis ? 'true' : undefined} className={filtreSecondaire(r === depuis)}>
+                  {r}
+                </Link>
+              ))}
+            </nav>
+          )}
+          <ArbreBracket
+            arbre={arbre}
+            joueurs={joueursArbre}
+            libelle={`Tableau pronostiqué à l'Elo depuis le tour ${depuis}`}
+            libelleVainqueur="Champion prédit"
+          />
         </section>
       )}
 

@@ -7,14 +7,18 @@ import BracketRoundPanel from './BracketRoundPanel';
 import ClassementBracketPanel from './ClassementBracketPanel';
 import ImportBracketPanel from './ImportBracketPanel';
 import ParticipantsBracketPanel from './ParticipantsBracketPanel';
-import { MOI, type Joueur, type Participant } from './types';
+import { MOI, nomStock, type Joueur, type Participant } from './types';
+import ArbreBracket, { type Marque } from '../ArbreBracket';
+import { construireArbre, departParDefaut, departsPossibles } from '../arbreGeometrie';
+import { teinteParticipant } from '@/lib/pastillesPicks';
 import type { Player } from '@/lib/types';
-import { champTexte, filtreSecondaire } from '@/app/ui';
+import { champTexte, filtreSecondaire, pilleSelecteur } from '@/app/ui';
 import { majParametreUrl } from './urlEtat';
 
-type Onglet = 'reel' | 'participants' | 'classement' | 'import';
+type Onglet = 'arbre' | 'reel' | 'participants' | 'classement' | 'import';
 
 const ONGLETS: { key: Onglet; label: string }[] = [
+  { key: 'arbre', label: 'Arbre' },
   { key: 'classement', label: 'Classement & probabilités' },
   { key: 'reel', label: 'Bracket réel' },
   { key: 'participants', label: 'Bracket des participants' },
@@ -64,7 +68,7 @@ export default function SimulateurBracket({
 
   const [roundChoisi, setRoundChoisi] = useState(roundParDefaut);
   const [onglet, setOnglet] = useState<Onglet>(
-    ONGLETS.some((o) => o.key === ongletInitial) ? (ongletInitial as Onglet) : 'reel',
+    ONGLETS.some((o) => o.key === ongletInitial) ? (ongletInitial as Onglet) : 'arbre',
   );
   // Une fois l'onglet Classement ouvert, il reste monté (masqué en CSS) même
   // en le quittant : sa simulation Monte Carlo (useMemo, ~150-300 ms mesurés)
@@ -86,6 +90,38 @@ export default function SimulateurBracket({
     () => resoudreArbre(matches, rounds, (r, p) => scenario.get(cleDuel(r, p)) ?? null),
     [matches, rounds, scenario],
   );
+
+  // Arbre (vue par défaut) : le tableau RÉEL — résultats joués seulement, sans
+  // les clics hypothétiques du bloc 2 — des quarts (par défaut) à la finale,
+  // avec sous chaque joueur les participants qui l'ont choisi pour ce match.
+  const arbreReel = useMemo(() => resoudreArbre(matches, rounds, () => null), [matches, rounds]);
+  const duelsArbre = useMemo(
+    () => arbreReel.duels.map((d) => ({ round: d.round, position: d.position, a: d.a, b: d.b, vainqueur: d.vainqueur })),
+    [arbreReel],
+  );
+  const departs = useMemo(() => departsPossibles(rounds, duelsArbre), [rounds, duelsArbre]);
+  const [depuis, setDepuis] = useState<string | null>(() => departParDefaut(rounds, duelsArbre));
+  const arbreDessine = useMemo(
+    () => (depuis ? construireArbre(rounds, duelsArbre, depuis) : null),
+    [rounds, duelsArbre, depuis],
+  );
+  const legende = useMemo(
+    () =>
+      stocks.map((s) => {
+        const nom = nomStock(s, participants);
+        return { stock: s, nom, couleur: `var(--color-participant-${teinteParticipant(nom)})` };
+      }),
+    [stocks, participants],
+  );
+  const marques = useMemo(() => {
+    const out: Record<string, Marque[]> = {};
+    for (const { stock, nom, couleur } of legende) {
+      for (const [cle, playerId] of picksBracket[stock] ?? []) {
+        (out[`${cle}|${playerId}`] ??= []).push({ nom, couleur });
+      }
+    }
+    return out;
+  }, [legende, picksBracket]);
 
   function onChangerRound(round: string) {
     setRoundChoisi(round);
@@ -199,7 +235,7 @@ export default function SimulateurBracket({
             aria-pressed={onglet === o.key}
             onClick={() => {
               setOnglet(o.key);
-              majParametreUrl('vue', o.key === 'reel' ? null : o.key);
+              majParametreUrl('vue', o.key === 'arbre' ? null : o.key);
               if (o.key === 'classement') setClassementOuvert(true);
             }}
             className={filtreSecondaire(onglet === o.key)}
@@ -208,6 +244,47 @@ export default function SimulateurBracket({
           </button>
         ))}
       </nav>
+
+      {onglet === 'arbre' && (
+        <section aria-label="Arbre du tableau" className="space-y-4">
+          {departs.length > 1 && (
+            <nav aria-label="Départ de l'arbre" className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs text-zinc-600">Depuis :</span>
+              {departs.map((r) => (
+                <button key={r} type="button" aria-pressed={r === depuis} onClick={() => setDepuis(r)} className={pilleSelecteur(r === depuis)}>
+                  {r}
+                </button>
+              ))}
+            </nav>
+          )}
+          {arbreDessine ? (
+            <>
+              <ArbreBracket
+                arbre={arbreDessine}
+                joueurs={joueurs}
+                marques={marques}
+                libelle={`Tableau réel depuis le tour ${depuis}`}
+                libelleVainqueur="Vainqueur"
+              />
+              <ul aria-label="Qui a choisi qui" className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs">
+                {legende.map((l) => (
+                  <li key={l.stock} className="flex items-center gap-2 text-zinc-700">
+                    <span className="size-2 rounded-full" style={{ background: l.couleur }} aria-hidden="true" />
+                    {l.nom}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-center text-xs text-zinc-500">
+                Tableau réel. Sous chaque joueur, les participants qui l&apos;ont choisi pour gagner ce match.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-zinc-500">
+              L&apos;arbre s&apos;affiche dès que le tableau est complet à partir des huitièmes ou des quarts.
+            </p>
+          )}
+        </section>
+      )}
 
       {onglet === 'reel' && (
         <BracketRoundPanel

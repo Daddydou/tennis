@@ -204,7 +204,7 @@ export default function ComparaisonEchelle() {
             </table>
           </div>
 
-          <div className="rounded-2xl bg-white px-3 py-3 text-sm shadow-card">
+          <div className="rounded-2xl bg-surface px-3 py-3 text-sm shadow-card">
             <p>
               Écart global le plus faible :{' '}
               <span className="font-mono font-semibold">

@@ -2,58 +2,86 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { filtreSecondaire } from '@/app/ui';
 import { ONGLETS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
 
 /**
- * Titre et onglets du tournoi, rendus UNE fois par le layout du tournoi :
- * ils restent affichés pendant qu'un onglet se charge (seul le contenu passe
- * au squelette de ./loading.tsx). L'onglet actif se déduit de l'URL.
+ * Onglets du tournoi, rendus UNE fois par le layout du tournoi : ils restent
+ * affichés pendant qu'un onglet se charge. L'onglet actif se déduit de l'URL.
  *
- * Cinq onglets (Dashboard, Tableau, Picks, Bracket, Fantasy). Deux d'entre
- * eux ont deux vues, affichées sous la barre : Tableau (Tableau | Résultats)
- * et Bracket (Le jeu | Prédictions). Les URLs de chaque vue n'ont pas changé.
+ * Façon frise du guide Dark : une ligne fine, chaque onglet un point avec son
+ * nom au-dessus ; l'onglet actif est un point jaune qui rayonne. Quand
+ * l'onglet a deux vues (Tableau | Résultats, Bracket : Le jeu | Prédictions),
+ * elles pendent sous son point, reliées par un pointillé — une branche d'arbre.
+ * Au téléphone, la frise défile horizontalement plutôt que de se tasser.
  */
-export default function TournoiNav({ id, nom, masters = false }: { id: string; nom: string; masters?: boolean }) {
+export default function TournoiNav({ id, masters = false }: { id: string; masters?: boolean }) {
   const segment = usePathname().split('/')[3] ?? '';
   const active = ongletDe(segment);
-  const vues = masters ? [] : (ONGLETS.find((o) => o.key === active)?.vues ?? []);
+  const onglets = masters ? ONGLETS_MASTERS : ONGLETS;
   const vueActive = vueDe(segment);
+  const colonnes = { gridTemplateColumns: `repeat(${onglets.length}, minmax(0, 1fr))` };
+  const indexActif = onglets.findIndex((o) => o.key === active);
+  const vues = masters ? [] : (onglets[indexActif]?.vues ?? []);
   return (
-    <div className="space-y-2">
-      <h1 className="text-lg font-semibold">{nom}</h1>
-      {/* Cinq onglets tiennent presque dans la largeur d'un téléphone : la barre
-          défile quand même horizontalement plutôt que de passer à la ligne, ce
-          qui garde l'onglet actif et ses voisins à portée de pouce. */}
-      <nav aria-label="Onglets du tournoi" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 text-sm">
-        {(masters ? ONGLETS_MASTERS : ONGLETS).map((o) => (
-          <Link
-            key={o.key}
-            href={o.href(id)}
-            aria-current={o.key === active ? 'page' : undefined}
-            className={`-mb-px flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 transition active:scale-[0.97] ${
-              o.key === active
-                ? 'border-accent font-semibold text-accent'
-                : 'border-transparent text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            {o.label}
-          </Link>
-        ))}
+    <div className="-mx-4 overflow-x-auto px-4">
+      <nav aria-label="Onglets du tournoi" className="min-w-[30rem]">
+        <ul className="relative grid" style={colonnes}>
+          <li aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[2.6rem] h-px bg-white/30" />
+          {onglets.map((o) => {
+            const actif = o.key === active;
+            return (
+              <li key={o.key} className="flex justify-center">
+                <Link
+                  href={o.href(id)}
+                  aria-current={actif ? 'page' : undefined}
+                  className="group flex min-h-14 flex-col items-center gap-3 px-2 pt-2 transition active:scale-[0.97]"
+                >
+                  <span
+                    className={`titre-espace whitespace-nowrap pl-[0.3em] text-[0.7rem] ${
+                      actif ? 'font-normal text-zinc-950' : 'text-zinc-600 group-hover:text-zinc-900'
+                    }`}
+                  >
+                    {o.label}
+                  </span>
+                  <span className="flex size-3.5 items-center justify-center">
+                    <span
+                      className={
+                        actif
+                          ? 'size-3 rounded-full bg-accent shadow-[0_0_14px_3px_rgba(215,242,90,.45)]'
+                          : 'size-1.5 rounded-full bg-zinc-600 transition group-hover:size-2.5 group-hover:bg-zinc-900'
+                      }
+                    />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
+      {/* Les vues pendent sous le point de l'onglet actif (même colonne). */}
       {vues.length > 0 && (
-        <nav aria-label="Vues" className="flex flex-wrap gap-1">
-          {vues.map((v) => (
-            <Link
-              key={v.segment}
-              href={`/tournoi/${id}/${v.segment}`}
-              aria-current={vueActive === v.segment ? 'page' : undefined}
-              className={filtreSecondaire(vueActive === v.segment)}
-            >
-              {v.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="grid min-w-[30rem]" style={colonnes}>
+          <nav aria-label="Vues" className="flex flex-col items-center" style={{ gridColumnStart: indexActif + 1 }}>
+            <span aria-hidden="true" className="h-3 border-l border-dotted border-white/45" />
+            <div className="flex gap-1.5">
+              {vues.map((v) => {
+                const courante = vueActive === v.segment;
+                return (
+                  <Link
+                    key={v.segment}
+                    href={`/tournoi/${id}/${v.segment}`}
+                    aria-current={courante ? 'page' : undefined}
+                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-xs transition active:scale-[0.97] ${
+                      courante ? 'text-zinc-950 ring-1 ring-white/55' : 'text-zinc-600 ring-1 ring-white/12 hover:text-zinc-900'
+                    }`}
+                  >
+                    {v.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+        </div>
       )}
     </div>
   );

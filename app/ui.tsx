@@ -1,41 +1,41 @@
 /**
  * SYSTÈME DE DESIGN — jetons partagés, pour toute l'app.
  *
- * Thème clair, esprit Apple (iOS/macOS) : fond de page gris très clair,
- * cartes blanches surélevées par une ombre douce (jamais une bordure dure),
- * accent bleu système, coins généreux et cohérents. Détail couleur/contraste
- * dans le bloc de commentaire en tête de app/globals.css.
+ * Thème sombre « esprit Dark » : fond presque noir granuleux, titres en
+ * capitales fines très espacées, séparations par filets d'un pixel. Couleurs
+ * et contrastes : bloc de commentaire en tête de app/globals.css.
  *
  * Principes :
- *   - Accent bleu réservé aux actions principales — jamais aux couleurs déjà
- *     porteuses de sens ailleurs dans l'app (surfaces, source d'Elo,
- *     erreurs, cf. app/page.tsx et app/tournoi/[id]/BadgeSourceElo.tsx).
+ *   - Accent jaune « balle de tennis » réservé à l'action principale et à
+ *     l'élément actif. Le texte posé sur l'accent est `text-encre` (presque
+ *     noir) : du blanc sur ce jaune serait illisible.
+ *   - Les actions principales sont des cadres fins à libellé espacé, pas des
+ *     aplats : c'est la grammaire du style Dark. L'aplat jaune n'apparaît
+ *     qu'au survol et sur la sélection.
  *   - Chaque élément interactif presse visuellement au clic
- *     (`active:scale-[0.97]`, transition rapide) : l'utilisateur voit sa
- *     pression prise en compte avant même la réponse du serveur.
+ *     (`active:scale-[0.97]`).
  *   - Zones cliquables d'au moins 44px de haut (`min-h-11`) — usage
  *     principalement au téléphone.
  */
 
 /**
  * Bouton principal : l'action la plus importante d'un écran ou d'un bloc.
- * Désactivé, il passe en gris plein plutôt qu'en transparence : un texte
- * blanc sur bleu à 40 % devenait illisible au soleil.
+ * Cadre jaune fin, libellé en capitales espacées ; plein jaune au survol.
  */
 export const boutonPrimaire =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-white shadow-sm transition active:scale-[0.97] active:bg-accent-actif hover:bg-accent-fonce disabled:pointer-events-none disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-accent px-5 font-titre text-xs font-normal uppercase tracking-[0.24em] text-accent transition active:scale-[0.97] active:bg-accent-actif hover:bg-accent hover:text-encre disabled:pointer-events-none disabled:border-zinc-300 disabled:text-zinc-500';
 
 /** Bouton secondaire : une action possible, jamais LA priorité de l'écran. */
 export const boutonSecondaire =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-zinc-100 px-4 text-sm font-medium text-zinc-900 transition active:scale-[0.97] hover:bg-zinc-200 disabled:pointer-events-none disabled:text-zinc-500';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-white/15 px-4 text-sm font-medium text-zinc-900 transition active:scale-[0.97] hover:border-white/40 hover:bg-white/5 disabled:pointer-events-none disabled:text-zinc-500';
 
 /** Bouton d'action destructrice — même geste, texte rouge, jamais de fond agressif. */
 export const boutonDanger =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-medium text-red-700 transition active:scale-[0.97] hover:bg-red-50 disabled:pointer-events-none disabled:text-zinc-500';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium text-red-700 transition active:scale-[0.97] hover:bg-red-50 disabled:pointer-events-none disabled:text-zinc-500';
 
 /** Lien discret habillé en action (mêmes zones tactiles) — pour naviguer, pas pour valider. */
 export const lienBouton =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 text-sm font-medium text-accent shadow-sm transition active:scale-[0.97] hover:bg-zinc-50';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-white/12 px-3.5 text-sm font-medium text-accent transition active:scale-[0.97] hover:border-accent/60 hover:bg-white/5';
 
 /**
  * Agrandit la zone cliquable d'un lien texte SANS le transformer en bouton
@@ -45,48 +45,44 @@ export const lienBouton =
 export const zoneTactile = 'inline-flex min-h-11 items-center';
 
 /**
- * Pastille de sélection (participant, tour, onglet) : actif ou non — esprit
- * contrôle segmenté iOS (piste grise, sélection pleine couleur), jamais de
- * bordure dure.
+ * Pastille de sélection (participant, tour, onglet) : actif ou non. Piste
+ * sombre, sélection pleine en jaune balle.
  */
 export function pilleSelecteur(actif: boolean): string {
-  return `inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition active:scale-[0.97] ${
-    actif ? 'bg-accent text-white shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+  return `inline-flex min-h-11 items-center justify-center rounded-full px-3.5 text-sm font-medium transition active:scale-[0.97] ${
+    actif ? 'bg-accent text-encre' : 'bg-zinc-100 text-zinc-600 ring-1 ring-white/8 hover:bg-zinc-200 hover:text-zinc-900'
   }`;
 }
 
 /**
  * Sélecteur de SECOND niveau (filtre, sous-vue sous une rangée de
- * `pilleSelecteur`) : la sélection est une puce blanche sur le gris de la
- * page, jamais le bleu plein — deux rangées bleues l'une sous l'autre ne
- * disaient plus laquelle commandait l'autre.
+ * `pilleSelecteur`) : la sélection est un simple cadre clair, jamais le jaune
+ * plein — deux rangées jaunes l'une sous l'autre ne diraient plus laquelle
+ * commande l'autre.
  */
 export function filtreSecondaire(actif: boolean): string {
-  return `inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm transition active:scale-[0.97] ${
-    actif ? 'bg-white font-semibold text-zinc-900 shadow-sm' : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+  return `inline-flex min-h-11 items-center justify-center rounded-full px-3.5 text-sm transition active:scale-[0.97] ${
+    actif ? 'font-semibold text-zinc-950 ring-1 ring-white/45' : 'text-zinc-600 hover:bg-white/5 hover:text-zinc-900'
   }`;
 }
 
 /**
- * Carte de contenu : fond blanc pur sur le gris très clair de la page,
- * ombre douce (`shadow-card`, cf. globals.css) plutôt qu'une bordure —
- * c'est cet écart de luminance + l'ombre qui donne l'effet « surélevé ».
+ * Carte de contenu : surface sombre légèrement translucide (le grain du fond
+ * transparaît), filet d'un pixel au lieu d'une ombre (`shadow-card`).
  */
-export const carte = 'rounded-2xl bg-white shadow-card';
+export const carte = 'rounded-lg bg-surface/85 shadow-card backdrop-blur-sm';
 
 /**
- * Champ de saisie texte : fond gris clair façon iOS (jamais blanc sur
- * blanc dans une carte), qui blanchit et s'entoure d'un anneau bleu au focus.
+ * Champ de saisie texte : fond sombre, filet clair au focus et anneau jaune.
  */
 export const champTexte =
-  'min-h-11 rounded-xl border border-transparent bg-zinc-100 px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-accent';
+  'min-h-11 rounded-md border border-white/10 bg-zinc-100 px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-500 focus:border-transparent focus:bg-zinc-50 focus:ring-2 focus:ring-accent';
 
 /**
- * Note d'information neutre (méthode, contexte, mode d'emploi) : gris clair,
- * JAMAIS une teinte sémantique — le ciel est réservé au dur, l'ambre aux
- * avertissements (cf. DESIGN.md, « La règle des teintes prises »).
+ * Note d'information neutre (méthode, contexte, mode d'emploi) : gris sombre,
+ * JAMAIS une teinte sémantique (cf. DESIGN.md, « La règle des teintes prises »).
  */
-export const noteInfo = 'rounded-xl bg-zinc-100 px-3 py-2 text-xs leading-relaxed text-zinc-700';
+export const noteInfo = 'rounded-md bg-zinc-100 px-3 py-2 text-xs leading-relaxed text-zinc-700 ring-1 ring-white/6';
 
 /**
  * Badge court dans une ligne (gagné, perdu, en attente…) : 12px minimum, la

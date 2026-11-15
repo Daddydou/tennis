@@ -87,7 +87,7 @@ function Duel({
         ? 'border-emerald-400 bg-emerald-50 font-medium'
         : 'border-zinc-200 text-zinc-500'
       : actif
-        ? 'border-accent bg-accent font-medium text-white'
+        ? 'border-accent bg-accent font-medium text-encre'
         : 'border-zinc-300 hover:border-zinc-500';
     const cliquable = onChoisir !== null && id !== null;
     return (
@@ -109,7 +109,7 @@ function Duel({
   };
 
   return (
-    <div className="space-y-1 rounded-2xl bg-white p-2 shadow-card">
+    <div className="space-y-1 rounded-2xl bg-surface p-2 shadow-card">
       <div className="flex gap-1.5">
         {ligne(duel.a)}
         {ligne(duel.b)}

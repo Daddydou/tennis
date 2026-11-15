@@ -1,51 +1,102 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import { Inter, Jost } from 'next/font/google';
 import './globals.css';
 import { seDeconnecter } from './login/actions';
 import { sessionValide } from '@/auth/garde';
-import NavGlobale from './NavGlobale';
+import { listTournaments } from '@/db/queries';
+import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
+import type { TournamentRow } from '@/db/queries';
+import MenuTiroir, { type GroupeVignettes, type VignetteTournoi } from './MenuTiroir';
+import { commenceDansLaSemaine, fraicheur, SURFACE_LABEL } from './tournoisUi';
+
+/* Polices auto-hébergées par Next (aucun appel à Google côté visiteur). */
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const jost = Jost({ subsets: ['latin'], weight: ['300', '400'], variable: '--font-jost', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Picks Tennis',
   description: 'Jeu de picks tennis personnel',
 };
 
+export const viewport: Viewport = { themeColor: '#07080a', colorScheme: 'dark' };
+
+/** Combien de tournois récents dans le menu (le reste : « Tous les tournois »). */
+const NB_RECENTS_MENU = 6;
+
+function vignette(t: TournamentRow): VignetteTournoi {
+  const cat = t.category ? (LIBELLE_CATEGORIE_COURT[t.category] ?? t.category) : null;
+  const surface = t.surface ? (SURFACE_LABEL[t.surface] ?? t.surface) : null;
+  return { id: t.id, nom: t.name, surface: t.surface, meta: [t.tour, cat, surface].filter(Boolean).join(' · ') };
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const connecte = await sessionValide();
+
+  // Le menu tiroir n'existe qu'une fois connecté (rien à montrer sur /login).
+  let groupes: GroupeVignettes[] = [];
+  let tous: VignetteTournoi[] = [];
+  if (connecte) {
+    const tournois = await listTournaments();
+    const aujourdHui = new Date().toISOString().slice(0, 10);
+    const enCours = tournois.filter((t) => fraicheur(t, aujourdHui) === 'en-cours');
+    const bientot = tournois.filter((t) => commenceDansLaSemaine(t, aujourdHui));
+    const deja = new Set([...enCours, ...bientot].map((t) => t.id));
+    const recents = tournois.filter((t) => !deja.has(t.id)).slice(0, NB_RECENTS_MENU);
+    groupes = [
+      { titre: 'En cours', tournois: enCours.map(vignette) },
+      { titre: 'Cette semaine', tournois: bientot.map(vignette) },
+      { titre: 'Derniers', tournois: recents.map(vignette) },
+    ];
+    tous = tournois.map(vignette);
+  }
+
   return (
-    <html lang="fr" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        {/* Barre blanche sur le fond gris très clair de la page : le même
-            écart de luminance qui « surélève » les cartes (cf. app/ui.tsx),
-            plus un filet fin en dessous — jamais une bordure épaisse. */}
-        <header className="bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-2 px-2 sm:px-4">
-            <Link
-              href="/"
-              aria-label="Picks Tennis, accueil"
-              className="flex min-h-11 shrink-0 items-center rounded-xl px-2 font-semibold tracking-tight transition active:scale-[0.97] hover:bg-zinc-100"
-            >
-              🎾<span className="hidden sm:inline"> Picks Tennis</span>
-            </Link>
-            <NavGlobale
-              deconnexion={
-                connecte ? (
-                  <form action={seDeconnecter}>
+    <html lang="fr" className={`h-full antialiased ${inter.variable} ${jost.variable}`}>
+      <body className="flex min-h-full flex-col overflow-x-clip">
+        {/* Barre du haut transparente, au-dessus des bandeaux qui glissent dessous :
+            le menu à gauche, le nom au centre, la balle (accueil) à droite. */}
+        <header className="relative z-30">
+          <div className="mx-auto grid h-16 max-w-6xl grid-cols-[auto_1fr_auto] items-center px-2 sm:px-4">
+            {connecte ? (
+              <MenuTiroir
+                groupes={groupes}
+                tous={tous}
+                deconnexion={
+                  <form key="deconnexion" action={seDeconnecter}>
                     <button
                       type="submit"
-                      className="flex min-h-11 items-center rounded-xl px-2.5 text-sm text-zinc-600 transition active:scale-[0.97] hover:bg-zinc-100 hover:text-zinc-900"
+                      className="titre-espace inline-flex min-h-11 items-center text-[0.7rem] text-zinc-700 transition hover:text-zinc-950"
                     >
                       Déconnexion
                     </button>
                   </form>
-                ) : undefined
-              }
-            />
+                }
+              />
+            ) : (
+              <span className="size-11" aria-hidden="true" />
+            )}
+            <Link
+              href="/"
+              className="titre-espace justify-self-center pl-[0.6em] text-sm tracking-[0.6em] text-zinc-900 transition hover:text-zinc-950"
+            >
+              Tennis
+            </Link>
+            <Link
+              href="/"
+              aria-label="Accueil"
+              className="flex size-11 items-center justify-center rounded-md transition hover:bg-white/5"
+            >
+              <svg width="26" height="26" viewBox="0 0 30 30" fill="none" strokeWidth="1" aria-hidden="true" className="stroke-zinc-700">
+                <circle cx="15" cy="15" r="12" />
+                <path d="M5 7c6 4 6 12 0 16M25 7c-6 4-6 12 0 16" />
+              </svg>
+            </Link>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-5">{children}</main>
       </body>
     </html>
   );

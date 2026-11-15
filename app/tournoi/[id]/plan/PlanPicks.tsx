@@ -422,7 +422,7 @@ export default function PlanPicks({
                             l.etat === 'valide'
                               ? 'bg-emerald-100 text-emerald-800'
                               : l.etat === 'choisi'
-                                ? 'bg-zinc-900 text-white'
+                                ? 'bg-zinc-900 text-encre'
                                 : 'bg-zinc-100 text-zinc-700'
                           }`}
                         >

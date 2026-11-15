@@ -113,7 +113,7 @@ export default async function CotesPage({
               href={`/calibration/cotes?tournoi=${t.id}`}
               className={`flex min-h-11 items-center rounded-lg border px-2.5 transition active:scale-[0.97] ${
                 actif
-                  ? 'border-accent bg-accent text-white'
+                  ? 'border-accent bg-accent text-encre'
                   : n > 0
                     ? 'border-emerald-300 text-emerald-700'
                     : 'border-zinc-300 text-zinc-500 hover:border-zinc-500'
@@ -128,7 +128,7 @@ export default async function CotesPage({
       </nav>
 
       {tournoiCourant && (
-        <div className="space-y-2 rounded-2xl bg-white p-3 shadow-card">
+        <div className="space-y-2 rounded-2xl bg-surface p-3 shadow-card">
           <p className="text-sm">
             <span className="font-medium">{tournoiCourant.name}</span>{' '}
             <span className="text-zinc-500">
@@ -232,7 +232,7 @@ export default async function CotesPage({
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white p-3 text-sm text-zinc-500 shadow-card">
+        <div className="rounded-2xl bg-surface p-3 text-sm text-zinc-500 shadow-card">
           <p className="font-medium text-zinc-700">
             Aucun match évaluable pour ce tournoi.
           </p>

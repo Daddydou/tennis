@@ -47,7 +47,7 @@ export default function EditeurPronostic({
           <select
             value={p[cle][i]}
             onChange={(e) => change({ [cle]: p[cle].map((x, k) => (k === i ? e.target.value : x)) })}
-            className="min-h-11 flex-1 rounded-xl bg-white px-3 text-sm shadow-sm"
+            className="min-h-11 flex-1 rounded-xl bg-surface px-3 text-sm shadow-sm"
             aria-label={`${titre}, place ${i + 1}`}
           >
             {groupe.map((id) => (
@@ -76,7 +76,7 @@ export default function EditeurPronostic({
       <div className="space-y-1 text-sm">
         <label className="flex flex-wrap items-center gap-2">
           <span className="w-44 text-xs text-zinc-600">Demie 1 ({nom(d1[0])} – {nom(d1[1])})</span>
-          <select value={p.vainqueursDemis[0]} onChange={(e) => change({ vainqueursDemis: [e.target.value, p.vainqueursDemis[1]] })} className="min-h-11 rounded-xl bg-white px-3 text-sm shadow-sm" aria-label="Vainqueur de la demie 1">
+          <select value={p.vainqueursDemis[0]} onChange={(e) => change({ vainqueursDemis: [e.target.value, p.vainqueursDemis[1]] })} className="min-h-11 rounded-xl bg-surface px-3 text-sm shadow-sm" aria-label="Vainqueur de la demie 1">
             {d1.map((id) => (
               <option key={id} value={id}>
                 {nom(id)}
@@ -86,7 +86,7 @@ export default function EditeurPronostic({
         </label>
         <label className="flex flex-wrap items-center gap-2">
           <span className="w-44 text-xs text-zinc-600">Demie 2 ({nom(d2[0])} – {nom(d2[1])})</span>
-          <select value={p.vainqueursDemis[1]} onChange={(e) => change({ vainqueursDemis: [p.vainqueursDemis[0], e.target.value] })} className="min-h-11 rounded-xl bg-white px-3 text-sm shadow-sm" aria-label="Vainqueur de la demie 2">
+          <select value={p.vainqueursDemis[1]} onChange={(e) => change({ vainqueursDemis: [p.vainqueursDemis[0], e.target.value] })} className="min-h-11 rounded-xl bg-surface px-3 text-sm shadow-sm" aria-label="Vainqueur de la demie 2">
             {d2.map((id) => (
               <option key={id} value={id}>
                 {nom(id)}
@@ -96,7 +96,7 @@ export default function EditeurPronostic({
         </label>
         <label className="flex flex-wrap items-center gap-2">
           <span className="w-44 text-xs text-zinc-600">Championne</span>
-          <select value={p.champion} onChange={(e) => change({ champion: e.target.value })} className="min-h-11 rounded-xl bg-white px-3 text-sm shadow-sm" aria-label="Championne">
+          <select value={p.champion} onChange={(e) => change({ champion: e.target.value })} className="min-h-11 rounded-xl bg-surface px-3 text-sm shadow-sm" aria-label="Championne">
             {p.vainqueursDemis.map((id) => (
               <option key={id} value={id}>
                 {nom(id)}

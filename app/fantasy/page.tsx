@@ -126,7 +126,7 @@ export default async function HistoriqueFantasyPage() {
       <BackfillButton />
 
       {lignes.length === 0 ? (
-        <p className="rounded-2xl bg-white px-3 py-4 text-sm text-zinc-500 shadow-card">
+        <p className="rounded-2xl bg-surface px-3 py-4 text-sm text-zinc-500 shadow-card">
           Aucun tournoi enregistré pour l&apos;instant. L&apos;historique se
           remplit à chaque import ; pour reprendre les tournois déjà en base,
           utiliser le bouton ci-dessus.
@@ -233,7 +233,7 @@ export default async function HistoriqueFantasyPage() {
             </table>
           </div>
 
-          <div className="rounded-2xl bg-white px-3 py-3 text-sm shadow-card">
+          <div className="rounded-2xl bg-surface px-3 py-3 text-sm shadow-card">
             {termines.length === 0 ? (
               <p className="text-zinc-500">
                 Aucun tournoi terminé pour l&apos;instant : rien à comparer. Un

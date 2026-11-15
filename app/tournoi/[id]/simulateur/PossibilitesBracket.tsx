@@ -86,7 +86,7 @@ export default function PossibilitesBracket({
   };
 
   return (
-    <details className="rounded-2xl bg-white p-4 shadow-sm">
+    <details className="rounded-2xl bg-surface p-4 shadow-sm">
       <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-zinc-900">
         Possibilités des participants (bracket de Thomas)
       </summary>
@@ -111,7 +111,7 @@ export default function PossibilitesBracket({
                   min={0}
                   name={`max_${p.pseudo}`}
                   defaultValue={max[p.pseudo] ?? ''}
-                  className="min-h-11 w-24 rounded-xl bg-white px-3 text-sm text-zinc-900 shadow-sm"
+                  className="min-h-11 w-24 rounded-xl bg-surface px-3 text-sm text-zinc-900 shadow-sm"
                 />
               </label>
             ))}

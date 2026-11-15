@@ -99,7 +99,7 @@ export default function ProceduresPage() {
             <a
               key={g.id}
               href={`#${g.id}`}
-              className="inline-flex min-h-11 items-center rounded-xl bg-white px-3 shadow-card transition active:scale-[0.97] hover:bg-zinc-50"
+              className="inline-flex min-h-11 items-center rounded-xl bg-surface px-3 shadow-card transition active:scale-[0.97] hover:bg-zinc-50"
             >
               {g.titre}
             </a>
