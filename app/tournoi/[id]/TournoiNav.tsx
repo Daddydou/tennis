@@ -23,8 +23,8 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
   const indexActif = onglets.findIndex((o) => o.key === active);
   const vues = masters ? [] : (onglets[indexActif]?.vues ?? []);
   return (
-    <div className="-mx-4 overflow-x-auto px-4">
-      <nav aria-label="Onglets du tournoi" className="min-w-[30rem]">
+    <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+      <nav aria-label="Onglets du tournoi" className="min-w-[21rem] sm:min-w-[30rem]">
         <ul className="relative grid" style={colonnes}>
           <li aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[2.6rem] h-px bg-white/30" />
           {onglets.map((o) => {
@@ -37,7 +37,7 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
                   className="group flex min-h-14 flex-col items-center gap-3 px-2 pt-2 transition active:scale-[0.97]"
                 >
                   <span
-                    className={`titre-espace whitespace-nowrap pl-[0.3em] text-[0.7rem] ${
+                    className={`titre-espace whitespace-nowrap pl-[0.3em] text-[0.7rem] max-sm:pl-0 max-sm:text-[0.65rem] max-sm:tracking-[0.08em] ${
                       actif ? 'font-normal text-zinc-950' : 'text-zinc-600 group-hover:text-zinc-900'
                     }`}
                   >
@@ -60,7 +60,7 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
       </nav>
       {/* Les vues pendent sous le point de l'onglet actif (même colonne). */}
       {vues.length > 0 && (
-        <div className="grid min-w-[30rem]" style={colonnes}>
+        <div className="grid min-w-[21rem] sm:min-w-[30rem]" style={colonnes}>
           <nav aria-label="Vues" className="flex flex-col items-center" style={{ gridColumnStart: indexActif + 1 }}>
             <span aria-hidden="true" className="h-3 border-l border-dotted border-white/45" />
             <div className="flex gap-1.5">
