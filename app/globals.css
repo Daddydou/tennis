@@ -484,12 +484,240 @@ table {
   outline-offset: 2px;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  MOUVEMENT — lent, doux, jamais gratuit (esprit du guide Dark)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Tout ce qui bouge est en CSS (aucune bibliothèque) et ne touche qu'à
+ * l'opacité, au flou et aux transformations : le téléphone le joue sur la
+ * carte graphique, sans saccade. Chaque animation est une variable
+ * `--animate-*` (Tailwind en tire la classe `animate-*`) : le bloc
+ * « Réduire les animations » plus bas les remplace toutes par un simple fondu.
+ *
+ *  - apparition : un bloc monte de 12 px en sortant d'un léger flou ;
+ *  - titre : les capitales se resserrent en sortant du flou ;
+ *  - trace : un trait se dessine (lignes du court, avec `pathLength="1"`) ;
+ *  - pousse : une ligne s'étire depuis son origine (ligne de la saison, arbre) ;
+ *  - eclore : un point naît en grossissant un peu trop, puis se pose ;
+ *  - halo : le point actif respire ;
+ *  - page : l'arrivée d'un écran (app/template.tsx).
+ */
+@theme {
+  --animate-apparition: apparition 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-titre: titre 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-trace: trace 1.6s cubic-bezier(0.6, 0, 0.2, 1) both;
+  --animate-pousse: pousse 1.1s cubic-bezier(0.6, 0, 0.2, 1) both;
+  --animate-eclore: eclore 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-halo: halo 3.2s ease-in-out infinite;
+  --animate-fondu: fondu 0.9s ease-out both;
+  --animate-page: page 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes apparition {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+  @keyframes titre {
+    from {
+      opacity: 0;
+      letter-spacing: 0.55em;
+      filter: blur(10px);
+    }
+    to {
+      opacity: 1;
+      filter: none;
+    }
+  }
+  @keyframes trace {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes pousse {
+    from {
+      transform: scale(0, 1);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes eclore {
+    0% {
+      opacity: 0;
+      transform: scale(0);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.3);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes halo {
+    0%,
+    100% {
+      box-shadow: 0 0 14px 3px rgba(215, 242, 90, 0.35);
+    }
+    50% {
+      box-shadow: 0 0 26px 8px rgba(215, 242, 90, 0.55);
+    }
+  }
+  @keyframes fondu {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes page {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* Un trait SVG qui se dessine : à poser avec `pathLength="1"` sur l'élément. */
+@utility trait-dessine {
+  stroke-dasharray: 1;
+  animation: var(--animate-trace);
+}
+
+/*
+ * CASCADE : les enfants directs apparaissent l'un après l'autre (80 ms
+ * d'écart, 10 au plus) — cartes de l'accueil, vignettes du menu, listes.
+ */
+@utility cascade {
+  & > * {
+    animation: var(--animate-apparition);
+  }
+  & > *:nth-child(2) { animation-delay: 80ms; }
+  & > *:nth-child(3) { animation-delay: 160ms; }
+  & > *:nth-child(4) { animation-delay: 240ms; }
+  & > *:nth-child(5) { animation-delay: 320ms; }
+  & > *:nth-child(6) { animation-delay: 400ms; }
+  & > *:nth-child(7) { animation-delay: 480ms; }
+  & > *:nth-child(8) { animation-delay: 560ms; }
+  & > *:nth-child(9) { animation-delay: 640ms; }
+  & > *:nth-child(n + 10) { animation-delay: 720ms; }
+}
+
+/*
+ * OUVERTURE (accueil) : la première visite d'une session joue un écran
+ * d'ouverture (IntroOuverture.tsx) ; la scène attend alors qu'il se lève
+ * (`--intro`). Le script en tête de page (layout.tsx) pose `.intro-vue` sur
+ * <html> AVANT l'affichage si l'ouverture a déjà été vue : rien ne clignote.
+ */
+html:not(.intro-vue) [data-scene] {
+  --intro: 1.7s;
+}
+.intro-vue .intro-ouverture {
+  display: none;
+}
+@keyframes intro-sortie {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes intro-jauge {
+  from {
+    transform: scale(0, 1);
+  }
+  to {
+    transform: none;
+  }
+}
+.intro-ouverture {
+  animation: intro-sortie 0.6s ease-in 1.5s both;
+}
+.intro-ouverture .jauge {
+  transform-origin: left;
+  animation: intro-jauge 1.3s cubic-bezier(0.6, 0, 0.2, 1) 0.15s both;
+}
+
+/*
+ * MENU TIROIR : le panneau glisse depuis la gauche, le voile s'assombrit.
+ * `@starting-style` donne l'état de départ à l'ouverture ; `allow-discrete`
+ * laisse la fermeture se jouer avant que le <dialog> ne disparaisse.
+ */
+dialog.tiroir {
+  transform: translateX(-100%);
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+    overlay 0.5s allow-discrete,
+    display 0.5s allow-discrete;
+}
+dialog.tiroir[open] {
+  transform: none;
+}
+@starting-style {
+  dialog.tiroir[open] {
+    transform: translateX(-100%);
+  }
+}
+dialog.tiroir::backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  transition:
+    background-color 0.5s,
+    backdrop-filter 0.5s,
+    overlay 0.5s allow-discrete,
+    display 0.5s allow-discrete;
+}
+dialog.tiroir[open]::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+}
+@starting-style {
+  dialog.tiroir[open]::backdrop {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+  }
+}
+
+/*
+ * RÉDUIRE LES ANIMATIONS (réglage du téléphone ou de l'ordinateur) : plus de
+ * mouvement ni de flou, seulement des fondus courts. L'ouverture est sautée.
+ */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-apparition: fondu 0.3s ease-out both;
+    --animate-titre: fondu 0.3s ease-out both;
+    --animate-trace: none;
+    --animate-pousse: fondu 0.3s ease-out both;
+    --animate-eclore: fondu 0.3s ease-out both;
+    --animate-halo: none;
+    --animate-page: fondu 0.2s ease-out both;
+  }
+  html:not(.intro-vue) [data-scene] {
+    --intro: 0s;
+  }
+  .intro-ouverture {
+    display: none;
+  }
   *,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }
 

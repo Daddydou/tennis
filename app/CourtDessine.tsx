@@ -63,7 +63,11 @@ const SERVICE_PROCHE = 5.485; // 23,77/2 − 6,40
 const FILET = LONGUEUR / 2;
 const SERVICE_LOIN = LONGUEUR - SERVICE_PROCHE;
 
-function Perspective({ t, id, cadrage }: { t: Teinte; id: string; cadrage: 'centre' | 'haut' }) {
+function Perspective({ t, id, cadrage, delai }: { t: Teinte; id: string; cadrage: 'centre' | 'haut'; delai: string | null }) {
+  // Animé (`delai` fourni) : chaque ligne se dessine (pathLength = 1, cf.
+  // `trait-dessine` dans globals.css), les lignes de côté d'abord, le filet en dernier.
+  const dessin = (ms: number) =>
+    delai ? { pathLength: 1, className: 'trait-dessine', style: { animationDelay: `calc(${delai} + ${ms}ms)` } } : {};
   const court = [pt(0, -DOUBLE), pt(LONGUEUR, -DOUBLE), pt(LONGUEUR, DOUBLE), pt(0, DOUBLE)].join(' ');
   const abords = [pt(-6, -DOUBLE - 3.5), pt(LONGUEUR + 6, -DOUBLE - 3.5), pt(LONGUEUR + 6, DOUBLE + 3.5), pt(-6, DOUBLE + 3.5)].join(' ');
   const traits = [
@@ -95,9 +99,9 @@ function Perspective({ t, id, cadrage }: { t: Teinte; id: string; cadrage: 'cent
       <polygon points={abords} fill={t.abords} />
       <polygon points={court} fill={`url(#${id}-s)`} />
       <g stroke="#fff" strokeOpacity="0.36" strokeWidth="1.4" fill="none">
-        <polygon points={court} />
+        <polygon points={court} {...dessin(0)} />
         {traits.map((l, i) => (
-          <line key={i} {...l} />
+          <line key={i} {...l} {...dessin(250 + i * 120)} />
         ))}
       </g>
       <polygon
@@ -105,7 +109,7 @@ function Perspective({ t, id, cadrage }: { t: Teinte; id: string; cadrage: 'cent
         fill="#05070a"
         fillOpacity="0.35"
       />
-      <line x1={gx} y1={gy - hauteur} x2={dx} y2={dy - hauteur} stroke="#fff" strokeOpacity="0.7" strokeWidth="2" />
+      <line x1={gx} y1={gy - hauteur} x2={dx} y2={dy - hauteur} stroke="#fff" strokeOpacity="0.7" strokeWidth="2" {...dessin(900)} />
       <rect width="1440" height="480" fill={`url(#${id}-l)`} />
     </svg>
   );
@@ -142,15 +146,18 @@ export default function CourtDessine({
   surface,
   variante = 'perspective',
   cadrage = 'centre',
+  delai = null,
 }: {
   surface: string | null | undefined;
   variante?: 'perspective' | 'plan';
   /** Perspective : `haut` garde le fond du court et le ciel, coupe le premier plan. */
   cadrage?: 'centre' | 'haut';
+  /** Perspective : les lignes se dessinent, à partir de ce délai CSS (ex. `calc(var(--intro) + 0ms)`). */
+  delai?: string | null;
 }) {
   const t = teinteSurface(surface);
   // Identifiant des dégradés : le même pour une même surface et une même
   // variante (définitions identiques, un doublon dans la page est sans effet).
   const id = `court-${variante}-${surface ?? 'aucune'}`;
-  return variante === 'plan' ? <Plan t={t} id={id} /> : <Perspective t={t} id={id} cadrage={cadrage} />;
+  return variante === 'plan' ? <Plan t={t} id={id} /> : <Perspective t={t} id={id} cadrage={cadrage} delai={delai} />;
 }

@@ -43,11 +43,12 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
                   >
                     {o.label}
                   </span>
-                  <span className="flex size-3.5 items-center justify-center">
+                  {/* L'onglet qu'on vient d'ouvrir : son point éclot puis respire. */}
+                  <span className={`flex size-3.5 items-center justify-center ${actif ? 'animate-eclore' : ''}`}>
                     <span
                       className={
                         actif
-                          ? 'size-3 rounded-full bg-accent shadow-[0_0_14px_3px_rgba(215,242,90,.45)]'
+                          ? 'animate-halo size-3 rounded-full bg-accent shadow-[0_0_14px_3px_rgba(215,242,90,.45)]'
                           : 'size-1.5 rounded-full bg-zinc-600 transition group-hover:size-2.5 group-hover:bg-zinc-900'
                       }
                     />
@@ -61,7 +62,12 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
       {/* Les vues pendent sous le point de l'onglet actif (même colonne). */}
       {vues.length > 0 && (
         <div className="grid min-w-[21rem] sm:min-w-[30rem]" style={colonnes}>
-          <nav aria-label="Vues" className="flex flex-col items-center" style={{ gridColumnStart: indexActif + 1 }}>
+          <nav
+            key={onglets[indexActif]?.key}
+            aria-label="Vues"
+            className="animate-apparition flex flex-col items-center"
+            style={{ gridColumnStart: indexActif + 1 }}
+          >
             <span aria-hidden="true" className="h-3 border-l border-dotted border-white/45" />
             <div className="flex gap-1.5">
               {vues.map((v) => {

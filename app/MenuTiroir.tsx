@@ -140,7 +140,7 @@ export default function MenuTiroir({
           // Un clic sur le voile (hors du panneau) referme.
           if (e.target === e.currentTarget) setOuvert(false);
         }}
-        className="m-0 h-dvh max-h-none w-full max-w-md overflow-hidden border-r border-white/8 bg-[#050607] p-0 text-zinc-800 backdrop:bg-black/70 backdrop:backdrop-blur-[2px] open:flex open:flex-col"
+        className="tiroir m-0 h-dvh max-h-none w-full max-w-md overflow-hidden border-r border-white/8 bg-[#050607] p-0 text-zinc-800 open:flex open:flex-col"
       >
         <div className="flex justify-end px-5 pt-5">
           <button
@@ -178,7 +178,7 @@ export default function MenuTiroir({
               {resultats.length === 0 ? (
                 <p className="text-sm text-zinc-600">Aucun tournoi ne correspond.</p>
               ) : (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="cascade grid grid-cols-3 gap-4">
                   {resultats.map((t) => (
                     <Vignette key={t.id} t={t} />
                   ))}
@@ -188,7 +188,7 @@ export default function MenuTiroir({
           ) : (
             <>
               <Section titre="Tournois" ouvert={section === 'tournois'} basculer={() => basculer('tournois')}>
-                <div className="space-y-6">
+                <div className="cascade space-y-6">
                   {groupes
                     .filter((g) => g.tournois.length > 0)
                     .map((g) => (
@@ -207,7 +207,7 @@ export default function MenuTiroir({
                 </div>
               </Section>
               <Section titre="Outils" ouvert={section === 'outils'} basculer={() => basculer('outils')}>
-                <ul>
+                <ul className="cascade">
                   {outils.map((l) => (
                     <li key={l.href}>
                       <Link

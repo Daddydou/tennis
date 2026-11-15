@@ -33,13 +33,13 @@ export default async function TournoiLayout({
   return (
     <div className="space-y-5">
       <header className="pleine-largeur relative -mt-[5.25rem] h-64 overflow-hidden sm:h-72">
-        <div className="absolute inset-0">
-          <CourtDessine surface={tournoi.surface} />
+        <div className="animate-fondu absolute inset-0">
+          <CourtDessine surface={tournoi.surface} delai="200ms" />
         </div>
         <div className="absolute inset-0 bg-linear-to-t from-background via-background/45 to-background/70" aria-hidden="true" />
         <div className="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-2 px-4 pb-5">
-          <p className="titre-espace text-[0.7rem] text-zinc-700">{meta}</p>
-          <h1 className="text-3xl leading-tight text-zinc-950 sm:text-4xl">{tournoi.name}</h1>
+          <p className="titre-espace animate-fondu text-[0.7rem] text-zinc-700 [animation-delay:300ms]">{meta}</p>
+          <h1 className="animate-titre text-3xl leading-tight text-zinc-950 sm:text-4xl">{tournoi.name}</h1>
         </div>
       </header>
       <TournoiNav id={id} masters={estMasters(tournoi.rounds)} />

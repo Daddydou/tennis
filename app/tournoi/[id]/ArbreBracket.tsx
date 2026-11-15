@@ -24,11 +24,14 @@ function Noeud({
   nom,
   rang,
   marques,
+  delai,
 }: {
   n: NoeudArbre;
   nom: string | null;
   rang: number | null;
   marques: Marque[];
+  /** Ms avant l'apparition : l'arbre se construit de l'extérieur vers le vainqueur. */
+  delai: number;
 }) {
   const rayon = n.vainqueurFinal ? RAYON_VAINQUEUR : RAYON;
   const cercle = n.vainqueurFinal
@@ -44,8 +47,8 @@ function Noeud({
           : 'border-white/35 text-zinc-800';
   return (
     <div
-      className="absolute flex flex-col items-center gap-1.5"
-      style={{ left: rem(n.x - COLONNE / 2), top: rem(n.y - rayon), width: rem(COLONNE) }}
+      className={`absolute flex flex-col items-center gap-1.5 ${n.vainqueurFinal ? 'animate-eclore' : 'animate-apparition'}`}
+      style={{ left: rem(n.x - COLONNE / 2), top: rem(n.y - rayon), width: rem(COLONNE), animationDelay: `${delai}ms` }}
     >
       <div
         className={`flex items-center justify-center rounded-full border bg-[#0b0e12] font-titre tracking-[0.08em] ${cercle} ${
@@ -94,6 +97,13 @@ export default function ArbreBracket({
   const duels = arbre.noeuds.filter((n) => !n.vainqueurFinal && n.cle.endsWith('|a'));
   const vainqueur = arbre.noeuds.find((n) => n.vainqueurFinal)?.joueur ?? null;
 
+  // Construction de l'extérieur vers le centre : une colonne toutes les 160 ms,
+  // le vainqueur en dernier. Les traits poussent depuis leur bout extérieur.
+  const centre = arbre.largeur / 2;
+  const distance = (x: number) => Math.round(Math.abs(x - centre) / COLONNE);
+  const plusLoin = Math.max(0, ...arbre.noeuds.map((n) => distance(n.x)));
+  const delai = (x: number) => (plusLoin - distance(x)) * 160;
+
   return (
     <figure className="space-y-2">
       <div className="-mx-4 overflow-x-auto px-4 pb-2">
@@ -106,14 +116,26 @@ export default function ArbreBracket({
             t.type === 'h' ? (
               <div
                 key={i}
-                className={`absolute h-px ${t.accent ? 'bg-accent/70' : 'bg-white/30'}`}
-                style={{ left: rem(t.x), top: rem(t.y), width: rem(Math.max(t.largeur, 0)) }}
+                className={`animate-pousse absolute h-px ${t.accent ? 'bg-accent/70' : 'bg-white/30'}`}
+                style={{
+                  left: rem(t.x),
+                  top: rem(t.y),
+                  width: rem(Math.max(t.largeur, 0)),
+                  transformOrigin: t.x < centre ? 'left' : 'right',
+                  animationDelay: `${delai(t.x < centre ? t.x : t.x + t.largeur) + 80}ms`,
+                }}
               />
             ) : (
               <div
                 key={i}
-                className={`absolute border-y border-white/30 ${t.ouvert === 'gauche' ? 'border-r' : 'border-l'}`}
-                style={{ left: rem(t.x), top: rem(t.y), width: rem(t.largeur), height: rem(t.hauteur) }}
+                className={`animate-fondu absolute border-y border-white/30 ${t.ouvert === 'gauche' ? 'border-r' : 'border-l'}`}
+                style={{
+                  left: rem(t.x),
+                  top: rem(t.y),
+                  width: rem(t.largeur),
+                  height: rem(t.hauteur),
+                  animationDelay: `${delai(t.ouvert === 'gauche' ? t.x : t.x + t.largeur) + 60}ms`,
+                }}
               />
             ),
           )}
@@ -124,6 +146,7 @@ export default function ArbreBracket({
               nom={nom(n.joueur)}
               rang={n.joueur ? (joueurs[n.joueur]?.rang ?? null) : null}
               marques={n.joueur && n.round ? (marques[`${n.round}|${n.position}|${n.joueur}`] ?? []) : []}
+              delai={delai(n.x)}
             />
           ))}
         </div>
