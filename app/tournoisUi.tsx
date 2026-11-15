@@ -3,10 +3,11 @@ import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 import { estMasters } from '@/lib/masters';
 import { statutPicksAPoser } from '@/lib/pastillesPicks';
 import type { TournamentRow } from '@/db/queries';
+import CourtDessine from './CourtDessine';
 import { ChipStatutPick } from './pastillesPicks';
 import { carte, lienBouton, zoneTactile } from './ui';
 
-const SURFACE_LABEL: Record<string, string> = {
+export const SURFACE_LABEL: Record<string, string> = {
   hard: 'Dur',
   clay: 'Terre',
   grass: 'Gazon',
@@ -44,14 +45,15 @@ interface JeuCircuit {
 // texte, une classe recomposée à l'exécution n'existerait jamais dans le CSS.
 const CIRCUIT: Record<string, JeuCircuit> = {
   ATP: {
-    barre: 'bg-accent',
-    barreBordure: 'border-l-blue-600',
-    puce: 'bg-accent text-white',
+    // Bleu ciel : le jaune « balle » est pris par l'accent et par « Moi ».
+    barre: 'bg-sky-600',
+    barreBordure: 'border-l-sky-600',
+    puce: 'bg-sky-600 text-encre',
   },
   WTA: {
     barre: 'bg-fuchsia-600',
     barreBordure: 'border-l-fuchsia-600',
-    puce: 'bg-fuchsia-600 text-white',
+    puce: 'bg-fuchsia-600 text-encre',
   },
 };
 
@@ -59,7 +61,7 @@ const CIRCUIT: Record<string, JeuCircuit> = {
 const CIRCUIT_INCONNU: JeuCircuit = {
   barre: 'bg-zinc-400',
   barreBordure: 'border-l-zinc-400',
-  puce: 'bg-zinc-600 text-white',
+  puce: 'bg-zinc-600 text-encre',
 };
 
 const circuitDe = (tour: string | null) =>
@@ -150,14 +152,14 @@ const MOIS = [
   'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
 ];
 
-function formatDate(iso: string | null): string {
+export function formatDate(iso: string | null): string {
   if (!iso) return '—';
   const [a, m, j] = iso.slice(0, 10).split('-');
   const mois = MOIS[Number(m) - 1];
   return mois ? `${Number(j)} ${mois} ${a}` : iso;
 }
 
-function categorie(t: TournamentRow): string {
+export function categorie(t: TournamentRow): string {
   return t.category ? LIBELLE_CATEGORIE_COURT[t.category] ?? t.category : '—';
 }
 
@@ -226,15 +228,20 @@ export function CarteTournoi({
   aPoser?: PicksAPoserCarte | null;
 }) {
   return (
-    <li className={`relative overflow-hidden pl-1 ${carte}`}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${circuitDe(t.tour).barre}`} aria-hidden="true" />
-      <div className="space-y-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <Link href={`/tournoi/${t.id}`} className="text-base font-semibold hover:underline">
+    <li className={`relative overflow-hidden ${carte}`}>
+      {/* Bandeau : le court du tournoi, dessiné, avec le nom posé dessus. */}
+      <div className="relative h-28 overflow-hidden">
+        <CourtDessine surface={t.surface} />
+        <span className="absolute inset-0 bg-linear-to-t from-surface via-surface/30 to-transparent" aria-hidden="true" />
+        <span className={`absolute inset-x-0 top-0 h-0.5 ${circuitDe(t.tour).barre}`} aria-hidden="true" />
+        <div className="absolute inset-x-4 bottom-2 flex items-end justify-between gap-2">
+          <Link href={`/tournoi/${t.id}`} className="titre-espace min-w-0 truncate text-base text-zinc-950 hover:text-accent">
             {t.name}
           </Link>
           <PuceCircuit tour={t.tour} />
         </div>
+      </div>
+      <div className="space-y-2 p-4 pt-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
           <BadgeSurface surface={t.surface} />
           <span>

@@ -34,7 +34,7 @@ export default function AttenteCalcul({ quoi }: { quoi: string }) {
 
   if (abandon) {
     return (
-      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm shadow-card">
+      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-sm shadow-card">
         <span className="text-zinc-700">
           Le calcul {quoi} n&apos;a pas abouti en une minute (tableau très large, ou tour pas encore constitué).
         </span>
@@ -46,7 +46,7 @@ export default function AttenteCalcul({ quoi }: { quoi: string }) {
   }
 
   return (
-    <p role="status" className="flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 text-sm text-zinc-700 shadow-card">
+    <p role="status" className="flex items-center gap-2.5 rounded-2xl bg-surface px-4 py-3 text-sm text-zinc-700 shadow-card">
       <Spinner className="text-accent" />
       Calcul {quoi} en cours… la page se complète d&apos;elle-même.
     </p>

@@ -24,11 +24,11 @@ const FOND: Record<VerdictMasters, string> = {
   juste: 'bg-emerald-100 text-emerald-950',
   partiel: 'bg-amber-100 text-amber-950',
   rate: 'bg-red-100 text-red-950',
-  attente: 'bg-white text-zinc-900',
+  attente: 'bg-surface text-zinc-900',
 };
 const SIGNE: Record<VerdictMasters, string> = { juste: '✓', partiel: '≈', rate: '✗', attente: '' };
 
-const champSelect = 'min-h-11 w-full rounded-xl bg-white px-2 text-sm shadow-sm disabled:bg-zinc-100 disabled:text-zinc-700';
+const champSelect = 'min-h-11 w-full rounded-xl bg-surface px-2 text-sm shadow-sm disabled:bg-zinc-100 disabled:text-zinc-700';
 
 export default function ComparaisonPronostics({
   poules,

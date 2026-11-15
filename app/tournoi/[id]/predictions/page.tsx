@@ -58,11 +58,11 @@ export default async function PredictionsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ vue?: string; round?: string; moitie?: string }>;
+  searchParams: Promise<{ vue?: string; round?: string; moitie?: string; depuis?: string }>;
 }) {
   const { id } = await params;
   await redirigerSiMasters(id);
-  const { vue: vueParam, round, moitie } = await searchParams;
+  const { vue: vueParam, round, moitie, depuis: depuisArbre } = await searchParams;
   const vue: Vue = vueParam === 'tableau' ? 'tableau' : 'chances';
 
   // Lectures indépendantes, de front (le blend est une lecture légère de tn_odds).
@@ -75,7 +75,7 @@ export default async function PredictionsPage({
     return (
       <div className="space-y-4">
         <SelecteurVue id={id} vue={vue} />
-        <TableauPronostique id={id} engine={engine} blend={blend} roundParam={round} moitieParam={moitie} />
+        <TableauPronostique id={id} engine={engine} blend={blend} roundParam={round} moitieParam={moitie} depuisParam={depuisArbre} />
       </div>
     );
   }

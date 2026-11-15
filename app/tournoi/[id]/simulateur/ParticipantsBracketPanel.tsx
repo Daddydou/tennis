@@ -126,7 +126,7 @@ export default function ParticipantsBracketPanel({
           return (
             <div
               key={cle}
-              className="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-2 text-sm shadow-card"
+              className="flex items-center gap-2 rounded-2xl bg-surface px-2.5 py-2 text-sm shadow-card"
             >
               <span className="w-36 shrink-0 truncate text-xs text-zinc-500" title={caption}>
                 {caption}

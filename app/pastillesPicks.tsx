@@ -20,7 +20,7 @@ import {
 const LIGNE: Record<ResultatLigne, string> = {
   gagne: 'border-gagne-bord bg-gagne-fond text-gagne-texte',
   perdu: 'border-perdu-bord bg-perdu-fond text-perdu-texte',
-  a_jouer: 'border-zinc-200 bg-white text-zinc-900',
+  a_jouer: 'border-zinc-200 bg-surface text-zinc-900',
 };
 
 export const classeLigneResultat = (r: ResultatLigne) => `rounded-xl border px-2.5 py-1.5 ${LIGNE[r]}`;
@@ -52,7 +52,7 @@ export function PuceParticipant({ nom }: { nom: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full ring-1 ring-white text-[0.65rem] font-bold leading-none text-white ${POINT[teinteParticipant(nom)]}`}
+      className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full ring-1 ring-background text-[0.65rem] font-bold leading-none text-encre ${POINT[teinteParticipant(nom)]}`}
     >
       {initiale(nom)}
     </span>
@@ -75,7 +75,7 @@ function IconeHorloge() {
 /** Une pastille : point du participant + nom + ✓ (juste), ✗ (raté) ou horloge (en attente). */
 export function PastillePick({ p }: { p: PastillePickTour }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white py-0.5 pl-0.5 pr-2 text-xs font-medium text-zinc-900">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-surface py-0.5 pl-0.5 pr-2 text-xs font-medium text-zinc-900">
       <PuceParticipant nom={p.participant} />
       {p.participant}
       {p.resultat === 'juste' && (

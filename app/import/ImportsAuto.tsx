@@ -49,7 +49,7 @@ export function SectionImportsAuto({ lignes }: { lignes: VueSurveillance[] }) {
       <h2 className="text-base font-semibold">Imports automatiques</h2>
 
       {enAlerte.length > 0 && (
-        <div role="alert" className="rounded-xl bg-red-600 p-3 text-sm font-medium text-white">
+        <div role="alert" className="rounded-xl bg-red-600 p-3 text-sm font-medium text-encre">
           {enAlerte.map((s) => (
             <p key={s.tournament_id}>
               {s.nom} : {s.echecs_consecutifs} échecs d&apos;import consécutifs —{' '}

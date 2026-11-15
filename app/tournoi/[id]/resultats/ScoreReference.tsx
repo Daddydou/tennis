@@ -78,7 +78,7 @@ export async function DetailReference({
   );
 
   return (
-    <details className="rounded-2xl bg-white px-3 py-2 text-xs shadow-card">
+    <details className="rounded-2xl bg-surface px-3 py-2 text-xs shadow-card">
       <summary className="flex min-h-11 cursor-pointer items-center text-zinc-600">
         Score de référence :{' '}
         <span className="font-medium text-zinc-900">

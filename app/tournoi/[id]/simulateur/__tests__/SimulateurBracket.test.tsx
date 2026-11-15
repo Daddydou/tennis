@@ -113,7 +113,8 @@ const picksBracketInitiaux: Record<string, Record<string, string>> = {
   p1: { 'SF|1': CHARLIE },
 };
 
-function renderEcran() {
+// Les tests ci-dessous partent du Bracket réel (l'Arbre est la vue par défaut, testée à part).
+function renderEcran(ongletInitial: string = 'reel') {
   return render(
     <SimulateurBracket
       tournamentId="t1"
@@ -125,6 +126,7 @@ function renderEcran() {
       participants={participants}
       picksBracketInitiaux={picksBracketInitiaux}
       roundParDefaut="SF"
+      ongletInitial={ongletInitial}
     />,
   );
 }
@@ -262,5 +264,21 @@ describe('SimulateurBracket', () => {
     await user.click(screen.getByRole('button', { name: /Bravo/ }));
     await user.click(screen.getByRole('button', { name: 'Classement & probabilités' }));
     expect(screen.getByTestId('classement-p1')).toHaveAttribute('data-simules', '1');
+  });
+});
+
+describe('Arbre (vue par défaut)', () => {
+  it("s'ouvre sur l'arbre du tableau réel, avec qui a choisi qui", () => {
+    renderEcran('');
+    const arbre = screen.getByRole('region', { name: 'Arbre du tableau' });
+    // Les demies du fixture (SF -> F) : la liste lisible par un lecteur d'écran nomme les duels.
+    expect(within(arbre).getByText(/SF : Alpha contre Bravo/)).toBeTruthy();
+    expect(within(arbre).getByText(/SF : Charlie contre Delta/)).toBeTruthy();
+    // Légende : Moi et Laki.
+    const legende = within(arbre).getByRole('list', { name: 'Qui a choisi qui' });
+    expect(within(legende).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Moi', 'Laki']);
+    // Les points sous Alpha (Moi) et sous Charlie (Laki).
+    expect(within(arbre).getAllByTitle('Moi')).toHaveLength(1);
+    expect(within(arbre).getAllByTitle('Laki')).toHaveLength(1);
   });
 });

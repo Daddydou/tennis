@@ -45,9 +45,9 @@ const LIBELLE_VERDICT: Record<VerdictMasters, string> = {
 };
 
 const STYLE_PASTILLE: Record<VerdictMasters, string> = {
-  juste: 'bg-emerald-600 text-white',
+  juste: 'bg-emerald-600 text-encre',
   partiel: 'bg-amber-200 text-amber-950 ring-1 ring-amber-600',
-  rate: 'bg-red-600 text-white',
+  rate: 'bg-red-600 text-encre',
   attente: 'bg-zinc-200 text-zinc-700',
 };
 

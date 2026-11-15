@@ -75,7 +75,7 @@ export default function PlanMasters({
                 role="radio"
                 aria-checked={sel}
                 onClick={() => setChoix(s.cle)}
-                className={`rounded-xl border px-3 py-2 text-left text-sm transition-colors ${sel ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 bg-white hover:bg-zinc-50'}`}
+                className={`rounded-xl border px-3 py-2 text-left text-sm transition-colors ${sel ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 bg-surface hover:bg-zinc-50'}`}
               >
                 <span className="block font-semibold">{s.titre}</span>
                 <span className="block text-xs tabular-nums text-zinc-600">{pts(s.plan.stats.moyenne)} pts attendus</span>

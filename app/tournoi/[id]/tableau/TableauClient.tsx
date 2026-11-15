@@ -39,8 +39,8 @@ const STATUT: Record<string, { label: string; classes: string }> = {
 };
 
 const STYLE_PASTILLE: Record<Verdict, string> = {
-  juste: 'bg-emerald-600 text-white',
-  rate: 'bg-red-600 text-white',
+  juste: 'bg-emerald-600 text-encre',
+  rate: 'bg-red-600 text-encre',
   attente: 'bg-zinc-200 text-zinc-700',
 };
 
@@ -57,7 +57,7 @@ const LONGUEUR_LIEN = 42;
 
 /** Pastille ronde d'un participant : sa lettre, colorée selon le verdict du pronostic. */
 function Pastille({ stock, pick, rouge = false }: { stock: StockEntree; pick: PickVue; rouge?: boolean }) {
-  const style = rouge ? 'bg-white text-red-700 ring-1 ring-red-600' : STYLE_PASTILLE[pick.verdict];
+  const style = rouge ? 'bg-surface text-red-700 ring-1 ring-red-600' : STYLE_PASTILLE[pick.verdict];
   return (
     <span
       title={`${stock.nom} : ${pick.joueurNom} (${rouge ? 'absent du match' : LIBELLE_VERDICT[pick.verdict]})`}
@@ -228,7 +228,7 @@ function Bilans({ tours, stocks }: { tours: TourVue[]; stocks: StockEntree[] }) 
           <span key={cleStock(s.id)} className="inline-flex items-center gap-1 text-xs tabular-nums text-zinc-700">
             <span
               aria-hidden="true"
-              className="inline-flex size-5 items-center justify-center rounded-full bg-zinc-800 text-[0.65rem] font-bold text-white"
+              className="inline-flex size-5 items-center justify-center rounded-full bg-zinc-800 text-[0.65rem] font-bold text-encre"
             >
               {initiale(s.nom)}
             </span>

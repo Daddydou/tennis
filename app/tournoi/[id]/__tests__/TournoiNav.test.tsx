@@ -14,7 +14,7 @@ afterEach(() => cleanup());
 
 function sur(pathname: string, masters = false) {
   chemin = pathname;
-  render(<TournoiNav id="t1" nom="Paris 2026" masters={masters} />);
+  render(<TournoiNav id="t1" masters={masters} />);
 }
 
 const onglets = () => screen.getByRole('navigation', { name: 'Onglets du tournoi' });
