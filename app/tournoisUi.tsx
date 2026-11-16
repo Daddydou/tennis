@@ -3,7 +3,7 @@ import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 import { estMasters } from '@/lib/masters';
 import { statutPicksAPoser } from '@/lib/pastillesPicks';
 import type { TournamentRow } from '@/db/queries';
-import CourtDessine from './CourtDessine';
+import FondTournoi from './FondTournoi';
 import { ChipStatutPick } from './pastillesPicks';
 import { carte, lienBouton, zoneTactile } from './ui';
 
@@ -228,10 +228,10 @@ export function CarteTournoi({
   aPoser?: PicksAPoserCarte | null;
 }) {
   return (
-    <li className={`relative overflow-hidden ${carte}`}>
-      {/* Bandeau : le court du tournoi, dessiné, avec le nom posé dessus. */}
+    <li className={`group relative overflow-hidden ${carte}`}>
+      {/* Bandeau : la photo du lieu (ou le court dessiné), avec le nom posé dessus. */}
       <div className="relative h-28 overflow-hidden">
-        <CourtDessine surface={t.surface} />
+        <FondTournoi nom={t.name} surface={t.surface} debut={t.start_date} variante="carte" />
         <span className="absolute inset-0 bg-linear-to-t from-surface via-surface/30 to-transparent" aria-hidden="true" />
         <span className={`absolute inset-x-0 top-0 h-0.5 ${circuitDe(t.tour).barre}`} aria-hidden="true" />
         <div className="absolute inset-x-4 bottom-2 flex items-end justify-between gap-2">

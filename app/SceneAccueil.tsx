@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { TournamentRow } from '@/db/queries';
-import CourtDessine from './CourtDessine';
+import FondTournoi from './FondTournoi';
 import { ligneSaison, positionDansAnnee, semaineIso } from './ligneSaison';
 import { categorie, formatDate, SURFACE_LABEL, type PicksAPoserCarte } from './tournoisUi';
 
@@ -44,13 +44,14 @@ export default function SceneAccueil({
       data-scene
       className="pleine-largeur relative -mt-[5.25rem] flex h-[min(82vh,48rem)] min-h-[34rem] flex-col overflow-hidden"
     >
-      {/* Le court occupe le bas de la scène : le titre flotte dans le « ciel ». */}
-      <div
-        className="absolute inset-x-0 bottom-0 top-[36%] animate-fondu"
-        style={{ maskImage: 'linear-gradient(to bottom, transparent, #000 30%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 30%)', animationDelay: 'var(--intro, 0s)' }}
-      >
-        <CourtDessine surface={vedette?.surface} cadrage="haut" delai="calc(var(--intro, 0s) + 300ms)" />
-      </div>
+      {/* La photo du lieu (ou, à défaut, le court dessiné en bas de la scène). */}
+      <FondTournoi
+        nom={vedette?.name ?? ''}
+        surface={vedette?.surface}
+        debut={vedette?.start_date}
+        variante="scene"
+        delai="var(--intro, 0s)"
+      />
       <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_40%,rgba(0,0,0,.85)_100%)]" aria-hidden="true" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-background via-background/70 to-transparent" aria-hidden="true" />
       <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-background/80 to-transparent" aria-hidden="true" />

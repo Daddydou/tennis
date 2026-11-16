@@ -7,6 +7,7 @@ import { sessionValide } from '@/auth/garde';
 import { listTournaments } from '@/db/queries';
 import { LIBELLE_CATEGORIE_COURT } from '@/lib/calendrier';
 import type { TournamentRow } from '@/db/queries';
+import FondVivant from './FondVivant';
 import IntroOuverture from './IntroOuverture';
 import MenuTiroir, { type GroupeVignettes, type VignetteTournoi } from './MenuTiroir';
 import { commenceDansLaSemaine, fraicheur, SURFACE_LABEL } from './tournoisUi';
@@ -35,7 +36,7 @@ const NB_RECENTS_MENU = 6;
 function vignette(t: TournamentRow): VignetteTournoi {
   const cat = t.category ? (LIBELLE_CATEGORIE_COURT[t.category] ?? t.category) : null;
   const surface = t.surface ? (SURFACE_LABEL[t.surface] ?? t.surface) : null;
-  return { id: t.id, nom: t.name, surface: t.surface, meta: [t.tour, cat, surface].filter(Boolean).join(' · ') };
+  return { id: t.id, nom: t.name, surface: t.surface, debut: t.start_date, meta: [t.tour, cat, surface].filter(Boolean).join(' · ') };
 }
 
 export default async function RootLayout({
@@ -69,6 +70,8 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_INTRO }} />
       </head>
       <body className="flex min-h-full flex-col overflow-x-clip">
+        {/* Fibres et poussières qui dérivent derrière tout (canvas fixe, sans clic). */}
+        <FondVivant />
         {connecte && <IntroOuverture annee={Number(new Date().toISOString().slice(0, 4))} />}
         {/* Barre du haut transparente, au-dessus des bandeaux qui glissent dessous :
             le menu à gauche, le nom au centre, la balle (accueil) à droite. */}

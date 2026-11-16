@@ -512,6 +512,7 @@ table {
   --animate-halo: halo 3.2s ease-in-out infinite;
   --animate-fondu: fondu 0.9s ease-out both;
   --animate-page: page 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-scintille: scintille 1.1s linear both;
 
   @keyframes apparition {
     from {
@@ -581,6 +582,30 @@ table {
     }
     to {
       opacity: 1;
+    }
+  }
+  /* Apparition qui hésite (portraits de l'arbre du guide Dark). */
+  @keyframes scintille {
+    0% {
+      opacity: 0;
+      filter: blur(6px);
+    }
+    25% {
+      opacity: 0.7;
+    }
+    33% {
+      opacity: 0.1;
+    }
+    52% {
+      opacity: 0.85;
+      filter: blur(1.5px);
+    }
+    60% {
+      opacity: 0.35;
+    }
+    100% {
+      opacity: 1;
+      filter: none;
     }
   }
   @keyframes page {
@@ -695,6 +720,72 @@ dialog.tiroir[open]::backdrop {
 }
 
 /*
+ * PHOTOS (FondTournoi.tsx) — l'entrée façon guide Dark :
+ *  - lentille : la photo s'ouvre à travers un cercle qui s'agrandit, en
+ *    sortant du flou et d'un léger zoom ;
+ *  - miroir : un reflet inversé glisse sur elle puis s'efface ;
+ *  - respire : ensuite, un zoom très lent, sans fin (40 s aller, 40 s retour) ;
+ *  - défile : quand la page défile, la photo glisse moins vite qu'elle
+ *    (navigateurs qui savent lier une animation au défilement).
+ */
+.fond-lentille {
+  animation: lentille 1.9s cubic-bezier(0.6, 0, 0.15, 1) both;
+}
+@keyframes lentille {
+  from {
+    clip-path: circle(0% at 50% 55%);
+    filter: blur(16px);
+    transform: scale(1.14);
+  }
+  55% {
+    filter: blur(4px);
+  }
+  to {
+    clip-path: circle(120% at 50% 55%);
+    filter: none;
+    transform: none;
+  }
+}
+.fond-miroir {
+  transform: scaleX(-1);
+  opacity: 0;
+  animation: miroir 2.6s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+@keyframes miroir {
+  from {
+    opacity: 0.6;
+    transform: scaleX(-1) translateX(22%);
+  }
+  to {
+    opacity: 0;
+    transform: scaleX(-1) translateX(-4%);
+  }
+}
+.fond-respire {
+  animation: respire 40s ease-in-out 2s infinite alternate both;
+}
+@keyframes respire {
+  from {
+    transform: scale(1.03);
+  }
+  to {
+    transform: scale(1.13) translate(-1.5%, -1%);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .fond-defile {
+    animation: defile linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 90vh;
+  }
+  @keyframes defile {
+    to {
+      transform: translateY(16%);
+    }
+  }
+}
+
+/*
  * RÉDUIRE LES ANIMATIONS (réglage du téléphone ou de l'ordinateur) : plus de
  * mouvement ni de flou, seulement des fondus courts. L'ouverture est sautée.
  */
@@ -707,11 +798,20 @@ dialog.tiroir[open]::backdrop {
     --animate-eclore: fondu 0.3s ease-out both;
     --animate-halo: none;
     --animate-page: fondu 0.2s ease-out both;
+    --animate-scintille: fondu 0.3s ease-out both;
   }
   html:not(.intro-vue) [data-scene] {
     --intro: 0s;
   }
   .intro-ouverture {
+    display: none;
+  }
+  .fond-lentille,
+  .fond-respire,
+  .fond-defile {
+    animation: none;
+  }
+  .fond-miroir {
     display: none;
   }
   *,

@@ -98,13 +98,6 @@ export default function PlanMasters({
 
         <GrillePicks picks={actif.plan.picks} noms={mapNoms} />
 
-        <p className="text-xs leading-relaxed text-zinc-600">
-          Un joueur ne se pique qu’une fois par phase : trois joueurs différents par poule sur les trois journées, puis, en phase finale, deux
-          différents (demie et finale). Chaque plan optimise tous les tours ENSEMBLE et se recalcule après chaque résultat importé ; pour les
-          journées 2 et 3, les adversaires se déduisent de la journée 1. Les bilans comptent les points des picks seulement (le pronostic est à
-          part) ; mauvais cas et bon cas : 1 tournoi simulé sur 10 fait moins, ou plus. « Contre » suppose que chaque rival joue, pour ses picks
-          restants, son meilleur plan en points espérés.
-        </p>
       </section>
 
       {afficherGT && <PanneauGTMasters key={actif.cle} tournamentId={tournamentId} picks={actif.plan.picks} noms={noms} />}

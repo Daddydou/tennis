@@ -147,13 +147,6 @@ export default function ConseilsMastersCarte({
           <span className="text-xs text-zinc-600">points espérés par pick</span>
         </header>
         <GrillePicks picks={picks} noms={noms} />
-        <p className="text-xs text-zinc-600">
-          Un joueur ne se pique qu&apos;une fois par phase : trois joueuses différentes par poule sur les trois journées, puis, en phase finale, deux
-          différentes (demie et finale). Le plan optimise les trois journées ENSEMBLE : une joueuse forte n&apos;est utilisée qu&apos;une fois, là où
-          elle rapporte le plus de points par rapport à ses remplaçantes (d&apos;où parfois un autre nom en journée 1 que la plus forte de la poule). Il
-          est recalculé après chaque résultat ; pour les journées 2 et 3, les adversaires se déduisent de la journée 1 (les vainqueurs se
-          rencontrent, les perdantes aussi).
-        </p>
       </section>
       )}
 

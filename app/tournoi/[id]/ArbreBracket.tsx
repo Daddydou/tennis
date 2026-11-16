@@ -47,7 +47,7 @@ function Noeud({
           : 'border-white/35 text-zinc-800';
   return (
     <div
-      className={`absolute flex flex-col items-center gap-1.5 ${n.vainqueurFinal ? 'animate-eclore' : 'animate-apparition'}`}
+      className={`absolute flex flex-col items-center gap-1.5 ${n.vainqueurFinal ? 'animate-eclore' : 'animate-scintille'}`}
       style={{ left: rem(n.x - COLONNE / 2), top: rem(n.y - rayon), width: rem(COLONNE), animationDelay: `${delai}ms` }}
     >
       <div

@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import CourtDessine from './CourtDessine';
+import FondTournoi from './FondTournoi';
 import { GROUPES } from './navigation';
 
 /**
@@ -23,6 +23,8 @@ export type VignetteTournoi = {
   id: string;
   nom: string;
   surface: string | null;
+  /** Date de début (choisit la photo du lieu). */
+  debut: string | null;
   /** « ATP · M1000 · Dur » — déjà écrit en toutes lettres côté serveur. */
   meta: string;
 };
@@ -35,7 +37,7 @@ function Vignette({ t }: { t: VignetteTournoi }) {
   return (
     <Link href={`/tournoi/${t.id}`} className="group flex min-w-0 flex-col gap-1.5">
       <span className="relative block aspect-square overflow-hidden rounded-sm ring-1 ring-white/10 transition group-hover:ring-white/40">
-        <CourtDessine surface={t.surface} variante="plan" />
+        <FondTournoi nom={t.nom} surface={t.surface} debut={t.debut} variante="vignette" />
         <span className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/50" aria-hidden="true" />
       </span>
       <span className="truncate text-xs leading-tight text-zinc-900 group-hover:text-zinc-950">{t.nom}</span>
@@ -228,6 +230,9 @@ export default function MenuTiroir({
         <div className="flex items-center gap-6 border-t border-white/8 px-8 py-4">
           <Link href="/" className="titre-espace inline-flex min-h-11 items-center text-[0.7rem] text-zinc-700 hover:text-zinc-950">
             Accueil
+          </Link>
+          <Link href="/credits" className="titre-espace inline-flex min-h-11 items-center text-[0.7rem] text-zinc-700 hover:text-zinc-950">
+            Crédits
           </Link>
           {deconnexion}
         </div>
