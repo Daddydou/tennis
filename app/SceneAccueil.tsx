@@ -18,15 +18,18 @@ export default function SceneAccueil({
   etat,
   aPoser,
   aujourdHui,
+  enCours = [],
 }: {
   tournois: TournamentRow[];
+  /** Tournois en cours aujourd'hui : étiquetés et d'une autre couleur sur la ligne de la saison. */
+  enCours?: string[];
   vedette: TournamentRow | null;
   etat: 'en-cours' | 'bientot' | 'passe';
   aPoser: PicksAPoserCarte | null;
   aujourdHui: string;
 }) {
   const annee = Number(aujourdHui.slice(0, 4));
-  const points = ligneSaison(tournois, annee, vedette?.id ?? null);
+  const points = ligneSaison(tournois, annee, vedette?.id ?? null, new Set(enCours));
   const xAujourdhui = positionDansAnnee(aujourdHui);
   const meta = vedette
     ? [vedette.tour, categorie(vedette), vedette.surface ? (SURFACE_LABEL[vedette.surface] ?? vedette.surface) : null]
@@ -88,7 +91,7 @@ export default function SceneAccueil({
 
       {points.length > 0 && (
         <nav aria-label={`Saison ${annee}`} className="relative mx-auto mb-10 w-full max-w-6xl px-10">
-          <div className="relative h-14">
+          <div className="relative h-[4.5rem]">
             <div className="animate-pousse absolute inset-x-0 top-3 h-px origin-left bg-white/45" style={apres(700)} aria-hidden="true" />
             <span
               className="absolute top-0 h-6 w-px bg-white/30"
@@ -110,16 +113,26 @@ export default function SceneAccueil({
                     className={
                       p.vedette
                         ? 'animate-halo size-3 rounded-full bg-accent shadow-[0_0_18px_4px_rgba(215,242,90,.45)]'
-                        : 'size-1.5 rounded-full bg-zinc-700 transition group-hover:size-2.5 group-hover:bg-zinc-950'
+                        : p.enCours
+                          ? 'size-2.5 rounded-full bg-accent/80 ring-2 ring-accent/30 transition group-hover:size-3 group-hover:bg-accent'
+                          : 'size-1.5 rounded-full bg-zinc-700 transition group-hover:size-2.5 group-hover:bg-zinc-950 group-focus-visible:size-2.5 group-focus-visible:bg-zinc-950'
                     }
                   />
                 </span>
-                {p.etiquette && (
+                {p.etiquette ? (
                   <span
                     style={apres(1000 + Math.round(p.x * 1000))}
-                    className={`animate-fondu whitespace-nowrap text-[0.65rem] uppercase tracking-[0.12em] ${
-                      p.vedette ? 'text-zinc-950' : 'text-zinc-600 max-sm:hidden'
+                    className={`animate-fondu whitespace-nowrap text-[0.65rem] uppercase tracking-[0.12em] ${p.rangee === 1 ? 'mt-4' : ''} ${
+                      p.enCours ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-950 max-sm:hidden'
                     }`}
+                  >
+                    {p.nom}
+                  </span>
+                ) : (
+                  // Les autres tournois : leur nom apparaît au-dessus du point, au survol (ou au clavier).
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute bottom-full mb-1 translate-y-1 whitespace-nowrap rounded-sm bg-black/75 px-2 py-1 text-[0.65rem] uppercase tracking-[0.12em] text-zinc-950 opacity-0 ring-1 ring-white/15 backdrop-blur-sm transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
                   >
                     {p.nom}
                   </span>

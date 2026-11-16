@@ -35,6 +35,7 @@ export default async function Home() {
         etat={vedette && enCours.includes(vedette) ? 'en-cours' : vedette && bientot.includes(vedette) ? 'bientot' : 'passe'}
         aPoser={vedette ? (aPoser.get(vedette.id) ?? null) : null}
         aujourdHui={aujourdHui}
+        enCours={enCours.map((t) => t.id)}
       />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
