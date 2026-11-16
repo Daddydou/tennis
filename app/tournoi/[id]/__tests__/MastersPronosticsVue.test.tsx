@@ -84,7 +84,7 @@ describe('phase finale et légende', () => {
     const l = screen.getByTestId('legende-pronostics');
     expect(l.textContent).toMatch(/juste/i);
     expect(l.textContent).toMatch(/rat/i);
-    expect(l.textContent).toMatch(/pas finie/i);
+    expect(l.textContent).toMatch(/pas encore certain/i);
   });
 });
 
