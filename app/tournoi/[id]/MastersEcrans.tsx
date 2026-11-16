@@ -6,7 +6,7 @@ import { calculerConseilsMasters, type ConseilsMasters } from '@/db/mastersConse
 import { lirePronostics, type PronosticStocke } from '@/db/mastersPronostic';
 import { getMatchRows, getParticipants, getPlayerRows, getTousLesPicks, type MatchRow, type TournamentRow } from '@/db/queries';
 import { libelleTourMasters } from '@/lib/masters';
-import { analyserMatchsMasters, partitionnerTours, type JoueuseAnalyseMasters, type MatchAnalyseMasters } from '@/lib/mastersAnalyse';
+import { analyserMatchsMasters, type JoueuseAnalyseMasters, type MatchAnalyseMasters } from '@/lib/mastersAnalyse';
 import { pronosticFerme } from '@/lib/mastersPronostic';
 import { pastillesDuTour, resultatLigne } from '@/lib/pastillesPicks';
 import { lignesPhaseFinale, pastillesPoule, pronosticsParParticipant, type ParticipantPronostic } from '@/lib/mastersPronosticVue';
@@ -90,17 +90,14 @@ function LigneJoueuse({
   noms,
   vainqueur,
   round,
-  seulementMoi = false,
 }: {
   j: JoueuseAnalyseMasters;
   noms: Noms;
   vainqueur: string | null;
   round: string;
-  /** Tour validé : seuls MES picks restent affichés, ceux des autres ne le sont que sur les tours non validés. */
-  seulementMoi?: boolean;
 }) {
   const resultat = resultatLigne(vainqueur, j.id);
-  const pastilles = pastillesDuTour({ picks: seulementMoi ? j.picks.filter((p) => p.participant === 'Moi') : j.picks, round, joueuseId: j.id, vainqueurId: vainqueur });
+  const pastilles = pastillesDuTour({ picks: j.picks, round, joueuseId: j.id, vainqueurId: vainqueur });
   return (
     <div className={`space-y-1 ${classeLigneResultat(resultat)}`} data-resultat={resultat}>
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -128,10 +125,10 @@ function LigneJoueuse({
 
 function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[]; noms: Noms }) {
   if (matchs.length === 0) return null;
-  // Les picks des autres ne s'affichent que sur les tours NON validés (en cours ou à jouer) ; les tours validés
-  // (tous les matchs joués) sont repliés dessous, avec les résultats et mes seuls picks.
-  const { ouverts, valides } = partitionnerTours(matchs);
-  const tour = (round: string, seulementMoi: boolean) => (
+  // Tous les tours, dans l'ordre du tournoi (journées, demies, finale), tous ouverts : les picks de chacun y restent
+  // visibles avec leur résultat (✓ / ✗), un tour joué comme un tour à venir. Même affichage pour l'ATP et la WTA.
+  const tours = [...new Set(matchs.map((m) => m.round))];
+  const tour = (round: string) => (
     <div key={round} className="space-y-2" data-testid={`tour-${round}`}>
       <h3 className="text-xs font-medium text-soustitre">{libelleTourMasters(round)}</h3>
       <div className="grid gap-2 md:grid-cols-2">
@@ -140,8 +137,8 @@ function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[];
           .map((m, i) => (
             <div key={i} className={`${carte} space-y-1.5 p-2`} data-testid="affiche-masters">
               {m.poule && <p className="px-1 text-xs text-zinc-500">Poule {m.poule}</p>}
-              <LigneJoueuse j={m.joueuses[0]} noms={noms} vainqueur={m.vainqueurId} round={round} seulementMoi={seulementMoi} />
-              <LigneJoueuse j={m.joueuses[1]} noms={noms} vainqueur={m.vainqueurId} round={round} seulementMoi={seulementMoi} />
+              <LigneJoueuse j={m.joueuses[0]} noms={noms} vainqueur={m.vainqueurId} round={round} />
+              <LigneJoueuse j={m.joueuses[1]} noms={noms} vainqueur={m.vainqueurId} round={round} />
             </div>
           ))}
       </div>
@@ -150,17 +147,9 @@ function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[];
   return (
     <section aria-label="Joueuses et adversaires" className="space-y-3">
       <h2 className="text-sm font-semibold">
-        Joueuses et adversaires <span className="font-normal text-zinc-500">· Elo, chance de gagner, picks des autres sur les tours non validés</span>
+        Joueuses et adversaires <span className="font-normal text-zinc-500">· Elo, chance de gagner, picks de chacun sur chaque tour</span>
       </h2>
-      {ouverts.map((round) => tour(round, false))}
-      {valides.length > 0 && (
-        <details className="space-y-3" data-testid="tours-valides">
-          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-zinc-700">
-            Tours validés ({valides.map(libelleTourMasters).join(', ')}) · résultats et mes picks
-          </summary>
-          {valides.map((round) => tour(round, true))}
-        </details>
-      )}
+      {tours.map((round) => tour(round))}
     </section>
   );
 }

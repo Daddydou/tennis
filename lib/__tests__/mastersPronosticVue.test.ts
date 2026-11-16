@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PronosticMasters } from '../masters';
-import { lignesPhaseFinale, pastillesPoule, pronosticsParParticipant } from '../mastersPronosticVue';
+import { lignesPhaseFinale, pastillesPoule, placesPossibles, pronosticsParParticipant } from '../mastersPronosticVue';
 import { vueMasters, type LigneMatchMasters } from '../mastersVue';
 
 const set = (s: string) => s.split(' ').filter(Boolean).map((x) => ({ g1: Number(x.split('-')[0]), g2: Number(x.split('-')[1]) }));
@@ -71,6 +71,55 @@ describe('pastillesPoule', () => {
   });
 });
 
+/** Poules jouées jusqu'à la J2 incluse (a1 > a2 > a3 > a4) : a1 et a2 qualifiées pour sûr (2 victoires), a3 et a4 éliminées pour sûr (0). */
+const jusquaJ2 = () => poulesJouees().map((r) => (r.round === 'J3' ? { ...r, winnerId: null, status: 'scheduled', sets: [] } : r));
+
+describe('placesPossibles', () => {
+  it('poule vide : tout est encore possible', () => {
+    const v = vueMasters(poulesVides());
+    expect(placesPossibles(v.poules.A)?.get('a1')).toEqual([1, 2, 3, 4]);
+  });
+
+  it('après 2 journées : les deux premières restent 1er ou 2e, les deux dernières 3e ou 4e', () => {
+    const p = placesPossibles(vueMasters(jusquaJ2()).poules.A);
+    expect(p?.get('a1')).toEqual([1, 2]);
+    expect(p?.get('a2')).toEqual([1, 2]);
+    expect(p?.get('a3')).toEqual([3, 4]);
+    expect(p?.get('a4')).toEqual([3, 4]);
+  });
+
+  it('poule finie : une seule place par joueuse', () => {
+    const p = placesPossibles(vueMasters(poulesJouees()).poules.A);
+    expect(['a1', 'a2', 'a3', 'a4'].map((id) => p!.get(id)?.join())).toEqual(['1', '2', '3', '4']);
+  });
+});
+
+describe('pastillesPoule, poule pas finie : coloré dès que c\'est certain', () => {
+  const prevu = (classementPrevu: string[]) => ({ cle: 'moi', nom: 'moi', classementPrevu });
+  const verdicts = (classement: string[]) => {
+    const m = pastillesPoule(vueMasters(jusquaJ2()).poules.A, [prevu(classement)]);
+    return Object.fromEntries(['a1', 'a2', 'a3', 'a4'].map((id) => [id, m.get(id)?.[0].verdict]));
+  };
+
+  it('place encore possible : attente ; qualifiée sûre prévue 3e ou 4e : raté', () => {
+    // a1 1er, a2 2e : possibles. a3 3e, a4 4e : possibles. Rien de tranché.
+    expect(verdicts(['a1', 'a2', 'a3', 'a4'])).toEqual({ a1: 'attente', a2: 'attente', a3: 'attente', a4: 'attente' });
+    // a3 prévue 1re : impossible et éliminée sûre -> raté. a1 prévue 3e : qualifiée sûre -> raté.
+    expect(verdicts(['a3', 'a4', 'a1', 'a2'])).toEqual({ a3: 'rate', a4: 'rate', a1: 'rate', a2: 'rate' });
+  });
+
+  it('qualifiée sûre prévue dans le top 2 à l\'autre place : partiel dès qu\'une place est acquise', () => {
+    const apresJ3 = vueMasters(poulesJouees()).poules.A;
+    const m = pastillesPoule(apresJ3, [prevu(['a2', 'a1', 'a3', 'a4'])]);
+    expect(m.get('a2')?.[0].verdict).toBe('partiel');
+  });
+
+  it('un participant sans qualification certaine reste en attente (poule vide)', () => {
+    const m = pastillesPoule(vueMasters(poulesVides()).poules.A, [prevu(['a1', 'a2', 'a3', 'a4'])]);
+    expect([...m.values()].every((l) => l[0].verdict === 'attente')).toBe(true);
+  });
+});
+
 describe('lignesPhaseFinale', () => {
   const pronostic = (champion: string, demis: [string, string] = ['a1', 'b1']): PronosticMasters => ({
     classementA: ['a1', 'a2', 'a3', 'a4'],
@@ -94,6 +143,12 @@ describe('lignesPhaseFinale', () => {
     const [l] = lignesPhaseFinale(vueMasters(poulesJouees()), parts(pronostic('a4', ['a4', 'b1'])));
     expect(l.finalistes[0]).toEqual({ joueurId: 'a4', verdict: 'rate' });
     expect(l.finalistes[1].verdict).toBe('attente');
+    expect(l.champion.verdict).toBe('rate');
+  });
+
+  it('poule pas finie : une joueuse qui ne peut plus se qualifier est ratée dès maintenant', () => {
+    const [l] = lignesPhaseFinale(vueMasters(jusquaJ2()), parts(pronostic('a3', ['a3', 'b1'])));
+    expect(l.finalistes[0]).toEqual({ joueurId: 'a3', verdict: 'rate' });
     expect(l.champion.verdict).toBe('rate');
   });
 

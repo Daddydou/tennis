@@ -174,7 +174,7 @@ export function LegendePronostics() {
   return (
     <p className={noteInfo} data-testid="legende-pronostics">
       Pastille sur une joueuse de poule = la place que chaque participant lui a prévue (M = Moi, L = Laki, T = Thomas, suivi de la place) : vert = place exacte, ambre =
-      qualifiée trouvée mais pas à cette place, rouge = raté, gris = poule pas finie. Phase finale : ✓ juste, ✗ raté, sans signe = pas encore joué.
+      qualifiée trouvée mais pas à cette place, rouge = raté, gris = pas encore certain (une pastille se colore dès que la place est acquise ou impossible, même avant la fin de la poule). Phase finale : ✓ juste, ✗ raté, sans signe = pas encore joué.
     </p>
   );
 }
