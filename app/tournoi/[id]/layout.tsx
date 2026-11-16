@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import TournoiNav from './TournoiNav';
+import Entonnoir from '@/app/Entonnoir';
 import FondTournoi from '@/app/FondTournoi';
 import { categorie, formatDate, SURFACE_LABEL } from '@/app/tournoisUi';
 import { getTournament } from '@/db/queries';
@@ -30,8 +31,11 @@ export default async function TournoiLayout({
   ]
     .filter((x) => x && x !== '—')
     .join(' · ');
+  // Ouvert depuis une vignette du menu : tout le tournoi (bandeau, onglets,
+  // contenu) sort du point de la vignette (Entonnoir.tsx). Le layout est recréé
+  // à chaque changement de tournoi, jamais entre deux onglets.
   return (
-    <div className="space-y-5">
+    <Entonnoir type="tournoi" fondu={false} className="space-y-5">
       <header className="pleine-largeur relative -mt-[5.25rem] h-64 overflow-hidden sm:h-72">
         <FondTournoi nom={tournoi.name} surface={tournoi.surface} debut={tournoi.start_date} variante="bandeau" />
         <div className="absolute inset-0 bg-linear-to-t from-background via-background/45 to-background/70" aria-hidden="true" />
@@ -42,6 +46,6 @@ export default async function TournoiLayout({
       </header>
       <TournoiNav id={id} masters={estMasters(tournoi.rounds)} />
       {children}
-    </div>
+    </Entonnoir>
   );
 }

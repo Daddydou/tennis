@@ -6,7 +6,8 @@ import { Spinner } from '@/app/ui';
  */
 export default function Chargement() {
   return (
-    <div className="space-y-4" aria-busy="true" aria-live="polite">
+    // `chargement-racine` : caché pendant qu'un tournoi sort du point du menu (globals.css, « ENTONNOIR »).
+    <div className="chargement-racine space-y-4" aria-busy="true" aria-live="polite">
       <div className="flex items-center gap-2 text-sm text-zinc-500">
         <Spinner />
         Chargement…

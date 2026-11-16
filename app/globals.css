@@ -786,6 +786,80 @@ dialog.tiroir[open]::backdrop {
 }
 
 /*
+ * ENTONNOIR (origineEntonnoir.ts, Entonnoir.tsx) — la page sort du point d'où on
+ * l'a ouverte (vignette du menu, point d'un onglet) :
+ *  - attente : la page est fermée sur ce point (cercle de rayon nul) tant
+ *    que son contenu n'est pas arrivé ; pour un tournoi, un point lumineux
+ *    reste posé à l'endroit de la vignette et le squelette général se cache ;
+ *  - ouvre : un cercle centré sur le point grandit jusqu'à couvrir l'écran,
+ *    pendant que la page passe de petite, floue et lumineuse à nette, en se
+ *    dépliant depuis ce même point — lente au départ, rapide ensuite ;
+ *  - fini : plus aucune animation (rien ne rejoue).
+ * Pendant l'entonnoir, la photo du tournoi n'a pas sa propre ouverture en
+ * cercle : c'est la page entière qui s'ouvre.
+ */
+[data-entonnoir='attente'] {
+  animation: none;
+  clip-path: circle(0 at var(--ox) var(--oy));
+}
+[data-entonnoir='ouvre'] {
+  transform-origin: var(--ox) var(--oy);
+  animation: entonnoir 1s cubic-bezier(0.5, 0, 0.15, 1) backwards;
+}
+[data-entonnoir='fini'] {
+  animation: none;
+}
+@keyframes entonnoir {
+  from {
+    clip-path: circle(0 at var(--ox) var(--oy));
+    transform: scale(0.25);
+    filter: blur(12px) brightness(1.8);
+    opacity: 0.5;
+  }
+  45% {
+    filter: blur(5px) brightness(1.25);
+    opacity: 1;
+  }
+  to {
+    clip-path: circle(var(--orayon) at var(--ox) var(--oy));
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+[data-entonnoir] .fond-lentille {
+  animation: none;
+}
+[data-entonnoir] .fond-miroir {
+  display: none;
+}
+.point-entonnoir {
+  position: fixed;
+  z-index: 40;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: -0.375rem 0 0 -0.375rem;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  box-shadow: 0 0 18px 5px rgba(215, 242, 90, 0.45);
+  pointer-events: none;
+  animation: point-entonnoir 0.7s ease-in-out infinite alternate;
+}
+@keyframes point-entonnoir {
+  from {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+html[data-entonnoir-attente] .chargement-racine {
+  visibility: hidden;
+}
+
+/*
  * RÉDUIRE LES ANIMATIONS (réglage du téléphone ou de l'ordinateur) : plus de
  * mouvement ni de flou, seulement des fondus courts. L'ouverture est sautée.
  */
