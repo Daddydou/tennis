@@ -59,7 +59,7 @@ export default async function Home() {
           {enCours.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-xs">En cours</h2>
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="cascade grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {enCours.map((t) => (
                   <CarteTournoi key={t.id} t={t} debut="depuis le" aPoser={aPoser.get(t.id)} />
                 ))}
@@ -71,7 +71,7 @@ export default async function Home() {
           {bientot.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-xs">Cette semaine</h2>
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="cascade grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {bientot.map((t) => (
                   <CarteTournoi key={t.id} t={t} debut="début le" />
                 ))}

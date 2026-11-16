@@ -258,11 +258,6 @@ export async function MastersPicks({
 
       <AnalyseMatchsMasters matchs={matchs} noms={noms} />
 
-      <p className={noteInfo}>
-        Un joueur ne se pique qu&apos;une fois par phase. Les pastilles donnent les picks de Moi, Laki et Thomas déjà enregistrés (alignés sur Game Tracker à chaque lecture),
-        dans la journée où ils ont été posés : ✓ juste, ✗ raté, horloge = match pas encore joué. Les picks des autres ne s&apos;affichent que sur les tours non validés
-        (matchs encore à jouer) ; leurs picks des tours terminés se lisent en cliquant sur leur nom en haut de l&apos;écran.
-      </p>
     </div>
   );
 }

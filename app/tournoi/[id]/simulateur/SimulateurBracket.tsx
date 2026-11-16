@@ -260,6 +260,7 @@ export default function SimulateurBracket({
           {arbreDessine ? (
             <>
               <ArbreBracket
+                key={depuis}
                 arbre={arbreDessine}
                 joueurs={joueurs}
                 marques={marques}
