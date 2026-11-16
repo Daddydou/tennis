@@ -79,7 +79,7 @@ export const GROUPES: Groupe[] = [
           'En demi-finale et en finale : un seul pick.',
           'Masters (ATP Finals, WTA Finals) : l’onglet `Picks` propose aussi `Prudent`, `Équilibré`, `Audacieux` et `Contre Laki et Thomas` pour TOUT le tournoi (poules, demie, finale). Chaque carte donne les points attendus et la chance de finir devant Laki et Thomas ; le bilan détaille mauvais cas et bon cas. Les plans sont recalculés à chaque chargement, donc après chaque résultat importé. Le panneau `Game Tracker` envoie les picks de la stratégie choisie, tour ouvert seulement, après un clic.',
           'Masters : en haut de l’onglet `Picks`, les pastilles `Moi`, `Laki`, `Thomas` (avec leurs points Picks) permettent de voir les picks des autres, comme sur Paris. Pour Laki et Thomas, c’est en LECTURE SEULE (journée par journée et par poule, demie, finale) : leurs picks arrivent par `Lire Game Tracker`, une fois le tour verrouillé chez Game Tracker.',
-          'Masters, règles des plans (ces explications ne sont plus affichées dans l’onglet `Picks`) : un joueur ne se pique qu’une fois par phase, soit trois joueurs différents par poule sur les trois journées, puis deux différents en phase finale (demie et finale). Chaque plan optimise tous les tours ENSEMBLE (un joueur fort n’est utilisé qu’une fois, là où il rapporte le plus par rapport à ses remplaçants) et se recalcule après chaque résultat importé ; pour les journées 2 et 3, les adversaires se déduisent de la journée 1 (les vainqueurs se rencontrent, les perdants aussi). Les bilans comptent les points des picks seulement (le pronostic est à part) ; mauvais cas et bon cas : 1 tournoi simulé sur 10 fait moins, ou plus. « Contre Laki et Thomas » suppose que chaque rival joue, pour ses picks restants, son meilleur plan en points espérés. Les pastilles des autres ne s’affichent que sur les tours non validés ; leurs picks des tours terminés se lisent en appuyant sur leur nom en haut de l’écran.',
+          'Masters, règles des plans (ces explications ne sont plus affichées dans l’onglet `Picks`) : un joueur ne se pique qu’une fois par phase, soit trois joueurs différents par poule sur les trois journées, puis deux différents en phase finale (demie et finale). Chaque plan optimise tous les tours ENSEMBLE (un joueur fort n’est utilisé qu’une fois, là où il rapporte le plus par rapport à ses remplaçants) et se recalcule après chaque résultat importé ; pour les journées 2 et 3, les adversaires se déduisent de la journée 1 (les vainqueurs se rencontrent, les perdants aussi). Les bilans comptent les points des picks seulement (le pronostic est à part) ; mauvais cas et bon cas : 1 tournoi simulé sur 10 fait moins, ou plus. « Contre Laki et Thomas » suppose que chaque rival joue, pour ses picks restants, son meilleur plan en points espérés. Les pastilles de Moi, Laki et Thomas s’affichent sur tous les tours, joués ou non.',
           'Lire les couleurs (Masters, `Picks`) : fond vert sombre = joueuse qui a gagné (✓), fond rouge sombre = perdu (✗), fond neutre = à jouer. Sous chaque joueuse, une pastille par participant (point rond avec son initiale : Moi jaune, Laki violet, Thomas orange) montre qui l’a pickée POUR CETTE JOURNÉE seulement : ✓ juste, ✗ raté, horloge = match pas encore joué. Statut d’un pick : `déjà posé` bleu, `réservé, à valider` ambre, `à poser` en pointillé gris, `verrouillé` gris foncé avec cadenas. Toujours un mot ou un signe à côté de la couleur.',
         ],
         doc: 'README.md (principe du jeu)',
@@ -100,9 +100,9 @@ export const GROUPES: Groupe[] = [
         attention: [
           'Les pronostics viennent du bracket (`Bracket`, jeu bracket). En bas de chaque match, le bloc « Jeu de picks · pas le bracket » montre le joueur pické pour ce tour dans le jeu de picks (un joueur par tour) : c’est un AUTRE jeu. On peut donc avoir pické Van Assche en quarts (✓ dans ce bloc) sans l’avoir mis vainqueur dans son bracket (pastille rouge) ; ces ✓ et ✗ ne comptent pas dans `n/3 juste` ni dans les bilans.',
           'Un match gagné par abandon ou forfait compte comme joué : le gagnant avance au tour suivant.',
-          'Masters (ATP Finals, WTA Finals) : le `Tableau` montre les pronostics de chacun sur les poules (une pastille par participant : lettre + place prévue ; vert = place exacte, ambre = qualifiée trouvée mais pas à la bonne place, rouge = raté, gris = poule pas finie) et, sous la finale, ses finalistes et sa championne (✓ juste, ✗ raté). Le Dashboard classe Moi, Laki et Thomas : points du Pronostic + points des Picks = Total. Un pronostic se saisit à la main dans l’onglet `Pronostic` (il ferme au premier match) : l’API de Thomas ne donne pas encore ceux de Laki et de Thomas pour les Finals.',
+          'Masters (ATP Finals, WTA Finals) : le `Tableau` montre les pronostics de chacun sur les poules (une pastille par participant : lettre + place prévue ; vert = place exacte, ambre = qualifiée trouvée mais pas à la bonne place, rouge = raté, gris = pas encore certain : une pastille se colore dès que la place est acquise ou impossible, même avant la fin de la poule) et, sous la finale, ses finalistes et sa championne (✓ juste, ✗ raté). Le Dashboard classe Moi, Laki et Thomas : points du Pronostic + points des Picks = Total. Un pronostic se saisit à la main dans l’onglet `Pronostic` (il ferme au premier match) : l’API de Thomas ne donne pas encore ceux de Laki et de Thomas pour les Finals.',
         ],
-        maj: '2026-11-08',
+        maj: '2026-11-16',
       },
       {
         id: 'envoyer-game-tracker',
@@ -162,7 +162,7 @@ export const GROUPES: Groupe[] = [
           'Ouvrir le tournoi puis l’onglet `Pronostic` : la grille met côte à côte le pronostic de chacun (vert = juste, ambre = bien qualifiée, rouge = raté, blanc = pas encore joué) et une colonne « Simulé ».',
           'Pour simuler : dans la colonne « Simulé », choisir le classement des deux poules, les vainqueurs des demies et la championne. Les points de chacun (pronostic, puis total avec les picks) se recalculent tout de suite. `Revenir à l’état réel` remet le départ. Ce qui est déjà joué est figé.',
           'Pour saisir un pronostic à la main : sous la grille, ouvrir le bloc du participant, classer les deux poules, choisir les vainqueurs des demies et la championne, puis `Enregistrer ce pronostic`. C’est possible même après le premier match (enregistré comme « manuel »).',
-          'Onglet `Picks` : « Joueuses et adversaires » montre les picks de Moi, Laki et Thomas seulement sur les tours non validés ; les tours dont tous les matchs sont joués sont repliés (résultats et mes picks). Les picks d’un autre sur un tour terminé : cliquer sur son nom en haut de l’écran.',
+          'Onglet `Picks` : « Joueuses et adversaires » montre toutes les journées (puis demies et finale), jouées ou non, avec les picks de Moi, Laki et Thomas sur chacune (✓ juste, ✗ raté). Pour voir un autre participant en détail : cliquer sur son nom en haut de l’écran.',
         ],
         attention: [
           'L’API de Thomas ne donne PAS les pronostics d’un Masters (ils sont tous « sans_prono » dans /brackets) : ils ne se lisent que sur son site, page « Pronostics des participants ». Il faut les recopier à la main. Seuls ses points totaux par participant sont exposés.',
@@ -171,7 +171,7 @@ export const GROUPES: Groupe[] = [
           'Le bracket simulé ne simule pas les picks : ils comptent pour leurs points actuels.',
         ],
         doc: 'docs/masters.md ; lib/mastersScenario.ts, app/tournoi/[id]/ComparaisonPronostics.tsx',
-        maj: '2026-11-13',
+        maj: '2026-11-16',
       },
       {
         id: 'fantasy',

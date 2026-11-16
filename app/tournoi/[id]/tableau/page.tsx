@@ -25,7 +25,7 @@ export default async function TableauPage({
   const { id } = await params;
   // Un tournoi au format Masters (poules) a son propre Tableau : poules, classements, demies, finale.
   const tournoiMasters = await getTournament(id);
-  if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersTableau id={id} />;
+  if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersTableau id={id} tour={tournoiMasters.tour} />;
 
   // Lectures indépendantes : en parallèle (jamais en cascade, cf. CLAUDE.md).
   const [tournoi, matchRows, participants, picks, picksJeu] = await Promise.all([
