@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { retenirOrigine } from '@/app/origineEntonnoir';
 import { ONGLETS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
 
 /**
@@ -34,6 +35,12 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
                 <Link
                   href={o.href(id)}
                   aria-current={actif ? 'page' : undefined}
+                  // L'onglet s'ouvrira depuis son point (origineEntonnoir.ts).
+                  onClick={(e) => {
+                    if (actif) return;
+                    const point = e.currentTarget.querySelector('[data-origine]');
+                    if (point) retenirOrigine('onglet', point, true);
+                  }}
                   className="group flex min-h-14 flex-col items-center gap-3 px-2 pt-2 transition active:scale-[0.97]"
                 >
                   <span
@@ -44,7 +51,7 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
                     {o.label}
                   </span>
                   {/* L'onglet qu'on vient d'ouvrir : son point éclot puis respire. */}
-                  <span className={`flex size-3.5 items-center justify-center ${actif ? 'animate-eclore' : ''}`}>
+                  <span data-origine className={`flex size-3.5 items-center justify-center ${actif ? 'animate-eclore' : ''}`}>
                     <span
                       className={
                         actif
@@ -77,6 +84,9 @@ export default function TournoiNav({ id, masters = false }: { id: string; master
                     key={v.segment}
                     href={`/tournoi/${id}/${v.segment}`}
                     aria-current={courante ? 'page' : undefined}
+                    onClick={(e) => {
+                      if (!courante) retenirOrigine('onglet', e.currentTarget, true);
+                    }}
                     className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-xs transition active:scale-[0.97] ${
                       courante ? 'text-zinc-950 ring-1 ring-white/55' : 'text-zinc-600 ring-1 ring-white/12 hover:text-zinc-900'
                     }`}

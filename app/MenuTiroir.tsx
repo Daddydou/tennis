@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { retenirOrigine } from './origineEntonnoir';
 import FondTournoi from './FondTournoi';
 import { GROUPES } from './navigation';
 
@@ -33,10 +34,26 @@ export type GroupeVignettes = { titre: string; tournois: VignetteTournoi[] };
 
 const outils = GROUPES.find((g) => g.cle === 'outils')?.liens ?? [];
 
-function Vignette({ t }: { t: VignetteTournoi }) {
+function Vignette({ t, fermer }: { t: VignetteTournoi; fermer: () => void }) {
+  const pathname = usePathname();
+  const href = `/tournoi/${t.id}`;
   return (
-    <Link href={`/tournoi/${t.id}`} className="group flex min-w-0 flex-col gap-1.5">
-      <span className="relative block aspect-square overflow-hidden rounded-sm ring-1 ring-white/10 transition group-hover:ring-white/40">
+    <Link
+      href={href}
+      // Le tournoi s'ouvrira depuis cette photo (origineEntonnoir.ts) ; rien à faire si on y est déjà.
+      onClick={(e) => {
+        // Ouvert dans un autre onglet du navigateur (Ctrl, Cmd, Maj, clic du milieu) : rien ne s'ouvre ici.
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        if (pathname === href || pathname.startsWith(`${href}/`)) return;
+        const photo = e.currentTarget.querySelector('[data-origine]');
+        if (!photo) return;
+        retenirOrigine('tournoi', photo);
+        // Le menu se range tout de suite : on voit le point lumineux attendre la page.
+        fermer();
+      }}
+      className="group flex min-w-0 flex-col gap-1.5"
+    >
+      <span data-origine className="relative block aspect-square overflow-hidden rounded-sm ring-1 ring-white/10 transition group-hover:ring-white/40">
         <FondTournoi nom={t.nom} surface={t.surface} debut={t.debut} variante="vignette" />
         <span className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/50" aria-hidden="true" />
       </span>
@@ -182,7 +199,7 @@ export default function MenuTiroir({
               ) : (
                 <div className="cascade grid grid-cols-3 gap-4">
                   {resultats.map((t) => (
-                    <Vignette key={t.id} t={t} />
+                    <Vignette key={t.id} t={t} fermer={() => setOuvert(false)} />
                   ))}
                 </div>
               )}
@@ -198,7 +215,7 @@ export default function MenuTiroir({
                         <p className="titre-espace text-[0.7rem] text-zinc-500">{g.titre}</p>
                         <div className="grid grid-cols-3 gap-4">
                           {g.tournois.map((t) => (
-                            <Vignette key={t.id} t={t} />
+                            <Vignette key={t.id} t={t} fermer={() => setOuvert(false)} />
                           ))}
                         </div>
                       </div>
