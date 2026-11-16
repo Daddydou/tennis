@@ -1,5 +1,6 @@
 import { badgeNeutre, carte, noteInfo } from '@/app/ui';
 import { libelleTourMasters } from '@/lib/masters';
+import { motsJoueur } from '@/lib/mastersMots';
 import type { LignePhaseFinale, PastillePoule, VerdictMasters } from '@/lib/mastersPronosticVue';
 import type { MatchVue, PouleVue, VueMasters } from '@/lib/mastersVue';
 import { initiale } from '@/lib/tableauVue';
@@ -84,7 +85,7 @@ function Choix({ id, verdict, noms }: { id: string; verdict: VerdictMasters; nom
   );
 }
 
-export function CartePoule({ p, noms, pastilles }: { p: PouleVue; noms: Noms; pastilles?: Map<string, PastillePoule[]> }) {
+export function CartePoule({ p, noms, pastilles, tour }: { p: PouleVue; noms: Noms; pastilles?: Map<string, PastillePoule[]>; tour?: string | null }) {
   const qualifies = new Set(p.qualifies ?? []);
   // Avant le premier match, tout le monde est à égalité : pas de rang à afficher.
   const commence = p.classement.some((l) => l.joues > 0);
@@ -99,7 +100,7 @@ export function CartePoule({ p, noms, pastilles }: { p: PouleVue; noms: Noms; pa
         <thead>
           <tr className="text-left text-xs text-zinc-500">
             <th className="w-6 py-1 font-normal">#</th>
-            <th className="py-1 font-normal">Joueuse</th>
+            <th className="py-1 font-normal">{motsJoueur(tour).Joueur}</th>
             <th className="py-1 text-right font-normal">V-D</th>
             <th className="py-1 text-right font-normal">Sets</th>
             <th className="py-1 text-right font-normal">Jeux</th>
@@ -148,7 +149,7 @@ export function CartePoule({ p, noms, pastilles }: { p: PouleVue; noms: Noms; pa
 }
 
 /** Pronostics de chacun pour la phase finale : finalistes et championne, colorés selon le résultat. */
-function PronosticsPhaseFinale({ lignes, noms }: { lignes: LignePhaseFinale[]; noms: Noms }) {
+function PronosticsPhaseFinale({ lignes, noms, tour }: { lignes: LignePhaseFinale[]; noms: Noms; tour?: string | null }) {
   return (
     <div className="space-y-1.5 border-t border-zinc-100 pt-3" data-testid="pronostics-phase-finale">
       <h3 className="text-xs font-medium text-soustitre">Pronostics</h3>
@@ -160,7 +161,7 @@ function PronosticsPhaseFinale({ lignes, noms }: { lignes: LignePhaseFinale[]; n
             {l.finalistes.map((f) => (
               <Choix key={f.joueurId} id={f.joueurId} verdict={f.verdict} noms={noms} />
             ))}
-            <span className="text-xs text-zinc-500">Championne</span>
+            <span className="text-xs text-zinc-500">{tour === 'ATP' ? 'Champion' : 'Championne'}</span>
             <Choix id={l.champion.joueurId} verdict={l.champion.verdict} noms={noms} />
           </li>
         ))}
@@ -170,16 +171,16 @@ function PronosticsPhaseFinale({ lignes, noms }: { lignes: LignePhaseFinale[]; n
 }
 
 /** Légende des couleurs du pronostic, sous les poules et la phase finale. */
-export function LegendePronostics() {
+export function LegendePronostics({ tour }: { tour?: string | null }) {
   return (
     <p className={noteInfo} data-testid="legende-pronostics">
-      Pastille sur une joueuse de poule = la place que chaque participant lui a prévue (M = Moi, L = Laki, T = Thomas, suivi de la place) : vert = place exacte, ambre =
+      Pastille sur {motsJoueur(tour).un} de poule = la place que chaque participant lui a prévue (M = Moi, L = Laki, T = Thomas, suivi de la place) : vert = place exacte, ambre =
       qualifiée trouvée mais pas à cette place, rouge = raté, gris = pas encore certain (une pastille se colore dès que la place est acquise ou impossible, même avant la fin de la poule). Phase finale : ✓ juste, ✗ raté, sans signe = pas encore joué.
     </p>
   );
 }
 
-export function PhaseFinale({ vue, noms, pronostics }: { vue: VueMasters; noms: Noms; pronostics?: LignePhaseFinale[] }) {
+export function PhaseFinale({ vue, noms, pronostics, tour }: { vue: VueMasters; noms: Noms; pronostics?: LignePhaseFinale[]; tour?: string | null }) {
   const joueurOuEtiquette = (jId: string | null, etiquette: string) =>
     jId ? <span className="text-zinc-900">{noms.get(jId) ?? jId}</span> : <span className="text-zinc-500">{etiquette}</span>;
 
@@ -214,8 +215,12 @@ export function PhaseFinale({ vue, noms, pronostics }: { vue: VueMasters; noms: 
           </p>
         )}
       </div>
-      {vue.championId && <p className="text-sm font-semibold">Championne : {noms.get(vue.championId) ?? vue.championId}</p>}
-      {pronostics && pronostics.length > 0 && <PronosticsPhaseFinale lignes={pronostics} noms={noms} />}
+      {vue.championId && (
+        <p className="text-sm font-semibold">
+          {tour === 'ATP' ? 'Champion' : 'Championne'} : {noms.get(vue.championId) ?? vue.championId}
+        </p>
+      )}
+      {pronostics && pronostics.length > 0 && <PronosticsPhaseFinale lignes={pronostics} noms={noms} tour={tour} />}
     </section>
   );
 }

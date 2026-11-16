@@ -7,6 +7,7 @@ import { lirePronostics, type PronosticStocke } from '@/db/mastersPronostic';
 import { getMatchRows, getParticipants, getPlayerRows, getTousLesPicks, type MatchRow, type TournamentRow } from '@/db/queries';
 import { libelleTourMasters } from '@/lib/masters';
 import { analyserMatchsMasters, type JoueuseAnalyseMasters, type MatchAnalyseMasters } from '@/lib/mastersAnalyse';
+import { motsJoueur } from '@/lib/mastersMots';
 import { pronosticFerme } from '@/lib/mastersPronostic';
 import { pastillesDuTour, resultatLigne } from '@/lib/pastillesPicks';
 import { lignesPhaseFinale, pastillesPoule, pronosticsParParticipant, type ParticipantPronostic } from '@/lib/mastersPronosticVue';
@@ -49,7 +50,7 @@ async function chargerBase(id: string): Promise<{ rows: MatchRow[]; vue: VueMast
   return { rows, vue, noms };
 }
 
-export async function MastersTableau({ id }: { id: string }) {
+export async function MastersTableau({ id, tour }: { id: string; tour?: string | null }) {
   const { vue, noms } = await chargerBase(id);
 
   // Pronostics de chacun (jamais bloquants : sans eux, le tableau s'affiche comme avant).
@@ -67,11 +68,11 @@ export async function MastersTableau({ id }: { id: string }) {
   return (
     <div className="space-y-4" data-testid="masters-tableau">
       <div className="grid gap-4 md:grid-cols-2">
-        <CartePoule p={vue.poules.A} noms={noms} pastilles={pastillesPoule(vue.poules.A, prevus('A'))} />
-        <CartePoule p={vue.poules.B} noms={noms} pastilles={pastillesPoule(vue.poules.B, prevus('B'))} />
+        <CartePoule p={vue.poules.A} noms={noms} pastilles={pastillesPoule(vue.poules.A, prevus('A'))} tour={tour} />
+        <CartePoule p={vue.poules.B} noms={noms} pastilles={pastillesPoule(vue.poules.B, prevus('B'))} tour={tour} />
       </div>
-      <PhaseFinale vue={vue} noms={noms} pronostics={lignesPhaseFinale(vue, parts)} />
-      {parts.some((p) => p.pronostic) && <LegendePronostics />}
+      <PhaseFinale vue={vue} noms={noms} pronostics={lignesPhaseFinale(vue, parts)} tour={tour} />
+      {parts.some((p) => p.pronostic) && <LegendePronostics tour={tour} />}
       {sansPronostic.length > 0 && (
         <p className={noteInfo}>
           Pas de pronostic enregistré pour {sansPronostic.join(', ')} : à saisir dans l&apos;onglet Pronostic (saisie à la main possible, même après le premier match).
@@ -123,12 +124,12 @@ function LigneJoueuse({
   );
 }
 
-function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[]; noms: Noms }) {
+function AnalyseMatchsMasters({ matchs, noms, tour }: { matchs: MatchAnalyseMasters[]; noms: Noms; tour?: string | null }) {
   if (matchs.length === 0) return null;
   // Tous les tours, dans l'ordre du tournoi (journées, demies, finale), tous ouverts : les picks de chacun y restent
   // visibles avec leur résultat (✓ / ✗), un tour joué comme un tour à venir. Même affichage pour l'ATP et la WTA.
   const tours = [...new Set(matchs.map((m) => m.round))];
-  const tour = (round: string) => (
+  const blocDuTour = (round: string) => (
     <div key={round} className="space-y-2" data-testid={`tour-${round}`}>
       <h3 className="text-xs font-medium text-soustitre">{libelleTourMasters(round)}</h3>
       <div className="grid gap-2 md:grid-cols-2">
@@ -145,11 +146,11 @@ function AnalyseMatchsMasters({ matchs, noms }: { matchs: MatchAnalyseMasters[];
     </div>
   );
   return (
-    <section aria-label="Joueuses et adversaires" className="space-y-3">
+    <section aria-label={`${motsJoueur(tour).Joueurs} et adversaires`} className="space-y-3">
       <h2 className="text-sm font-semibold">
-        Joueuses et adversaires <span className="font-normal text-zinc-500">· Elo, chance de gagner, picks de chacun sur chaque tour</span>
+        {motsJoueur(tour).Joueurs} et adversaires <span className="font-normal text-zinc-500">· Elo, chance de gagner, picks de chacun sur chaque tour</span>
       </h2>
-      {tours.map((round) => tour(round))}
+      {tours.map((round) => blocDuTour(round))}
     </section>
   );
 }
@@ -245,7 +246,7 @@ export async function MastersPicks({
         <p className={noteInfo}>Les propositions de picks apparaissent quand les deux poules de 4 sont connues.</p>
       )}
 
-      <AnalyseMatchsMasters matchs={matchs} noms={noms} />
+      <AnalyseMatchsMasters matchs={matchs} noms={noms} tour={tournoi.tour} />
 
     </div>
   );
