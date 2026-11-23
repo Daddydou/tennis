@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
-import { Inter, Jost } from 'next/font/google';
+// Polices fournies par des paquets npm (Fontsource) : copiées dans le site au build, aucun appel à
+// Google ni au build ni chez le visiteur. (next/font/google cassait le build Vercel : « next/font/google
+// queries have exactly one entry », le 23/11/2026.)
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource-variable/jost/wght.css';
 import './globals.css';
 import { seDeconnecter } from './login/actions';
 import { sessionValide } from '@/auth/garde';
@@ -12,9 +16,6 @@ import IntroOuverture from './IntroOuverture';
 import MenuTiroir, { type GroupeVignettes, type VignetteTournoi } from './MenuTiroir';
 import { commenceDansLaSemaine, fraicheur, SURFACE_LABEL } from './tournoisUi';
 
-/* Polices auto-hébergées par Next (aucun appel à Google côté visiteur). */
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const jost = Jost({ subsets: ['latin'], weight: ['300', '400'], variable: '--font-jost', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Picks Tennis',
@@ -65,7 +66,7 @@ export default async function RootLayout({
   return (
     // suppressHydrationWarning : le script ci-dessous peut ajouter `intro-vue`
     // à <html> avant React (l'ouverture a déjà été vue dans cette session).
-    <html lang="fr" className={`h-full antialiased ${inter.variable} ${jost.variable}`} suppressHydrationWarning>
+    <html lang="fr" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_INTRO }} />
       </head>
