@@ -408,6 +408,9 @@
 
 html {
   color-scheme: dark;
+  /* Familles des paquets @fontsource-variable (importés dans app/layout.tsx). */
+  --font-inter: 'Inter Variable';
+  --font-jost: 'Jost Variable';
 }
 
 /*

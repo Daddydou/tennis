@@ -157,6 +157,29 @@ describe('planResultatsMasters — tournoi complet jusqu\'à la finale', () => {
     expect(p3.tournoiStatut).toBe('completed');
   });
 
+  it('finale entre deux joueuses qui se sont affrontées en JOURNÉE 1 : la finale est enregistrée, le match de poule reste intact (WTA Finals 2026)', () => {
+    const rows = apresImport();
+    const appliquer = (plan: ReturnType<typeof planResultatsMasters>) => {
+      for (const c of plan.creations) rows.push({ round: c.round, position: c.position, half: c.half, player1Id: c.player1Id, player2Id: c.player2Id, winnerId: null, status: 'scheduled', sets: [] });
+      for (const m of plan.maj) Object.assign(rows.find((x) => x.round === m.round && (x.position ?? 0) === m.position)!, { winnerId: m.winnerId, status: m.status, sets: m.sets });
+      for (const p of plan.placements) Object.assign(rows.find((x) => x.round === p.round && (x.position ?? 0) === p.position)!, { player1Id: p.player1Id, player2Id: p.player2Id });
+    };
+    // Poule A : a1 bat tout le monde, a4 (son adversaire de journée 1) bat a2 et a3, a2 bat a3 -> a1 1re, a4 2e.
+    const pouleA = [obs('a1', 'a4', 'a1', '6-4 6-0'), obs('a2', 'a3', 'a2', '6-2 6-2'), obs('a1', 'a2', 'a1', '6-1 6-1'), obs('a4', 'a3', 'a4', '6-3 6-3'), obs('a1', 'a3', 'a1', '6-2 6-1'), obs('a4', 'a2', 'a4', '7-5 6-4')];
+    const pouleB: ObservationApi[] = [];
+    for (let i = 1; i <= 4; i++) for (let j = i + 1; j <= 4; j++) pouleB.push(obs(`b${i}`, `b${j}`, `b${i}`, '6-4 6-4'));
+    const demies = [obs('a1', 'b2', 'a1', '6-3 6-3', { roundId: 10 }), obs('b1', 'a4', 'a4', '6-4 6-4', { roundId: 10 })];
+    const finale = obs('a1', 'a4', 'a4', '7-5 6-3', { roundId: 12 });
+    for (let passage = 0; passage < 3; passage++) appliquer(planResultatsMasters(rows, [...pouleA, ...pouleB, ...demies, finale]));
+
+    const j1 = rows.find((r) => r.round === 'J1' && r.position === 0)!;
+    expect(j1).toMatchObject({ winnerId: 'a1', status: 'completed' });
+    expect(j1.sets).toEqual([{ g1: 6, g2: 4, tb1: null, tb2: null }, { g1: 6, g2: 0, tb1: null, tb2: null }]);
+    const f = rows.find((r) => r.round === 'F')!;
+    expect(f).toMatchObject({ player1Id: 'a1', player2Id: 'a4', winnerId: 'a4', status: 'completed' });
+    expect(planResultatsMasters(rows, [...pouleA, ...pouleB, ...demies, finale]).tournoiStatut).toBe('completed');
+  });
+
   it('une poule pas finie : pas de demies', () => {
     const rows = apresImport();
     const p = planResultatsMasters(rows, resultatsDePoule('a').slice(0, 5));
