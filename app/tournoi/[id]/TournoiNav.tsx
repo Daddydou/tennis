@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { retenirOrigine } from '@/app/origineEntonnoir';
-import { ONGLETS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
+import { ONGLETS, ONGLETS_DAVIS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
 
 /**
  * Onglets du tournoi, rendus UNE fois par le layout du tournoi : ils restent
@@ -15,14 +15,14 @@ import { ONGLETS, ONGLETS_MASTERS, ongletDe, vueDe } from './onglets';
  * elles pendent sous son point, reliées par un pointillé — une branche d'arbre.
  * Au téléphone, la frise défile horizontalement plutôt que de se tasser.
  */
-export default function TournoiNav({ id, masters = false }: { id: string; masters?: boolean }) {
+export default function TournoiNav({ id, masters = false, davis = false }: { id: string; masters?: boolean; davis?: boolean }) {
   const segment = usePathname().split('/')[3] ?? '';
   const active = ongletDe(segment);
-  const onglets = masters ? ONGLETS_MASTERS : ONGLETS;
+  const onglets = masters ? ONGLETS_MASTERS : davis ? ONGLETS_DAVIS : ONGLETS;
   const vueActive = vueDe(segment);
   const colonnes = { gridTemplateColumns: `repeat(${onglets.length}, minmax(0, 1fr))` };
   const indexActif = onglets.findIndex((o) => o.key === active);
-  const vues = masters ? [] : (onglets[indexActif]?.vues ?? []);
+  const vues = onglets[indexActif]?.vues ?? [];
   return (
     <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
       <nav aria-label="Onglets du tournoi" className="min-w-[21rem] sm:min-w-[30rem]">
