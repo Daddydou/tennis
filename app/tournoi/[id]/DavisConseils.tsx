@@ -33,7 +33,8 @@ const nom = (c: CodeNation | null) => (c ? equipe(c).nom : '?');
 type Recherche = Record<string, string | string[] | undefined>;
 const cleR = (r: { tour: TourDavis; position: number }) => `${r.tour}${r.position}`;
 
-export default async function DavisConseils({ id, recherche }: { id: string; recherche: Recherche }) {
+/** Tout ce que les écrans Davis calculent à partir de la base et de la composition choisie. */
+async function preparer(id: string, recherche: Recherche) {
   const [etat, elo] = await Promise.all([lireEtatDavis(id), eloMaisonDe(NOMS_ELO_DAVIS)]);
   const { rencontres, mesPicks, inconnues } = etat;
   const valeur = (k: string) => {
@@ -65,35 +66,43 @@ export default async function DavisConseils({ id, recherche }: { id: string; rec
   };
 
   const quartsComplets = [0, 1, 2, 3].every((i) => rencontres.some((r) => r.tour === 'QF' && r.position === i && r.nation1 && r.nation2));
-  if (!quartsComplets || inconnues.length) {
-    return (
-      <p className={noteInfo}>
-        Conseils indisponibles : {inconnues.length ? `nation(s) inconnue(s) dans lib/davisEquipes.ts : ${inconnues.join(', ')}.` : 'les quarts ne sont pas encore tous connus.'}
-      </p>
-    );
-  }
+  const erreur =
+    !quartsComplets || inconnues.length
+      ? `Conseils indisponibles : ${inconnues.length ? `nation(s) inconnue(s) dans lib/davisEquipes.ts : ${inconnues.join(', ')}.` : 'les quarts ne sont pas encore tous connus.'}`
+      : null;
 
-  const tableau = analyseTableau(rencontres, analyser);
-  const utilises = new Set(mesPicks.map((p) => p.nation));
-  const plans = utilises.size === 0 ? plansPicks(rencontres, analyser) : [];
   // Dans l'ordre RÉEL des rencontres (programme officiel des quarts), pas celui du tableau.
   const ordreQuart = (r: RencontreEtat) => (r.tour === 'QF' ? (programmeQuart(r.nation1!, r.nation2!)?.date ?? `z${r.position}`) : `z${r.position}`);
   const aJouer = rencontres
     .filter((r) => r.nation1 && r.nation2 && !r.vainqueur)
     .sort((a, b) => TOURS.indexOf(a.tour) - TOURS.indexOf(b.tour) || ordreQuart(a).localeCompare(ordreQuart(b)));
-  // Prochain tour à picker : le premier tour dont une rencontre reste à jouer.
-  const tourOuvert = aJouer[0]?.tour ?? null;
+
+  // Picks : le premier tour où je n'ai encore rien posé (picks lus chez Game Tracker une fois le tour verrouillé).
+  const utilises = new Set(mesPicks.map((p) => p.nation));
+  const tourAPicker = TOURS.find((t) => !mesPicks.some((p) => p.tour === t)) ?? null;
+  const plans = !erreur && tourAPicker === 'QF' ? plansPicks(rencontres, analyser) : [];
+  const duTour = tourAPicker ? rencontres.filter((r) => r.tour === tourAPicker) : [];
+  const nationsConnues = duTour.length > 0 && duTour.every((r) => r.nation1 && r.nation2);
   const optionsPick =
-    tourOuvert && utilises.size > 0
-      ? aJouer
-          .filter((r) => r.tour === tourOuvert)
+    !erreur && tourAPicker && tourAPicker !== 'QF' && nationsConnues
+      ? duTour
           .flatMap((r) => [
             { nation: r.nation1!, adversaire: r.nation2!, a: analyser(r.nation1!, r.nation2!), cote: 'A' as const },
             { nation: r.nation2!, adversaire: r.nation1!, a: analyser(r.nation1!, r.nation2!), cote: 'B' as const },
           ])
           .map((o) => ({ ...o, p: o.cote === 'A' ? o.a.pA : 1 - o.a.pA, points: o.cote === 'A' ? o.a.pointsPickA : o.a.pointsPickB, deja: utilises.has(o.nation) }))
-          .sort((x, y) => y.points - x.points)
+          .sort((x, y) => Number(x.deja) - Number(y.deja) || y.points - x.points)
       : [];
+  return { rencontres, mesPicks, elo, compos, analyser, erreur, aJouer, tourAPicker, plans, optionsPick };
+}
+
+type Contexte = Awaited<ReturnType<typeof preparer>>;
+
+export default async function DavisConseils({ id, recherche }: { id: string; recherche: Recherche }) {
+  const ctx = await preparer(id, recherche);
+  const { rencontres, elo, compos, analyser, erreur, aJouer } = ctx;
+  if (erreur) return <p className={noteInfo}>{erreur}</p>;
+  const tableau = analyseTableau(rencontres, analyser);
 
   return (
     <div className="space-y-6" data-testid="davis-conseils">
@@ -128,48 +137,7 @@ export default async function DavisConseils({ id, recherche }: { id: string; rec
       </section>
 
       {/* 2. Picks par pays */}
-      <section className={`${carte} space-y-3 p-4`}>
-        <h2 className="text-sm">Picks par pays</h2>
-        {plans.length > 0 ? (
-          <>
-            <p className="text-xs text-zinc-600">
-              Un pays par moitié en quart. Les points comptent les quatre picks : la demie et la finale sont choisies au mieux une fois les adversaires connus (un pays ne sert qu&apos;une fois).
-            </p>
-            <ol className="space-y-1 text-sm">
-              {plans.slice(0, 5).map((p, i) => (
-                <li key={`${p.quartHaut}${p.quartBas}`} className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5">
-                  <span className={i === 0 ? 'font-medium text-accent' : ''}>
-                    {nom(p.quartHaut)} + {nom(p.quartBas)}
-                  </span>
-                  <span className="text-xs tabular-nums text-zinc-600">
-                    {p.points.toFixed(1)} pts attendus (quarts {p.pointsQuarts.toFixed(1)}) · finale sans pays disponible : {pct(p.pFinaleSansPick)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </>
-        ) : optionsPick.length > 0 ? (
-          <>
-            <p className="text-xs text-zinc-600">
-              Déjà pickés : {mesPicks.map((p) => nom(p.nation)).join(', ')}. Pour {LIBELLE_TOUR[tourOuvert!].toLowerCase()}, les pays encore disponibles, du plus rentable au moins rentable :
-            </p>
-            <ol className="space-y-1 text-sm">
-              {optionsPick.map((o) => (
-                <li key={o.nation} className={`flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5 ${o.deja ? 'text-zinc-500 line-through' : ''}`}>
-                  <span>
-                    {nom(o.nation)} <span className="text-xs text-zinc-500">contre {nom(o.adversaire)}</span>
-                  </span>
-                  <span className="text-xs tabular-nums text-zinc-600">
-                    {pct(o.p)} de gagner · {o.points.toFixed(1)} pts attendus{o.deja ? ' · déjà utilisé' : ''}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </>
-        ) : (
-          <p className="text-xs text-zinc-600">Plus de pick à poser.</p>
-        )}
-      </section>
+      <SectionPicks ctx={ctx} />
 
       {/* 3. Bracket des nations */}
       <section className={`${carte} space-y-3 p-4`}>
@@ -230,6 +198,70 @@ export default async function DavisConseils({ id, recherche }: { id: string; rec
         </div>
       </section>
     </div>
+  );
+}
+
+/** Écran Picks d'une Coupe Davis : les conseils de picks du modèle Davis (pas le plan des tournois classiques). */
+export async function PicksDavis({ id }: { id: string }) {
+  const ctx = await preparer(id, {});
+  if (ctx.erreur) return <p className={noteInfo}>{ctx.erreur}</p>;
+  return <SectionPicks ctx={ctx} />;
+}
+
+/**
+ * Picks par pays : avant les quarts, les plans classés (4 picks, un pays une seule fois) ; ensuite, pour
+ * le tour suivant, les pays encore disponibles du plus rentable au moins rentable. Mes picks déjà posés
+ * arrivent de Game Tracker (« Lire Game Tracker ») une fois leur tour verrouillé.
+ */
+export function SectionPicks({ ctx }: { ctx: Contexte }) {
+  const { plans, optionsPick, mesPicks, tourAPicker } = ctx;
+  return (
+    <section className={`${carte} space-y-3 p-4`}>
+      <h2 className="text-sm">Picks par pays</h2>
+      {plans.length > 0 ? (
+        <>
+          <p className="text-xs text-zinc-600">
+            Un pays par moitié en quart. Les points comptent les quatre picks : la demie et la finale sont choisies au mieux une fois les adversaires connus (un pays ne sert qu&apos;une fois).
+          </p>
+          <ol className="space-y-1 text-sm">
+            {plans.slice(0, 5).map((p, i) => (
+              <li key={`${p.quartHaut}${p.quartBas}`} className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5">
+                <span className={i === 0 ? 'font-medium text-accent' : ''}>
+                  {nom(p.quartHaut)} + {nom(p.quartBas)}
+                </span>
+                <span className="text-xs tabular-nums text-zinc-600">
+                  {p.points.toFixed(1)} pts attendus (quarts {p.pointsQuarts.toFixed(1)}) · finale sans pays disponible : {pct(p.pFinaleSansPick)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : optionsPick.length > 0 ? (
+        <>
+          <p className="text-xs text-zinc-600">
+            Déjà pickés : {mesPicks.map((p) => nom(p.nation)).join(', ')}. Pour {LIBELLE_TOUR[tourAPicker!].toLowerCase()}, les pays encore disponibles, du plus rentable au moins rentable :
+          </p>
+          <ol className="space-y-1 text-sm">
+            {optionsPick.map((o) => (
+              <li key={o.nation} className={`flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5 ${o.deja ? 'text-zinc-500 line-through' : ''}`}>
+                <span>
+                  {nom(o.nation)} <span className="text-xs text-zinc-500">contre {nom(o.adversaire)}</span>
+                </span>
+                <span className="text-xs tabular-nums text-zinc-600">
+                  {pct(o.p)} de gagner · {o.points.toFixed(1)} pts attendus{o.deja ? ' · déjà utilisé' : ''}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : tourAPicker ? (
+        <p className="text-xs text-zinc-600">
+          {mesPicks.length ? `Déjà pickés : ${mesPicks.map((p) => nom(p.nation)).join(', ')}. ` : ''}Les nations {tourAPicker === 'F' ? 'de la finale' : 'des demies'} ne sont pas encore connues.
+        </p>
+      ) : (
+        <p className="text-xs text-zinc-600">Plus de pick à poser.</p>
+      )}
+    </section>
   );
 }
 

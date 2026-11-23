@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { estMasters } from '@/lib/masters';
+import { estDavis } from '@/lib/davisRencontre';
+import { PicksDavis } from '../DavisConseils';
 import { MastersPicks } from '../MastersEcrans';
 import { notFound } from 'next/navigation';
 import NoteCotesUtilisees from '../NoteCotesUtilisees';
@@ -9,7 +11,7 @@ import { FournisseurPoolGT } from './PoolGameTracker';
 import { pointsPicksParStock, stocksDuGroupe } from '../pointsStock';
 import PlanPicks from '../plan/PlanPicks';
 import AnalyseJoueurs from './AnalyseJoueurs';
-import { carte, couleurPoints, pilleSelecteur } from '@/app/ui';
+import { carte, couleurPoints, noteInfo, pilleSelecteur } from '@/app/ui';
 import { classeLigneResultat } from '@/app/pastillesPicks';
 import { libellePicksAPoser } from '@/app/tournoisUi';
 import { ligneDepuisPoints } from '@/lib/pastillesPicks';
@@ -55,6 +57,28 @@ export default async function PicksPage({
   const tournoiMasters = await getTournament(id);
   if (tournoiMasters && estMasters(tournoiMasters.rounds)) {
     return <MastersPicks id={id} tournoi={tournoiMasters} participantId={participantParam ?? null} />;
+  }
+  // Coupe Davis : le plan des tournois classiques ne connaît ni les nations (Elo par défaut) ni le barème
+  // Davis. On montre les conseils du modèle Davis ; les picks se posent sur Game Tracker et reviennent ici
+  // par « Lire Game Tracker » une fois le tour verrouillé.
+  if (tournoiMasters && estDavis(tournoiMasters.rounds)) {
+    return (
+      <FournisseurPoolGT>
+        <div className="space-y-5">
+          <p className={noteInfo}>
+            Les picks de la Coupe Davis se posent sur Game Tracker. Conseils ci-dessous d&apos;après l&apos;Elo des joueurs de chaque équipe (détail, bracket et pronos des matchs : onglet{' '}
+            <Link href={`/tournoi/${id}/pronostic`} className="underline underline-offset-2">
+              Pronos
+            </Link>
+            ).
+          </p>
+          <PicksDavis id={id} />
+          <div id="game-tracker" className="scroll-mt-4">
+            <PanneauGameTracker tournamentId={id} />
+          </div>
+        </div>
+      </FournisseurPoolGT>
+    );
   }
 
   // Toutes les lectures partent de front : en cascade, chaque aller-retour
