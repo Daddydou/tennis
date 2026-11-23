@@ -4,6 +4,7 @@ import Entonnoir from '@/app/Entonnoir';
 import FondTournoi from '@/app/FondTournoi';
 import { categorie, formatDate, SURFACE_LABEL } from '@/app/tournoisUi';
 import { getTournament } from '@/db/queries';
+import { estDavis } from '@/lib/davisRencontre';
 import { estMasters } from '@/lib/masters';
 
 /**
@@ -44,7 +45,7 @@ export default async function TournoiLayout({
           <h1 className="animate-titre text-3xl leading-tight text-zinc-950 sm:text-4xl">{tournoi.name}</h1>
         </div>
       </header>
-      <TournoiNav id={id} masters={estMasters(tournoi.rounds)} />
+      <TournoiNav id={id} masters={estMasters(tournoi.rounds)} davis={estDavis(tournoi.rounds)} />
       {children}
     </Entonnoir>
   );

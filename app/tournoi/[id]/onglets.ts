@@ -58,6 +58,19 @@ export const ONGLETS_MASTERS: DefOnglet[] = [
   { key: 'pronostic', label: 'Pronostic', href: (id) => `/tournoi/${id}/pronostic`, vues: [] },
 ];
 
+/**
+ * Onglets d'une Coupe Davis (nations à la place des joueurs) : Dashboard, Tableau (rencontres et saisie des
+ * résultats), Picks (pays), Bracket (bracket des nations) et Pronos (chances, conseils pour les trois jeux,
+ * pronos des matchs selon la composition). Pas de Fantasy : il n'existe pas en Coupe Davis.
+ */
+export const ONGLETS_DAVIS: DefOnglet[] = [
+  { key: 'dashboard', label: 'Dashboard', href: (id) => `/tournoi/${id}`, vues: [] },
+  { key: 'tableau', label: 'Tableau', href: (id) => `/tournoi/${id}/tableau`, vues: [] },
+  { key: 'picks', label: 'Picks', href: (id) => `/tournoi/${id}/picks`, vues: [] },
+  { key: 'bracket', label: 'Bracket', href: (id) => `/tournoi/${id}/simulateur`, vues: [] },
+  { key: 'pronostic', label: 'Pronos', href: (id) => `/tournoi/${id}/pronostic`, vues: [] },
+];
+
 /** Segment d'URL (le 3e : /tournoi/<id>/<segment>) -> onglet actif. */
 const PAR_SEGMENT: Record<string, Onglet> = {
   tableau: 'tableau',
