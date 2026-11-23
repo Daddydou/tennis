@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { EQUIPES_DAVIS_2026, equipeDeNation, programmeQuart, type CodeNation } from '../davisEquipes';
-import { analyseRencontre, analyseTableau, composition, modeleMatch, plansPicks, probaElo, type RencontreEtat } from '../davisConseils';
+import { analyseRencontre, analyseTableau, composition, modeleMatch, plansComplets, plansPicks, probaElo, type RencontreEtat } from '../davisConseils';
 
 const ELO = new Map<string, number>([
   ['Flavio Cobolli', 2146], ['Lorenzo Musetti', 2281], ['Luciano Darderi', 2060],
@@ -114,5 +114,32 @@ describe('équipes', () => {
     expect(equipeDeNation('République Tchèque')?.code).toBe('CZE');
     expect(equipeDeNation('republique tcheque')?.code).toBe('CZE');
     expect(equipeDeNation('France')).toBeNull();
+  });
+});
+
+describe('plan complet des picks', () => {
+  const plans = plansComplets(QF, analyser);
+  it('quatre picks, quatre pays différents, un par moitié en quart', () => {
+    const p = plans[0];
+    expect(p.picks.map((x) => x.slot)).toEqual(['QF-top', 'QF-bottom', 'SF', 'F']);
+    expect(new Set(p.picks.map((x) => x.nation)).size).toBe(4);
+    expect(['ITA', 'KOR', 'CZE', 'CAN']).toContain(p.picks[0].nation);
+    expect(['GBR', 'GER', 'AUT', 'ESP']).toContain(p.picks[1].nation);
+    expect(p.points).toBeCloseTo(p.picks.reduce((s, x) => s + x.points, 0), 6);
+  });
+  it('les plans sont classés ; chaque pick de demie ou de finale vise un pays qui peut y être', () => {
+    expect(plans[0].points).toBeGreaterThanOrEqual(plans[plans.length - 1].points);
+    for (const p of plans) for (const x of p.picks) expect(x.pJoue).toBeGreaterThan(0);
+  });
+  it('garder un favori pour plus tard fait partie des plans étudiés (Espagne en finale)', () => {
+    const tous = plansComplets(QF, analyser, {}, 1000);
+    const garde = tous.find((p) => p.picks[3].nation === 'ESP');
+    expect(garde).toBeDefined();
+    expect(garde!.picks[3].pJoue).toBeGreaterThan(0.5);
+  });
+  it('un pick déjà posé est imposé', () => {
+    const p = plansComplets(QF, analyser, { 'QF-top': 'CZE', 'QF-bottom': 'GBR' })[0];
+    expect(p.picks[0]).toMatchObject({ nation: 'CZE', pose: true, planB: null });
+    expect(p.picks[1].nation).toBe('GBR');
   });
 });

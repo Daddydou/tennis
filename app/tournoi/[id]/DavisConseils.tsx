@@ -4,10 +4,11 @@ import {
   analyseRencontre,
   analyseTableau,
   composition,
-  plansPicks,
+  plansComplets,
   type AnalyseRencontre,
   type Composition,
   type RencontreEtat,
+  type SlotDavis,
   type TourDavis,
 } from '@/lib/davisConseils';
 import { EQUIPES_DAVIS_2026, joueursDeSimple, programmeQuart, type CodeNation, type EquipeDavis } from '@/lib/davisEquipes';
@@ -77,23 +78,16 @@ async function preparer(id: string, recherche: Recherche) {
     .filter((r) => r.nation1 && r.nation2 && !r.vainqueur)
     .sort((a, b) => TOURS.indexOf(a.tour) - TOURS.indexOf(b.tour) || ordreQuart(a).localeCompare(ordreQuart(b)));
 
-  // Picks : le premier tour où je n'ai encore rien posé (picks lus chez Game Tracker une fois le tour verrouillé).
-  const utilises = new Set(mesPicks.map((p) => p.nation));
-  const tourAPicker = TOURS.find((t) => !mesPicks.some((p) => p.tour === t)) ?? null;
-  const plans = !erreur && tourAPicker === 'QF' ? plansPicks(rencontres, analyser) : [];
-  const duTour = tourAPicker ? rencontres.filter((r) => r.tour === tourAPicker) : [];
-  const nationsConnues = duTour.length > 0 && duTour.every((r) => r.nation1 && r.nation2);
-  const optionsPick =
-    !erreur && tourAPicker && tourAPicker !== 'QF' && nationsConnues
-      ? duTour
-          .flatMap((r) => [
-            { nation: r.nation1!, adversaire: r.nation2!, a: analyser(r.nation1!, r.nation2!), cote: 'A' as const },
-            { nation: r.nation2!, adversaire: r.nation1!, a: analyser(r.nation1!, r.nation2!), cote: 'B' as const },
-          ])
-          .map((o) => ({ ...o, p: o.cote === 'A' ? o.a.pA : 1 - o.a.pA, points: o.cote === 'A' ? o.a.pointsPickA : o.a.pointsPickB, deja: utilises.has(o.nation) }))
-          .sort((x, y) => Number(x.deja) - Number(y.deja) || y.points - x.points)
-      : [];
-  return { rencontres, mesPicks, elo, compos, analyser, erreur, aJouer, tourAPicker, plans, optionsPick };
+  // Picks : plan des quatre picks (quart haut, quart bas, demie, finale), mes picks déjà posés imposés
+  // (lus chez Game Tracker une fois leur tour verrouillé).
+  const hautDuTableau = new Set(rencontres.filter((r) => r.tour === 'QF' && r.position <= 1).flatMap((r) => [r.nation1, r.nation2]));
+  const poses: Partial<Record<SlotDavis, CodeNation>> = {};
+  for (const p of mesPicks) {
+    if (p.tour === 'QF') poses[hautDuTableau.has(p.nation) ? 'QF-top' : 'QF-bottom'] = p.nation;
+    else if (p.tour === 'SF' || p.tour === 'F') poses[p.tour] = p.nation;
+  }
+  const plans = erreur ? [] : plansComplets(rencontres, analyser, poses, 5);
+  return { rencontres, mesPicks, elo, compos, analyser, erreur, aJouer, plans };
 }
 
 type Contexte = Awaited<ReturnType<typeof preparer>>;
@@ -209,57 +203,81 @@ export async function PicksDavis({ id }: { id: string }) {
 }
 
 /**
- * Picks par pays : avant les quarts, les plans classés (4 picks, un pays une seule fois) ; ensuite, pour
- * le tour suivant, les pays encore disponibles du plus rentable au moins rentable. Mes picks déjà posés
- * arrivent de Game Tracker (« Lire Game Tracker ») une fois leur tour verrouillé.
+ * Picks par pays : le plan des quatre picks, comme le plan des tournois classiques. Chaque pays ne sert
+ * qu'une fois : le plan peut garder un favori pour la demie ou la finale si ça rapporte plus en moyenne
+ * (chances d'y arriver comprises). Il se recalcule à chaque résultat et à chaque pick posé.
  */
+const LIBELLE_SLOT: Record<SlotDavis, string> = { 'QF-top': 'Quart · haut', 'QF-bottom': 'Quart · bas', SF: 'Demie', F: 'Finale' };
+
 export function SectionPicks({ ctx }: { ctx: Contexte }) {
-  const { plans, optionsPick, mesPicks, tourAPicker } = ctx;
+  const { plans } = ctx;
+  const [plan, ...autres] = plans;
+  if (!plan) return null;
   return (
-    <section className={`${carte} space-y-3 p-4`}>
-      <h2 className="text-sm">Picks par pays</h2>
-      {plans.length > 0 ? (
-        <>
-          <p className="text-xs text-zinc-600">
-            Un pays par moitié en quart. Les points comptent les quatre picks : la demie et la finale sont choisies au mieux une fois les adversaires connus (un pays ne sert qu&apos;une fois).
-          </p>
-          <ol className="space-y-1 text-sm">
-            {plans.slice(0, 5).map((p, i) => (
-              <li key={`${p.quartHaut}${p.quartBas}`} className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5">
-                <span className={i === 0 ? 'font-medium text-accent' : ''}>
-                  {nom(p.quartHaut)} + {nom(p.quartBas)}
-                </span>
-                <span className="text-xs tabular-nums text-zinc-600">
-                  {p.points.toFixed(1)} pts attendus (quarts {p.pointsQuarts.toFixed(1)}) · finale sans pays disponible : {pct(p.pFinaleSansPick)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </>
-      ) : optionsPick.length > 0 ? (
-        <>
-          <p className="text-xs text-zinc-600">
-            Déjà pickés : {mesPicks.map((p) => nom(p.nation)).join(', ')}. Pour {LIBELLE_TOUR[tourAPicker!].toLowerCase()}, les pays encore disponibles, du plus rentable au moins rentable :
-          </p>
-          <ol className="space-y-1 text-sm">
-            {optionsPick.map((o) => (
-              <li key={o.nation} className={`flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5 ${o.deja ? 'text-zinc-500 line-through' : ''}`}>
-                <span>
-                  {nom(o.nation)} <span className="text-xs text-zinc-500">contre {nom(o.adversaire)}</span>
-                </span>
-                <span className="text-xs tabular-nums text-zinc-600">
-                  {pct(o.p)} de gagner · {o.points.toFixed(1)} pts attendus{o.deja ? ' · déjà utilisé' : ''}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </>
-      ) : tourAPicker ? (
+    <section className={`${carte} space-y-4 p-4`}>
+      <div className="space-y-1">
+        <h2 className="text-sm">Mon plan de picks</h2>
         <p className="text-xs text-zinc-600">
-          {mesPicks.length ? `Déjà pickés : ${mesPicks.map((p) => nom(p.nation)).join(', ')}. ` : ''}Les nations {tourAPicker === 'F' ? 'de la finale' : 'des demies'} ne sont pas encore connues.
+          Les quatre picks ensemble (un pays une seule fois) : un pays gardé pour la demie ou la finale ne rapporte que s&apos;il y arrive, d&apos;où « joue ce tour ». Recalculé à chaque résultat ;
+          les picks déjà posés chez Game Tracker sont gardés.
         </p>
-      ) : (
-        <p className="text-xs text-zinc-600">Plus de pick à poser.</p>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs text-zinc-500">
+            <th className="py-1 font-normal">Tour</th>
+            <th className="py-1 font-normal">Pays</th>
+            <th className="py-1 text-right font-normal">Joue ce tour</th>
+            <th className="py-1 text-right font-normal">Gagne</th>
+            <th className="py-1 text-right font-normal">Pts attendus</th>
+          </tr>
+        </thead>
+        <tbody>
+          {plan.picks.map((p) => (
+            <tr key={p.slot} className="border-t border-white/6 align-top">
+              <td className="py-1.5 text-xs text-zinc-500">{LIBELLE_SLOT[p.slot]}</td>
+              <td className="py-1.5">
+                <span className="font-medium text-accent">{nom(p.nation)}</span>
+                {p.pose && <span className="ml-1.5 text-xs text-zinc-500">posé</span>}
+                {p.planB && (
+                  <span className="block text-xs text-zinc-500">
+                    plan B : {nom(p.planB.nation)} ({p.planB.points.toFixed(1)} pts)
+                  </span>
+                )}
+              </td>
+              <td className="py-1.5 text-right tabular-nums text-zinc-600">{pct(p.pJoue)}</td>
+              <td className="py-1.5 text-right tabular-nums text-zinc-600">{pct(p.pGagne)}</td>
+              <td className="py-1.5 text-right font-medium tabular-nums">{p.points.toFixed(1)}</td>
+            </tr>
+          ))}
+          <tr className="border-t border-white/15">
+            <td colSpan={4} className="py-1.5 text-xs text-zinc-500">
+              Total attendu
+            </td>
+            <td className="py-1.5 text-right font-medium tabular-nums">{plan.points.toFixed(1)}</td>
+          </tr>
+        </tbody>
+      </table>
+      {autres.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-zinc-500">Autres plans</p>
+          <ol className="space-y-1 text-sm">
+            {autres.map((a) => (
+              <li key={a.picks.map((p) => p.nation).join('-')} className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/6 py-1.5">
+                <span>
+                  {a.picks.map((p, i) => (
+                    <span key={p.slot}>
+                      {i > 0 && <span className="text-zinc-500"> · </span>}
+                      <span className="text-xs text-zinc-500">{LIBELLE_SLOT[p.slot].replace('Quart · ', 'Q ')} </span>
+                      {nom(p.nation)}
+                    </span>
+                  ))}
+                </span>
+                <span className="text-xs tabular-nums text-zinc-600">{a.points.toFixed(1)} pts</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
     </section>
   );

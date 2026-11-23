@@ -514,3 +514,154 @@ export function plansPicks(rencontres: RencontreEtat[], analyser: Analyseur): Pl
   }
   return plans.sort((x, y) => y.points - x.points);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Plan complet des picks (comme le plan des tournois classiques)     */
+/* ------------------------------------------------------------------ */
+
+export type SlotDavis = 'QF-top' | 'QF-bottom' | 'SF' | 'F';
+export const SLOTS_DAVIS: readonly SlotDavis[] = ['QF-top', 'QF-bottom', 'SF', 'F'];
+
+export interface PickPlan {
+  slot: SlotDavis;
+  nation: CodeNation;
+  /** Points espérés de ce pick (0 si la nation ne joue pas ce tour). */
+  points: number;
+  /** Probabilité que la nation joue ce tour (1 en quart). */
+  pJoue: number;
+  /** Probabilité qu'elle gagne la rencontre de ce tour. */
+  pGagne: number;
+  /** Pick déjà posé (lu chez Game Tracker) : imposé au plan. */
+  pose: boolean;
+  /** Meilleure autre nation pour ce slot, les autres picks inchangés. */
+  planB: { nation: CodeNation; points: number } | null;
+}
+
+export interface PlanComplet {
+  picks: PickPlan[];
+  points: number;
+}
+
+/**
+ * Plan des quatre picks (quart haut, quart bas, demie, finale), un pays une seule fois : la combinaison qui
+ * rapporte le plus de points ESPÉRÉS, en tenant compte des chances de chaque nation d'atteindre la demie
+ * ou la finale (un favori peut être gardé pour plus tard, comme le plan des tournois classiques). Les picks
+ * déjà posés sont imposés. Le plan se recalcule à chaque résultat : il ne fige rien.
+ * Renvoie les meilleurs plans, du meilleur au moins bon.
+ */
+export function plansComplets(
+  rencontres: RencontreEtat[],
+  analyser: Analyseur,
+  poses: Partial<Record<SlotDavis, CodeNation>> = {},
+  combien = 5,
+): PlanComplet[] {
+  const qf = [0, 1, 2, 3].map((i) => rencontres.find((r) => r.tour === 'QF' && r.position === i)!);
+  const sf = [0, 1].map((i) => rencontres.find((r) => r.tour === 'SF' && r.position === i));
+  const fi = rencontres.find((r) => r.tour === 'F');
+  const memo = new Map<string, AnalyseRencontre>();
+  const an = (a: CodeNation, b: CodeNation) => {
+    const k = `${a}|${b}`;
+    if (!memo.has(k)) memo.set(k, analyser(a, b));
+    return memo.get(k)!;
+  };
+  const ept = (a: CodeNation, b: CodeNation) => an(a, b).pointsPickA;
+  const pVictoire = (r: RencontreEtat | undefined, a: CodeNation, b: CodeNation) => {
+    if (r?.vainqueur && ((r.nation1 === a && r.nation2 === b) || (r.nation1 === b && r.nation2 === a))) return r.vainqueur === a ? 1 : 0;
+    return an(a, b).pA;
+  };
+
+  // Rencontres possibles de chaque tour : paire -> probabilité.
+  const gagnantQf = qf.map((r) => {
+    const p = pVictoire(r, r.nation1!, r.nation2!);
+    return new Map<CodeNation, number>([
+      [r.nation1!, p],
+      [r.nation2!, 1 - p],
+    ]);
+  });
+  const pairesSf: Map<string, number>[] = [0, 1].map((h) => {
+    const m = new Map<string, number>();
+    for (const [x, px] of gagnantQf[2 * h]) for (const [y, py] of gagnantQf[2 * h + 1]) if (px * py > 0) m.set(`${x}|${y}`, px * py);
+    return m;
+  });
+  const gagnantSf = [0, 1].map((h) => {
+    const m = new Map<CodeNation, number>();
+    for (const [k, p] of pairesSf[h]) {
+      const [x, y] = k.split('|') as [CodeNation, CodeNation];
+      const px = pVictoire(sf[h], x, y);
+      m.set(x, (m.get(x) ?? 0) + p * px);
+      m.set(y, (m.get(y) ?? 0) + p * (1 - px));
+    }
+    return m;
+  });
+  const pairesF = new Map<string, number>();
+  for (const [x, px] of gagnantSf[0]) for (const [y, py] of gagnantSf[1]) if (px * py > 0) pairesF.set(`${x}|${y}`, px * py);
+
+  // Valeur d'une nation sur un slot : points espérés, probabilité de jouer, probabilité de gagner ce tour.
+  const valeur = (slot: SlotDavis, n: CodeNation): { points: number; pJoue: number; pGagne: number } => {
+    if (slot === 'QF-top' || slot === 'QF-bottom') {
+      const r = qf.slice(slot === 'QF-top' ? 0 : 2, slot === 'QF-top' ? 2 : 4).find((x) => x.nation1 === n || x.nation2 === n);
+      if (!r) return { points: -Infinity, pJoue: 0, pGagne: 0 };
+      const adv = r.nation1 === n ? r.nation2! : r.nation1!;
+      return { points: ept(n, adv), pJoue: 1, pGagne: pVictoire(r, n, adv) };
+    }
+    const paires = slot === 'SF' ? [...pairesSf[0], ...pairesSf[1]] : [...pairesF];
+    let points = 0;
+    let pJoue = 0;
+    let pGagne = 0;
+    for (const [k, p] of paires) {
+      const [x, y] = k.split('|') as [CodeNation, CodeNation];
+      if (x !== n && y !== n) continue;
+      const adv = x === n ? y : x;
+      const r = slot === 'SF' ? sf.find((s) => s && (s.nation1 === n || s.nation2 === n)) : fi;
+      pJoue += p;
+      points += p * ept(n, adv);
+      pGagne += p * pVictoire(r, n, adv);
+    }
+    return { points, pJoue, pGagne };
+  };
+
+  const nations = qf.flatMap((r) => [r.nation1!, r.nation2!]);
+  const candidats: Record<SlotDavis, CodeNation[]> = {
+    'QF-top': poses['QF-top'] ? [poses['QF-top']] : [qf[0].nation1!, qf[0].nation2!, qf[1].nation1!, qf[1].nation2!],
+    'QF-bottom': poses['QF-bottom'] ? [poses['QF-bottom']] : [qf[2].nation1!, qf[2].nation2!, qf[3].nation1!, qf[3].nation2!],
+    SF: poses.SF ? [poses.SF] : nations,
+    F: poses.F ? [poses.F] : nations,
+  };
+  const cache = new Map<string, ReturnType<typeof valeur>>();
+  const val = (s: SlotDavis, n: CodeNation) => {
+    const k = `${s}|${n}`;
+    if (!cache.has(k)) cache.set(k, valeur(s, n));
+    return cache.get(k)!;
+  };
+
+  const plans: { nations: CodeNation[]; points: number }[] = [];
+  for (const h of candidats['QF-top'])
+    for (const b of candidats['QF-bottom'])
+      for (const s of candidats.SF)
+        for (const f of candidats.F) {
+          const choix = [h, b, s, f];
+          if (new Set(choix).size < 4) continue;
+          const points = SLOTS_DAVIS.reduce((t, slot, i) => t + Math.max(0, val(slot, choix[i]).points), 0);
+          plans.push({ nations: choix, points });
+        }
+  plans.sort((x, y) => y.points - x.points);
+
+  return plans.slice(0, combien).map((pl) => ({
+    points: pl.points,
+    picks: SLOTS_DAVIS.map((slot, i) => {
+      const n = pl.nations[i];
+      const v = val(slot, n);
+      const autres = new Set(pl.nations.filter((_, j) => j !== i));
+      const pose = poses[slot] === n;
+      let planB: PickPlan['planB'] = null;
+      if (!pose) {
+        for (const m of candidats[slot]) {
+          if (m === n || autres.has(m)) continue;
+          const p = val(slot, m).points;
+          if (p > 0 && (!planB || p > planB.points)) planB = { nation: m, points: p };
+        }
+      }
+      return { slot, nation: n, points: Math.max(0, v.points), pJoue: v.pJoue, pGagne: v.pGagne, pose, planB };
+    }),
+  }));
+}
