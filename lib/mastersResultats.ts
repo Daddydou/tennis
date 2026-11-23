@@ -109,6 +109,32 @@ interface LigneEff extends LigneMatchMasters {
   scheduledAt?: string | null;
 }
 
+/** Identifiant de tour des poules chez Matchstat (« round robin ») : départage les cas ambigus. */
+const ROUND_ID_POULE_API = 8;
+
+/**
+ * Identifiant(s) de tour de l'API pour les poules, d'après les duels de la journée 1.
+ *
+ * On garde le ou les identifiants partagés par le PLUS de duels de la journée 1 : celui des poules les
+ * couvre tous. Il ne suffit pas de tout prendre : si les deux finalistes s'étaient déjà affrontées en
+ * journée 1 (WTA Finals 2026 : Andreeva – Svitolina), la paire a deux matchs dans l'API, et l'identifiant
+ * de la finale passerait pour un identifiant de poule (la finale écrasait alors le match de poule et
+ * n'était jamais enregistrée : tournoi impossible à clôturer).
+ */
+export function roundIdsDePoule(rows: LigneMatchMasters[], parPaire: Map<string, ObservationApi[]>): Set<number> {
+  const compte = new Map<number, number>();
+  for (const r of rows.filter((x) => x.round === 'J1' && x.player1Id && x.player2Id)) {
+    const ids = new Set((parPaire.get(cle(r.player1Id!, r.player2Id!)) ?? []).map((o) => o.roundId));
+    for (const id of ids) compte.set(id, (compte.get(id) ?? 0) + 1);
+  }
+  if (compte.size === 0) return new Set();
+  const max = Math.max(...compte.values());
+  const meilleurs = [...compte].filter(([, n]) => n === max).map(([id]) => id);
+  // Égalité (une seule paire de journée 1 connue, par exemple) : l'identifiant « round robin » de Matchstat l'emporte.
+  if (meilleurs.length > 1 && meilleurs.includes(ROUND_ID_POULE_API)) return new Set([ROUND_ID_POULE_API]);
+  return new Set(meilleurs);
+}
+
 export function planResultatsMasters(rows: LigneMatchMasters[], observations: ObservationApi[]): PlanResultats {
   const eff: LigneEff[] = rows.map((r) => ({ ...r, sets: r.sets ? r.sets.map((s) => ({ ...s })) : [] }));
   const maj = new Map<string, MajMatch>();
@@ -123,11 +149,7 @@ export function planResultatsMasters(rows: LigneMatchMasters[], observations: Ob
   const lignesPoule = () => eff.filter((r) => estPoule(r) && r.player1Id && r.player2Id);
   const decide = (r: LigneEff) => DECIDES.includes(r.status) && r.winnerId !== null;
 
-  // Identifiant de tour de l'API pour les poules : celui des matchs de la journée 1 déjà connus.
-  const roundIdsPoule = new Set<number>();
-  for (const r of eff.filter((x) => x.round === 'J1' && x.player1Id && x.player2Id)) {
-    for (const o of parPaire.get(cle(r.player1Id!, r.player2Id!)) ?? []) roundIdsPoule.add(o.roundId);
-  }
+  const roundIdsPoule = roundIdsDePoule(eff, parPaire);
   const estObservationPoule = (o: ObservationApi) => roundIdsPoule.size === 0 || roundIdsPoule.has(o.roundId);
 
   /** Applique une observation à une ligne ; enregistre une mise à jour si quelque chose change. */
