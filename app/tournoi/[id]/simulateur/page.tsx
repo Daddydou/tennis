@@ -5,9 +5,16 @@ import AttenteCalcul from '../AttenteCalcul';
 import PossibilitesBracket from './PossibilitesBracket';
 import SimulateurSections from './SimulateurSections';
 import { cleSlot } from './picksSim';
+import DavisBracket from './DavisBracket';
+import { stocksDuGroupe } from '../pointsStock';
+import { lireDavisPronos } from '@/db/davisPronos';
+import { estDavis } from '@/lib/davisRencontre';
+import { vueBracketDavis } from '@/lib/davisVues';
 import {
   getBracketRoundPicks,
+  getMatchRows,
   getParticipants,
+  getTournament,
   getSimulatedPicks,
   getTousLesPicks,
   loadEngineData,
@@ -33,6 +40,16 @@ export default async function SimulateurPage({
 }) {
   const { id } = await params;
   await redirigerSiMasters(id);
+
+  // Coupe Davis : le Bracket est celui des nations, lu sur Game Tracker (pas de simulateur Monte Carlo : les
+  // nations n'ont ni classement ni Elo).
+  const tournoiDavis = await getTournament(id);
+  if (tournoiDavis && estDavis(tournoiDavis.rounds)) {
+    const [matchRowsDavis, participantsDavis, pronosDavis] = await Promise.all([getMatchRows(id), getParticipants(), lireDavisPronos(id)]);
+    const stocksDavis = stocksDuGroupe(participantsDavis);
+    return <DavisBracket id={id} vue={vueBracketDavis(matchRowsDavis, pronosDavis, stocksDavis)} stocks={stocksDavis} />;
+  }
+
   const sp = await searchParams;
   const section = typeof sp.section === 'string' ? sp.section : undefined;
   const vue = typeof sp.vue === 'string' ? sp.vue : undefined;

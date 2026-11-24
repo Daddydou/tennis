@@ -14,6 +14,9 @@ import { construireTableau } from '@/lib/tableauVue';
 import { pointsBracketParStock, stocksDuGroupe } from '../pointsStock';
 import { TableauClient } from './TableauClient';
 import { SaisieDavis, type RencontreASaisir } from './SaisieDavis';
+import PronosDavis from './PronosDavis';
+import { lireDavisPronos } from '@/db/davisPronos';
+import { cleStockDavis, picksTableauDavis, vueBracketDavis, vuePronosDavis } from '@/lib/davisVues';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,14 +31,19 @@ export default async function TableauPage({
   if (tournoiMasters && estMasters(tournoiMasters.rounds)) return <MastersTableau id={id} tour={tournoiMasters.tour} />;
 
   // Lectures indépendantes : en parallèle (jamais en cascade, cf. CLAUDE.md).
-  const [tournoi, matchRows, participants, picks, picksJeu] = await Promise.all([
+  const davis = !!tournoiMasters && estDavis(tournoiMasters.rounds);
+  const [tournoi, matchRows, participants, picksPont, picksJeu, pronosDavis] = await Promise.all([
     Promise.resolve(tournoiMasters),
     getMatchRows(id),
     getParticipants(),
     getBracketRoundPicks(id),
     getTousLesPicks(id),
+    davis ? lireDavisPronos(id) : Promise.resolve([]),
   ]);
   if (!tournoi) notFound();
+  // Coupe Davis : les brackets lus sur Game Tracker (nation + score) donnent les pastilles ; à défaut, ceux du
+  // pont de Thomas (nations seules).
+  const picks = davis ? picksTableauDavis(picksPont, pronosDavis) : picksPont;
 
   const ids = new Set<string>();
   for (const m of matchRows) {
@@ -54,14 +62,24 @@ export default async function TableauPage({
     picksJeu,
     stocks,
     nomJoueur: (pid) => nomParId.get(pid) ?? pid,
+    libelleVide: davis ? 'À déterminer' : undefined,
   });
 
   // Points du bracket : le MÊME calcul que le Dashboard (pointsBracketParStock). Un participant absent de la
   // carte n'a aucun pronostic de bracket : null (à distinguer d'un vrai 0).
-  const pointsParStock = pointsBracketParStock(matchRows, tournoi.rounds ?? [], picks);
+  const pointsParStock = pointsBracketParStock(matchRows, tournoi.rounds ?? [], picksPont);
   const pointsBracket: Record<string, number | null> = Object.fromEntries(
     stocks.map((s) => [s.id ?? 'moi', pointsParStock.has(s.id) ? (pointsParStock.get(s.id) as number) : null]),
   );
+  // Coupe Davis : points du bracket au barème de la Coupe Davis (2 / 4 / 8 + bonus de score), pas celui des tournois classiques.
+  if (davis) {
+    const { totaux } = vueBracketDavis(matchRows, pronosDavis, stocks);
+    for (const s of stocks) {
+      const t = totaux[cleStockDavis(s.id)];
+      if (t && t.nb > 0) pointsBracket[cleStockDavis(s.id)] = t.points;
+    }
+  }
+  const pronosMatchs = davis ? vuePronosDavis(matchRows, pronosDavis, stocks) : [];
 
   // Coupe Davis : saisie du résultat de chaque rencontre (ses trois matchs), ce qui alimente les points des picks.
   const rencontresDavis: RencontreASaisir[] = estDavis(tournoi.rounds)
@@ -81,6 +99,7 @@ export default async function TableauPage({
   return (
     <div className="space-y-5">
       {rencontresDavis.length > 0 && <SaisieDavis tournamentId={id} rencontres={rencontresDavis} />}
+      {pronosMatchs.length > 0 && <PronosDavis rencontres={pronosMatchs} stocks={stocks} />}
       {tours.length === 0 ? (
         <p className="text-sm text-zinc-500">Aucun match importé.</p>
       ) : (

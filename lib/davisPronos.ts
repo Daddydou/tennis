@@ -2,16 +2,16 @@
  * PRONOS DE LA COUPE DAVIS (pronos des matchs + score du bracket) - module PUR, sans React / Next / Supabase.
  *
  * Game Tracker ne donne ces deux jeux dans aucune API (celle de Thomas ne donne que les positions du bracket).
- * On lit donc le TEXTE de ses pages (copié-collé de l'écran « Pronos » ou « Bracket »), on le rattache aux
- * rencontres de notre tableau, puis on compte les points avec le barème de lib/davis.ts.
+ * On lit donc le TEXTE de ses pages (copiÃ©-collÃ© de l'Ã©cran Â« Pronos Â» ou Â« Bracket Â»), on le rattache aux
+ * rencontres de notre tableau, puis on compte les points avec le barÃ¨me de lib/davis.ts.
  *
- *   - Écran « Pronos » : toutes les rencontres, avec, pour chacune une fois commencée, la ligne de chaque
- *     participant (S1, S2, Double) ; avant, seulement MON prono (« Ton prono : CZE 2-0 »).
- *   - Écran « Bracket » : un participant à la fois (onglets Moi / Laki / moustiton, non visibles dans le
- *     texte : l'appelant dit de qui il s'agit), « QUART 1 / Italie en 2-0 ».
+ *   - Ã‰cran Â« Pronos Â» : toutes les rencontres, avec, pour chacune une fois commencÃ©e, la ligne de chaque
+ *     participant (S1, S2, Double) ; avant, seulement MON prono (Â« Ton prono : CZE 2-0 Â»).
+ *   - Ã‰cran Â« Bracket Â» : un participant Ã  la fois (onglets Moi / Laki / moustiton, non visibles dans le
+ *     texte : l'appelant dit de qui il s'agit), Â« QUART 1 / Italie en 2-0 Â».
  *
- * On identifie une rencontre par ses DEUX NATIONS (jamais par le numéro de quart, qui n'est pas l'ordre des
- * dates) ; l'écran Bracket n'a que le numéro : on vérifie alors que la nation pronostiquée peut bien
+ * On identifie une rencontre par ses DEUX NATIONS (jamais par le numÃ©ro de quart, qui n'est pas l'ordre des
+ * dates) ; l'Ã©cran Bracket n'a que le numÃ©ro : on vÃ©rifie alors que la nation pronostiquÃ©e peut bien
  * gagner cette rencontre dans notre tableau.
  */
 import { resoudreParticipant } from './bracketImport';
@@ -37,7 +37,7 @@ export const PSEUDOS_GT: readonly PseudoGT[] = ['Daddy', 'Laki', 'moustiton'];
 
 export interface PronoMatchLu {
   pseudo: PseudoGT;
-  /** Les deux nations de la rencontre (ordre de l'écran). */
+  /** Les deux nations de la rencontre (ordre de l'Ã©cran). */
   nations: [CodeNation, CodeNation];
   ordre: OrdreMatch;
   nation: CodeNation;
@@ -46,7 +46,7 @@ export interface PronoMatchLu {
 
 export interface PronoBracketLu {
   tour: TourDavis;
-  /** 0-based : « QUART 2 » = 1. */
+  /** 0-based : Â« QUART 2 Â» = 1. */
   index: number;
   nation: CodeNation;
   sets: ScoreSets;
@@ -68,17 +68,17 @@ const ISO2_VERS_CODE: Record<string, CodeNation> = {
   ES: 'ESP',
 };
 
-/** Drapeau (deux indicateurs régionaux) -> code nation ; null si inconnu. */
+/** Drapeau (deux indicateurs rÃ©gionaux) -> code nation ; null si inconnu. */
 export function codeDeDrapeau(drapeau: string): CodeNation | null {
   const lettres = [...drapeau].map((c) => String.fromCharCode((c.codePointAt(0) ?? 0) - 0x1f1e6 + 65)).join('');
   return ISO2_VERS_CODE[lettres] ?? null;
 }
 
 const FLAG = '[\\u{1F1E6}-\\u{1F1FF}]{2}';
-/** Un prono : drapeau, éventuellement le code (« 🇨🇿 CZE 2-0 »), puis le score en sets. */
+/** Un prono : drapeau, Ã©ventuellement le code (Â« ðŸ‡¨ðŸ‡¿ CZE 2-0 Â»), puis le score en sets. */
 const PAIRE = `(${FLAG})\\s*(?:[A-Z]{3}\\s+)?(2-[01])(?!\\d)`;
-/** Une case d'une ligne de participant : un prono, ou un tiret (rien de pronostiqué / double non joué). */
-const RE_CASE = new RegExp(`${PAIRE}|(?<!\\d)[—–-](?!\\d)`, 'gu');
+/** Une case d'une ligne de participant : un prono, ou un tiret (rien de pronostiquÃ© / double non jouÃ©). */
+const RE_CASE = new RegExp(`${PAIRE}|(?<!\\d)[â€”â€“-](?!\\d)`, 'gu');
 const RE_PAIRE = new RegExp(PAIRE, 'u');
 const RE_LIGNE_NATION = new RegExp(`^(${FLAG})\\s+\\S`, 'u');
 const RE_LIGNE_PARTICIPANT = /^(Daddy|Laki|moustiton)\b(?:\s*\((?:toi|moi)\))?\s*(.*)$/;
@@ -94,7 +94,7 @@ const lignes = (texte: string) =>
 
 const estSets = (s: string): s is ScoreSets => s === '2-0' || s === '2-1';
 
-/** Écran « Pronos » -> un prono par participant, rencontre et match lisibles. */
+/** Ã‰cran Â« Pronos Â» -> un prono par participant, rencontre et match lisibles. */
 export function lirePronosGT(texte: string): PronoMatchLu[] {
   const out = new Map<string, PronoMatchLu>();
   let nations: CodeNation[] = [];
@@ -162,7 +162,7 @@ export function lirePronosGT(texte: string): PronoMatchLu[] {
 
 const TOUR_DU_MOT: Record<string, TourDavis> = { QUART: 'QF', DEMIE: 'SF', FINALE: 'F' };
 
-/** Écran « Bracket » (un participant) -> sa nation et son score pour chaque rencontre. */
+/** Ã‰cran Â« Bracket Â» (un participant) -> sa nation et son score pour chaque rencontre. */
 export function lireBracketGT(texte: string): PronoBracketLu[] {
   const out = new Map<string, PronoBracketLu>();
   let courant: { tour: TourDavis; index: number } | null = null;
@@ -181,9 +181,9 @@ export function lireBracketGT(texte: string): PronoBracketLu[] {
   return [...out.values()];
 }
 
-/** Devine de quel écran vient le texte collé et le lit. */
+/** Devine de quel Ã©cran vient le texte collÃ© et le lit. */
 export function lireTexteGT(texte: string): LectureGT {
-  if (texte.trim().length < 20) return { type: 'inconnu', erreur: 'Rien à lire : colle le texte de la page Game Tracker.' };
+  if (texte.trim().length < 20) return { type: 'inconnu', erreur: 'Rien Ã  lire : colle le texte de la page Game Tracker.' };
   const bracket = lireBracketGT(texte);
   if (bracket.length > 0 && !/LES PRONOS|1ER SIMPLE/i.test(texte)) return { type: 'bracket', bracket };
   const pronos = lirePronosGT(texte);
@@ -191,12 +191,12 @@ export function lireTexteGT(texte: string): LectureGT {
   return {
     type: 'inconnu',
     erreur:
-      'Aucun prono reconnu. Colle toute la page « Pronos » (ou « Bracket »), sélectionnée avec Ctrl+A puis copiée ; les drapeaux et les scores doivent être dans le texte.',
+      'Aucun prono reconnu. Colle toute la page Â« Pronos Â» (ou Â« Bracket Â»), sÃ©lectionnÃ©e avec Ctrl+A puis copiÃ©e ; les drapeaux et les scores doivent Ãªtre dans le texte.',
   };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Rattachement à nos rencontres                                      */
+/*  Rattachement Ã  nos rencontres                                      */
 /* ------------------------------------------------------------------ */
 
 /** Une rencontre de notre tableau (tn_matches), avec ses nations en code ; null tant qu'elle n'est pas connue. */
@@ -207,7 +207,7 @@ export interface RencontreTable {
   nation2: CodeNation | null;
 }
 
-/** Ce qui s'écrit dans tn_davis_pronos (participantId null = moi). */
+/** Ce qui s'Ã©crit dans tn_davis_pronos (participantId null = moi). */
 export interface LigneProno {
   participantId: string | null;
   round: TourDavis;
@@ -222,16 +222,16 @@ export interface ResolutionPronos {
   lignes: LigneProno[];
   erreurs: string[];
   avertissements: string[];
-  /** Phrases à montrer après l'enregistrement. */
+  /** Phrases Ã  montrer aprÃ¨s l'enregistrement. */
   resume: string[];
 }
 
-const nomNation = (c: CodeNation) => EQUIPES_DAVIS_2026.find((e) => e.code === c)?.nom ?? c;
+export const nomNation = (c: string) => EQUIPES_DAVIS_2026.find((e) => e.code === c)?.nom ?? c;
 const libelleOrdre: Record<OrdreMatch, string> = { 1: 'simple 1', 2: 'simple 2', 3: 'double' };
 
 type Participant = { id: string; name: string };
 
-/** Pronos des matchs lus -> lignes, rencontre retrouvée par ses deux nations. */
+/** Pronos des matchs lus -> lignes, rencontre retrouvÃ©e par ses deux nations. */
 export function resoudrePronos(lus: PronoMatchLu[], rencontres: RencontreTable[], participants: Participant[]): ResolutionPronos {
   const lignesOut: LigneProno[] = [];
   const erreurs: string[] = [];
@@ -242,9 +242,9 @@ export function resoudrePronos(lus: PronoMatchLu[], rencontres: RencontreTable[]
     const r = rencontres.find(
       (x) => x.nation1 && x.nation2 && [x.nation1, x.nation2].sort().join() === [...p.nations].sort().join(),
     );
-    const nom = `${nomNation(p.nations[0])} – ${nomNation(p.nations[1])}`;
+    const nom = `${nomNation(p.nations[0])} â€“ ${nomNation(p.nations[1])}`;
     if (!r) {
-      const msg = `Rencontre ${nom} absente de notre tableau : ignorée.`;
+      const msg = `Rencontre ${nom} absente de notre tableau : ignorÃ©e.`;
       if (!avertissements.includes(msg)) avertissements.push(msg);
       continue;
     }
@@ -258,7 +258,7 @@ export function resoudrePronos(lus: PronoMatchLu[], rencontres: RencontreTable[]
       continue;
     }
     lignesOut.push({ participantId: stock.stockId, round: r.tour, matchPosition: r.position, jeu: 'match', ordre: p.ordre, nation: p.nation, sets: p.sets });
-    const cle = `${nom} · ${p.pseudo}`;
+    const cle = `${nom} Â· ${p.pseudo}`;
     const set = parRencontre.get(cle) ?? new Set<string>();
     set.add(libelleOrdre[p.ordre]);
     parRencontre.set(cle, set);
@@ -267,7 +267,7 @@ export function resoudrePronos(lus: PronoMatchLu[], rencontres: RencontreTable[]
   return { lignes: lignesOut, erreurs: [...new Set(erreurs)], avertissements, resume };
 }
 
-/** Nations qui peuvent encore gagner la rencontre (tour, index) d'après notre tableau (QF : ses deux nations). */
+/** Nations qui peuvent encore gagner la rencontre (tour, index) d'aprÃ¨s notre tableau (QF : ses deux nations). */
 function nationsPossibles(tour: TourDavis, index: number, rencontres: RencontreTable[]): Set<CodeNation> {
   if (tour === 'QF') {
     const r = rencontres.find((x) => x.tour === 'QF' && x.position === index);
@@ -279,7 +279,7 @@ function nationsPossibles(tour: TourDavis, index: number, rencontres: RencontreT
   return set;
 }
 
-/** Bracket d'un participant (écran « Bracket ») -> lignes, en vérifiant que chaque nation peut gagner sa rencontre. */
+/** Bracket d'un participant (Ã©cran Â« Bracket Â») -> lignes, en vÃ©rifiant que chaque nation peut gagner sa rencontre. */
 export function resoudreBracket(
   lus: PronoBracketLu[],
   pseudo: PseudoGT,
@@ -294,7 +294,7 @@ export function resoudreBracket(
     const possibles = nationsPossibles(b.tour, b.index, rencontres);
     if (!possibles.has(b.nation)) {
       erreurs.push(
-        `${b.tour === 'QF' ? 'Quart' : b.tour === 'SF' ? 'Demie' : 'Finale'} ${b.index + 1} : ${nomNation(b.nation)} ne peut pas gagner cette rencontre chez nous (numéros différents ?). Rien n'est enregistré.`,
+        `${b.tour === 'QF' ? 'Quart' : b.tour === 'SF' ? 'Demie' : 'Finale'} ${b.index + 1} : ${nomNation(b.nation)} ne peut pas gagner cette rencontre chez nous (numÃ©ros diffÃ©rents ?). Rien n'est enregistrÃ©.`,
       );
       continue;
     }
@@ -319,7 +319,7 @@ export interface LigneRencontreBase {
 
 const CODES = EQUIPES_DAVIS_2026.map((e) => e.code) as string[];
 
-/** « davis-ITA » -> « ITA » (identifiants créés par l'import Davis). */
+/** Â« davis-ITA Â» -> Â« ITA Â» (identifiants crÃ©Ã©s par l'import Davis). */
 export function codeDeJoueur(id: string | null | undefined): CodeNation | null {
   const m = /^davis-([A-Z]{3})$/.exec(id ?? '');
   return m && CODES.includes(m[1]) ? (m[1] as CodeNation) : null;
@@ -327,7 +327,7 @@ export function codeDeJoueur(id: string | null | undefined): CodeNation | null {
 
 const TOURS = ['QF', 'SF', 'F'];
 
-/** Rencontres de la base -> rencontres du barème (matchs lus dans tn_matches.sets). */
+/** Rencontres de la base -> rencontres du barÃ¨me (matchs lus dans tn_matches.sets). */
 export function rencontresDavis(rows: LigneRencontreBase[]): RencontreDavis[] {
   return rows
     .filter((r) => TOURS.includes(r.round) && r.position !== null)
@@ -343,13 +343,13 @@ export function rencontresDavis(rows: LigneRencontreBase[]): RencontreDavis[] {
 }
 
 export interface PointsDavisStock {
-  /** Points des pronos des matchs (déjà multipliés par le tour). */
+  /** Points des pronos des matchs (dÃ©jÃ  multipliÃ©s par le tour). */
   pronos: number;
   /** Bonus de score du bracket (+1 / +2 / +4). */
   bracketScore: number;
-  /** Bracket complet : bonne nation (2 / 4 / 8) + bonus de score, d'après les pronos de Game Tracker lus. */
+  /** Bracket complet : bonne nation (2 / 4 / 8) + bonus de score, d'aprÃ¨s les pronos de Game Tracker lus. */
   bracketTotal: number;
-  /** Nombre de pronos de matchs / de rencontres de bracket enregistrés. */
+  /** Nombre de pronos de matchs / de rencontres de bracket enregistrÃ©s. */
   nbPronos: number;
   nbBracket: number;
 }
@@ -386,9 +386,9 @@ export function pointsDavisParStock(rows: LigneRencontreBase[], lignesPronos: Li
 export interface ClassementsDavisEntree {
   id: string | null;
   nom: string;
-  /** Points Picks par pays (déjà calculés dans tn_picks). */
+  /** Points Picks par pays (dÃ©jÃ  calculÃ©s dans tn_picks). */
   picks: number;
-  /** Points du bracket des nations d'après tn_bracket_round_picks (nations seules, barème 1/2/4), si connu. */
+  /** Points du bracket des nations d'aprÃ¨s tn_bracket_round_picks (nations seules, barÃ¨me 1/2/4), si connu. */
   bracketNationsSeules: number | null;
   /** Pronos lus sur Game Tracker pour ce stock, s'il y en a. */
   davis: PointsDavisStock | null;
@@ -397,9 +397,9 @@ export interface ClassementsDavisEntree {
 export interface LigneClassementDavis {
   id: string | null;
   nom: string;
-  /** null = pas encore importé. */
+  /** null = pas encore importÃ©. */
   bracket: number | null;
-  /** Le bracket n'a que les nations (pas de score de sets) : points sous-estimés. */
+  /** Le bracket n'a que les nations (pas de score de sets) : points sous-estimÃ©s. */
   bracketSansScore: boolean;
   pronos: number | null;
   picks: number;
@@ -408,8 +408,8 @@ export interface LigneClassementDavis {
 
 /**
  * Un tableau par stock avec les trois jeux. Bracket : pronos de Game Tracker (nation + score, 2/4/8 + 1/2/4) s'ils
- * sont importés, sinon les nations du pont de Thomas (barème 1/2/4 de scoreDuStock, doublé pour retrouver 2/4/8,
- * sans le bonus de score). Pronos : seulement ceux importés. Un jeu non importé compte 0 dans le total.
+ * sont importÃ©s, sinon les nations du pont de Thomas (barÃ¨me 1/2/4 de scoreDuStock, doublÃ© pour retrouver 2/4/8,
+ * sans le bonus de score). Pronos : seulement ceux importÃ©s. Un jeu non importÃ© compte 0 dans le total.
  */
 export function classementsDavis(entrees: ClassementsDavisEntree[]): LigneClassementDavis[] {
   return entrees
