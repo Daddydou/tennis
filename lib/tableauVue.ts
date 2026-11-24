@@ -172,6 +172,8 @@ export function construireTableau(args: {
   stocks: StockEntree[];
   /** Nom d'un joueur par son id. */
   nomJoueur: (id: string) => string;
+  /** Texte d'un emplacement sans joueur : « BYE » par défaut ; « À déterminer » en Coupe Davis (nations pas encore connues). */
+  libelleVide?: string;
 }): TourVue[] {
   const { rounds, matchs, picks, stocks, nomJoueur } = args;
   const picksJeu = args.picksJeu ?? [];
@@ -184,7 +186,7 @@ export function construireTableau(args: {
     pickParStock.set(cle, carte);
   }
 
-  const nom = (id: string | null): string => (id === null ? 'BYE' : nomJoueur(id));
+  const nom = (id: string | null): string => (id === null ? (args.libelleVide ?? 'BYE') : nomJoueur(id));
   const tours: TourVue[] = [];
 
   for (const round of rounds) {
