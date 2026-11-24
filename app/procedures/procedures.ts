@@ -142,6 +142,7 @@ export const GROUPES: Groupe[] = [
           'Ouvrir le tournoi puis `Picks` : « Mon plan de picks » répartit les quatre picks (quart haut, quart bas, demie, finale ; un pays une seule fois) comme le plan des tournois classiques : un favori peut être gardé pour plus tard s’il y rapporte plus en moyenne (« joue ce tour » = chance qu’il y soit). Plan B par tour et autres plans dessous ; recalculé à chaque résultat, les picks déjà posés sont gardés. Poser les picks sur Game Tracker : une nation par moitié en quart, une en demie, une en finale ; une nation ne se pique qu’une fois.',
           'Cliquer sur `Lire Game Tracker` : les picks de Laki et de Thomas, les tours verrouillés et leur bracket sont repris, et mes picks validés du tour ouvert partent chez Thomas.',
           'Avant chaque tour : ouvrir l’onglet `Pronos` (chances de chaque nation, picks conseillés, bracket des nations conseillé, pronos des matchs rencontre par rencontre, Elo de chaque joueur). Quand l’ordre des matchs est annoncé (la veille), choisir sous la rencontre qui joue le simple 1 et le simple 2, puis `Recalculer avec cette composition` : les chiffres suivent. Rien n’est enregistré : les choix se posent sur Game Tracker.',
+          'Pour que la feuille de match officielle compte à chaque visite (picks, bracket, pronos) : la donner à Claude, qui la saisit dans `lib/davisEquipes.ts` (`PROGRAMME_QUARTS_2026`, champ `ordre`, plus les joueurs ajoutés ou forfaits et la paire de double), puis fusionne. L’écran affiche alors « Feuille de match officielle prise en compte ».',
           'Après chaque rencontre, ouvrir `Tableau` puis « Saisir les résultats des rencontres » : pour chaque match (simple 1, simple 2, double éventuel), le statut, le vainqueur et le score en sets. Le vainqueur de la rencontre est déduit (2 matchs gagnés) et passe tout seul au tour suivant ; les points des picks sont recalculés à l’enregistrement.',
         ],
         attention: [
@@ -153,7 +154,7 @@ export const GROUPES: Groupe[] = [
           'Relancer `import:davis` ne duplique rien et ne touche jamais un résultat déjà enregistré.',
         ],
         doc: 'scripts/importer-davis.mts, lib/davisImport.ts, lib/davisRencontre.ts, lib/davisConseils.ts, lib/davisEquipes.ts ; règles complètes : Project, doc `claude/regles-coupe-davis.md`',
-        maj: '2026-11-23',
+        maj: '2026-11-24',
       },
       {
         id: 'pronostics-masters',
