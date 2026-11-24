@@ -101,7 +101,11 @@ export function positionVoisine(p: number): number {
  */
 export function memeNom(prenom: string | null, nom: string | null, nomInterne: string): boolean {
   const cles = new Set(clesCandidates(nomInterne));
-  return [`${prenom} ${nom}`, `${nom} ${prenom}`].some((n) => clesCandidates(n).some((c) => cles.has(c)));
+  // Une partie vide (null, '') est ignorée : une NATION de Coupe Davis n'a pas de prénom (« Italie »), et
+  // « null Italie » ne correspondrait jamais à « Italie ».
+  const parties = [prenom, nom].map((p) => (p ?? '').trim()).filter(Boolean);
+  if (parties.length === 0) return false;
+  return [parties.join(' '), [...parties].reverse().join(' ')].some((n) => clesCandidates(n).some((c) => cles.has(c)));
 }
 
 /**
