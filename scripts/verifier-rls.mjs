@@ -76,6 +76,7 @@ const TABLES = [
   'tn_elo_maison_alias',
   // 0032 - pronostics des Masters
   'tn_masters_pronostics',
+  'tn_davis_pronos',
 ];
 
 /**

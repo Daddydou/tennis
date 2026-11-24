@@ -513,3 +513,10 @@ select to_regproc('public.tn_score_davis') is not null
    and to_regclass('public.tn_davis_matchs') is null
    as appliquee;
 ```
+
+## 0036 - Coupe Davis : pronos des matchs et score du bracket (tn_davis_pronos)
+
+Nouvelle table `tn_davis_pronos` : les pronos des matchs (S1, S2, double : nation + score en sets) et le score du bracket (nation + score pour chaque rencontre) lus sur le site de Game Tracker, qui n'a pas d'API pour ces deux jeux. Une ligne par participant (`participant_id` nul = moi), rencontre (`round` + `match_position`), jeu (`match` ou `bracket`) et ordre du match. RLS : lecture publique, aucune écriture hors service role. Alimentée depuis l'onglet Pronos (collage du texte de la page).
+```sql
+select to_regclass('public.tn_davis_pronos') is not null as appliquee;
+```
