@@ -1,5 +1,9 @@
 import Link from 'next/link';
 import MastersDashboard from './MastersDashboard';
+import DavisClassements from './DavisClassements';
+import { lireDavisPronos } from '@/db/davisPronos';
+import { estDavis } from '@/lib/davisRencontre';
+import { classementsDavis, pointsDavisParStock } from '@/lib/davisPronos';
 import { estMasters } from '@/lib/masters';
 import { notFound } from 'next/navigation';
 import { pointsBracketParStock, pointsPicksParStock, stocksDuGroupe } from './pointsStock';
@@ -33,11 +37,13 @@ export default async function DashboardPage({
   if (!tournoi) notFound();
   if (estMasters(tournoi.rounds)) return <MastersDashboard id={id} tournoi={tournoi} />;
 
-  const [matchRows, participants, bracketRoundPicks, tousLesPicks] = await Promise.all([
+  const davis = estDavis(tournoi.rounds);
+  const [matchRows, participants, bracketRoundPicks, tousLesPicks, pronosDavis] = await Promise.all([
     getMatchRows(id),
     getParticipants(),
     getBracketRoundPicks(id),
     getTousLesPicks(id),
+    davis ? lireDavisPronos(id) : Promise.resolve([]),
   ]);
 
   const rounds = tournoi.rounds ?? [];
@@ -81,6 +87,22 @@ export default async function DashboardPage({
       return { ...s, aBracket, bracket, picks, total: bracket + picks };
     })
     .sort((a, b) => b.total - a.total);
+
+  // Coupe Davis : trois mini-tournois (Bracket, Pronos des matchs, Picks par pays) au lieu du classement à deux colonnes.
+  const classementDavis = davis
+    ? (() => {
+        const parStock = pointsDavisParStock(matchRows, pronosDavis);
+        return classementsDavis(
+          stocks.map((s) => ({
+            id: s.id,
+            nom: s.nom,
+            picks: picksParStock.get(s.id) ?? 0,
+            bracketNationsSeules: bracketParStock.has(s.id) ? (bracketParStock.get(s.id) as number) : null,
+            davis: parStock.get(s.id) ?? null,
+          })),
+        );
+      })()
+    : null;
 
   return (
     <div className="space-y-5">
@@ -134,6 +156,8 @@ export default async function DashboardPage({
         <p className="text-sm text-zinc-600">
           Aucun match importé pour ce tournoi — rends-toi sur l&apos;onglet Tableau.
         </p>
+      ) : classementDavis ? (
+        <DavisClassements id={id} lignes={classementDavis} />
       ) : (
         <section className="space-y-2.5">
           <h2 className="text-sm font-semibold">Classement</h2>

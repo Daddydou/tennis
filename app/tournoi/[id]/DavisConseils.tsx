@@ -1,4 +1,5 @@
 import { carte, noteInfo, boutonSecondaire } from '@/app/ui';
+import ImportPronosDavis from './pronostic/ImportPronosDavis';
 import { eloMaisonDe, lireEtatDavis, NOMS_ELO_DAVIS } from '@/db/davisConseils';
 import {
   analyseRencontre,
@@ -105,8 +106,11 @@ export default async function DavisConseils({ id, recherche }: { id: string; rec
     <div className="space-y-6" data-testid="davis-conseils">
       <p className={noteInfo}>
         Conseils calculés avec l&apos;Elo maison (surface dur) des joueurs sélectionnés, la composition de chaque rencontre et une note pour chaque paire de double ; l&apos;Italie joue à domicile.
-        Rien n&apos;est enregistré ici : les choix se posent sur Game Tracker.
+        Les conseils n&apos;enregistrent rien : les choix se posent sur Game Tracker (seule la case d&apos;import ci-dessous écrit, pour lire ses pronos).
       </p>
+
+      {/* 0. Import des pronos / du bracket lus sur Game Tracker */}
+      <ImportPronosDavis tournamentId={id} />
 
       {/* 1. Chances */}
       <section className={`${carte} space-y-3 p-4`}>
