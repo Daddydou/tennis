@@ -15,6 +15,7 @@ import {
   lireBracket,
   lireIds,
   lireTournois,
+  nomJoueurThomas,
   pronosticsNonDesignes,
   recalculerPointsTotaux,
   statistiquesPronostics,
@@ -246,10 +247,19 @@ describe('exemptions (BYE)', () => {
     expect(recalculerPointsTotaux(b.tours).get('u1')).toBeUndefined();
   });
 
-  it('un vrai joueur sans prénom reste refusé, avec le chemin exact', () => {
+  it('un vrai joueur sans nom reste refusé, avec le chemin exact', () => {
     const brut = brut4();
-    (brut.joueurs[0] as { prenom: string | null }).prenom = null;
-    expect(() => lireBracket(brut)).toThrow('$.joueurs[0].prenom devrait être une chaîne');
+    (brut.joueurs[0] as { nom: string | null }).nom = null;
+    expect(() => lireBracket(brut)).toThrow('$.joueurs[0].nom devrait être une chaîne');
+  });
+
+  it('une nation de Coupe Davis (prénom null, nom seul) est lue et affichée par son nom', () => {
+    const brut = brut4();
+    Object.assign(brut.joueurs[0], { prenom: null, nom: 'Italie', pays: 'ITA' });
+    const b = lireBracket(brut);
+    expect(b.joueurs[0]).toMatchObject({ prenom: null, nom: 'Italie' });
+    expect(nomJoueurThomas(b.joueurs[0])).toBe('Italie');
+    expect(validerBracket(b)).toEqual([]);
   });
 
   it('une exemption ne gagne pas de match et ne se pronostique pas', () => {
@@ -320,7 +330,7 @@ describe('lucky loser non désignée (LL)', () => {
     for (const statut of [null, 'Q', 'Alt']) {
       const brut = brut4();
       Object.assign(brut.joueurs[3], { statut });
-      expect(() => lireBracket(brut)).toThrow('$.joueurs[3].prenom devrait être une chaîne');
+      expect(() => lireBracket(brut)).toThrow('$.joueurs[3].nom devrait être une chaîne');
     }
   });
 });

@@ -10,10 +10,27 @@ import {
   correspondanceTours,
   deriverPronostics,
   joueurDePosition,
+  memeNom,
   planifierEcriture,
   verifierJoueurs,
   type MatchInterne,
 } from '../bracketExternePont';
+
+describe('memeNom : nom sans prénom (nations de Coupe Davis)', () => {
+  it('une nation sans prénom chez Game Tracker est reconnue', () => {
+    expect(memeNom(null, 'Italie', 'Italie')).toBe(true);
+    expect(memeNom('', 'République Tchèque', 'République Tchèque')).toBe(true);
+    expect(memeNom(null, 'Italie', 'Corée du Sud')).toBe(false);
+  });
+  it('rien à comparer : jamais « même nom »', () => {
+    expect(memeNom(null, null, 'Italie')).toBe(false);
+  });
+  it('joueurs ordinaires inchangés (prénom + nom, deux ordres, initiale)', () => {
+    expect(memeNom('Xinyu', 'Wang', 'X. Wang')).toBe(true);
+    expect(memeNom('Bu', 'Yunchaokete', 'Y. Bu')).toBe(true);
+    expect(memeNom('Xinyu', 'Wang', 'Y. Zhang')).toBe(false);
+  });
+});
 
 const NOMS = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
 const LAKI = 'id-laki';

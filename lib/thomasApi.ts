@@ -72,7 +72,7 @@ export const STATUT_LUCKY_LOSER = 'LL';
 
 export interface JoueurThomas {
   position: number;
-  /** null seulement pour une place sans nom (`estPlaceSansNom` : BYE ou LL non désignée). */
+  /** null pour une place sans nom (`estPlaceSansNom` : BYE ou LL non désignée) ou pour une nation de Coupe Davis (le nom seul). */
   prenom: string | null;
   /** null seulement pour une place sans nom (`estPlaceSansNom` : BYE ou LL non désignée). */
   nom: string | null;
@@ -111,7 +111,7 @@ export function estMatchExemption(m: Pick<MatchThomas, 'score'>): boolean {
 export function nomJoueurThomas(j: JoueurThomas): string {
   if (estExemption(j)) return STATUT_EXEMPTION;
   if (estNonDesignee(j)) return 'LL non désignée';
-  return `${j.prenom} ${j.nom}`;
+  return [j.prenom, j.nom].filter(Boolean).join(' ');
 }
 
 export interface PronosticThomas {
@@ -239,11 +239,12 @@ export function lireBracket(raw: unknown): BracketThomas {
       const o = objet(j, c);
       const statut = texteOuNull(o.statut, `${c}.statut`);
       // Exemption ou lucky loser pas encore désignée : prénom et nom peuvent
-      // manquer. Tout autre joueur, lui, en a toujours.
+      // manquer. Tout autre joueur a un nom ; le prénom, lui, manque pour une NATION de Coupe Davis
+      // (prenom: null, nom: « Italie »).
       const nomOuNull = statut === STATUT_EXEMPTION || statut === STATUT_LUCKY_LOSER ? texteOuNull : texte;
       return {
         position: entier(o.position, `${c}.position`),
-        prenom: nomOuNull(o.prenom, `${c}.prenom`),
+        prenom: texteOuNull(o.prenom, `${c}.prenom`),
         nom: nomOuNull(o.nom, `${c}.nom`),
         tete: entierOuNull(o.tete, `${c}.tete`),
         statut,
