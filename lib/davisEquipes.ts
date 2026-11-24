@@ -77,7 +77,14 @@ export const EQUIPES_DAVIS_2026: EquipeDavis[] = [
     code: 'CZE',
     nom: 'République Tchèque',
     capitaine: 'Tomas Berdych',
-    joueurs: [s('Jakub Mensik', 'Jakub Mensik', 16), s('Jiri Lehecka', 'Jiri Lehecka', 21), d('Patrik Rikl', 'Patrik Rikl', 35), d('Adam Pavlasek', null, 40)],
+    // Machac ajouté (feuille de match du 24/11) ; classements de la feuille de match.
+    joueurs: [
+      s('Jiri Lehecka', 'Jiri Lehecka', 14),
+      s('Jakub Mensik', 'Jakub Mensik', 16),
+      s('Tomas Machac', 'Tomas Machac', 60),
+      d('Patrik Rikl', 'Patrik Rikl', 36),
+      d('Adam Pavlasek', null, 41),
+    ],
     noteDouble: 1850,
     pairePressentie: 'Pavlasek / Rikl',
     domicile: false,
@@ -86,15 +93,11 @@ export const EQUIPES_DAVIS_2026: EquipeDavis[] = [
     code: 'CAN',
     nom: 'Canada',
     capitaine: 'Frank Dancevic',
-    joueurs: [
-      s('Félix Auger-Aliassime', 'Felix Auger Aliassime', 7),
-      s('Denis Shapovalov', 'Denis Shapovalov', 52),
-      s('Gabriel Diallo', 'Gabriel Diallo', 149),
-      s('Liam Draxl', 'Liam Draxl', 194),
-      d('Duncan Chan', 'Duncan Chan', 232),
-    ],
-    noteDouble: 1800,
-    pairePressentie: 'Chan / un joueur de simple',
+    // Shapovalov et Diallo forfait : feuille de match du 24/11 (classements de la feuille de match).
+    // Double annoncé : Auger-Aliassime / Chan (le n° 1 de simple rejoue en double).
+    joueurs: [s('Félix Auger-Aliassime', 'Felix Auger Aliassime', 17), s('Liam Draxl', 'Liam Draxl', 165), d('Duncan Chan', 'Duncan Chan', 232)],
+    noteDouble: 1830,
+    pairePressentie: 'Auger-Aliassime / Chan',
     domicile: false,
   },
   {
@@ -147,12 +150,31 @@ export const EQUIPES_DAVIS_2026: EquipeDavis[] = [
   },
 ];
 
+/** Ordre des matchs annoncé (la veille ou le jour même) : noms de JoueurDavis.nom, dans l'ordre de `nations`. */
+export interface OrdreOfficiel {
+  simple1: [string, string];
+  simple2: [string, string];
+  /** Paires annoncées pour le double, dans l'ordre de `nations`. */
+  double: [string, string];
+}
+
 /**
  * Programme officiel des quarts (heure de Paris), annoncé par l'ITF. Attention : l'ordre des quarts chez
  * Game Tracker (et dans notre tableau) n'est pas l'ordre réel : République Tchèque – Canada ouvre la semaine.
+ * `ordre` : feuille de match, à remplir dès qu'elle est publiée (elle remplace la composition par défaut).
  */
-export const PROGRAMME_QUARTS_2026: { nations: [CodeNation, CodeNation]; date: string; libelle: string }[] = [
-  { nations: ['CZE', 'CAN'], date: '2026-11-24T16:00:00+01:00', libelle: 'mar. 24 nov. à 16 h' },
+export const PROGRAMME_QUARTS_2026: { nations: [CodeNation, CodeNation]; date: string; libelle: string; ordre?: OrdreOfficiel }[] = [
+  {
+    nations: ['CZE', 'CAN'],
+    date: '2026-11-24T16:00:00+01:00',
+    libelle: 'mar. 24 nov. à 16 h',
+    // Feuille de match officielle du 24/11.
+    ordre: {
+      simple1: ['Tomas Machac', 'Liam Draxl'],
+      simple2: ['Jiri Lehecka', 'Félix Auger-Aliassime'],
+      double: ['Pavlasek / Rikl', 'Auger-Aliassime / Chan'],
+    },
+  },
   { nations: ['ITA', 'KOR'], date: '2026-11-25T16:00:00+01:00', libelle: 'mer. 25 nov. à 16 h' },
   { nations: ['GBR', 'GER'], date: '2026-11-26T10:00:00+01:00', libelle: 'jeu. 26 nov. à 10 h' },
   { nations: ['AUT', 'ESP'], date: '2026-11-26T17:00:00+01:00', libelle: 'jeu. 26 nov., pas avant 17 h' },
@@ -161,6 +183,18 @@ export const PROGRAMME_QUARTS_2026: { nations: [CodeNation, CodeNation]; date: s
 /** Horaire officiel d'un quart entre ces deux nations (dans un sens ou dans l'autre), s'il est connu. */
 export function programmeQuart(a: CodeNation, b: CodeNation): { date: string; libelle: string } | null {
   return PROGRAMME_QUARTS_2026.find((p) => p.nations.includes(a) && p.nations.includes(b)) ?? null;
+}
+
+/**
+ * Ordre des matchs officiel d'une rencontre, orienté dans le sens demandé (côté `a` d'abord), s'il a été
+ * annoncé ; null sinon.
+ */
+export function ordreOfficiel(a: CodeNation, b: CodeNation): OrdreOfficiel | null {
+  const p = PROGRAMME_QUARTS_2026.find((x) => x.nations.includes(a) && x.nations.includes(b));
+  if (!p?.ordre) return null;
+  if (p.nations[0] === a) return p.ordre;
+  const inv = <T,>(t: [T, T]): [T, T] => [t[1], t[0]];
+  return { simple1: inv(p.ordre.simple1), simple2: inv(p.ordre.simple2), double: inv(p.ordre.double) };
 }
 
 /** Équipe d'une nation d'après son nom dans tn_players (« Italie »...). */

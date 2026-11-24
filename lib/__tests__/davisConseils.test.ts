@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { EQUIPES_DAVIS_2026, equipeDeNation, programmeQuart, type CodeNation } from '../davisEquipes';
+import { EQUIPES_DAVIS_2026, equipeDeNation, ordreOfficiel, programmeQuart, type CodeNation } from '../davisEquipes';
 import { analyseRencontre, analyseTableau, composition, modeleMatch, plansComplets, plansPicks, probaElo, type RencontreEtat } from '../davisConseils';
 
 const ELO = new Map<string, number>([
@@ -104,6 +104,15 @@ describe('picks', () => {
 });
 
 describe('équipes', () => {
+  it('feuille de match officielle : orientée dans le sens demandé, absente si non annoncée', () => {
+    expect(ordreOfficiel('CZE', 'CAN')?.simple1).toEqual(['Tomas Machac', 'Liam Draxl']);
+    expect(ordreOfficiel('CAN', 'CZE')?.simple2).toEqual(['Félix Auger-Aliassime', 'Jiri Lehecka']);
+    expect(ordreOfficiel('ITA', 'KOR')).toBeNull();
+    // Chaque nom de la feuille de match est bien un joueur de simple de son équipe (sinon il serait ignoré).
+    const o = ordreOfficiel('CZE', 'CAN')!;
+    const c = composition(eq('CZE'), eq('CAN'), ELO, { simple1: o.simple1, simple2: o.simple2 });
+    expect([...c.simple1, ...c.simple2].map((j) => j.nom)).toEqual([...o.simple1, ...o.simple2]);
+  });
   it('programme réel des quarts : République Tchèque – Canada ouvre la semaine, dans un sens ou dans l’autre', () => {
     expect(programmeQuart('CAN', 'CZE')?.libelle).toMatch(/mar\. 24/);
     expect(programmeQuart('ITA', 'KOR')?.libelle).toMatch(/mer\. 25/);

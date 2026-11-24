@@ -11,7 +11,7 @@ import {
   type SlotDavis,
   type TourDavis,
 } from '@/lib/davisConseils';
-import { EQUIPES_DAVIS_2026, joueursDeSimple, programmeQuart, type CodeNation, type EquipeDavis } from '@/lib/davisEquipes';
+import { EQUIPES_DAVIS_2026, joueursDeSimple, ordreOfficiel, programmeQuart, type CodeNation, type EquipeDavis } from '@/lib/davisEquipes';
 
 /**
  * Onglet « Pronos » d'une Coupe Davis : chances de chaque nation et conseils pour les trois jeux de
@@ -20,7 +20,8 @@ import { EQUIPES_DAVIS_2026, joueursDeSimple, programmeQuart, type CodeNation, t
  * choix se posent sur Game Tracker.
  *
  * La composition (qui joue le simple 1 et le simple 2) se choisit dans l'écran : elle passe par l'adresse
- * de la page (?QF1_s1a=...), sans rien écrire en base. Par défaut : les numéros 2 au simple 1, les
+ * de la page (?QF1_s1a=...), sans rien écrire en base. Sinon la feuille de match officielle si elle est
+ * saisie dans lib/davisEquipes.ts (PROGRAMME_QUARTS_2026[].ordre), sinon les numéros 2 au simple 1 et les
  * numéros 1 au simple 2, d'après le classement ATP.
  */
 
@@ -48,11 +49,13 @@ async function preparer(id: string, recherche: Recherche) {
   for (const r of rencontres) {
     if (!r.nation1 || !r.nation2) continue;
     const k = cleR(r);
+    // Priorité : choix fait dans l'écran, puis feuille de match officielle (lib/davisEquipes.ts), puis défaut.
+    const o = ordreOfficiel(r.nation1, r.nation2);
     compos.set(
       `${r.nation1}|${r.nation2}`,
       composition(equipe(r.nation1), equipe(r.nation2), elo, {
-        simple1: [valeur(`${k}_s1a`), valeur(`${k}_s1b`)],
-        simple2: [valeur(`${k}_s2a`), valeur(`${k}_s2b`)],
+        simple1: [valeur(`${k}_s1a`) ?? o?.simple1[0] ?? null, valeur(`${k}_s1b`) ?? o?.simple1[1] ?? null],
+        simple2: [valeur(`${k}_s2a`) ?? o?.simple2[0] ?? null, valeur(`${k}_s2b`) ?? o?.simple2[1] ?? null],
       }),
     );
   }
@@ -345,6 +348,11 @@ function CarteRencontre({ r, a, compo, recherche }: { r: RencontreEtat; a: Analy
         </tbody>
       </table>
       <p className="text-xs text-zinc-500">Carton plein sur les deux simples avec ces pronos : {pct(carton)}.</p>
+      {ordreOfficiel(r.nation1!, r.nation2!) && (
+        <p className="text-xs text-accent" data-testid={`ordre-officiel-${k}`}>
+          Feuille de match officielle prise en compte (double annoncé : {ordreOfficiel(r.nation1!, r.nation2!)!.double.join(' contre ')}).
+        </p>
+      )}
 
       {/* Composition : formulaire GET, rien n'est écrit en base. */}
       <form method="get" className="flex flex-wrap items-end gap-3 text-xs">
